@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>최윤수 모바일 명함</title><meta property="og:title" content="최윤수 대표이사 | 홈퍼니싱 · 아르띠꼬 스튜디오"><meta property="og:image" content="https://soo-cpu.github.io/card/soo/card.png"><meta property="og:url" content="https://soo-cpu.github.io/card/soo/"><meta property="og:type" content="website"><meta property="og:description" content="공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Jost:wght@300;400&display=swap">
+<style>[hidden]{display:none!important}
+/* Layout: one phone screen, no scrolling. Paper-card block on top, two big buttons, compact contact list, one row of channel icons. Warm grey-beige from the paper card. */
+:root{
+  --bg:#f3f0ec; --card:#fbfaf8; --ink:#4a423b; --taupe:#9a8b7e; --line:#e4ded6;
+  --olive:#6f7247; --gold:#b49a5e; --navy:#1f2f4f; --on:#fbfaf8;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-logo:"Jost","Futura","Century Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1c1a18; --card:#262321; --ink:#ece6df; --taupe:#b8a898; --line:#3a3531;
+  --olive:#8d9160; --gold:#d0b679; --navy:#9fb2d6; --on:#fbfaf8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1a18; --card:#262321; --ink:#ece6df; --taupe:#b8a898; --line:#3a3531;
+  --olive:#8d9160; --gold:#d0b679; --navy:#9fb2d6; --on:#fbfaf8; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.4;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-block:12px}
+.wrap{max-width:420px;min-height:100%;margin:0 auto;display:flex;flex-direction:column;justify-content:center;gap:10px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 18px 14px;position:relative;box-shadow:0 8px 24px -18px rgba(60,45,30,.4)}
+.logo{position:absolute;top:14px;right:18px;font-family:var(--f-logo);font-weight:300;font-size:24px;color:var(--taupe);line-height:1}
+.name h1{margin:0;font-size:30px;font-weight:600;letter-spacing:.28em;color:var(--taupe);line-height:1.15}
+.name .en{font-family:var(--f-logo);font-weight:300;font-size:13px;color:var(--taupe)}
+.org{margin-top:8px;font-size:14px;line-height:1.45}
+.org b{font-weight:500}
+.org .role{color:var(--taupe)}
+.tag{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--taupe);line-height:1.5}
+.tag .h{color:var(--navy);font-weight:500}.tag .a{color:var(--olive);font-weight:500}
+
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;height:46px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:500;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btn.primary{background:var(--olive);border-color:var(--olive);color:var(--on)}
+.btn svg{width:17px;height:17px}
+
+.list{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:2px 14px}
+.row{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;min-height:38px;border-top:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:14px}
+.row:first-child{border-top:0}
+.row .k{font-family:var(--f-logo);color:var(--taupe);font-size:14px}
+.row .v{min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.row .v.addr{font-size:12.5px;padding-block:6px}
+.maps{display:flex;gap:6px;margin-top:4px}
+.maps a{font-size:11px;color:var(--olive);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.copy{font:inherit;font-size:11px;color:var(--taupe);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer}
+.copy.done{color:var(--olive);border-color:var(--olive)}
+
+.chs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.ch{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--ink);font-size:11px;text-align:center;line-height:1.2}
+.ch .ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);color:var(--olive)}
+.ch.hs .ic{color:var(--navy)}
+.ch .ic svg{width:19px;height:19px}
+.btn:focus-visible,.row:focus-visible,.copy:focus-visible,.ch:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+</style></head><body style="margin:0">
+
+<div class="wrap">
+  <section class="card" aria-label="명함">
+    <div class="logo">ártico</div>
+    <div class="name"><h1>최윤수</h1><div class="en">Choi Yun Soo</div></div>
+    <div class="org"><b>주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</b><br><span class="role">대표이사 CEO</span></div>
+    <div class="tag">공간을 설계하는 <span class="h">홈퍼니싱</span> · 취향을 디자인하는 <span class="a">아르띠꼬</span><br>디자인 · 설계 · 실내건축</div>
+  </section>
+
+  <div class="actions">
+    <a class="btn primary" href="tel:01095066066"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>전화하기</a>
+    <a class="btn" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>상담 신청</a>
+  </div>
+
+  <section class="list" aria-label="연락처">
+    <a class="row" href="tel:01095066066"><span class="k">M</span><span class="v">010. 9506. 6066</span><button class="copy" type="button" data-copy="010-9506-6066">복사</button></a>
+    <a class="row" href="tel:15665904"><span class="k">T</span><span class="v">1566. 5904 · 대표번호</span><button class="copy" type="button" data-copy="1566-5904">복사</button></a>
+    <a class="row" href="mailto:woo17115@hanmail.net"><span class="k">E</span><span class="v">woo17115@hanmail.net</span><button class="copy" type="button" data-copy="woo17115@hanmail.net">복사</button></a>
+    <a class="row" href="mailto:soo@artico-studio.com"><span class="k">W</span><span class="v">soo@artico-studio.com</span><button class="copy" type="button" data-copy="soo@artico-studio.com">복사</button></a>
+    <a class="row" href="mailto:soo17115@gmail.com"><span class="k">G</span><span class="v">soo17115@gmail.com</span><button class="copy" type="button" data-copy="soo17115@gmail.com">복사</button></a>
+    <div class="row"><span class="k">F</span><span class="v">031. 513. 9561</span><button class="copy" type="button" data-copy="031-513-9561">복사</button></div>
+    <div class="row"><span class="k">A</span><span class="v addr">경기도 구리시 동구릉로 129번길 2-1, 1층<span class="maps"><a href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">네이버 지도</a><a href="https://www.google.com/maps/search/?api=1&amp;query=%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">구글 지도</a></span></span><button class="copy" type="button" data-copy="경기도 구리시 동구릉로 129번길 2-1, 1층">복사</button></div>
+  </section>
+
+  <nav class="chs" aria-label="채널">
+    <a class="ch" href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12l4 4v12H4z"/><path d="M8 10h8M8 14h8M8 18h5"/></svg></span>시공 사례<br>블로그</a>
+    <a class="ch" href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>방문<br>예약</a>
+    <a class="ch" href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg></span>유튜브</a>
+    <a class="ch" href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r=".8" fill="currentColor"/></svg></span>인스타</a>
+    <a class="ch hs" href="https://blog.naver.com/soo17115" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9l2-5h12l2 5"/><path d="M4 9h16v11H4z"/><path d="M10 20v-5h4v5"/></svg></span>한샘<br>대리점</a>
+  </nav>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function(b){
+  b.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    var t=b.getAttribute('data-copy');
+    function ok(){b.textContent='복사됨';b.classList.add('done');setTimeout(function(){b.textContent='복사';b.classList.remove('done')},1600)}
+    function fallback(){var r=document.createRange();r.selectNodeContents(b.parentNode.querySelector('.v'));var s=getSelection();s.removeAllRanges();s.addRange(r)}
+    try{navigator.clipboard.writeText(t).then(ok,fallback)}catch(err){fallback()}
+  });
+});
+</script>
+</body></html>
