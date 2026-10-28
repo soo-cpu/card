@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#2f5d50">
+<title>견적서 · ártico studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Gowun+Batang:wght@700&display=swap">
+<style>html,body{margin:0;background:#fbfaf7;color:#1d2523}[hidden]{display:none!important}
+.gate{min-height:100vh;display:grid;place-items:center;padding:16px;font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.gatecard{width:100%;max-width:360px;background:#fff;border:1px solid #e4e0d8;border-radius:14px;padding:26px 20px;text-align:center}
+.gatecard .b{font-family:"Gowun Batang",serif;font-size:24px;font-weight:700;color:#2f5d50}
+.gatecard p{margin:10px 0 0;line-height:1.6}.gatecard .s{font-size:13px;color:#55605c}
+.gatecard form{display:grid;gap:10px;margin-top:16px}
+.gatecard input{font-size:24px;letter-spacing:.4em;text-align:center;padding:10px;border:1px solid #cfcac0;border-radius:10px}
+.gatecard button{font-size:16px;padding:12px;border:0;border-radius:10px;background:#2f5d50;color:#fff;font-weight:700}
+.gatecard .e{color:#a33;font-size:13px;min-height:1.2em}
+.cq{--cq-bg:#fbfaf7;--cq-card:#ffffff;--cq-ink:#1d2523;--cq-sub:#55605c;--cq-line:#e4e0d8;--cq-accent:#2f5d50;--cq-soft:#eef3f0;
+  background:var(--cq-bg);color:var(--cq-ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.65;
+  max-width:760px;margin:0 auto;padding:20px 16px 40px;box-sizing:border-box;word-break:keep-all;overflow-wrap:anywhere}
+.cq *{box-sizing:border-box}
+.cq-cover{background:var(--cq-card);border:1px solid var(--cq-line);border-radius:14px;padding:22px 18px}
+.cq-brand{font-family:"Gowun Batang",serif;font-size:22px;font-weight:700;color:var(--cq-accent)}
+.cq-kicker{font-size:12px;color:var(--cq-sub);letter-spacing:.04em;margin-top:2px}
+.cq-title{font-size:21px;line-height:1.4;margin:14px 0 10px}
+.cq-info{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:0}
+.cq-info div{display:flex;gap:8px;font-size:14px;min-width:0}
+.cq-info dt{color:var(--cq-sub);flex:none;width:3.2em}
+.cq-info dd{margin:0;min-width:0}
+.cq-total{margin-top:16px;background:var(--cq-soft);border-radius:10px;padding:14px 16px;display:grid;gap:2px}
+.cq-total span{font-size:13px;color:var(--cq-sub)}
+.cq-total strong{font-size:24px;color:var(--cq-accent);font-variant-numeric:tabular-nums}
+.cq-total small{font-size:12px;color:var(--cq-sub)}
+.cq-sec{background:var(--cq-card);border:1px solid var(--cq-line);border-radius:14px;padding:18px;margin-top:14px}
+.cq-h{font-size:17px;margin:0 0 10px;color:var(--cq-accent)}
+.cq-h3{font-size:15px;margin:12px 0 4px}
+.cq-p{margin:0 0 6px;white-space:pre-line}
+.cq-greet p{margin:0;white-space:pre-line}
+.cq-fig{margin:10px 0 0}
+.cq-fig img{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--cq-line);background:#f3f1ec;min-height:60px}
+.cq-fig img.broken{min-height:0;height:0;border:0}
+.cq-fig figcaption{font-size:12px;color:var(--cq-sub);margin-top:4px}
+.cq-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cq-grid.sm{grid-template-columns:repeat(3,1fr)}
+.cq-grid .cq-fig{margin:0}
+.cq-pal{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.cq-pal div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--cq-sub)}
+.cq-pal .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--cq-line);display:inline-block}
+.cq-rooms{margin:12px 0 0;padding-left:22px;display:grid;gap:10px}
+.cq-rooms p{margin:2px 0 0;font-size:14px}
+.cq-rooms .cq-mat{color:var(--cq-sub);font-size:13px}
+.cq-cat{border-top:1px solid var(--cq-line);padding:12px 0}
+.cq-cat:first-of-type{border-top:0;padding-top:4px}
+.cq-cathd{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.cq-cathd span{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cq-items{margin:4px 0 0;font-size:13px;color:var(--cq-sub)}
+.cq-cat .cq-grid{margin-top:8px}
+.cq-sum{border-top:2px solid var(--cq-ink);margin-top:6px;padding-top:10px;display:grid;gap:4px}
+.cq-sum div{display:flex;justify-content:space-between;gap:12px}
+.cq-sum .grand strong{font-size:19px;color:var(--cq-accent)}
+.cq-pay{display:grid;gap:8px}
+.cq-pay div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--cq-line);padding-bottom:6px}
+.cq-pay strong{text-align:right;font-weight:600}
+.cq-note p{margin:0 0 4px;font-size:13px;color:var(--cq-sub)}
+.cq-promo{margin-top:18px;text-align:center;padding:22px 12px;border-top:1px solid var(--cq-line)}
+.cq-tag{font-weight:700;margin:0}
+.cq-sub{margin:2px 0 12px;color:var(--cq-sub);font-size:13px}
+.cq-call{display:inline-block;background:var(--cq-accent);color:#fff;text-decoration:none;border-radius:999px;padding:10px 22px;font-weight:700}
+.cq-links{display:grid;gap:8px;margin:14px auto 0;max-width:360px}
+.cq-links a{display:block;border:1px solid var(--cq-line);border-radius:10px;padding:10px;color:var(--cq-ink);text-decoration:none;background:var(--cq-card);font-size:14px}
+.cq-corp{font-size:12px;color:var(--cq-sub);margin:16px 0 0}
+.cq-mark{font-size:11px;color:#9aa19e;margin:4px 0 0}
+@media (max-width:420px){.cq-info{grid-template-columns:1fr}.cq-grid.sm{grid-template-columns:1fr 1fr}.cq-total strong{font-size:21px}}
+.cq-sign{display:grid;gap:4px;text-align:left;max-width:420px;margin:0 auto;font-size:14px}
+.cq-sign .cq-gap{height:6px}
+.cq-sign a{color:var(--cq-ink);text-decoration:none;display:block;border:1px solid var(--cq-line);border-radius:10px;padding:9px 12px;background:var(--cq-card)}
+.cq-sign div:first-child,.cq-sign div:nth-last-child(2){color:var(--cq-sub);overflow:hidden;white-space:nowrap}
+</style></head><body>
+<div class="gate" id="gate"><div class="gatecard"><div class="b">ártico studio</div><p id="gateMsg">견적서를 불러오는 중입니다…</p><p class="s" id="gateSub"></p>
+<form id="gateForm" hidden><input id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" aria-label="휴대폰 번호 뒤 4자리"><button id="gateBtn">견적서 보기</button><p class="e" id="gateErr" aria-live="polite"></p></form></div></div>
+<main id="page"></main>
+<script>/* 아르띠꼬 고객 견적 화면 — 툴(고객 화면)과 고객 링크 페이지가 같이 쓴다.
+   들어오는 데이터에는 판매가(부가세 포함)만 있다. 원가·마진·업체 정보는 처음부터 넣지 않는다. */
+var ArticoQ=(function(){
+const PROMO={tagline:"공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬",sub:"디자인 · 설계 · 실내건축",tel:"1566-5904",
+  links:[["시공 사례 (블로그)","https://blog.naver.com/artico_studio"],["포트폴리오·견적 (오늘의집)","https://o2o.ohou.se/partner/myhome/13553169"],["유튜브","https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew"],["인스타그램","https://www.instagram.com/artico_design.studio"],["상담·방문 예약 (네이버 플레이스)","https://m.place.naver.com/place/36428683/home"]]};
+const SIGN="━━━━━━━━━━━━━━━━━━\n공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬\n디자인 · 설계 · 실내건축\n\n📞 상담 1566-5904\n📅 상담·방문 예약 (네이버 플레이스) https://m.place.naver.com/place/36428683/home\n🏠 시공 사례 (블로그) https://blog.naver.com/artico_studio\n📐 포트폴리오·견적 (오늘의집) https://o2o.ohou.se/partner/myhome/13553169\n🎬 유튜브 https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew\n📷 인스타그램 https://www.instagram.com/artico_design.studio\n━━━━━━━━━━━━━━━━━━\n🛋 매장에서 직접 보고 싶다면 → 대리점 블로그 https://blog.naver.com/soo17115";
+const GREETING="안녕하세요, 주식회사 홈퍼니싱 대표 최윤수입니다. 저희는 세 가지를 약속드립니다. 첫째, 디자인 그대로 시공합니다. 둘째, 필요 없는 공사는 권하지 않지만, 살면서 후회할 부분은 꼭 짚어 드립니다. 셋째, 상담부터 AS까지 고객관리 시스템으로 관리하고, 마감하면 안 보이는 곳까지 사진으로 보여드립니다. 집 고민 있으시면 편하게 연락 주세요.";
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function won(n){return Math.round(n).toLocaleString("ko-KR")+"원"}
+function man(n){return Math.round(n/10000).toLocaleString("ko-KR")+"만원"}
+function safeUrl(u){u=String(u||"");return /^(https:\/\/|\/_blob\/|data:image\/|blob:)/.test(u)?u:""}
+function img(u,alt){const im=document.createElement("img");im.src=safeUrl(u);im.alt=alt||"";im.loading="eager";im.decoding="async";
+  im.onerror=function(){const m=/[?&]id=([\w-]+)|\/d\/([\w-]+)/.exec(im.src);if(m&&!im.dataset.f){im.dataset.f=1;im.src="https://drive.google.com/thumbnail?id="+(m[1]||m[2])+"&sz=w1600"}else im.classList.add("broken")};return im}
+function figure(p){const f=el("figure","cq-fig");f.appendChild(img(p.url,p.cap||""));if(p.cap)f.appendChild(el("figcaption",null,p.cap));return f}
+function sec(title,cls){const s=el("section","cq-sec"+(cls?" "+cls:""));if(title)s.appendChild(el("h2","cq-h",title));return s}
+function hexOk(h){return /^#[0-9a-fA-F]{6}$/.test(h||"")?h:"#8a9a90"}
+
+function render(root,d){
+  root.innerHTML="";root.classList.add("cq");
+  const cover=el("header","cq-cover");
+  cover.append(el("div","cq-brand",d.co&&d.co.brand||"ártico studio"),el("div","cq-kicker","인테리어 디자인 제안 · 견적"));
+  cover.appendChild(el("h1","cq-title",(d.cust?d.cust+" 고객님 ":"")+(d.site||"리모델링")));
+  const info=el("dl","cq-info");
+  [["현장",d.site],["규모",[d.type,d.area?d.area+"평":"",d.baths?"욕실 "+d.baths:""].filter(Boolean).join(" · ")],["착공",d.start||"협의"],["입주",d.moveIn||"협의"],["작성일",d.date],["담당",d.staff]].forEach(([k,v])=>{if(!v)return;const w=el("div");w.append(el("dt",null,k),el("dd",null,v));info.appendChild(w)});
+  cover.appendChild(info);
+  const tot=el("div","cq-total");tot.append(el("span",null,"예상 공사비 (부가세 포함)"),el("strong",null,man(d.total)+(d.hi&&d.hi>d.total?" ~ "+man(d.hi):"")));
+  if(d.hi&&d.hi>d.total)tot.appendChild(el("small",null,"실측 후 자재·설계가 확정되면 이 범위 안에서 정해집니다."));
+  cover.appendChild(tot);root.appendChild(cover);
+
+  const g=sec("대표 인사말","cq-greet");g.appendChild(el("p",null,d.greeting||GREETING));root.appendChild(g);
+
+  if(d.concept||d.request){const s=sec("디자인 제안");if(d.concept)s.appendChild(el("p","cq-p",d.concept));if(d.request){s.appendChild(el("h3","cq-h3","고객님 요청 사항"));s.appendChild(el("p","cq-p",d.request))}root.appendChild(s)}
+
+  if(d.plan&&(d.plan.img||(d.plan.rooms||[]).length)){const p=d.plan;const s=sec("평면도 디자인 제안");
+    if(p.title)s.appendChild(el("h3","cq-h3",p.title));if(p.summary)s.appendChild(el("p","cq-p",p.summary));
+    if(p.img)s.appendChild(figure({url:p.img,cap:"평면도 위 색 영역은 대략적인 위치입니다. 실측 후 3D 디자인으로 확정합니다."}));
+    if((p.palette||[]).length){const pl=el("div","cq-pal");p.palette.forEach(c=>{const w=el("div");const sw=el("span","sw");sw.style.background=hexOk(c.hex);w.append(sw,el("small",null,c.name||""));pl.appendChild(w)});s.appendChild(pl)}
+    if((p.rooms||[]).length){const ul=el("ol","cq-rooms");p.rooms.forEach(r=>{const li=el("li");li.appendChild(el("strong",null,r.name||""));if(r.idea)li.appendChild(el("p",null,r.idea));if((r.materials||[]).length)li.appendChild(el("p","cq-mat","마감: "+r.materials.join(", ")));ul.appendChild(li)});s.appendChild(ul)}
+    root.appendChild(s)}
+
+  const free=(d.photos||[]).filter(p=>!p.cat);
+  [["design","디자인 제안 이미지"],["before","현장 사진 (공사 전)"],["ref","참고 · 시공 사례"]].forEach(([k,t])=>{const ph=free.filter(p=>p.kind===k);if(!ph.length)return;const s=sec(t);const gr=el("div","cq-grid");ph.forEach(p=>gr.appendChild(figure(p)));s.appendChild(gr);root.appendChild(s)});
+
+  const q=sec("공정별 견적 (부가세 포함)");
+  (d.cats||[]).forEach(c=>{const box=el("div","cq-cat");const hd=el("div","cq-cathd");hd.append(el("strong",null,c.n),el("span",null,won(c.amt)));box.appendChild(hd);
+    if((c.items||[]).length)box.appendChild(el("p","cq-items",c.items.join(" · ")));
+    const ph=(d.photos||[]).filter(p=>p.cat===c.n);if(ph.length){const gr=el("div","cq-grid sm");ph.forEach(p=>gr.appendChild(figure(p)));box.appendChild(gr)}
+    q.appendChild(box)});
+  const sum=el("div","cq-sum");const rows=[];if(d.disc)rows.push(["할인","-"+won(d.disc)]);rows.push(["합계 (부가세 포함)",won(d.total),"grand"]);if(d.hi&&d.hi>d.total)rows.push(["안내 범위",man(d.total)+" ~ "+man(d.hi)]);
+  rows.forEach(([a,b,cl])=>{const r=el("div",cl||null);r.append(el("span",null,a),el("strong",null,b));sum.appendChild(r)});q.appendChild(sum);root.appendChild(q);
+
+  if((d.pay||[]).length){const s=sec("지급 조건 (부가세 포함)");const gp=el("div","cq-pay");d.pay.forEach(([a,b])=>{const w=el("div");w.append(el("span",null,a),el("strong",null,man(b)));gp.appendChild(w)});s.appendChild(gp);root.appendChild(s)}
+  const sch=sec("일정");const sl=el("div","cq-pay");[["착공 희망",d.start||"협의"],["입주 희망",d.moveIn||"협의"],["실측·본견적","상담 후 담당자가 연락드려 일정을 잡습니다"]].forEach(([a,b])=>{const w=el("div");w.append(el("span",null,a),el("strong",null,b));sl.appendChild(w)});sch.appendChild(sl);root.appendChild(sch);
+
+  const nt=sec(null,"cq-note");(d.notes||["상담 내용 기준 가견적입니다. 실측 후 자재와 설계가 확정되면 금액이 달라질 수 있습니다.","견적서는 작성일로부터 1개월 동안 유효합니다.","디자인 계약 후 공사를 진행하지 않더라도 디자인비는 환급되지 않습니다."]).forEach(x=>nt.appendChild(el("p",null,x)));root.appendChild(nt);
+
+  const pr=el("footer","cq-promo");const sg=el("div","cq-sign");
+  SIGN.split("\n").forEach(line=>{const row=el("div",line?null:"cq-gap");const m=/^(.*?)\s*(https:\/\/\S+)$/.exec(line);
+    if(m){const a=el("a",null,m[1]);a.href=m[2];a.target="_blank";a.rel="noopener";row.appendChild(a)}
+    else if(/1566-5904/.test(line)){const a=el("a",null,line);a.href="tel:15665904";row.appendChild(a)}else row.textContent=line;sg.appendChild(row)});
+  pr.appendChild(sg);
+  pr.appendChild(el("p","cq-corp",(d.co&&d.co.corp||"주식회사 홈퍼니싱")+" · ártico studio · 경기도 구리시 인창동"));
+  if(d.mark)pr.appendChild(el("p","cq-mark",d.mark));
+  root.appendChild(pr);
+}
+
+/* ---- 링크용 암호화: 압축 → AES-GCM(코드+비밀번호) → base64url ---- */
+const enc=new TextEncoder(),dec=new TextDecoder();
+function b64u(buf){let s="";const b=new Uint8Array(buf);for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(s){s=String(s).replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const bin=atob(s);const b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return b}
+async function pipe(bytes,stream){const r=new Blob([bytes]).stream().pipeThrough(stream);return new Uint8Array(await new Response(r).arrayBuffer())}
+async function keyOf(code,pin){const base=await crypto.subtle.importKey("raw",enc.encode(code+":"+(pin||"")),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:enc.encode("artico-q-"+code),iterations:120000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function seal(obj,code,pin){let raw=enc.encode(JSON.stringify(obj));let z=0;
+  if(typeof CompressionStream!=="undefined"){raw=await pipe(raw,new CompressionStream("deflate-raw"));z=1}
+  const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},await keyOf(code,pin),raw));
+  const out=new Uint8Array(1+12+ct.length);out[0]=z;out.set(iv,1);out.set(ct,13);return b64u(out)}
+async function open(s,code,pin){const b=unb64u(s);const z=b[0],iv=b.slice(1,13),ct=b.slice(13);
+  let raw=new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv},await keyOf(code,pin),ct));
+  if(z)raw=await pipe(raw,new DecompressionStream("deflate-raw"));return JSON.parse(dec.decode(raw))}
+async function lookup(code){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode("artico:"+code)));return Array.from(h.slice(0,16)).map(x=>x.toString(16).padStart(2,"0")).join("")}
+function newCode(n){const A="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";const r=crypto.getRandomValues(new Uint8Array(n||10));return Array.from(r,x=>A[x%A.length]).join("")}
+return {render,seal,open,lookup,newCode,PROMO,GREETING,SIGN};
+})();
+
+(function(){
+const $=id=>document.getElementById(id);
+function params(){const h=location.hash.replace(/^#/,"");const o={};h.split("&").forEach(kv=>{const i=kv.indexOf("=");if(i>0)o[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1))});
+  const q=new URLSearchParams(location.search);q.forEach((v,k)=>{if(!o[k])o[k]=v});return o}
+function msg(t,sub){$("gate").hidden=false;$("gateForm").hidden=true;$("gateMsg").textContent=t;$("gateSub").textContent=sub||""}
+function jsonp(url){return new Promise((res,rej)=>{const cb="__aq"+Math.random().toString(36).slice(2);const sc=document.createElement("script");
+  const t=setTimeout(()=>{cleanup();rej(new Error("timeout"))},15000);function cleanup(){clearTimeout(t);delete window[cb];sc.remove()}
+  window[cb]=d=>{cleanup();res(d)};sc.onerror=()=>{cleanup();rej(new Error("load"))};sc.src=url.replace("__CB__",cb);document.head.appendChild(sc)})}
+async function fromSheet(s,code){const h=await ArticoQ.lookup(code);
+  const url="https://docs.google.com/spreadsheets/d/"+encodeURIComponent(s)+"/gviz/tq?tqx=responseHandler:__CB__&headers=1&tq="+encodeURIComponent("select B,D where A='"+h+"'");
+  const r=await jsonp(url);const row=r&&r.table&&r.table.rows&&r.table.rows[0];if(!row)return null;
+  const c=row.c||[];return {d:c[0]&&c[0].v,p:String(c[1]&&c[1].v||"")==="y"}}
+let payload=null,code="",needPin=false;
+async function tryOpen(pin){try{const data=await ArticoQ.open(payload,code,pin);$("gate").hidden=true;ArticoQ.render($("page"),data);document.title=(data.cust?data.cust+" 고객님 ":"")+"견적서 · ártico studio";window.scrollTo(0,0);return true}catch(e){return false}}
+(async function(){
+  const p=params();code=p.c||p.k||"";
+  if(!code){msg("주소가 올바르지 않습니다.","문자로 받은 링크를 그대로 눌러 주세요.");return}
+  try{
+    if(p.s){const row=await fromSheet(p.s,code);if(!row||!row.d){msg("견적서를 찾을 수 없습니다.","기간이 지났거나 다시 보내 드린 견적서가 있을 수 있습니다. 담당자에게 문의해 주세요.");return}payload=row.d;needPin=row.p}
+    else if(p.d){payload=p.d;needPin=p.p==="1"}
+    else{msg("주소가 올바르지 않습니다.","문자로 받은 링크를 그대로 눌러 주세요.");return}
+  }catch(e){msg("견적서를 불러오지 못했습니다.","인터넷 연결을 확인하고 새로고침해 주세요.");return}
+  if(!needPin){if(!(await tryOpen("")))msg("견적서를 열 수 없습니다.","주소가 잘렸을 수 있습니다. 문자로 받은 링크를 그대로 눌러 주세요.");return}
+  $("gate").hidden=false;$("gateForm").hidden=false;$("gateMsg").textContent="고객님 휴대폰 번호 뒤 4자리를 입력해 주세요.";$("gateSub").textContent="견적서는 고객님만 보실 수 있도록 잠겨 있습니다.";$("pin").focus();
+  $("gateForm").onsubmit=async e=>{e.preventDefault();const v=$("pin").value.replace(/\D/g,"");$("gateBtn").disabled=true;$("gateErr").textContent="확인 중입니다…";
+    const ok=await tryOpen(v);$("gateBtn").disabled=false;if(!ok){$("gateErr").textContent="번호가 맞지 않습니다. 다시 입력해 주세요.";$("pin").select()}};
+})();
+})();
+</script>
+</body></html>
