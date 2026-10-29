@@ -1,0 +1,642 @@
+<title>홈퍼니싱 인트라넷</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: deep-navy side rail (top scroll row on phones) + white work area; each menu = summary chips, filter, list, detail sheet */
+:root{
+  --navy:#1F4E79; --deep:#203864; --yellow:#FFC000;
+  --bg:#ffffff; --panel:#ffffff; --soft:#F2F2F2; --ink:#111418; --sub:#5f6670; --line:#dde3ea;
+  --accent:#1F4E79; --accent-ink:#ffffff; --tint:#D1E3F3; --rail:#203864; --rail-ink:#e6edf6; --th:#1F4E79; --th-ink:#ffffff;
+  --ok:#1f7a4d; --ok-bg:#e3f3ea; --warn:#8a5a00; --warn-bg:#fff4d6; --bad:#c62828; --bad-bg:#fde8e8;
+  --font:"Noto Sans KR","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1521; --panel:#152033; --soft:#1a2740; --ink:#e8eef6; --sub:#9aa8ba; --line:#2a3a55;
+  --accent:#7fb2e5; --accent-ink:#0e1521; --tint:#1d3556; --rail:#0a1220; --rail-ink:#d7e2f0; --th:#1d3556; --th-ink:#e8eef6;
+  --ok:#6fd3a0; --ok-bg:#163527; --warn:#ffcf5c; --warn-bg:#3a2f12; --bad:#ff8a8a; --bad-bg:#3d1c1c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1521; --panel:#152033; --soft:#1a2740; --ink:#e8eef6; --sub:#9aa8ba; --line:#2a3a55;
+  --accent:#7fb2e5; --accent-ink:#0e1521; --tint:#1d3556; --rail:#0a1220; --rail-ink:#d7e2f0; --th:#1d3556; --th-ink:#e8eef6;
+  --ok:#6fd3a0; --ok-bg:#163527; --warn:#ffcf5c; --warn-bg:#3a2f12; --bad:#ff8a8a; --bad-bg:#3d1c1c; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--rail)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+.rail{background:var(--rail);color:var(--rail-ink);padding:20px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;padding-left:max(14px,env(safe-area-inset-left,0px));overflow-y:auto}
+.logo{display:flex;gap:10px;align-items:center}
+.logo .mark{width:34px;height:34px;border-radius:8px;background:var(--rail-ink);color:var(--deep);display:grid;place-items:center;font-weight:900;font-size:15px}
+.logo b{display:block;font-size:15px;font-weight:900;letter-spacing:.02em}
+.logo small{display:block;font-size:11px;opacity:.7;letter-spacing:.12em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav .grp{font-size:11px;letter-spacing:.12em;opacity:.55;padding:10px 12px 2px}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;color:inherit;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:500;opacity:.85}
+.nav a:hover{background:rgba(255,255,255,.07);opacity:1}
+.nav a[aria-current="page"]{background:rgba(255,255,255,.12);opacity:1;font-weight:700;box-shadow:inset 3px 0 0 var(--yellow)}
+.nav .cnt{font-size:12px;min-width:22px;text-align:center;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.14);font-variant-numeric:tabular-nums}
+.who{margin-top:auto;font-size:12px;opacity:.8;display:flex;gap:8px;align-items:center}
+.who img{width:24px;height:24px;border-radius:50%}
+.main{min-width:0;padding-block:22px 48px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1100px;margin:0 auto;display:grid;gap:18px}
+.banner{border:1px solid var(--line);background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head h1{margin:0;font-size:24px;font-weight:900;text-wrap:balance}
+.head p{margin:2px 0 0;color:var(--sub);font-size:13px}
+.btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;gap:6px;align-items:center;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ok{background:var(--ok);color:var(--bg);border-color:var(--ok)}
+.btn.bad{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel);text-decoration:none;color:inherit;display:grid;gap:2px}
+.tile span{font-size:13px;color:var(--sub)}
+.tile strong{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--accent)}
+.tile small{font-size:12px;color:var(--sub)}
+.tile.alert{border-color:var(--yellow);box-shadow:inset 0 3px 0 var(--yellow)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px;min-width:0}
+.card h2{margin:0 0 10px;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.list{display:grid}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:0}
+.item .t{min-width:0}
+.item .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t small{color:var(--sub);font-size:12px}
+.muted{color:var(--sub);font-size:13px}
+.empty{padding:22px 10px;text-align:center;color:var(--sub);font-size:14px;border:1px dashed var(--line);border-radius:10px}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--soft);color:var(--sub);border:1px solid var(--line)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.pill.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.pill.info{background:var(--tint);color:var(--accent);border-color:transparent}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.search{flex:1 1 200px;min-width:0;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{background:var(--th);color:var(--th-ink);text-align:left;font-weight:600;padding:9px 12px;white-space:nowrap;font-size:13px}
+td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even) td{background:var(--soft)}
+tbody tr[data-open]{cursor:pointer}
+tbody tr[data-open]:hover td{background:var(--tint)}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.toollinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.toollink{border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:inherit;display:grid;gap:2px;background:var(--soft)}
+.toollink b{color:var(--accent)}
+.toollink small{color:var(--sub);font-size:12px}
+.forms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.forms section{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel);min-width:0}
+.forms h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+.forms ul{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.forms a{color:var(--ink);text-decoration:none;font-size:14px}
+.forms a:hover{color:var(--accent);text-decoration:underline}
+.forms .use{font-size:11px;color:var(--accent);border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:6px;cursor:pointer;background:var(--panel)}
+details.plan summary{cursor:pointer;font-weight:700}
+.sum3{display:grid;gap:6px;margin:10px 0;padding:0;list-style:none}
+.sum3 li{padding:8px 12px;border-radius:8px;background:var(--soft)}
+.foot{color:var(--sub);font-size:12px;text-align:center;padding-top:10px;letter-spacing:.04em}
+.veil{position:fixed;inset:0;background:rgba(10,18,32,.45);display:grid;place-items:center;z-index:20;padding:16px}
+.sheet{background:var(--panel);color:var(--ink);border-radius:14px;width:min(820px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:20px;display:grid;gap:14px;border:1px solid var(--line)}
+.sheet h3{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.sheet h4{margin:6px 0 0;font-size:14px;color:var(--accent);grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.f{display:grid;gap:4px;min-width:0;align-content:start}
+.f.wide{grid-column:1/-1}
+.f label{font-size:12px;color:var(--sub);font-weight:600}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+.f textarea{min-height:90px;resize:vertical}
+.hint{font-size:12px;color:var(--sub);font-weight:400}
+.secnote{font-size:12px;color:var(--warn);background:var(--warn-bg);border-radius:8px;padding:8px 10px}
+.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+.steps .grp{grid-column:1/-1;font-weight:700;font-size:13px;color:var(--accent);margin-top:6px}
+.steps label{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);font-weight:400}
+.rows{display:grid;gap:6px}
+.row{display:grid;gap:6px;align-items:center}
+.row input,.row select{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 8px;min-width:0;width:100%}
+.files{display:flex;flex-wrap:wrap;gap:8px}
+.file{border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:flex;gap:8px;align-items:center;font-size:13px;max-width:100%}
+.file img{width:44px;height:44px;object-fit:cover;border-radius:6px}
+.file a{color:var(--accent);word-break:break-all}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
+.actions .r{display:flex;gap:8px;flex-wrap:wrap}
+.flow{display:flex;flex-wrap:wrap;gap:4px;font-size:12px;align-items:center}
+.flow span{padding:2px 8px;border-radius:6px;background:var(--soft);color:var(--sub)}
+.flow span.on{background:var(--accent);color:var(--accent-ink)}
+.flow span.done{background:var(--ok-bg);color:var(--ok)}
+.flow span.no{background:var(--bad-bg);color:var(--bad)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--deep);color:#fff;padding:10px 16px;border-radius:10px;z-index:30;font-size:14px;max-width:calc(100% - 32px)}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .rail{position:sticky;height:auto;flex-direction:row;align-items:center;gap:10px;padding-block:10px;z-index:5;overflow:hidden;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .logo small,.logo b,.nav .grp{display:none}
+  .nav{flex-direction:row;overflow-x:auto;flex:1;min-width:0}
+  .nav a{white-space:nowrap;padding:7px 10px}
+  .nav a[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--yellow)}
+  .who{display:none}
+  .main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid2,.toollinks,.forms{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .form,.steps{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr 1fr!important}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <aside class="rail">
+    <div class="logo"><div class="mark" aria-hidden="true">HF</div><div><b>홈퍼니싱</b><small>INTRANET</small></div></div>
+    <nav class="nav" id="nav" aria-label="메뉴"></nav>
+    <div class="who" id="who"></div>
+  </aside>
+  <main class="main"><div class="wrap" id="view"></div></main>
+</div>
+<div id="layer"></div>
+
+<script>
+(function(){
+// ===== 회사 기준 (고객관리 툴 v3.2 · 아르띠꼬 상담견적 v.15 · 공유드라이브 「0. 홈퍼니싱」 서식) =====
+const APP_VER="v0.2 초안", APP_DATE="2026-10-29";
+const STAFF_DEF=["최윤수","이봄이","채진아","정진혁"];
+const TOOL_QUOTE="https://claude.ai/artifact/UyzLeeqmFdTq54YL7Rko84";
+const TOOL_CRM="https://claude.ai/artifact/BVQPYfkDfTpDcPPUsu6e2x";
+const DRIVE=id=>"https://drive.google.com/file/d/"+id+"/view";
+const STAGES=[["1-상담영업","1단계 · 상담·영업",1,11],["2-계약준비","2단계 · 계약·준비",12,16],["3-시공수금","3단계 · 시공·수금",17,19],["4-완료사후","4단계 · 완료·사후",20,24]];
+const STEP_NAMES=["문의 접수","고객 정보","상담카드","현장 정보","협의·상담 내용","실측 정보","견적 작성","디자인 상담","자재·마감재 선정","견적 상담","계약 / 미계약","계약서 작성","견적·디자인 확정","공정표·일정","착공 전 준비","협력업체·원가","수금 관리","현장 관리","변경·추가 공사","준공 검수","인수인계","사후관리 (A/S)","후기·포트폴리오","연고 고객 관리"];
+const PROC=["철거","설비·배관","전기","목공","창호","타일","도장","바닥","도배","주방·가구","조명·마감","청소"];
+const ROUTES=["오늘의집","소개","매장방문","유튜브","인스타그램","블로그","전화","기타"];
+const Q_SOURCES=["매장 방문","오늘의집","전화","소개","기타"];
+const Q_STATUS=["신규 상담","실장 인계 대기","실장 연락 완료","실측 예약","본견적 진행","계약","보류·종료"];
+const Q_PRESETS=["전체 리모델링","욕실만","욕실 덧방(간단)","욕실 바닥만","주방만","도배·바닥만","장판·도배(간단)","직접 선택"];
+const SEC_NOTE="전체 전화번호·계좌번호·주민번호는 어디에도 적지 않아요. 고객명은 성만(예: 김OO), 연락처는 뒤 4자리만.";
+
+// 본사 서식(공유드라이브 「0. 홈퍼니싱」) → 전자결재 서류 종류. g = 입력 칸 묶음
+const DOC_KINDS=[
+ ["비용·지급","기안품의서 (본사)","pay"],["비용·지급","기안품의서 (현장)","pay"],["비용·지급","지출결의서 (개인청구)","pay"],["비용·지급","여비교통비 신청서","pay"],["비용·지급","전도금 신청서","pay"],["비용·지급","접대비 지출내역서","pay"],["비용·지급","법인카드 사용 결재","pay"],
+ ["현장·공사","발주서","order"],["현장·공사","견적요청서","order"],["현장·공사","공사 기성 정산서","order"],["현장·공사","계약변경 합의서 (추가공사)","order"],["현장·공사","착공계·준공계","order"],
+ ["계약·총무","공사 계약 결재","admin"],["계약·총무","외주·협력업체 계약","admin"],["계약·총무","법인 사용인감 신청","admin"],["계약·총무","공문 발송","admin"],["계약·총무","증명서 발급 신청 (재직·경력)","admin"],
+ ["인사·근태","휴가신청서","hr"],["인사·근태","추가근무 신청서","hr"],["인사·근태","출장 신청서","hr"],["인사·근태","결근·지각·조퇴·외출계","hr"],["인사·근태","휴직계·복직계","hr"],["인사·근태","경조금 지급 신청서","hr"],["인사·근태","사직원","hr"]
+];
+const KIND_GROUP=Object.fromEntries(DOC_KINDS.map(k=>[k[1],k[2]]));
+const GROUP_FIELDS={
+ pay:[["ref","현장명·고객코드","text"],["vendor","업체명·지급처","text"],["amount","금액 (원)","money"],["vat","부가세","sel",["VAT 별도","VAT 포함","해당 없음"]],["method","지급 방법","sel",["계좌이체","법인카드","현금","전도금"]],["due","지급 예정일","date"]],
+ order:[["ref","현장명·고객코드","text"],["vendor","업체명","text"],["amount","금액 (원)","money"],["vat","부가세","sel",["VAT 별도","VAT 포함","해당 없음"]],["due","납기·필요일","date"]],
+ admin:[["ref","관련 현장·건명","text"],["vendor","상대방 (발주처·업체·기관)","text"],["amount","금액 (원, 있으면)","money"],["due","필요 날짜","date"]],
+ hr:[["from","시작일","date"],["to","종료일","date"],["days","일수","num"],["leave","구분","sel",["연차","반차","병가","경조","공가","출장","추가근무","기타"]]]
+};
+const FORM_LIB=[
+ ["결재·비용 (관리부)",[["기안품의서","1r_m8Kt3xh1G4Tml9LhR6InTbaC5cs3T0","기안품의서 (본사)"],["지출결의서 (개인청구)","1ZaVZxv7zgqB1jaj0TCN7zJsW_DUixh3D","지출결의서 (개인청구)"],["여비교통비 신청서","1oayIyEw96Aoze2-AI9-s1oZo0IfZDL4A","여비교통비 신청서"],["교통비 명세서","1Vr6_Y2kJrpoCkIbNUU-9wO-k7DagvwzM"],["접대비 지출내역서","1_WYofA6ojVGQJ7R5h-N2o9k5eYmZ-G8V","접대비 지출내역서"],["업체별 결재리스트","1RslG-ZumCdDotQz5V3QV27Mw2NIm4Mhn"],["미수금 현황표","12dOOtTCBRW7uWgK0_XdQGejY-SOgur2O"],["현금 인수증","1bNJpkh2TmfslTS7gH0k-rsfURnZZapIX"],["현금 수령증","1qlNP4RgAEyrZVTPI9uTowDI6nvD4Bq8k"]]],
+ ["현장 서류",[["현장일보","13wyO5Sqkyn0QFTkcssExFDY1966fEJE5"],["작업일지","1iTJEZOoorh2QuSTDPIszkCIJSMYhg9HH"],["WORK Schedule (공정표)","15JJ7eUxDV-TXn2W7ie4cKE90zoGJx9ft"],["일용노무비 대장","1p3pDByHcdn3tYINToufp2ApYgZSGLJi3"],["전도금 신청서","1jTVPhw5DGi_Tr8MYDstXlB2fMi6IEgNd","전도금 신청서"],["전도금 관리대장","13vGGn-DXol1S-JEvuIWLt1siwn8gWdVZ"],["공사 실행내역서","1Xxs5l4deP8FwjjvEtzek319Vi-Ntevv-"],["공사 기성 정산서","1fR5iITBAroDqqWbu6grd3r8B4yPRRomS","공사 기성 정산서"],["발주서","1CELgnE11hB-8sTltLWO7VT2nGbbbuQ2b","발주서"],["견적요청서","1ZzMlc-jxPZQMTSwCRxxKzTh418D1R2Eb","견적요청서"],["프로젝트별 원장","1PBFTHjTtZGlIYTLqqRbA7HzVkxmoz-3A"]]],
+ ["계약·견적·청구",[["인테리어 계약서 (수정중)","1cvcg5kZI9FKlF_8rIFPke-4LZe6MWKA3","공사 계약 결재"],["공사계약서 (법인)","1fdJGff_5QcsnLijSNQqmzuUN8IbJdshV","공사 계약 결재"],["공사계약서 (개인)","1PdDW5GxZt1F7ohGtZ3wrRiZHGKQ9XO2F","공사 계약 결재"],["외주계약","1yh5vL2qCH0stx2JovKVOEPrsWYiLkD5m","외주·협력업체 계약"],["협력회사 등록신청서","1_KLlLEMfvFqzZqwGL3SCttOKDa2ztm7e"],["계약변경 합의서","1nU5rI0ouVcBL6exP3If4DhTA2v4GKVSR","계약변경 합의서 (추가공사)"],["견적서","1eJzL_kCoybSTwcXUaHQLXZs8PmIJpuK3"],["공사 견적서","1KBOcfvX2LvTHv49Whwndk0PIbf7-uxKC"],["정산서","1YyKZTEysmHzwWoEqvfeMkXk2hhwiEywJ"],["청구서","1p-Z5R7cfB5BZDLnnMKoxx4vLYfN0JoUZ"],["청구서 공문표지","1jXRLiabHGPbqAgOW3ASsYmTDiNXqlYBd"]]],
+ ["총무·대외",[["회의록","1g9_RPjO9O6SQXOuPjQhkKJhHPmzaHFwp"],["공문 발송","18mVCp-3ZfevQASHjt1VFm3y0WBkJZ_r8","공문 발송"],["공문서 발송대장","1nyHQ2En24h4M2fb8m4PcjSH6Hkzwz23j"],["팩스 전송","1QGBjRNIZ6AuF7hIfSMG8rTla28J7XryL"],["법인 사용인감계","1w7TSLvWRNXZFn2JNP4sbD__Hw3Mh1aUo","법인 사용인감 신청"],["위임장 (민원서류)","1nJyMOw-hYrZtmhpZ5rlOCMscba7FlSGL"],["차량운행일지","1wRR7GMuR64rNYYRqeA55l_kKIl3awAYU"]]],
+ ["인사·근태",[["인사기록부","1wCLMwLWw-gxSdI-TNQuNqlM4YyP5pwJj"],["근로자명부","1EulI3ZGwNgFJSTVFtohNbIi48lp8riEk"],["휴가신청서","1PYlkBMX502-_6-gLbxDSM5-cEd56Kc4A","휴가신청서"],["개인별 휴가관리카드","1dEjtipYK_FM0G42CXHOMMn4eFqjZMJY_"],["근무상황부","1-YE12qTWPLqmTNutiV5WKWww6vXTVL6d"],["추가근무 신청서","1B2aFjEyKS7wR5qosVfRA6pBjZniI2Vuj","추가근무 신청서"],["연차휴가 사용시기 지정 요청서","1oZjUjzSgJaOUfrrCFvklReEBCrydtD6Z"],["결근계","1nATtd6o6fZZu6_M4hJHMToeuFGK1ezaD","결근·지각·조퇴·외출계"],["지각계","17VAPAPOahiLUK2MIpTwzsUxLP_VUNKYl","결근·지각·조퇴·외출계"],["조퇴계","1u3JLZpOxAvv5KHxfKgB2s_ksDz6A705J","결근·지각·조퇴·외출계"],["외출계","1UP0NLPhYECe-Htavr4KRlO6Eqfa6E4Lq","결근·지각·조퇴·외출계"],["출장 신청서","1lOYzJCkET9G1uAvct3p_Mjbgdp8UfqpG","출장 신청서"],["출장 업무보고서","1YjnOG_1DBsbq89DNUDcgoBCpcSN-u3DW"],["휴직계","1-AZD5bOFkKbuqHzEuj6Qc8Q6KKMCiV4_","휴직계·복직계"],["복직계","1N6_yAqTyjrQykE2R20iN8OdeeM2FhbT0","휴직계·복직계"],["경조금 지급 신청서","1ZIm1Uo4KVhpW4UnaGdEjMtqxwW2aBYp8","경조금 지급 신청서"],["업무 인수인계서","1ZKQYFlS8yRt6rg8WTpjFTsgU-dWunvw7"],["사직원","1cwifoZyFkXVlvNhqnqrZcQ38cwjcEfw7","사직원"],["재직증명서","1wHiDIBpbLRZ8KQV0S08SyZWAH4tu93Em","증명서 발급 신청 (재직·경력)"],["경력증명서","1t2j29AxLuqxEHm5UStjhML0ZcYI_VAGl","증명서 발급 신청 (재직·경력)"],["증명서 발급 신청서","1aan5IslIgev-lnmrW0Sk2dR0FMvydnsz","증명서 발급 신청 (재직·경력)"],["교육일지","1KjOrrOHyoblFoAUdzLvXYVUCKuoL0HBA"],["퇴직금 중간정산 신청서","1ADI8DeI8_uq__43d0AmPTTpDbE-w7jic"]]]
+];
+
+// 메뉴별 입력 칸: [키, 이름, 종류, 보기, 넓게]. rows 종류의 보기 = 열 목록 [키, 이름, 종류, 보기, 너비]
+const MOD={
+ approvals:{grp:"업무",nav:"전자결재",title:"전자결재",sub:"본사 서식 기준 결재 서류를 올리고 담당 → 검토 → 대표 순서로 결재",add:"결재 올리기",
+  status:"status",statuses:["결재 대기","결재 진행","승인","반려"],
+  fields:[["kind","서류 종류","kind",null,1],["title","제목","text",null,1],["__g","","group"],["reviewer","검토 (중간 결재)","staffsel"],["approver","최종 결재","staffsel"],["body","내용","area",null,1],["files","첨부 (견적서·영수증·통장사본·사진)","files",null,1]],
+  sec:"계좌번호는 본문에 적지 말고 통장사본을 첨부해 주세요. 직원 개인 주민번호도 적지 않습니다.",
+  cols:[["kind","서류"],["title","제목"],["amount","금액","money"],["createdBy","기안자","person"],["line","결재선","line"],["createdAt","올린 날","date"],["status","상태","status"]]},
+ manuals:{grp:"업무",nav:"업무 매뉴얼",title:"업무 매뉴얼",sub:"직원이 같이 보는 업무 규칙과 방법",add:"매뉴얼 쓰기",
+  status:"cat",statuses:["공통 규칙","상담·영업","견적","계약·서류","현장·시공","사후관리","보안","인사·총무"],
+  fields:[["cat","분류","sel",["공통 규칙","상담·영업","견적","계약·서류","현장·시공","사후관리","보안","인사·총무"]],["ver","버전","text"],["title","제목","text",null,1],["body","내용","area",null,1],["files","첨부 (PDF·사진)","files",null,1]],
+  cols:[["cat","분류","status"],["title","제목"],["ver","버전"],["updatedBy","마지막 수정","person"],["updatedAt","수정일","date"]]},
+ sites:{grp:"현장·고객",nav:"현장 관리",title:"현장 관리",sub:"공사 중인 현장의 공정·인원·사진 기록",add:"현장 등록",
+  status:"status",statuses:["착공 전","공사 중","준공","보류"],
+  fields:[["code","고객코드","text"],["name","현장 이름 (단지명·동호수 빼고)","text"],["mgr","현장 담당","staffsel"],["status","상태","sel",["착공 전","공사 중","준공","보류"]],["start","착공일","date"],["end","준공 예정일","date"],["proc","지금 공정","sel",PROC],["progress","진행률 (%)","num"],["drive","현장 폴더 링크 (01.사진~08.지급품의)","url",null,1],["notice","현장 주의 (출입·주차·공사 시간)","area",null,1],["logs","현장 일지 (현장일보)","rows",[["d","날짜","date",null,"130px"],["proc","공정","sel",PROC,"110px"],["people","인원","num",null,"70px"],["text","한 일·특이사항","text",null,"1fr"]],1],["files","현장 사진","files",null,1]],
+  sec:"현장 사진에 현관 비밀번호·고객 얼굴·우편물(이름·주소)이 찍히지 않게 해 주세요.",
+  cols:[["code","코드"],["name","현장"],["mgr","담당"],["proc","지금 공정"],["progress","진행","bar"],["end","준공 예정","date"],["status","상태","status"]]},
+ customers:{grp:"현장·고객",nav:"고객 관리",title:"고객 관리",sub:"고객 1명 = 카드 1장 · 문의부터 연고 관리까지 24단계 (고객관리 툴 v3.2 기준)",add:"고객 등록",
+  status:"stage",statuses:STAGES.map(s=>s[0]),
+  fields:[["code","고객코드 (예: 2026-026)","text"],["name","고객명 (성만, 예: 김OO)","text"],["tel4","연락처 뒤 4자리","text"],["route","문의 경로","sel",ROUTES],["mgr","담당 직원","staffsel"],["status","상태","sel",["진행중","미계약","보류","완료"]],["py","평형","num"],["area","지역 (동까지만)","text"],["amt","계약 금액 (VAT 포함)","money"],["paid","입금 합계","money"],["start","착공일","date"],["asEnd","A/S 만료일","date"],["steps","24단계 진행","steps",null,1],["memo","메모 (내부용)","area",null,1],["files","관련 자료","files",null,1]],
+  sec:SEC_NOTE,
+  cols:[["code","코드"],["name","고객"],["route","경로"],["mgr","담당"],["stage","단계","stage"],["steps","진행","steps"],["amt","계약 금액","money"],["unpaid","미수금","unpaid"],["status","상태","status"]]},
+ quotes:{grp:"현장·고객",nav:"견적 관리",title:"견적 관리",sub:"아르띠꼬 상담견적 v.15 흐름 그대로 · 견적은 툴에서 작성, 여기는 견적 대장",add:"견적 등록",
+  status:"status",statuses:Q_STATUS,
+  fields:[["code","고객코드","text"],["name","고객명 (성만)","text"],["site","현장 (지역·평형)","text"],["source","상담 경로","sel",Q_SOURCES],["staff","담당","staffsel"],["status","진행 상태","sel",Q_STATUS],["preset","공사 범위","sel",Q_PRESETS],["py","평형","num"],["ver","견적 버전 (예: 1차)","text"],["amount","견적 금액 (VAT 포함)","money"],["d","견적일","date"],["link","고객용 견적 링크","url"],["memo","메모","area",null,1],["files","견적서 파일","files",null,1]],
+  sec:"원가·마진은 상담견적 툴에만 있어요. 이 대장에는 고객에게 보낸 금액만 적습니다.",
+  cols:[["code","코드"],["name","고객"],["preset","범위"],["staff","담당"],["ver","버전"],["amount","견적 금액","money"],["d","견적일","date"],["status","상태","status"]]},
+ as:{grp:"현장·고객",nav:"사후 관리",title:"사후 관리 (A/S)",sub:"준공 후 하자 접수부터 처리 완료까지",add:"A/S 접수",
+  status:"status",statuses:["접수","일정 잡힘","처리 중","완료"],
+  fields:[["code","고객코드","text"],["site","현장","text"],["d","접수일","date"],["mgr","담당","staffsel"],["status","상태","sel",["접수","일정 잡힘","처리 중","완료"]],["cost","비용 부담","sel",["회사","고객","협력업체"]],["asEnd","A/S 만료일","date"],["done","처리일","date"],["content","하자 내용","area",null,1],["result","처리 결과","area",null,1],["files","A/S 사진","files",null,1]],
+  cols:[["code","코드"],["site","현장"],["content","내용"],["mgr","담당"],["d","접수일","date"],["cost","부담"],["status","상태","status"]]},
+ staff:{grp:"회사",nav:"인사 관리",title:"인사 관리",sub:"직원 명부 · 인사기록카드 (본사 인사기록부 양식 기준) · 휴가 사용 현황",add:"직원 등록",
+  status:"state",statuses:["재직","휴직","퇴사"],
+  fields:[["name","성명","text"],["dept","소속","sel",["본사","아르띠꼬 스튜디오","현장"]],["pos","직위","text"],["title","직책","text"],["state","상태","sel",["재직","휴직","퇴사"]],["joined","입사일","date"],["promo","현 직위 승진일","date"],["annual","올해 연차 (일)","num"],["role","결재 권한","sel",["기안만","검토 (중간 결재)","최종 결재"]],["uid","계정 연결","account"]],
+  cols:[["name","성명"],["dept","소속"],["pos","직위"],["title","직책"],["joined","입사일","date"],["leaveUse","연차 사용","leave"],["role","결재 권한"],["state","상태","status"]]},
+};
+// 인사기록카드 (대표·편집자만 읽고 씀). 주민번호·계좌번호는 넣지 않음
+const HR_FIELDS=[["kind","입사 구분","sel",["신입","경력"]],["edu","입사 시 최종학력","text"],["birth","생년월일","date"],["phone","연락처","text"],["addr","주소 (시·구까지)","text"],["emergency","비상연락 (관계·뒤 4자리)","text"],["salary","연봉액","money"],["military","병역","text"],
+ ["school","학력","rows",[["period","기간","text",null,"1fr"],["name","학교명","text",null,"1fr"],["major","전공","text",null,"1fr"],["deg","학위","text",null,"90px"]],1],
+ ["career","입사 전 경력","rows",[["period","기간","text",null,"1fr"],["org","근무처","text",null,"1fr"],["pos","직위","text",null,"100px"],["duty","직책","text",null,"100px"]],1],
+ ["license","특허·자격·면허","rows",[["name","종류 및 등급","text",null,"1fr"],["d","취득년월","text",null,"120px"]],1],
+ ["appoint","발령 사항","rows",[["type","발령 구분","text",null,"110px"],["d","일자","date",null,"130px"],["pos","직위·직책","text",null,"1fr"],["dept","소속","text",null,"110px"]],1],
+ ["edu2","교육 사항","rows",[["period","기간","text",null,"1fr"],["course","과정","text",null,"1fr"],["where","사내·사외","sel",["사내","사외"],"100px"]],1],
+ ["reward","상벌 사항","rows",[["d","일자","date",null,"130px"],["type","상벌 구분","text",null,"110px"],["why","사유","text",null,"1fr"],["by","시행처","text",null,"110px"]],1],
+ ["hrmemo","메모 (대표 전용)","area",null,1]];
+const NAV_ORDER=["approvals","manuals","sites","customers","quotes","as","staff"];
+const TONE={"승인":"ok","반려":"bad","결재 대기":"warn","결재 진행":"info","공사 중":"info","준공":"ok","착공 전":"warn","접수":"warn","일정 잡힘":"info","처리 중":"info","완료":"ok","진행중":"info","미계약":"bad","계약":"ok","신규 상담":"warn","실장 인계 대기":"warn","재직":"ok","휴직":"warn","퇴사":""};
+
+// ===== 상태 =====
+const S={notices:[],approvals:[],manuals:[],sites:[],customers:[],quotes:[],as:[],staff:[],hr:[],activity:[]};
+let db=null,assets=null,user=null,me={id:null,name:"",isOwner:false,admin:false},mode="local";
+const names={};let filter={},query="";
+const LKEY="hf-intranet-v1";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{const n=Number(String(v??"").replace(/[^\d.-]/g,""));return isFinite(n)?n:0};
+const won=n=>n?num(n).toLocaleString("ko-KR")+"원":"—";
+const day=s=>s?String(s).slice(0,10):"";
+const nowISO=()=>new Date().toISOString();
+const todayStr=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const newId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const who=id=>id?(names[id]||(id===me.id?(me.name||"나"):"직원")):"—";
+function toast(t){const e=document.createElement("div");e.className="toast";e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
+const staffNames=()=>{const a=S.staff.filter(s=>s.state!=="퇴사").map(s=>s.name).filter(Boolean);return a.length?a:STAFF_DEF};
+const staffByName=n=>S.staff.find(s=>s.name===n);
+const myStaff=()=>me.id?S.staff.find(s=>s.uid===me.id):null;
+
+// ===== 저장소 (공유 DB, 없으면 이 브라우저 연습 모드) =====
+function loadLocal(){try{const r=JSON.parse(localStorage.getItem(LKEY)||"{}");Object.keys(S).forEach(k=>{if(Array.isArray(r[k]))S[k]=r[k]})}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify(S))}catch(e){toast("이 브라우저에 저장하지 못했어요")}}
+async function put(col,id,data){
+  if(db){await db.collection(col).doc(id).set(data)}
+  else{const a=S[col],i=a.findIndex(x=>x.id===id),row=Object.assign({id},data);i<0?a.unshift(row):a[i]=row;saveLocal();render()}
+}
+async function remove(col,id){
+  if(db){await db.collection(col).doc(id).delete()}
+  else{S[col]=S[col].filter(x=>x.id!==id);saveLocal();render()}
+}
+async function logAct(col,action,title){try{await put("activity",newId("a"),{at:nowISO(),by:me.id,col,action,title:String(title||"").slice(0,60)})}catch(e){}}
+function sorted(col){return S[col].slice().sort((a,b)=>String(b.updatedAt||b.createdAt||"").localeCompare(String(a.updatedAt||a.createdAt||"")))}
+
+// 결재선: [검토자?, 최종 결재자] 중 지금 차례
+function lineOf(r){return [r.reviewer,r.approver].filter(Boolean)}
+function curApprover(r){const l=lineOf(r);return l[r.step||0]||""}
+function canDecide(r){
+  if(!r||!["결재 대기","결재 진행"].includes(r.status||"결재 대기"))return false;
+  if(me.isOwner)return true;
+  const s=staffByName(curApprover(r));return !!(s&&me.id&&s.uid===me.id);
+}
+function leaveUsed(name){
+  const s=staffByName(name);if(!s)return 0;
+  return S.approvals.filter(a=>a.status==="승인"&&a.kind==="휴가신청서"&&a.createdBy&&a.createdBy===s.uid&&["연차","반차"].includes(a.leave)).reduce((t,a)=>t+(a.leave==="반차"?.5:num(a.days)||1),0);
+}
+
+async function resolveNames(){
+  if(!user)return;
+  const ids=new Set();
+  Object.keys(S).forEach(c=>S[c].forEach(r=>["createdBy","updatedBy","by","uid"].forEach(k=>r[k]&&ids.add(r[k]))));
+  S.approvals.forEach(a=>(a.history||[]).forEach(h=>h.by&&ids.add(h.by)));
+  const need=[...ids].filter(i=>!(i in names));
+  if(!need.length)return;
+  need.forEach(i=>names[i]="");
+  try{const ps=await user.profiles(need);let got=0;need.forEach(i=>{const n=ps[i]&&ps[i].name;if(n){names[i]=n;got++}});if(got)render()}catch(e){}
+}
+
+// ===== 화면 =====
+function route(){const h=(location.hash||"").slice(1);return h==="home"||h==="forms"||MOD[h]?h:"home"}
+function renderNav(){
+  const r=route();
+  const cnt={approvals:S.approvals.filter(x=>canDecide(x)).length||S.approvals.filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length};
+  let h=`<a href="#home" ${r==="home"?'aria-current="page"':""}><span>홈</span></a>`,g="";
+  NAV_ORDER.forEach(k=>{if(MOD[k].grp!==g){g=MOD[k].grp;h+=`<div class="grp">${esc(g)}</div>`}
+    h+=`<a href="#${k}" ${k===r?'aria-current="page"':""}><span>${esc(MOD[k].nav)}</span>${cnt[k]?`<span class="cnt">${cnt[k]}</span>`:""}</a>`;
+    if(k==="staff")h+=`<a href="#forms" ${r==="forms"?'aria-current="page"':""}><span>서식 자료실</span></a>`});
+  $("#nav").innerHTML=h;
+}
+function pill(v){return v?`<span class="pill ${TONE[v]||""}">${esc(v)}</span>`:""}
+function stageOf(c){
+  const done=new Set(c.steps||[]);let first=1;while(done.has(first)&&first<=24)first++;
+  const st=STAGES.find(s=>first>=s[2]&&first<=s[3])||STAGES[3];
+  return {cur:first>24?24:first,stage:st,done:done.size};
+}
+function lineHTML(r){
+  const l=lineOf(r),st=r.status||"결재 대기",step=r.step||0;
+  return `<div class="flow"><span class="done">${esc(who(r.createdBy))} 기안</span>${l.map((n,i)=>{const cls=st==="반려"&&i===step?"no":(st==="승인"||i<step)?"done":i===step?"on":"";return `<span class="${cls}">${esc(n)}${i===l.length-1?" (최종)":""}</span>`}).join("")}</div>`;
+}
+function cell(r,[k,,t]){
+  const v=r[k];
+  if(t==="money")return `<td class="num">${won(v)}</td>`;
+  if(t==="date")return `<td>${esc(day(v))}</td>`;
+  if(t==="person")return `<td>${esc(who(v))}</td>`;
+  if(t==="status")return `<td>${pill(v)}</td>`;
+  if(t==="line")return `<td>${lineHTML(r)}</td>`;
+  if(t==="leave"){const u=leaveUsed(r.name),a=num(r.annual);return `<td class="num">${a?`${u} / ${a}일`:(u?u+"일":"—")}</td>`}
+  if(t==="bar"){const p=Math.max(0,Math.min(100,num(v)));return `<td><div class="bar"><i style="width:${p}%"></i></div><small class="muted">${p}%</small></td>`}
+  if(t==="stage"){const s=stageOf(r);return `<td>${pill(s.stage[1].split(" · ")[1])}<br><small class="muted">${s.cur}. ${esc(STEP_NAMES[s.cur-1])}</small></td>`}
+  if(t==="steps"){const d=(r.steps||[]).length;return `<td><div class="bar"><i style="width:${d/24*100}%"></i></div><small class="muted">${d}/24</small></td>`}
+  if(t==="unpaid"){const u=num(r.amt)-num(r.paid);return `<td class="num">${num(r.amt)?(u>0?`<span class="pill warn">${won(u)}</span>`:"완납"):"—"}</td>`}
+  const s=String(v??"");return `<td>${esc(s.length>40?s.slice(0,40)+"…":s)}</td>`;
+}
+
+function renderHome(){
+  const open=S.approvals.filter(x=>["결재 대기","결재 진행"].includes(x.status));
+  const mine=S.approvals.filter(x=>canDecide(x));
+  const live=S.sites.filter(x=>x.status==="공사 중");
+  const cust=S.customers.filter(x=>(x.status||"진행중")==="진행중");
+  const unpaid=S.customers.reduce((a,c)=>a+Math.max(0,num(c.amt)-num(c.paid)),0);
+  const asOpen=S.as.filter(x=>x.status!=="완료");
+  const notices=sorted("notices").sort((a,b)=>(b.pin?1:0)-(a.pin?1:0));
+  const acts=S.activity.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,12);
+  return `
+  <div class="head"><div><h1>${esc(me.name?me.name+"님, 안녕하세요":"홈퍼니싱 인트라넷")}</h1><p>${new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})} · 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</p></div>
+  <div class="tools"><button class="btn pri" data-new="approvals">결재 올리기</button><button class="btn" data-new="notices">공지 쓰기</button></div></div>
+  <div class="tiles">
+    <a class="tile ${mine.length?"alert":""}" href="#approvals"><span>결재할 서류</span><strong>${mine.length}</strong><small>진행 중인 결재 ${open.length}건</small></a>
+    <a class="tile" href="#sites"><span>공사 중 현장</span><strong>${live.length}</strong><small>전체 현장 ${S.sites.length}곳</small></a>
+    <a class="tile" href="#customers"><span>진행 중 고객</span><strong>${cust.length}</strong><small>미수금 ${won(unpaid)}</small></a>
+    <a class="tile" href="#as"><span>A/S 처리 전</span><strong>${asOpen.length}</strong><small>접수·처리 중</small></a>
+  </div>
+  <div class="grid2">
+    <section class="card"><h2>공지사항</h2>
+      ${notices.length?`<div class="list">${notices.slice(0,6).map(n=>`<div class="item" data-open="notices" data-id="${esc(n.id)}">${n.pin?'<span class="pill warn">고정</span>':'<span class="pill">공지</span>'}<div class="t"><b>${esc(n.title)}</b><small>${esc(who(n.createdBy))} · ${esc(day(n.createdAt))}</small></div><span></span></div>`).join("")}</div>`:`<div class="empty">아직 공지가 없어요. 위의 ‘공지 쓰기’로 첫 공지를 올려 주세요.</div>`}
+    </section>
+    <section class="card"><h2>최근 활동</h2>
+      ${acts.length?`<div class="list">${acts.map(a=>`<div class="item" style="cursor:default"><span class="pill info">${esc((MOD[a.col]&&MOD[a.col].nav)||"공지")}</span><div class="t"><b>${esc(a.title)}</b><small>${esc(who(a.by))} · ${esc(a.action)} · ${esc(String(a.at).slice(5,16).replace("T"," "))}</small></div><span></span></div>`).join("")}</div>`:`<div class="empty">직원이 무언가 올리거나 고치면 여기에 차례로 쌓여요.</div>`}
+    </section>
+  </div>
+  <section class="card"><h2>바로 가는 툴</h2>
+    <div class="toollinks">
+      <a class="toollink" href="${TOOL_QUOTE}" target="_blank" rel="noopener"><b>아르띠꼬 상담견적 v.15 ↗</b><small>단가표·가견적·고객용 견적 링크·문자. 견적 작성은 여기서, 결과는 ‘견적 관리’ 대장에 등록</small></a>
+      <a class="toollink" href="${TOOL_CRM}" target="_blank" rel="noopener"><b>고객 관리 툴 ↗</b><small>24단계 세부 입력·계약서·수금표·작업 로그. 인트라넷 ‘고객 관리’는 직원 공유용 요약 카드</small></a>
+    </div>
+  </section>
+  <section class="card"><details class="plan"><summary>인트라넷 도입 요약 · 분석 · 향후 계획</summary>
+    <ul class="sum3">
+      <li>📊 <b>분석</b> — 본사 서식 60여 종이 공유드라이브에 한글·엑셀 파일로 흩어져 있고, 결재는 출력·서명 후 PDF로 모아 보관하고 있어요.</li>
+      <li>🎯 <b>향후 계획</b> — 자주 쓰는 서식 24종을 전자결재로 옮기고, 인사기록부를 인사기록카드로 옮겼어요. 2주 같이 써 본 뒤 v0.3으로 고칩니다.</li>
+      <li>⚠️ <b>주의</b> — 서식 원본은 공유드라이브 그대로 둡니다(읽기만). 계좌번호·주민번호는 적지 않고 첨부로만.</li>
+    </ul>
+    <div class="tablebox"><table><thead><tr><th>구분</th><th>현황</th><th>문제점</th><th>개선점</th></tr></thead><tbody>
+      <tr><td>결재</td><td>기안품의서·지출결의서 출력 → 서명 → 월별 PDF</td><td>진행 상황이 안 보이고 찾기 어려움</td><td>전자결재 (담당 → 검토 → 대표), 첨부·기록 자동</td></tr>
+      <tr><td>인사</td><td>인사기록부·휴가관리카드 doc 파일</td><td>최신 정보가 어디 있는지 모름</td><td>인사기록카드 + 승인된 휴가로 연차 자동 집계</td></tr>
+      <tr><td>매뉴얼</td><td>옵시디언·PDF</td><td>직원이 찾기 어려움</td><td>업무 매뉴얼 게시판</td></tr>
+      <tr><td>현장</td><td>현장일보·사진 개별 보관</td><td>진행 공유 늦음</td><td>현장 일지·사진·폴더 링크를 한곳에</td></tr>
+      <tr><td>고객·견적</td><td>툴 v3.2 · v.15</td><td>직원 공유 범위가 좁음</td><td>요약 카드·견적 대장 공유, 세부는 툴</td></tr>
+    </tbody></table></div>
+    <div class="tablebox" style="margin-top:10px"><table><thead><tr><th>할 일</th><th>담당</th><th>기한</th><th>우선순위</th></tr></thead><tbody>
+      <tr><td>인사 관리에 직원 4명 등록 + 계정 연결 + 결재 권한 지정</td><td>최윤수</td><td>자료 필요</td><td>상</td></tr>
+      <tr><td>직원에게 인트라넷 링크 공유 (‘참여자’ 권한, 편집자 아님)</td><td>최윤수</td><td>자료 필요</td><td>상</td></tr>
+      <tr><td>보안규칙·고객관리 매뉴얼 옮겨 올리기</td><td>이봄이·채진아</td><td>자료 필요</td><td>중</td></tr>
+      <tr><td>2주 사용 후 고칠 점 모으기 → v0.3</td><td>전 직원</td><td>자료 필요</td><td>중</td></tr>
+    </tbody></table></div>
+  </details></section>
+  <div class="foot">ⓒ HOME FURNISHING CO. all rights reserved. · 인트라넷 ${APP_VER} (${APP_DATE})</div>`;
+}
+
+function renderForms(){
+  return `<div class="head"><div><h1>서식 자료실</h1><p>공유드라이브 「0. 홈퍼니싱」의 본사 서식 원본 링크 · 원본은 고치지 말고 ‘사본 만들기’ 또는 다운로드해서 쓰세요</p></div></div>
+  <div class="secnote">원본 파일은 수정하지 않습니다. 결재가 필요한 서식은 ‘결재로’ 버튼으로 전자결재를 바로 올릴 수 있어요. 링크는 공유드라이브 권한이 있는 사람만 열립니다.</div>
+  <div class="forms">${FORM_LIB.map(([g,list])=>`<section><h3>${esc(g)}</h3><ul>${list.map(([n,id,kind])=>`<li><a href="${DRIVE(id)}" target="_blank" rel="noopener">${esc(n)}</a>${kind?`<button class="use" data-newkind="${esc(kind)}">결재로</button>`:""}</li>`).join("")}</ul></section>`).join("")}</div>
+  <div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`;
+}
+
+function renderModule(k){
+  const m=MOD[k];let rows=sorted(k);
+  const f=filter[k]||"";
+  const stat=v=>k==="customers"?stageOf(v).stage[0]:v[m.status];
+  let pre=[];
+  if(k==="approvals"){pre=[["__mine","내가 결재할 것",S.approvals.filter(canDecide).length],["__my","내가 올린 것",S.approvals.filter(a=>me.id&&a.createdBy===me.id).length]]}
+  if(f==="__mine")rows=rows.filter(canDecide);else if(f==="__my")rows=rows.filter(a=>me.id&&a.createdBy===me.id);else if(f)rows=rows.filter(r=>stat(r)===f);
+  if(query){const q=query.toLowerCase();rows=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(q))}
+  const counts=m.statuses.map(s=>[s,S[k].filter(r=>stat(r)===s).length]);
+  const label=s=>k==="customers"?STAGES.find(x=>x[0]===s)[1]:s;
+  let extra="";
+  if(k==="quotes"||k==="customers")extra=`<a class="btn" href="${k==="quotes"?TOOL_QUOTE:TOOL_CRM}" target="_blank" rel="noopener">${k==="quotes"?"상담견적 v.15 열기 ↗":"고객 관리 툴 열기 ↗"}</a>`;
+  if(k==="customers")extra+=`<span class="pill info">계약 금액 합계 ${won(S.customers.reduce((a,c)=>a+num(c.amt),0))}</span>`;
+  if(k==="quotes"){const n=S.quotes.length,w=S.quotes.filter(q=>q.status==="계약").length;extra+=`<span class="pill info">계약 견적 합계 ${won(S.quotes.filter(q=>q.status==="계약").reduce((a,q)=>a+num(q.amount),0))}</span><span class="pill">계약률 ${n?Math.round(w/n*100):0}%</span>`}
+  if(k==="approvals")extra=`<a class="btn" href="#forms">서식 자료실</a>`;
+  const addBtn=(k==="staff"&&!me.admin&&mode==="shared")?"":`<button class="btn pri" data-new="${k}">${esc(m.add)}</button>`;
+  return `
+  <div class="head"><div><h1>${esc(m.title)}</h1><p>${esc(m.sub)}</p></div><div class="tools">${extra}${addBtn}</div></div>
+  ${k==="customers"?`<div class="flow">${STAGES.map(s=>`<span class="${f===s[0]?"on":""}">${esc(s[1])} (${s[2]}~${s[3]})</span>`).join("")}</div>`:""}
+  ${k==="quotes"?`<div class="flow">${Q_STATUS.map(s=>`<span class="${f===s?"on":""}">${esc(s)}</span>`).join("<span style='background:none'>→</span>")}</div>`:""}
+  ${k==="staff"&&!me.admin&&mode==="shared"?`<div class="muted">인사기록카드 상세는 대표만 볼 수 있어요. 여기서는 직원 명부와 연차 사용 현황만 보입니다.</div>`:""}
+  <div class="tools"><div class="chips"><button class="chip" data-filter="" aria-pressed="${!f}">전체 ${S[k].length}</button>${pre.map(([v,t,n])=>`<button class="chip" data-filter="${v}" aria-pressed="${f===v}">${esc(t)} ${n}</button>`).join("")}${counts.map(([s,n])=>`<button class="chip" data-filter="${esc(s)}" aria-pressed="${f===s}">${esc(label(s))} ${n}</button>`).join("")}</div>
+  <input class="search" id="q" type="search" placeholder="검색 (코드·이름·내용)" value="${esc(query)}" autocomplete="off"></div>
+  ${rows.length?`<div class="tablebox"><table><thead><tr>${m.cols.map(c=>`<th>${esc(c[1])}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr data-open="${k}" data-id="${esc(r.id)}">${m.cols.map(c=>cell(r,c)).join("")}</tr>`).join("")}</tbody></table></div>`
+   :`<div class="empty">${S[k].length?"조건에 맞는 항목이 없어요.":k==="staff"?"직원을 등록하면 결재선·담당자 선택과 연차 집계에 쓰여요. 등록 전에는 기본 4명(최윤수·이봄이·채진아·정진혁)으로 고를 수 있어요.":`아직 등록된 항목이 없어요. 오른쪽 위 ‘${esc(m.add)}’로 첫 항목을 올려 주세요.`}</div>`}
+  <div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`;
+}
+
+function render(){
+  renderNav();
+  const r=route();
+  const banner=mode==="local"?`<div class="banner">연습 모드 · 지금은 이 브라우저에만 저장돼요. 직원과 공유하려면 claude.ai 인트라넷 링크로 열어 주세요.</div>`:"";
+  const focusQ=document.activeElement&&document.activeElement.id==="q";
+  $("#view").innerHTML=banner+(r==="home"?renderHome():r==="forms"?renderForms():renderModule(r));
+  if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+}
+
+// ===== 입력 시트 =====
+const NOTICE_FIELDS=[["title","제목","text",null,1],["pin","맨 위 고정","sel",["고정"]],["body","내용","area",null,1],["files","첨부","files",null,1]];
+let sheet=null; // {col,id,data,hr,files,rows,steps,confirmDel,busy}
+function opt(list,v){return `<option value=""></option>`+list.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}
+function fieldHTML(f,d,pref){
+  const [key,label,type,opts,wide]=f;const v=d[key]??"";const id="f_"+(pref||"")+key;const w=wide?" wide":"";const ds=`data-k="${key}"${pref?` data-p="${pref}"`:""}`;
+  if(type==="group"){const g=KIND_GROUP[d.kind]||"pay";return GROUP_FIELDS[g].map(x=>fieldHTML(x,d)).join("")+(g==="pay"?`<div class="f wide"><span class="hint">계좌번호는 적지 말고 통장사본을 첨부하세요. 법인카드는 영수증 사진을 첨부하세요.</span></div>`:"")}
+  if(type==="kind")return `<div class="f${w}"><label for="${id}">${label} <span class="hint">본사 서식 기준</span></label><select id="${id}" ${ds}>${DOC_KINDS.reduce((h,k,i,a)=>h+(i===0||a[i-1][0]!==k[0]?(i?"</optgroup>":"")+`<optgroup label="${esc(k[0])}">`:"")+`<option ${k[1]===v?"selected":""}>${esc(k[1])}</option>`,"")}</optgroup></select></div>`;
+  if(type==="area")return `<div class="f${w}"><label for="${id}">${label}</label><textarea id="${id}" ${ds}>${esc(v)}</textarea></div>`;
+  if(type==="sel")return `<div class="f${w}"><label for="${id}">${label}</label><select id="${id}" ${ds}>${opt(opts,v)}</select></div>`;
+  if(type==="staffsel")return `<div class="f${w}"><label for="${id}">${label}</label><select id="${id}" ${ds}>${opt(staffNames(),v)}</select></div>`;
+  if(type==="account"){
+    if(!me.isOwner||mode!=="shared")return `<div class="f"><label>${label}</label><span class="hint">${v?esc(who(v))+" 계정과 연결됨":"대표가 claude.ai 인트라넷에서 연결해요"}</span></div>`;
+    return `<div class="f"><label for="acct">${label} <span class="hint">결재·연차 집계에 필요</span></label><input id="acct" type="search" placeholder="이름으로 계정 찾기" autocomplete="off"><div class="chips" id="acctHits"></div><span class="hint" id="acctNow">${v?"연결됨: "+esc(who(v)):"아직 연결 안 됨"}</span></div>`;
+  }
+  if(type==="files")return `<div class="f wide"><label>${label}</label><div class="files" id="fileList"></div>${assets?`<input type="file" id="fileIn" multiple accept="image/*,application/pdf,.xlsx,.xls,.docx,.doc,.hwp,.txt,.csv">`:`<span class="hint">파일 올리기는 claude.ai 인트라넷에서 됩니다 (연습 모드에서는 안 됨).</span>`}</div>`;
+  if(type==="steps"){let h=`<div class="f wide"><label>${label} <span class="hint">끝난 단계를 체크하면 단계·진행률이 자동으로 바뀝니다</span></label><div class="steps">`;
+    STAGES.forEach(s=>{h+=`<div class="grp">${esc(s[1])}</div>`;for(let i=s[2];i<=s[3];i++)h+=`<label><input type="checkbox" data-step="${i}" ${(sheet.steps||[]).includes(i)?"checked":""}> ${i}. ${esc(STEP_NAMES[i-1])}</label>`});
+    return h+`</div></div>`}
+  if(type==="rows")return `<div class="f wide"><label>${label}</label><div class="rows" id="rows_${key}"></div><div><button class="btn sm" type="button" data-addrow="${key}">+ 한 줄</button></div></div>`;
+  const it=type==="date"?"date":type==="num"?"number":type==="url"?"url":"text";
+  const val=type==="money"&&v!==""?num(v).toLocaleString("ko-KR"):v;
+  return `<div class="f${w}"><label for="${id}">${label}</label><input id="${id}" ${ds} type="${it}" ${type==="money"?'inputmode="numeric" data-money="1"':""} value="${esc(val)}"></div>`;
+}
+function fieldsOf(col){return col==="notices"?NOTICE_FIELDS:MOD[col].fields}
+function allRowFields(col){return fieldsOf(col).concat(col==="staff"&&me.admin?HR_FIELDS:[]).filter(f=>f[2]==="rows")}
+function openSheet(col,id,preset){
+  const d=id?Object.assign({},(S[col].find(x=>x.id===id)||{})):{};
+  const hr=col==="staff"&&id?Object.assign({},(S.hr.find(x=>x.id===id)||{})):{};
+  if(!id){
+    const mineName=(myStaff()||{}).name||"";
+    if(col==="approvals"){d.kind=preset||"기안품의서 (본사)";const fin=S.staff.find(s=>s.role==="최종 결재"&&s.state!=="퇴사");d.approver=fin?fin.name:"최윤수";const rv=S.staff.find(s=>s.role==="검토 (중간 결재)"&&s.state!=="퇴사"&&s.name!==mineName);if(rv)d.reviewer=rv.name}
+    if(col==="as"){d.d=todayStr();d.status="접수"}
+    if(col==="quotes"){d.status="신규 상담";d.d=todayStr();d.staff=mineName}
+    if(col==="sites")d.status="착공 전";
+    if(col==="customers"){d.status="진행중";d.mgr=mineName}
+    if(col==="manuals")d.ver="v1.0";
+    if(col==="staff"){d.state="재직";d.dept="본사";d.role="기안만"}
+  }
+  const rows={};allRowFields(col).forEach(f=>{const src=HR_FIELDS.includes(f)?hr:d;rows[f[0]]=(src[f[0]]||[]).map(x=>Object.assign({},x))});
+  sheet={col,id:id||null,data:d,hr,files:(d.files||[]).slice(),rows,steps:(d.steps||[]).slice(),confirmDel:false,busy:false};
+  drawSheet();
+}
+function sheetLocked(){const {col,id,data:d}=sheet;if(col==="approvals"&&id&&d.status&&d.status!=="결재 대기")return true;if(col==="staff"&&mode==="shared"&&!me.admin)return true;return false}
+function drawSheet(){
+  if(!sheet){$("#layer").innerHTML="";return}
+  const {col,id,data:d}=sheet;const m=MOD[col];
+  const title=col==="notices"?(id?"공지":"공지 쓰기"):(id?(m.title+" · "+(d.title||d.name||d.code||d.site||"상세")):m.add);
+  const locked=sheetLocked();
+  let apBox="";
+  if(col==="approvals"&&id){
+    const hist=(d.history||[]).map(h=>`<div class="muted">${esc(String(h.at).slice(0,16).replace("T"," "))} · ${esc(h.name||who(h.by))} ${pill(h.result)} ${esc(h.note||"")}</div>`).join("");
+    apBox=`<div class="card" style="padding:12px 14px;display:grid;gap:8px"><div class="actions"><div>${pill(d.status||"결재 대기")} <span class="muted">기안 ${esc(who(d.createdBy))} · ${esc(day(d.createdAt))}</span></div></div>${lineHTML(d)}${hist}
+    ${canDecide(d)?`<div class="f wide"><label for="decNote">결재 의견 (지금 차례: ${esc(curApprover(d))}${me.isOwner&&staffByName(curApprover(d))&&staffByName(curApprover(d)).uid!==me.id?" · 대표 대결":""})</label><input id="decNote" placeholder="예: 다음 주 발주 진행"></div><div style="display:flex;gap:8px"><button class="btn ok" data-decide="승인">승인</button><button class="btn bad" data-decide="반려">반려</button></div>`:(["결재 대기","결재 진행"].includes(d.status)?`<p class="hint" style="margin:0">지금 결재 차례: ${esc(curApprover(d))}. 인사 관리에서 계정이 연결된 사람과 대표만 결재할 수 있어요.</p>`:"")}</div>`;
+  }
+  let hrBlock="";
+  if(col==="staff"&&me.admin)hrBlock=`<h4>인사기록카드 (대표·편집자만 보임) · 주민번호·계좌번호는 적지 않아요</h4>`+HR_FIELDS.map(f=>fieldHTML(f,sheet.hr,"hr_")).join("");
+  if(col==="staff"&&id){const u=leaveUsed(d.name),a=num(d.annual);hrBlock=`<div class="f wide"><span class="hint">연차 사용 (승인된 휴가신청서 기준): ${u}일${a?` / ${a}일 · 남은 ${a-u}일`:""}</span></div>`+hrBlock}
+  $("#layer").innerHTML=`<div class="veil" id="veil"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <h3><span>${esc(title)}</span><button class="btn sm" id="closeSheet">닫기</button></h3>
+    ${m&&m.sec?`<div class="secnote">${esc(m.sec)}</div>`:""}
+    ${apBox}
+    <form class="form" id="sheetForm" ${locked?"inert":""}>${fieldsOf(col).map(f=>fieldHTML(f,d)).join("")}${hrBlock}</form>
+    <div class="actions">
+      <div>${id&&!locked?(sheet.confirmDel?`<span class="muted">정말 지울까요?</span> <button class="btn bad sm" id="delYes">지우기</button> <button class="btn sm" id="delNo">취소</button>`:`<button class="btn bad sm" id="delAsk">삭제</button>`):""}</div>
+      <div class="r">${locked?`<span class="muted">${col==="approvals"?"결재가 시작된 서류는 고칠 수 없어요":"보기 전용"}</span>`:`<button class="btn" id="cancelSheet">취소</button><button class="btn pri" id="saveSheet">${id?"저장":(col==="approvals"?"결재 올리기":"등록")}</button>`}</div>
+    </div></div></div>`;
+  drawFiles();Object.keys(sheet.rows).forEach(drawRows);
+}
+function drawFiles(){
+  const box=$("#fileList");if(!box)return;const locked=sheetLocked();
+  box.innerHTML=sheet.files.length?sheet.files.map((f,i)=>{const u="/_blob/"+f.id;const img=/^image\//.test(f.type||"");
+    return `<div class="file">${img?`<img src="${esc(u)}" alt="">`:""}<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.name||"파일")}</a>${locked?"":`<button class="btn sm" type="button" data-rmfile="${i}" aria-label="첨부 빼기">✕</button>`}</div>`}).join(""):`<span class="hint">첨부 없음</span>`;
+}
+function drawRows(key){
+  const box=$("#rows_"+key);if(!box)return;
+  const f=allRowFields(sheet.col).find(x=>x[0]===key);const cols=f[3];
+  box.innerHTML=sheet.rows[key].map((r,i)=>`<div class="row" style="grid-template-columns:${cols.map(c=>c[4]||"1fr").join(" ")} auto">${cols.map(([k,l,t,o])=>t==="sel"?`<select data-row="${key}" data-i="${i}" data-c="${k}" aria-label="${esc(l)}">${opt(o,r[k])}</select>`:`<input type="${t==="date"?"date":t==="num"?"number":"text"}" data-row="${key}" data-i="${i}" data-c="${k}" value="${esc(r[k]||"")}" placeholder="${esc(l)}" aria-label="${esc(l)}">`).join("")}<button class="btn sm" type="button" data-rmrow="${key}" data-i="${i}" aria-label="줄 지우기">✕</button></div>`).join("")||`<span class="hint">아직 없어요</span>`;
+}
+function collect(){
+  const out={},hr={};
+  document.querySelectorAll("#sheetForm [data-k]").forEach(el=>{let v=el.value.trim();if(el.dataset.money)v=v?num(v):"";else if(el.type==="number")v=v===""?"":num(v);(el.dataset.p==="hr_"?hr:out)[el.dataset.k]=v});
+  if(fieldsOf(sheet.col).some(f=>f[2]==="files"))out.files=sheet.files;
+  allRowFields(sheet.col).forEach(f=>{const clean=sheet.rows[f[0]].filter(r=>Object.values(r).some(x=>String(x||"").trim()));(HR_FIELDS.includes(f)?hr:out)[f[0]]=clean});
+  if(sheet.col==="customers"){out.steps=sheet.steps.slice().sort((a,b)=>a-b);out.stage=stageOf(out).stage[0]}
+  if(sheet.col==="staff")out.uid=sheet.data.uid||"";
+  return {out,hr};
+}
+const REQUIRED={approvals:["title"],manuals:["title"],notices:["title"],customers:["code"],quotes:["code"],sites:["name"],as:["content"],staff:["name"]};
+async function saveSheet(){
+  if(sheet.busy)return;
+  const {col,id}=sheet;const {out:d,hr}=collect();
+  const miss=(REQUIRED[col]||[]).filter(k=>!String(d[k]??"").trim());
+  if(miss.length){toast("‘"+((fieldsOf(col).find(f=>f[0]===miss[0])||[0,miss[0]])[1])+"’ 칸을 채워 주세요");return}
+  if(col==="approvals"&&!d.approver){toast("‘최종 결재’ 할 사람을 골라 주세요");return}
+  if(col==="approvals"&&d.reviewer&&d.reviewer===d.approver)d.reviewer="";
+  const base=id?S[col].find(x=>x.id===id)||{}:{};
+  const row=Object.assign({},base,d,{updatedAt:nowISO(),updatedBy:me.id});delete row.id;
+  if(!id){row.createdAt=row.updatedAt;row.createdBy=me.id;if(col==="approvals"){row.status="결재 대기";row.step=0;row.history=[]}}
+  const docId=id||newId(col.slice(0,2));
+  sheet.busy=true;
+  try{
+    await put(col,docId,row);
+    if(col==="staff"&&me.admin&&Object.keys(hr).length){const hb=Object.assign({},S.hr.find(x=>x.id===docId)||{},hr,{updatedAt:nowISO(),updatedBy:me.id});delete hb.id;await put("hr",docId,hb)}
+    logAct(col,id?"수정":(col==="approvals"?"결재 요청":"등록"),row.title||row.name||row.code||row.site||"");
+    toast(id?"저장했어요":(col==="approvals"?"결재를 올렸어요":"등록했어요"));sheet=null;drawSheet();
+  }catch(e){sheet.busy=false;toast(e&&e.code==="not_granted"?"이 링크는 보기 권한이라 저장할 수 없어요. 대표에게 권한을 요청해 주세요":"저장하지 못했어요. 잠시 후 다시 눌러 주세요")}
+}
+async function decide(result){
+  const {col,id}=sheet;const base=S[col].find(x=>x.id===id);if(!base||!canDecide(base)||sheet.busy)return;
+  const note=(($("#decNote")||{}).value||"").trim();
+  const l=lineOf(base),step=base.step||0,name=l[step];
+  const hist=(base.history||[]).concat([{at:nowISO(),by:me.id,name,result,note}]);
+  const last=step>=l.length-1;
+  const status=result==="반려"?"반려":(last?"승인":"결재 진행");
+  const row=Object.assign({},base,{status,step:result==="승인"&&!last?step+1:step,history:hist,updatedAt:nowISO(),updatedBy:me.id});delete row.id;
+  sheet.busy=true;
+  try{await put(col,id,row);logAct(col,result==="반려"?"반려":(last?"최종 승인":"검토 승인"),base.title);toast(result==="반려"?"반려했어요":(last?"최종 승인했어요":"승인했어요 · 다음 결재자에게 넘어갔어요"));sheet=null;drawSheet()}
+  catch(e){sheet.busy=false;toast("결재를 저장하지 못했어요")}
+}
+async function uploadFiles(list){
+  if(!assets)return;
+  for(const f of list){
+    if(f.size>20*1024*1024){toast(f.name+" : 20MB가 넘어 올릴 수 없어요");continue}
+    try{toast("올리는 중… "+f.name);const r=await assets.upload(f);sheet.files.push({id:r.id,name:f.name,type:r.contentType||f.type,size:r.sizeBytes||f.size});drawFiles()}
+    catch(e){toast(e&&e.code==="not_granted"?"파일을 올릴 권한이 없어요":"파일을 올리지 못했어요: "+f.name)}
+  }
+}
+let acctTimer=null;
+function acctSearch(q){
+  clearTimeout(acctTimer);
+  acctTimer=setTimeout(async()=>{
+    const box=$("#acctHits");if(!box||!user||!user.search)return;
+    let hits=[];try{hits=await user.search(q)}catch(e){}
+    box.innerHTML="";
+    hits.filter(h=>h.id).slice(0,6).forEach(h=>{const b=document.createElement("button");b.type="button";b.className="chip";b.dataset.acct=h.id;b.dataset.acctname=h.name||"";b.textContent="+ "+(h.name||"이름 없음");box.appendChild(b)});
+    if(!box.children.length){const s=document.createElement("span");s.className="muted";s.textContent="찾은 사람이 없어요";box.appendChild(s)}
+  },250);
+}
+
+// ===== 이벤트 =====
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("button,[data-open],[data-new]");if(!t)return;
+  if(t.dataset.new){openSheet(t.dataset.new);return}
+  if(t.dataset.newkind){openSheet("approvals",null,t.dataset.newkind);return}
+  if(t.dataset.open){openSheet(t.dataset.open,t.dataset.id);return}
+  if(t.dataset.filter!==undefined){filter[route()]=t.dataset.filter;render();return}
+  if(!sheet)return;
+  if(t.id==="closeSheet"||t.id==="cancelSheet"){sheet=null;drawSheet();return}
+  if(t.id==="saveSheet"){saveSheet();return}
+  if(t.dataset.decide){decide(t.dataset.decide);return}
+  if(t.id==="delAsk"){const c=collect();Object.assign(sheet.data,c.out);Object.assign(sheet.hr,c.hr);sheet.confirmDel=true;drawSheet();return}
+  if(t.id==="delNo"){sheet.confirmDel=false;drawSheet();return}
+  if(t.id==="delYes"){const {col,id,data}=sheet;try{await remove(col,id);if(col==="staff"&&me.admin&&S.hr.some(x=>x.id===id))await remove("hr",id);logAct(col,"삭제",data.title||data.name||data.code||data.site||"");toast("지웠어요");sheet=null;drawSheet()}catch(err){toast("지우지 못했어요")}return}
+  if(t.dataset.rmfile!==undefined){sheet.files.splice(+t.dataset.rmfile,1);drawFiles();return}
+  if(t.dataset.addrow){const k=t.dataset.addrow;sheet.rows[k].push(k==="logs"?{d:todayStr()}:{});drawRows(k);return}
+  if(t.dataset.rmrow){sheet.rows[t.dataset.rmrow].splice(+t.dataset.i,1);drawRows(t.dataset.rmrow);return}
+  if(t.dataset.acct){sheet.data.uid=t.dataset.acct;names[t.dataset.acct]=t.dataset.acctname||names[t.dataset.acct]||"";const n=$("#acctNow");if(n)n.textContent="연결됨: "+(t.dataset.acctname||"선택한 계정")+" (저장을 눌러야 반영)";return}
+});
+document.addEventListener("input",e=>{
+  const el=e.target;
+  if(el.id==="q"){query=el.value;render();return}
+  if(el.dataset.row){sheet.rows[el.dataset.row][+el.dataset.i][el.dataset.c]=el.value;return}
+  if(el.dataset.money){const n=num(el.value);el.value=el.value.trim()?n.toLocaleString("ko-KR"):""}
+  if(el.id==="acct")acctSearch(el.value);
+});
+document.addEventListener("focusin",e=>{if(e.target.id==="acct"&&!e.target.value)acctSearch("")});
+document.addEventListener("change",e=>{
+  const el=e.target;
+  if(el.dataset.step){const n=+el.dataset.step;sheet.steps=el.checked?[...new Set(sheet.steps.concat(n))]:sheet.steps.filter(x=>x!==n);return}
+  if(el.dataset.row){sheet.rows[el.dataset.row][+el.dataset.i][el.dataset.c]=el.value;return}
+  if(el.id==="fileIn"){uploadFiles([...el.files]);el.value="";return}
+  if(sheet&&sheet.col==="approvals"&&el.dataset.k==="kind"){const c=collect();Object.assign(sheet.data,c.out);drawSheet()}
+});
+document.addEventListener("submit",e=>e.preventDefault());
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheet){sheet=null;drawSheet()}});
+window.addEventListener("hashchange",()=>{query="";render();window.scrollTo(0,0)});
+
+// ===== 시작 =====
+loadLocal();me.admin=true;me.isOwner=true;render();
+(async()=>{
+  if(!window.claude||!window.claude.use)return;
+  try{user=await window.claude.use("user")}catch(e){user=null}
+  try{db=await window.claude.use("db")}catch(e){db=null}
+  if(!db){render();return}
+  mode="shared";me.admin=false;me.isOwner=false;
+  if(user){try{const v=await user.me();me={id:v.id,name:v.name,isOwner:v.isOwner,admin:v.isOwner||v.canEdit,avatar:v.avatarUrl};if(v.id&&v.name)names[v.id]=v.name}catch(e){}
+    const w=$("#who");if(w&&me.id){w.innerHTML="";const img=document.createElement("img");img.src=me.avatar;img.alt="";const s=document.createElement("span");s.textContent=(me.name||"나")+(me.isOwner?" · 대표":"");w.append(img,s)}}
+  try{assets=await window.claude.use("assets")}catch(e){assets=null}
+  Object.keys(S).forEach(k=>{S[k]=[]});
+  const cols=["notices","staff"].concat(NAV_ORDER.filter(k=>k!=="staff"));
+  if(me.admin)cols.push("hr");
+  cols.forEach(col=>{db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{})});
+  db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
+  render();
+})();
+})();
+</script>
