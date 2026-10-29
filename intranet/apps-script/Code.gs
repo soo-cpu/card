@@ -19,11 +19,14 @@ const KINDS = ['기안·품의(본사)', '기안·품의(업체기성)', '기안
 
 // 시트 머리글 (순서가 곧 열 순서)
 const H = {
-  직원: ['직원ID', '이름', '직급', '부서', '입사일', '회사이메일', '연락처', '담당업무', '재직상태', '권한', '수정일'],
+  // 본사 「인사기록부」 앞면 항목 순서 (주민번호·주소·혼인·연봉은 민감정보 시트로)
+  직원: ['직원ID', '이름', '소속', '직급', '직책', '입사일', '현직위승진일', '입사구분', '입사시최종학력', '연락처', '회사이메일', '담당업무', '재직상태', '권한', '수정일'],
+  // 인사기록부 표 항목 (학력·어학·자격면허·병역·입사전경력·발령·교육·상벌) — 대표만 봄
+  인사이력: ['이력ID', '직원ID', '구분', '기간/일자', '항목1', '항목2', '항목3', '항목4', '비고'],
   결재: ['문서번호', '종류', '현장코드', '현장명', '기안일자', '기안부서', '기안자', '기안자이메일', '제목', '업체명(연락처)', '공급가합계', '부가세합계', '금액(VAT포함)', '지급요청일', '증빙자료', '증빙파일', '비고', '휴가구분', '휴가시작', '휴가종료', '휴가일수', '상태', '결재자', '결재일시', '결재의견', '작성일시'],
   결재_지출내역: ['문서번호', '순번', '일자', '구분', '지출내역', '공급가', '부가세'],
   현장: ['현장코드', '현장명', '고객코드', '상태', '등록일', '비고'],
-  직원_민감: ['직원ID', '이름', '주민등록번호', '주소', '급여(연봉)', '급여계좌', '근로계약서 링크', '인사기록 폴더 링크', '비고', '수정일'],
+  직원_민감: ['직원ID', '이름', '주민등록번호', '주소', '혼인여부', '급여(연봉)', '급여계좌', '근로계약서 링크', '인사기록 폴더 링크', '비고', '수정일'],
   결재_계좌: ['문서번호', '업체명', '계좌번호', '작성일시']
 };
 
@@ -34,7 +37,7 @@ function setup() {
   const p = PropertiesService.getScriptProperties();
   if (!p.getProperty('DB_ID')) {
     const db = SpreadsheetApp.create('홈퍼니싱 인트라넷 DB');
-    ['직원', '결재', '결재_지출내역', '현장'].forEach((n, i) => {
+    ['직원', '인사이력', '결재', '결재_지출내역', '현장'].forEach((n, i) => {
       const sh = i === 0 ? db.getSheets()[0].setName(n) : db.insertSheet(n);
       initSheet_(sh, H[n]);
     });
@@ -42,9 +45,13 @@ function setup() {
     // 기존 직원 이름만 미리 넣음 (나머지 칸은 대표가 채움)
     const st = db.getSheetByName('직원');
     [['최윤수', '대표이사', '대표'], ['정진혁', '실장', '직원'], ['채진아', '', '직원'], ['이봄이', '', '직원']].forEach(r => {
-      st.appendRow([newId_('E'), r[0], r[1], '', '', r[0] === '최윤수' ? OWNER_EMAIL : '', '', '', '재직', r[2], now_()]);
+      const o = { 직원ID: newId_('E'), 이름: r[0], 직급: r[1], 회사이메일: r[0] === '최윤수' ? OWNER_EMAIL : '', 재직상태: '재직', 권한: r[2], 수정일: now_() };
+      append_(st, H.직원, o);
     });
   }
+  // 이미 만든 DB에 새 시트가 빠져 있으면 추가 (기존 데이터는 그대로)
+  const dbx = SpreadsheetApp.openById(p.getProperty('DB_ID'));
+  ['직원', '인사이력', '결재', '결재_지출내역', '현장'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
   if (!p.getProperty('SECRET_ID')) {
     const sec = SpreadsheetApp.create('홈퍼니싱 민감정보(대표 전용) — 공유 금지');
     ['직원_민감', '결재_계좌'].forEach((n, i) => {
@@ -178,6 +185,24 @@ function saveSecret(o) {
   return true;
 }
 
+// 인사이력 (인사기록부 표 항목) — 대표만
+const HIST_KINDS = ['학력', '어학능력', '특허·자격·면허', '병역', '입사전경력', '발령사항', '교육사항', '상벌사항'];
+function getHistory(staffId) {
+  requireOwner_();
+  return rows_(db_().getSheetByName('인사이력'), H.인사이력).filter(r => r.직원ID === staffId)
+    .map(r => { const o = {}; H.인사이력.forEach(h => o[h] = r[h]); return o; });
+}
+function saveHistory(staffId, list) {
+  requireOwner_();
+  const sh = db_().getSheetByName('인사이력');
+  const all = rows_(sh, H.인사이력);
+  // 이 직원의 기존 줄을 아래에서부터 지우고 새로 씀
+  all.filter(r => r.직원ID === staffId).map(r => r._row).sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+  (list || []).filter(x => HIST_KINDS.indexOf(x.구분) >= 0 && (x['기간/일자'] || x.항목1 || x.항목2))
+    .forEach(x => append_(sh, H.인사이력, Object.assign({}, x, { 이력ID: newId_('H'), 직원ID: staffId })));
+  return true;
+}
+
 // 현장 (2단계 대비: 지금부터 현장코드 S26-001 사용)
 function listSites() {
   requireStaff_();
@@ -226,7 +251,7 @@ function submitApproval(f) {
     const files = (f.files || []).map(x => saveFile_(no, x)).join('\n');
     append_(sh, H.결재, {
       문서번호: no, 종류: f.종류, 현장코드: f.현장코드 || '', 현장명: f.현장명 || '', 기안일자: today_(),
-      기안부서: f.기안부서 || (v.staff ? v.staff.부서 : ''), 기안자: v.staff ? v.staff.이름 : '대표', 기안자이메일: v.email,
+      기안부서: f.기안부서 || (v.staff ? v.staff.소속 : ''), 기안자: v.staff ? v.staff.이름 : '대표', 기안자이메일: v.email,
       제목: f.제목, '업체명(연락처)': f.업체명 || '', 공급가합계: sup, 부가세합계: vat,
       '금액(VAT포함)': lines.length ? sup + vat : (Number(f.금액) || 0), 지급요청일: f.지급요청일 || '', 증빙자료: f.증빙자료 || '', 증빙파일: files,
       비고: f.비고 || '', 휴가구분: f.휴가구분 || '', 휴가시작: f.휴가시작 || '', 휴가종료: f.휴가종료 || '', 휴가일수: f.휴가일수 || '',
