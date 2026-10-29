@@ -35,6 +35,15 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .veil{position:fixed;inset:0;background:rgba(10,18,32,.45);display:grid;place-items:center;padding:16px}
 .sheet{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:18px;display:grid;gap:12px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 16px;border-radius:10px}
+.qbar{position:sticky;bottom:0;background:var(--deep);color:#fff;border-radius:12px;padding:10px 14px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.qbar b{font-size:20px;font-variant-numeric:tabular-nums}.qbar small{opacity:.8}
+.cat{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cat summary{padding:10px 14px;background:var(--gray);cursor:pointer;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.it{display:grid;grid-template-columns:auto 1fr 90px 120px;gap:8px;align-items:center;padding:8px 14px;border-top:1px solid var(--line)}
+.it.off{opacity:.55}.it .nm small{display:block;color:var(--sub);font-size:12px}.it input[type=number]{padding:6px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:4px;color:var(--sub)}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;cursor:pointer}
+@media(max-width:560px){.it{grid-template-columns:auto 1fr 70px}.it .amt{grid-column:2/-1;text-align:right}}
 footer{color:var(--sub);font-size:12px;text-align:center}
 @media(max-width:560px){.grid{grid-template-columns:1fr}}
 </style></head>
@@ -44,7 +53,7 @@ footer{color:var(--sub);font-size:12px;text-align:center}
 <main id="view"><p class="muted">불러오는 중…</p></main>
 <div id="layer"></div>
 <script>
-let B=null, AP=[], tab=(location.hash||'#new').slice(1);
+let B=null, AP=[], tab=(location.hash||'#quote').slice(1);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const won=n=>Number(n)?Number(n).toLocaleString('ko-KR')+'원':'—';
@@ -59,9 +68,9 @@ async function boot(){
   render();
 }
 function render(){
-  const tabs=[['new','결재 올리기'],['approvals',B.isOwner?'결재함 (전체)':'내 결재'],['staff','인사']];
+  const tabs=[['quote','견적'],['new','결재 올리기'],['approvals',B.isOwner?'결재함 (전체)':'내 결재'],['staff','인사']];
   $('#nav').innerHTML=tabs.map(([k,t])=>`<button class="${tab===k?'on':''}" data-tab="${k}">${t}</button>`).join('');
-  if(tab==='new')viewNew();else if(tab==='approvals')viewApprovals();else viewStaff();
+  if(tab==='quote')viewQuote();else if(tab==='new')viewNew();else if(tab==='approvals')viewApprovals();else viewStaff();
 }
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;location.hash=tab;render()}});
 
@@ -192,6 +201,83 @@ async function editStaff(s){
     await call('saveSecret',q);await call('saveHistory',id,readHist());$('#layer').innerHTML='';toast('저장했어요');viewStaff();
   };
 }
+/* ---------- 견적 모듈 (상담견적 v.15 단가 계산과 같음) ---------- */
+let CAT=null, CUS=[], Q=null;
+const INSUL={pl_living:'wd_ins_lv',pl_room:'wd_ins_rm',pl_kitexp:'wd_ins_rm'};
+const QSTAT=['작성중','고객 제시','계약','보류'];
+const rnd=x=>x>=50000?Math.round(x/1000)*1000:Math.round(x/100)*100;
+function uPrice(p,mg){return p.마진적용&&p.기준판매가?Math.max(rnd(p.기준판매가*(1-CAT.defaultMargin)/(1-mg)),p.하한가||0):p.판매가}
+function aQty(p){return p.기본수량==='py'?(+Q.평형||0):p.기본수량==='bath'?(+Q.욕실수||1):(+p.기본수량||1)}
+function qOf(p){const it=Q.items[p.키];return it&&it.q!==null&&it.q!==''&&it.q!==undefined?+it.q:aQty(p)}
+function mcode(m){return (m/10).toFixed(3)}  // 0.28 → 0.028 (상담 중 은어 표기, v.15와 같음)
+function qCalc(){let sale=0,cost=0;const by={};CAT.items.forEach(p=>{const it=Q.items[p.키];if(!it||!it.on)return;const up=(B.isOwner&&+it.px>0)?+it.px:uPrice(p,+Q.마진기준);const a=Math.round(up*qOf(p));sale+=a;cost+=(p.원가||0)*qOf(p);by[p.공정]=(by[p.공정]||0)+a});
+  const disc=(+Q['할인(만원)']||0)*10000,net=Math.max(0,sale-disc),vat=Math.round(net*.1);return {sale,net,vat,total:net+vat,cost,by}}
+async function viewQuote(){
+  $('#view').innerHTML='<p class="muted">불러오는 중…</p>';
+  [CAT,CUS]=await Promise.all([CAT?Promise.resolve(CAT):call('getCatalog'),call('listCustomers')]);
+  const L=await call('listEstimates');
+  $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>견적</h1><button class="btn p" id="qNew">새 견적</button></div>
+  <div class="note">단가표: 상담견적 ${esc(CAT.source)} 기준 ${CAT.items.length}개 항목. 고객은 고객 목록에서 고르고, 없으면 그 자리에서 한 번만 등록해요.${B.isOwner?'':' 원가·마진은 대표 화면에만 보여요.'}</div>
+  ${L.length?`<div class="box"><table><thead><tr><th>견적번호</th><th>버전</th><th>고객</th><th>현장코드</th><th>범위</th><th>합계(VAT포함)</th>${B.isOwner?'<th>원가·마진율</th>':''}<th>상태</th><th>작성</th></tr></thead><tbody>
+  ${L.map((e,i)=>`<tr class="click" data-q="${i}"><td>${esc(e.견적번호)}</td><td>${esc(e.버전)}차</td><td>${esc(e.고객코드)} ${esc(e.고객명)}</td><td>${esc(e.현장코드)||'—'}</td><td>${esc(e.공사범위)}</td><td class="n">${won(e['합계(VAT포함)'])}</td>${B.isOwner?`<td class="n">${+e.원가합계?won(e.원가합계)+' · '+Math.round((e.공급가-e.원가합계)/e.공급가*100)+'%':'원가 미입력'}</td>`:''}<td>${pill2(e.상태)}</td><td class="muted">${esc(e.작성자)} ${esc(String(e.작성일시).slice(0,10))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card muted">아직 견적이 없어요. ‘새 견적’으로 시작하세요.</div>'}`;
+  $('#qNew').onclick=()=>{Q={견적번호:'',버전:0,고객코드:'',평형:'',욕실수:2,마진기준:CAT.defaultMargin,'할인(만원)':0,상태:'작성중',공사범위:'',메모:'',items:{}};qEditor()};
+  $('#view').onclick=async e=>{const tr=e.target.closest('tr[data-q]');if(!tr)return;const x=L[+tr.dataset.q];Q=await call('getEstimate',x.견적번호,x.버전);if(!B.isOwner)Q.마진기준=Q.마진기준||CAT.defaultMargin;qEditor()};
+}
+function pill2(s){return `<span class="pill ${s==='계약'?'ok':s==='보류'?'no':'w'}">${esc(s||'작성중')}</span>`}
+function applyPreset(name){Q.공사범위=name;Q.items={};const keys=CAT.presets[name];CAT.items.forEach(p=>{if(keys?keys.includes(p.키):p.기본체크)Q.items[p.키]={on:true,q:null}})}
+function toggle(p,on){if(on&&p.택1그룹)CAT.items.forEach(o=>{if(o.택1그룹===p.택1그룹&&o.키!==p.키&&Q.items[o.키])Q.items[o.키].on=false});
+  Q.items[p.키]=Object.assign(Q.items[p.키]||{q:null},{on});
+  const t=INSUL[p.키];if(t){if(on)Q.items[t]=Object.assign(Q.items[t]||{q:null},{on:true});else if(!Object.keys(INSUL).some(k=>INSUL[k]===t&&k!==p.키&&Q.items[k]&&Q.items[k].on)&&Q.items[t])Q.items[t].on=false}}
+function qEditor(){
+  const c=CUS.find(x=>x.고객코드===Q.고객코드);
+  const groups=CAT.order.map(g=>[g,CAT.items.filter(p=>p.공정===g)]).filter(x=>x[1].length);
+  $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>${Q.견적번호?esc(Q.견적번호)+' · '+esc(Q.버전)+'차':'새 견적'}</h1><button class="btn" id="qBack">목록</button></div>
+  <div class="card grid">
+    <div class="f w"><label>고객 (목록에서 선택 — 같은 고객을 두 번 등록하지 마세요)</label><div class="row"><select id="qCus" style="flex:1"><option value="">고객 선택</option>${CUS.map(x=>`<option value="${esc(x.고객코드)}" ${x.고객코드===Q.고객코드?'selected':''}>${esc(x.고객코드)} ${esc(x.고객명)} · ${esc(x.아파트명)} ${esc(x.동)} ${esc(x.평형)}평${x.연락처뒤4?' · '+esc(x.연락처뒤4):''}</option>`).join('')}</select><button class="btn" id="qAddCus">+ 새 고객</button></div></div>
+    <div class="f"><label>평형</label><input id="qPy" type="number" value="${esc(Q.평형)}"></div>
+    <div class="f"><label>욕실 수</label><input id="qBath" type="number" value="${esc(Q.욕실수)}"></div>
+    <div class="f"><label>기준 ${B.isOwner?'(마진 25~30%)':''}</label><select id="qMg">${CAT.margins.map(m=>`<option value="${m}" ${+Q.마진기준===m?'selected':''}>${mcode(m)}${m===CAT.defaultMargin?' *':''}</option>`).join('')}</select></div>
+    <div class="f"><label>할인 (만원)</label><input id="qDisc" type="number" value="${esc(Q['할인(만원)'])}"></div>
+    <div class="f"><label>상태</label><select id="qSt">${QSTAT.map(x=>`<option ${x===Q.상태?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="f"><label>현장코드</label><div class="muted">${c&&c.현장코드?esc(c.현장코드):'계약 후 프로젝트를 만들면 붙어요'}</div></div>
+    <div class="f w"><label>공사 범위 (빠른 선택)</label><div class="row">${Object.keys(CAT.presets).map(n=>`<button class="chip" data-pre="${esc(n)}" ${Q.공사범위===n?'style="background:var(--navy);color:#fff"':''}>${esc(n)}</button>`).join('')}</div></div>
+  </div>
+  <div id="qCats" style="display:grid;gap:8px">${groups.map(([g,list])=>`<details class="cat" ${list.some(p=>Q.items[p.키]&&Q.items[p.키].on)?'open':''}><summary><span>${esc(g)}</span><span class="muted" data-gs="${esc(g)}"></span></summary>
+    ${list.map(p=>`<div class="it" data-k="${esc(p.키)}"><input type="checkbox" data-on="${esc(p.키)}"><div class="nm">${esc(p.품목)}${p.택1그룹?'<span class="tag">택1</span>':''}<small>${esc(p.설명)}${p.설명?' · ':''}${esc(p.단위)}</small></div><input type="number" step="0.5" data-qty="${esc(p.키)}" aria-label="수량"><div class="amt n"></div></div>`).join('')}</details>`).join('')}</div>
+  <div class="f"><label>메모</label><textarea id="qMemo">${esc(Q.메모)}</textarea></div>
+  <div class="qbar"><div><small>공급가</small> <b id="qNet">0</b> <small id="qVat"></small><br><small>합계(VAT포함)</small> <b id="qTot">0</b>${B.isOwner?' <small id="qCost"></small>':''}</div>
+   <div class="row"><button class="btn" id="qSave">저장</button>${Q.견적번호?'<button class="btn p" id="qSaveV">새 버전으로 저장</button>':''}</div></div>`;
+  const sync=()=>{CAT.items.forEach(p=>{const row=$(`.it[data-k="${p.키}"]`);const it=Q.items[p.키],on=!!(it&&it.on);row.classList.toggle('off',!on);row.querySelector('[data-on]').checked=on;
+      const qi=row.querySelector('[data-qty]');if(document.activeElement!==qi)qi.value=on?qOf(p):'';qi.placeholder=String(aQty(p));
+      const up=(B.isOwner&&it&&+it.px>0)?+it.px:uPrice(p,+Q.마진기준);row.querySelector('.amt').textContent=on?Math.round(up*qOf(p)).toLocaleString('ko-KR')+'원':up.toLocaleString('ko-KR')+'원/'+p.단위});
+    const r=qCalc();document.querySelectorAll('[data-gs]').forEach(x=>x.textContent=r.by[x.dataset.gs]?won(r.by[x.dataset.gs]):'');
+    $('#qNet').textContent=won(r.net);$('#qVat').textContent='부가세 '+won(r.vat);$('#qTot').textContent=won(r.total);
+    if(B.isOwner&&$('#qCost'))$('#qCost').textContent=r.cost?`· 원가 ${won(r.cost)} · 마진율 ${Math.round((r.net-r.cost)/r.net*100)}%`:'· 원가 미입력(단가표 원가 칸)'};
+  sync();
+  $('#qBack').onclick=viewQuote;
+  $('#qCus').onchange=()=>{Q.고객코드=$('#qCus').value;const x=CUS.find(c=>c.고객코드===Q.고객코드);if(x){if(x.평형)Q.평형=x.평형;if(x.욕실수)Q.욕실수=x.욕실수}qEditor()};
+  $('#qAddCus').onclick=addCustomer;
+  [['#qPy','평형'],['#qBath','욕실수'],['#qDisc','할인(만원)']].forEach(([id,k])=>$(id).oninput=e=>{Q[k]=e.target.value;sync()});
+  $('#qMg').onchange=e=>{Q.마진기준=+e.target.value;sync()};
+  $('#qSt').onchange=e=>Q.상태=e.target.value;$('#qMemo').oninput=e=>Q.메모=e.target.value;
+  document.querySelectorAll('[data-pre]').forEach(b=>b.onclick=()=>{applyPreset(b.dataset.pre);qEditor()});
+  $('#qCats').onchange=e=>{const k=e.target.dataset.on;if(k){toggle(CAT.items.find(p=>p.키===k),e.target.checked);sync()}};
+  $('#qCats').oninput=e=>{const k=e.target.dataset.qty;if(k){Q.items[k]=Object.assign(Q.items[k]||{on:true},{q:e.target.value===''?null:+e.target.value});if(e.target.value!=='')Q.items[k].on=true;sync()}};
+  const save=async nv=>{if(!Q.고객코드){toast('고객을 먼저 골라 주세요');return}const r=await call('saveEstimate',Q,nv);Q.견적번호=r.견적번호;Q.버전=r.버전;toast(`저장했어요 · ${r.견적번호} ${r.버전}차 · ${won(r.합계)}`);qEditor()};
+  $('#qSave').onclick=()=>save(false);if($('#qSaveV'))$('#qSaveV').onclick=()=>save(true);
+}
+function addCustomer(){
+  const F=[['고객명','고객명 (성만, 예: 김OO)'],['연락처뒤4','연락처 뒤 4자리'],['아파트명','아파트명'],['동','동'],['호수','호수 (고객용 화면엔 안 보임)'],['평형','평형'],['욕실수','욕실 수'],['문의경로','문의 경로']];
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet"><div class="row" style="justify-content:space-between"><b>새 고객 등록</b><button class="btn" id="x">닫기</button></div>
+   <div class="note">전체 전화번호·주민번호·계좌번호는 적지 않아요. 고객명은 성만, 연락처는 뒤 4자리만.</div>
+   <div class="grid">${F.map(([k,l])=>`<div class="f"><label>${l}</label>${k==='문의경로'?`<select data-c="${k}">${['','오늘의집','소개','매장방문','유튜브','인스타그램','블로그','전화','기타'].map(o=>`<option>${o}</option>`).join('')}</select>`:`<input data-c="${k}" ${k==='평형'||k==='욕실수'?'type="number"':''}>`}</div>`).join('')}</div>
+   <div class="row"><button class="btn p" id="cs">등록하고 이 견적에 연결</button></div></div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';
+  $('#cs').onclick=async()=>{const o={};document.querySelectorAll('[data-c]').forEach(i=>o[i.dataset.c]=i.value.trim());
+    const dup=CUS.find(c=>c.고객명===o.고객명&&c.연락처뒤4&&c.연락처뒤4==o.연락처뒤4);if(dup){toast('이미 등록된 고객이에요: '+dup.고객코드);Q.고객코드=dup.고객코드;$('#layer').innerHTML='';qEditor();return}
+    const code=await call('saveCustomer',o);CUS=await call('listCustomers');Q.고객코드=code;if(o.평형)Q.평형=o.평형;if(o.욕실수)Q.욕실수=o.욕실수;$('#layer').innerHTML='';toast('고객 등록 '+code);qEditor()};
+}
+
 function drawHist(list){
   const box=$('#hist');
   box.innerHTML=Object.keys(HIST).map(k=>{const cols=HIST[k];const rows=list.filter(x=>x.구분===k);

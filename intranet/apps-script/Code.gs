@@ -27,7 +27,12 @@ const H = {
   결재_지출내역: ['문서번호', '순번', '일자', '구분', '지출내역', '공급가', '부가세'],
   현장: ['현장코드', '현장명', '고객코드', '상태', '등록일', '비고'],
   직원_민감: ['직원ID', '이름', '주민등록번호', '주소', '혼인여부', '급여(연봉)', '급여계좌', '근로계약서 링크', '인사기록 폴더 링크', '비고', '수정일'],
-  결재_계좌: ['문서번호', '업체명', '계좌번호', '작성일시']
+  결재_계좌: ['문서번호', '업체명', '계좌번호', '작성일시'],
+  // ── 견적 모듈 ── 고객 데이터는 이 한 곳에만 (견적·상담·계약이 같이 씀)
+  고객: ['고객코드', '고객명', '연락처뒤4', '아파트명', '동', '호수', '평형', '욕실수', '문의경로', '담당', '현장코드', '상태', '등록일', '메모'],
+  단가표: ['키', '공정', '품목', '설명', '단위', '기본수량', '기본체크', '택1그룹', '기준판매가', '판매가', '하한가', '마진적용', '원가', '사용', '출처'],
+  견적: ['견적번호', '버전', '고객코드', '고객명', '현장코드', '공사범위', '평형', '욕실수', '마진기준', '할인(만원)', '공급가', '부가세', '합계(VAT포함)', '원가합계', '상태', '작성자', '작성자이메일', '작성일시', '메모'],
+  견적_항목: ['견적번호', '버전', '키', '공정', '품목', '단위', '수량', '단가', '금액', '원가단가', '원가금액', '직접수정']
 };
 
 /* ================= 설치 (대표 계정으로 한 번만 실행) ================= */
@@ -37,7 +42,7 @@ function setup() {
   const p = PropertiesService.getScriptProperties();
   if (!p.getProperty('DB_ID')) {
     const db = SpreadsheetApp.create('홈퍼니싱 인트라넷 DB');
-    ['직원', '인사이력', '결재', '결재_지출내역', '현장'].forEach((n, i) => {
+    ['직원', '인사이력', '결재', '결재_지출내역', '현장', '고객', '단가표', '견적', '견적_항목'].forEach((n, i) => {
       const sh = i === 0 ? db.getSheets()[0].setName(n) : db.insertSheet(n);
       initSheet_(sh, H[n]);
     });
@@ -51,7 +56,7 @@ function setup() {
   }
   // 이미 만든 DB에 새 시트가 빠져 있으면 추가 (기존 데이터는 그대로)
   const dbx = SpreadsheetApp.openById(p.getProperty('DB_ID'));
-  ['직원', '인사이력', '결재', '결재_지출내역', '현장'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
+  ['직원', '인사이력', '결재', '결재_지출내역', '현장', '고객', '단가표', '견적', '견적_항목'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
   if (!p.getProperty('SECRET_ID')) {
     const sec = SpreadsheetApp.create('홈퍼니싱 민감정보(대표 전용) — 공유 금지');
     ['직원_민감', '결재_계좌'].forEach((n, i) => {
@@ -63,6 +68,7 @@ function setup() {
   if (!p.getProperty('FILES_ID')) {
     p.setProperty('FILES_ID', DriveApp.createFolder('홈퍼니싱 인트라넷 결재 증빙').getId());
   }
+  setupCatalog();
   Logger.log('DB: https://docs.google.com/spreadsheets/d/' + p.getProperty('DB_ID'));
   Logger.log('민감정보(대표 전용): https://docs.google.com/spreadsheets/d/' + p.getProperty('SECRET_ID'));
 }
@@ -310,4 +316,168 @@ function decide(no, result, note) {
       no + ' ' + a.제목 + ' 문서가 ' + result + '되었어요.' + (note ? '\n의견: ' + note : '') + '\n' + ScriptApp.getService().getUrl());
   }
   return true;
+}
+
+
+/* ================= 견적 모듈 =================
+ * 단가 계산은 「아르띠꼬 상담견적 v.15」와 같다.
+ *  - 마진적용 항목: 판매단가 = max(반올림(기준판매가 × (1−0.28) ÷ (1−마진)), 하한가)
+ *  - 그 밖의 항목: 판매가 그대로
+ *  - 반올림: 5만원 이상 1,000원 단위, 미만 100원 단위
+ *  - 합계: 공급가 − 할인(만원) → 부가세 10% → 합계
+ * 원가·마진율은 대표 화면에만 돌려준다. 직원·고객 화면에는 판매가만.
+ */
+const PUB_MARGIN = 0.28;
+const MARGINS = [0.25, 0.26, 0.27, 0.28, 0.29, 0.30];
+
+function setupCatalog() {
+  const sh = db_().getSheetByName('단가표');
+  if (sh.getLastRow() > 1) return;   // 이미 있으면 건드리지 않음
+  const rows = DEFAULT_CATALOG.map(c => c.concat(['', 1, CATALOG_SRC]));
+  sh.getRange(2, 1, rows.length, H.단가표.length).setValues(rows);
+}
+
+function rnd_(x) { return x >= 50000 ? Math.round(x / 1000) * 1000 : Math.round(x / 100) * 100; }
+function unitPrice_(p, mg) {
+  if (Number(p.마진적용) && Number(p.기준판매가)) return Math.max(rnd_(Number(p.기준판매가) * (1 - PUB_MARGIN) / (1 - mg)), Number(p.하한가) || 0);
+  return Number(p.판매가) || 0;
+}
+function autoQty_(p, py, bath) {
+  if (p.기본수량 === 'py') return Number(py) || 0;
+  if (p.기본수량 === 'bath') return Number(bath) || 1;
+  return Number(p.기본수량) || 1;
+}
+function catalog_() {
+  return rows_(db_().getSheetByName('단가표'), H.단가표).filter(p => p.키 && String(p.사용) !== '0');
+}
+
+// 화면용 단가표: 직원에겐 원가 칸을 빼고 준다
+function getCatalog() {
+  const v = requireStaff_();
+  return {
+    items: catalog_().map(p => {
+      const o = { 키: p.키, 공정: p.공정, 품목: p.품목, 설명: p.설명, 단위: p.단위, 기본수량: p.기본수량, 기본체크: Number(p.기본체크) ? 1 : 0, 택1그룹: p.택1그룹, 기준판매가: Number(p.기준판매가) || 0, 판매가: Number(p.판매가) || 0, 하한가: Number(p.하한가) || 0, 마진적용: Number(p.마진적용) ? 1 : 0 };
+      if (v.isOwner) o.원가 = Number(p.원가) || 0;
+      return o;
+    }),
+    presets: PRESETS, order: CAT_ORDER, margins: MARGINS, defaultMargin: PUB_MARGIN, source: CATALOG_SRC
+  };
+}
+
+/* ---- 고객 ---- */
+function listCustomers() {
+  requireStaff_();
+  return rows_(db_().getSheetByName('고객'), H.고객).map(c => { const o = {}; H.고객.forEach(h => o[h] = c[h]); return o; }).reverse();
+}
+function saveCustomer(o) {
+  const v = requireStaff_();
+  if (!o.고객명) throw new Error('고객명을 적어 주세요 (성만, 예: 김OO).');
+  if (o.연락처뒤4 && !/^\d{4}$/.test(String(o.연락처뒤4))) throw new Error('연락처는 뒤 4자리 숫자만 적어 주세요.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = db_().getSheetByName('고객');
+    const all = rows_(sh, H.고객);
+    const cur = o.고객코드 ? all.find(c => c.고객코드 === o.고객코드) : null;
+    const row = {}; H.고객.forEach(h => row[h] = o[h] !== undefined ? o[h] : (cur ? cur[h] : ''));
+    if (!cur) {
+      const y = Utilities.formatDate(new Date(), TZ, 'yyyy');
+      const n = all.filter(c => String(c.고객코드).indexOf(y + '-') === 0).length + 1;
+      row.고객코드 = y + '-' + ('00' + n).slice(-3);         // 고객관리 툴과 같은 2026-026 형식
+      row.등록일 = today_(); row.상태 = row.상태 || '상담';
+      row.담당 = row.담당 || (v.staff ? v.staff.이름 : '대표');
+    }
+    cur ? update_(sh, H.고객, cur._row, row) : append_(sh, H.고객, row);
+    return row.고객코드;
+  } finally { lock.releaseLock(); }
+}
+
+/* ---- 견적 ---- */
+// 서버에서 다시 계산 (화면 값은 믿지 않음)
+function priceEstimate_(f, owner) {
+  const mg = MARGINS.indexOf(Number(f.마진기준)) >= 0 ? Number(f.마진기준) : PUB_MARGIN;
+  const cat = catalog_(); const byKey = {}; cat.forEach(p => byKey[p.키] = p);
+  const lines = [];
+  Object.keys(f.items || {}).forEach(k => {
+    const it = f.items[k], p = byKey[k];
+    if (!p || !it || !it.on) return;
+    const q = (it.q !== null && it.q !== '' && it.q !== undefined) ? Number(it.q) : autoQty_(p, f.평형, f.욕실수);
+    const over = owner && Number(it.px) > 0 ? Number(it.px) : 0;   // 단가 직접 수정은 대표만
+    const up = over || unitPrice_(p, mg);
+    const cu = Number(p.원가) || 0;
+    lines.push({ 키: k, 공정: p.공정, 품목: p.품목, 단위: p.단위, 수량: q, 단가: up, 금액: Math.round(up * q), 원가단가: cu, 원가금액: Math.round(cu * q), 직접수정: over ? 1 : 0 });
+  });
+  const order = CAT_ORDER;
+  lines.sort((a, b) => order.indexOf(a.공정) - order.indexOf(b.공정));
+  const sale = lines.reduce((s, l) => s + l.금액, 0);
+  const cost = lines.reduce((s, l) => s + l.원가금액, 0);
+  const disc = (Number(f['할인(만원)']) || 0) * 10000;
+  const net = Math.max(0, sale - disc);
+  const vat = Math.round(net * 0.1);
+  return { mg, lines, sale, disc, net, vat, total: net + vat, cost, margin: net && cost ? (net - cost) / net : null };
+}
+
+// 화면에서 합계 미리 계산 (원가는 대표에게만)
+function previewEstimate(f) {
+  const v = requireStaff_();
+  const r = priceEstimate_(f, v.isOwner);
+  if (!v.isOwner) { r.cost = null; r.margin = null; r.lines.forEach(l => { delete l.원가단가; delete l.원가금액; }); }
+  return r;
+}
+
+function listEstimates() {
+  const v = requireStaff_();
+  return rows_(db_().getSheetByName('견적'), H.견적).map(e => {
+    const o = {}; H.견적.forEach(h => o[h] = e[h]);
+    if (!v.isOwner) { delete o.원가합계; delete o.마진기준; }
+    return o;
+  }).reverse();
+}
+
+function getEstimate(no, ver) {
+  const v = requireStaff_();
+  const e = rows_(db_().getSheetByName('견적'), H.견적).find(x => x.견적번호 === no && Number(x.버전) === Number(ver));
+  if (!e) throw new Error('견적을 찾지 못했어요.');
+  const items = {};
+  rows_(db_().getSheetByName('견적_항목'), H.견적_항목).filter(l => l.견적번호 === no && Number(l.버전) === Number(ver))
+    .forEach(l => items[l.키] = { on: true, q: Number(l.수량), px: v.isOwner && Number(l.직접수정) ? Number(l.단가) : 0 });
+  const o = {}; H.견적.forEach(h => o[h] = e[h]); o.items = items;
+  if (!v.isOwner) { delete o.원가합계; }
+  return o;
+}
+
+// 저장: 새 견적이면 번호 발급(Q26-10-01), asNewVersion이면 같은 번호의 다음 버전
+function saveEstimate(f, asNewVersion) {
+  const v = requireStaff_();
+  if (!f.고객코드) throw new Error('고객을 먼저 골라 주세요.');
+  const cust = rows_(db_().getSheetByName('고객'), H.고객).find(c => c.고객코드 === f.고객코드);
+  if (!cust) throw new Error('고객 목록에 없는 고객이에요.');
+  const r = priceEstimate_(f, v.isOwner);
+  if (!r.lines.length) throw new Error('공사 항목을 하나 이상 골라 주세요.');
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const d = db_(), sh = d.getSheetByName('견적'), ls = d.getSheetByName('견적_항목');
+    const all = rows_(sh, H.견적);
+    let no = f.견적번호, ver = Number(f.버전) || 0;
+    if (!no) {
+      const ym = Utilities.formatDate(new Date(), TZ, 'yy-MM');
+      const n = new Set(all.filter(e => String(e.견적번호).indexOf('Q' + ym + '-') === 0).map(e => e.견적번호)).size + 1;
+      no = 'Q' + ym + '-' + ('0' + n).slice(-2); ver = 1;
+    } else if (asNewVersion) {
+      ver = Math.max.apply(null, all.filter(e => e.견적번호 === no).map(e => Number(e.버전))) + 1;
+    }
+    const row = {
+      견적번호: no, 버전: ver, 고객코드: cust.고객코드, 고객명: cust.고객명, 현장코드: cust.현장코드 || '', 공사범위: f.공사범위 || '',
+      평형: f.평형 || '', 욕실수: f.욕실수 || '', 마진기준: r.mg, '할인(만원)': Number(f['할인(만원)']) || 0,
+      공급가: r.net, 부가세: r.vat, '합계(VAT포함)': r.total, 원가합계: r.cost, 상태: f.상태 || '작성중',
+      작성자: v.staff ? v.staff.이름 : '대표', 작성자이메일: v.email, 작성일시: now_(), 메모: f.메모 || ''
+    };
+    const cur = all.find(e => e.견적번호 === no && Number(e.버전) === ver);
+    if (cur) {
+      update_(sh, H.견적, cur._row, row);
+      rows_(ls, H.견적_항목).filter(l => l.견적번호 === no && Number(l.버전) === ver).map(l => l._row).sort((a, b) => b - a).forEach(rw => ls.deleteRow(rw));
+    } else append_(sh, H.견적, row);
+    const lineRows = r.lines.map(l => H.견적_항목.map(h => h === '견적번호' ? no : h === '버전' ? ver : l[h]));
+    if (lineRows.length) ls.getRange(ls.getLastRow() + 1, 1, lineRows.length, H.견적_항목.length).setValues(lineRows);
+    return { 견적번호: no, 버전: ver, 합계: r.total };
+  } finally { lock.releaseLock(); }
 }
