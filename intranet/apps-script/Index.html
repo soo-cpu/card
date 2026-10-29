@@ -206,22 +206,22 @@ let CAT=null, CUS=[], Q=null;
 const INSUL={pl_living:'wd_ins_lv',pl_room:'wd_ins_rm',pl_kitexp:'wd_ins_rm'};
 const QSTAT=['작성중','고객 제시','계약','보류'];
 const rnd=x=>x>=50000?Math.round(x/1000)*1000:Math.round(x/100)*100;
-function uPrice(p,mg){return p.마진적용&&p.기준판매가?Math.max(rnd(p.기준판매가*(1-CAT.defaultMargin)/(1-mg)),p.하한가||0):p.판매가}
+function uPrice(p,mg){if(p.원가||p.실비||p.고정){if(p.실비)return p.원가;if(p.고정)return p.판매가;return Math.max(rnd(p.원가/(1-mg)),p.하한가||0)}return p.마진적용&&p.기준판매가?Math.max(rnd(p.기준판매가*(1-CAT.defaultMargin)/(1-mg)),p.하한가||0):p.판매가}
 function aQty(p){return p.기본수량==='py'?(+Q.평형||0):p.기본수량==='bath'?(+Q.욕실수||1):(+p.기본수량||1)}
 function qOf(p){const it=Q.items[p.키];return it&&it.q!==null&&it.q!==''&&it.q!==undefined?+it.q:aQty(p)}
-function mcode(m){return (m/10).toFixed(3)}  // 0.28 → 0.028 (상담 중 은어 표기, v.15와 같음)
-function qCalc(){let sale=0,cost=0;const by={};CAT.items.forEach(p=>{const it=Q.items[p.키];if(!it||!it.on)return;const up=(B.isOwner&&+it.px>0)?+it.px:uPrice(p,+Q.마진기준);const a=Math.round(up*qOf(p));sale+=a;cost+=(p.원가||0)*qOf(p);by[p.공정]=(by[p.공정]||0)+a});
+function mpct(m){return Math.round(m*100)+'%'}  // 직원 화면은 실제 마진율로 표시 (고객 상담 모드에는 어떤 마진 표기도 보내지 않음)
+function qCalc(){let sale=0,cost=0;const by={};CAT.items.forEach(p=>{const it=Q.items[p.키];if(!it||!it.on)return;const up=(+it.px>0)?+it.px:uPrice(p,+Q.마진기준);const a=Math.round(up*qOf(p));sale+=a;cost+=(p.원가||0)*qOf(p);by[p.공정]=(by[p.공정]||0)+a});
   const disc=(+Q['할인(만원)']||0)*10000,net=Math.max(0,sale-disc),vat=Math.round(net*.1);return {sale,net,vat,total:net+vat,cost,by}}
 async function viewQuote(){
   $('#view').innerHTML='<p class="muted">불러오는 중…</p>';
   [CAT,CUS]=await Promise.all([CAT?Promise.resolve(CAT):call('getCatalog'),call('listCustomers')]);
   const L=await call('listEstimates');
   $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>견적</h1><button class="btn p" id="qNew">새 견적</button></div>
-  <div class="note">단가표: 상담견적 ${esc(CAT.source)} 기준 ${CAT.items.length}개 항목. 고객은 고객 목록에서 고르고, 없으면 그 자리에서 한 번만 등록해요.${B.isOwner?'':' 원가·마진은 대표 화면에만 보여요.'}</div>
-  ${L.length?`<div class="box"><table><thead><tr><th>견적번호</th><th>버전</th><th>고객</th><th>현장코드</th><th>범위</th><th>합계(VAT포함)</th>${B.isOwner?'<th>원가·마진율</th>':''}<th>상태</th><th>작성</th></tr></thead><tbody>
-  ${L.map((e,i)=>`<tr class="click" data-q="${i}"><td>${esc(e.견적번호)}</td><td>${esc(e.버전)}차</td><td>${esc(e.고객코드)} ${esc(e.고객명)}</td><td>${esc(e.현장코드)||'—'}</td><td>${esc(e.공사범위)}</td><td class="n">${won(e['합계(VAT포함)'])}</td>${B.isOwner?`<td class="n">${+e.원가합계?won(e.원가합계)+' · '+Math.round((e.공급가-e.원가합계)/e.공급가*100)+'%':'원가 미입력'}</td>`:''}<td>${pill2(e.상태)}</td><td class="muted">${esc(e.작성자)} ${esc(String(e.작성일시).slice(0,10))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card muted">아직 견적이 없어요. ‘새 견적’으로 시작하세요.</div>'}`;
+  <div class="note">단가표: 상담견적 ${esc(CAT.source)} 기준 ${CAT.items.length}개 항목. 고객은 고객 목록에서 고르고, 없으면 그 자리에서 한 번만 등록해요. 이 화면은 직원용(원가·마진 표시) — 고객에게는 보여 주지 마세요.</div>
+  ${L.length?`<div class="box"><table><thead><tr><th>견적번호</th><th>버전</th><th>고객</th><th>현장코드</th><th>범위</th><th>합계(VAT포함)</th><th>원가·마진율</th><th>상태</th><th>작성</th></tr></thead><tbody>
+  ${L.map((e,i)=>`<tr class="click" data-q="${i}"><td>${esc(e.견적번호)}</td><td>${esc(e.버전)}차</td><td>${esc(e.고객코드)} ${esc(e.고객명)}</td><td>${esc(e.현장코드)||'—'}</td><td>${esc(e.공사범위)}</td><td class="n">${won(e['합계(VAT포함)'])}</td>${`<td class="n">${+e.원가합계?won(e.원가합계)+' · '+Math.round((e.공급가-e.원가합계)/e.공급가*100)+'%':'원가 미입력'}</td>`}<td>${pill2(e.상태)}</td><td class="muted">${esc(e.작성자)} ${esc(String(e.작성일시).slice(0,10))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card muted">아직 견적이 없어요. ‘새 견적’으로 시작하세요.</div>'}`;
   $('#qNew').onclick=()=>{Q={견적번호:'',버전:0,고객코드:'',평형:'',욕실수:2,마진기준:CAT.defaultMargin,'할인(만원)':0,상태:'작성중',공사범위:'',메모:'',items:{}};qEditor()};
-  $('#view').onclick=async e=>{const tr=e.target.closest('tr[data-q]');if(!tr)return;const x=L[+tr.dataset.q];Q=await call('getEstimate',x.견적번호,x.버전);if(!B.isOwner)Q.마진기준=Q.마진기준||CAT.defaultMargin;qEditor()};
+  $('#view').onclick=async e=>{const tr=e.target.closest('tr[data-q]');if(!tr)return;const x=L[+tr.dataset.q];Q=await call('getEstimate',x.견적번호,x.버전);Q.마진기준=Q.마진기준||CAT.defaultMargin;qEditor()};
 }
 function pill2(s){return `<span class="pill ${s==='계약'?'ok':s==='보류'?'no':'w'}">${esc(s||'작성중')}</span>`}
 function applyPreset(name){Q.공사범위=name;Q.items={};const keys=CAT.presets[name];CAT.items.forEach(p=>{if(keys?keys.includes(p.키):p.기본체크)Q.items[p.키]={on:true,q:null}})}
@@ -236,7 +236,7 @@ function qEditor(){
     <div class="f w"><label>고객 (목록에서 선택 — 같은 고객을 두 번 등록하지 마세요)</label><div class="row"><select id="qCus" style="flex:1"><option value="">고객 선택</option>${CUS.map(x=>`<option value="${esc(x.고객코드)}" ${x.고객코드===Q.고객코드?'selected':''}>${esc(x.고객코드)} ${esc(x.고객명)} · ${esc(x.아파트명)} ${esc(x.동)} ${esc(x.평형)}평${x.연락처뒤4?' · '+esc(x.연락처뒤4):''}</option>`).join('')}</select><button class="btn" id="qAddCus">+ 새 고객</button></div></div>
     <div class="f"><label>평형</label><input id="qPy" type="number" value="${esc(Q.평형)}"></div>
     <div class="f"><label>욕실 수</label><input id="qBath" type="number" value="${esc(Q.욕실수)}"></div>
-    <div class="f"><label>기준 ${B.isOwner?'(마진 25~30%)':''}</label><select id="qMg">${CAT.margins.map(m=>`<option value="${m}" ${+Q.마진기준===m?'selected':''}>${mcode(m)}${m===CAT.defaultMargin?' *':''}</option>`).join('')}</select></div>
+    <div class="f"><label>마진율 (목표 28%)</label><select id="qMg">${CAT.margins.map(m=>`<option value="${m}" ${+Q.마진기준===m?'selected':''}>${mpct(m)}${m===CAT.defaultMargin?' (목표)':''}</option>`).join('')}</select></div>
     <div class="f"><label>할인 (만원)</label><input id="qDisc" type="number" value="${esc(Q['할인(만원)'])}"></div>
     <div class="f"><label>상태</label><select id="qSt">${QSTAT.map(x=>`<option ${x===Q.상태?'selected':''}>${x}</option>`).join('')}</select></div>
     <div class="f"><label>현장코드</label><div class="muted">${c&&c.현장코드?esc(c.현장코드):'계약 후 프로젝트를 만들면 붙어요'}</div></div>
@@ -245,14 +245,14 @@ function qEditor(){
   <div id="qCats" style="display:grid;gap:8px">${groups.map(([g,list])=>`<details class="cat" ${list.some(p=>Q.items[p.키]&&Q.items[p.키].on)?'open':''}><summary><span>${esc(g)}</span><span class="muted" data-gs="${esc(g)}"></span></summary>
     ${list.map(p=>`<div class="it" data-k="${esc(p.키)}"><input type="checkbox" data-on="${esc(p.키)}"><div class="nm">${esc(p.품목)}${p.택1그룹?'<span class="tag">택1</span>':''}<small>${esc(p.설명)}${p.설명?' · ':''}${esc(p.단위)}</small></div><input type="number" step="0.5" data-qty="${esc(p.키)}" aria-label="수량"><div class="amt n"></div></div>`).join('')}</details>`).join('')}</div>
   <div class="f"><label>메모</label><textarea id="qMemo">${esc(Q.메모)}</textarea></div>
-  <div class="qbar"><div><small>공급가</small> <b id="qNet">0</b> <small id="qVat"></small><br><small>합계(VAT포함)</small> <b id="qTot">0</b>${B.isOwner?' <small id="qCost"></small>':''}</div>
+  <div class="qbar"><div><small>공급가</small> <b id="qNet">0</b> <small id="qVat"></small><br><small>합계(VAT포함)</small> <b id="qTot">0</b> <small id="qCost"></small></div>
    <div class="row"><button class="btn" id="qSave">저장</button>${Q.견적번호?'<button class="btn p" id="qSaveV">새 버전으로 저장</button>':''}</div></div>`;
   const sync=()=>{CAT.items.forEach(p=>{const row=$(`.it[data-k="${p.키}"]`);const it=Q.items[p.키],on=!!(it&&it.on);row.classList.toggle('off',!on);row.querySelector('[data-on]').checked=on;
       const qi=row.querySelector('[data-qty]');if(document.activeElement!==qi)qi.value=on?qOf(p):'';qi.placeholder=String(aQty(p));
-      const up=(B.isOwner&&it&&+it.px>0)?+it.px:uPrice(p,+Q.마진기준);row.querySelector('.amt').textContent=on?Math.round(up*qOf(p)).toLocaleString('ko-KR')+'원':up.toLocaleString('ko-KR')+'원/'+p.단위});
+      const up=(it&&+it.px>0)?+it.px:uPrice(p,+Q.마진기준);row.querySelector('.amt').textContent=on?Math.round(up*qOf(p)).toLocaleString('ko-KR')+'원':up.toLocaleString('ko-KR')+'원/'+p.단위});
     const r=qCalc();document.querySelectorAll('[data-gs]').forEach(x=>x.textContent=r.by[x.dataset.gs]?won(r.by[x.dataset.gs]):'');
     $('#qNet').textContent=won(r.net);$('#qVat').textContent='부가세 '+won(r.vat);$('#qTot').textContent=won(r.total);
-    if(B.isOwner&&$('#qCost'))$('#qCost').textContent=r.cost?`· 원가 ${won(r.cost)} · 마진율 ${Math.round((r.net-r.cost)/r.net*100)}%`:'· 원가 미입력(단가표 원가 칸)'};
+    if($('#qCost'))$('#qCost').textContent=r.cost?`· 원가 ${won(r.cost)} · 마진율 ${Math.round((r.net-r.cost)/r.net*100)}%`:'· 원가 미입력(단가표 원가 칸)'};
   sync();
   $('#qBack').onclick=viewQuote;
   $('#qCus').onchange=()=>{Q.고객코드=$('#qCus').value;const x=CUS.find(c=>c.고객코드===Q.고객코드);if(x){if(x.평형)Q.평형=x.평형;if(x.욕실수)Q.욕실수=x.욕실수}qEditor()};

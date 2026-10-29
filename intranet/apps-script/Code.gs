@@ -30,7 +30,7 @@ const H = {
   결재_계좌: ['문서번호', '업체명', '계좌번호', '작성일시'],
   // ── 견적 모듈 ── 고객 데이터는 이 한 곳에만 (견적·상담·계약이 같이 씀)
   고객: ['고객코드', '고객명', '연락처뒤4', '아파트명', '동', '호수', '평형', '욕실수', '문의경로', '담당', '현장코드', '상태', '등록일', '메모'],
-  단가표: ['키', '공정', '품목', '설명', '단위', '기본수량', '기본체크', '택1그룹', '기준판매가', '판매가', '하한가', '마진적용', '원가', '사용', '출처'],
+  단가표: ['키', '공정', '품목', '설명', '단위', '기본수량', '기본체크', '택1그룹', '기준판매가', '판매가', '하한가', '마진적용', '원가', '실비', '고정', '원가근거', '사용', '출처'],
   견적: ['견적번호', '버전', '고객코드', '고객명', '현장코드', '공사범위', '평형', '욕실수', '마진기준', '할인(만원)', '공급가', '부가세', '합계(VAT포함)', '원가합계', '상태', '작성자', '작성자이메일', '작성일시', '메모'],
   견적_항목: ['견적번호', '버전', '키', '공정', '품목', '단위', '수량', '단가', '금액', '원가단가', '원가금액', '직접수정']
 };
@@ -333,12 +333,19 @@ const MARGINS = [0.25, 0.26, 0.27, 0.28, 0.29, 0.30];
 function setupCatalog() {
   const sh = db_().getSheetByName('단가표');
   if (sh.getLastRow() > 1) return;   // 이미 있으면 건드리지 않음
-  const rows = DEFAULT_CATALOG.map(c => c.concat(['', 1, CATALOG_SRC]));
+  const rows = DEFAULT_CATALOG.map(c => c.concat(['', 0, 0, '', 1, CATALOG_SRC]));
   sh.getRange(2, 1, rows.length, H.단가표.length).setValues(rows);
 }
 
 function rnd_(x) { return x >= 50000 ? Math.round(x / 1000) * 1000 : Math.round(x / 100) * 100; }
+// 상담견적 v.15와 같은 순서: 원가가 있으면 원가 기준(실비=원가 그대로, 고정=판매가, 그 밖=원가÷(1−마진) 반올림, 하한가 이상)
 function unitPrice_(p, mg) {
+  const c = Number(p.원가) || 0;
+  if (c || Number(p.실비) || Number(p.고정)) {
+    if (Number(p.실비)) return c;
+    if (Number(p.고정)) return Number(p.판매가) || 0;
+    return Math.max(rnd_(c / (1 - mg)), Number(p.하한가) || 0);
+  }
   if (Number(p.마진적용) && Number(p.기준판매가)) return Math.max(rnd_(Number(p.기준판매가) * (1 - PUB_MARGIN) / (1 - mg)), Number(p.하한가) || 0);
   return Number(p.판매가) || 0;
 }
@@ -357,7 +364,8 @@ function getCatalog() {
   return {
     items: catalog_().map(p => {
       const o = { 키: p.키, 공정: p.공정, 품목: p.품목, 설명: p.설명, 단위: p.단위, 기본수량: p.기본수량, 기본체크: Number(p.기본체크) ? 1 : 0, 택1그룹: p.택1그룹, 기준판매가: Number(p.기준판매가) || 0, 판매가: Number(p.판매가) || 0, 하한가: Number(p.하한가) || 0, 마진적용: Number(p.마진적용) ? 1 : 0 };
-      if (v.isOwner) o.원가 = Number(p.원가) || 0;
+      // 2026-10-30 대표 결정: 원가는 직원 전원 공개. 고객 상담 모드(별도 함수)에는 보내지 않음.
+      o.원가 = Number(p.원가) || 0; o.실비 = Number(p.실비) ? 1 : 0; o.고정 = Number(p.고정) ? 1 : 0;
       return o;
     }),
     presets: PRESETS, order: CAT_ORDER, margins: MARGINS, defaultMargin: PUB_MARGIN, source: CATALOG_SRC
@@ -401,7 +409,7 @@ function priceEstimate_(f, owner) {
     const it = f.items[k], p = byKey[k];
     if (!p || !it || !it.on) return;
     const q = (it.q !== null && it.q !== '' && it.q !== undefined) ? Number(it.q) : autoQty_(p, f.평형, f.욕실수);
-    const over = owner && Number(it.px) > 0 ? Number(it.px) : 0;   // 단가 직접 수정은 대표만
+    const over = Number(it.px) > 0 ? Number(it.px) : 0;   // 이 견적에서만 단가 직접 수정 (v.14와 같이 직원도 가능)
     const up = over || unitPrice_(p, mg);
     const cu = Number(p.원가) || 0;
     lines.push({ 키: k, 공정: p.공정, 품목: p.품목, 단위: p.단위, 수량: q, 단가: up, 금액: Math.round(up * q), 원가단가: cu, 원가금액: Math.round(cu * q), 직접수정: over ? 1 : 0 });
@@ -420,7 +428,6 @@ function priceEstimate_(f, owner) {
 function previewEstimate(f) {
   const v = requireStaff_();
   const r = priceEstimate_(f, v.isOwner);
-  if (!v.isOwner) { r.cost = null; r.margin = null; r.lines.forEach(l => { delete l.원가단가; delete l.원가금액; }); }
   return r;
 }
 
@@ -428,7 +435,6 @@ function listEstimates() {
   const v = requireStaff_();
   return rows_(db_().getSheetByName('견적'), H.견적).map(e => {
     const o = {}; H.견적.forEach(h => o[h] = e[h]);
-    if (!v.isOwner) { delete o.원가합계; delete o.마진기준; }
     return o;
   }).reverse();
 }
@@ -439,9 +445,8 @@ function getEstimate(no, ver) {
   if (!e) throw new Error('견적을 찾지 못했어요.');
   const items = {};
   rows_(db_().getSheetByName('견적_항목'), H.견적_항목).filter(l => l.견적번호 === no && Number(l.버전) === Number(ver))
-    .forEach(l => items[l.키] = { on: true, q: Number(l.수량), px: v.isOwner && Number(l.직접수정) ? Number(l.단가) : 0 });
+    .forEach(l => items[l.키] = { on: true, q: Number(l.수량), px: Number(l.직접수정) ? Number(l.단가) : 0 });
   const o = {}; H.견적.forEach(h => o[h] = e[h]); o.items = items;
-  if (!v.isOwner) { delete o.원가합계; }
   return o;
 }
 
@@ -480,4 +485,33 @@ function saveEstimate(f, asNewVersion) {
     if (lineRows.length) ls.getRange(ls.getLastRow() + 1, 1, lineRows.length, H.견적_항목.length).setValues(lineRows);
     return { 견적번호: no, 버전: ver, 합계: r.total };
   } finally { lock.releaseLock(); }
+}
+
+
+/* ---- 원가 가져오기 (대표가 한 번 실행) ----
+ * 상담견적 v.15의 원가를 대표 드라이브의 「단가표 원가 v.15 (대표 전용)」 시트에서 읽어 단가표 시트에 채운다.
+ * 원가는 코드(GitHub)에 넣지 않는다. 시트 열: 키, 원가, 실비, 고정, 하한가, 원가근거
+ */
+function importCosts(sheetId) {
+  requireOwner_();
+  sheetId = sheetId || PropertiesService.getScriptProperties().getProperty('COST_SHEET_ID');
+  if (!sheetId) throw new Error('원가 시트 ID가 없어요. 설치안내의 "원가 가져오기"를 보세요.');
+  const src = SpreadsheetApp.openById(sheetId).getSheets()[0].getDataRange().getValues();
+  const head = src[0].map(String), idx = n => head.indexOf(n);
+  const m = {}; src.slice(1).forEach(r => { if (r[idx('키')]) m[r[idx('키')]] = r; });
+  const sh = db_().getSheetByName('단가표');
+  let n = 0;
+  rows_(sh, H.단가표).forEach(p => {
+    const r = m[p.키]; if (!r) return;
+    p.원가 = Number(r[idx('원가')]) || 0; p.실비 = Number(r[idx('실비')]) ? 1 : 0; p.고정 = Number(r[idx('고정')]) ? 1 : 0;
+    if (Number(r[idx('하한가')])) p.하한가 = Number(r[idx('하한가')]);
+    p.원가근거 = r[idx('원가근거')] || '';
+    update_(sh, H.단가표, p._row, p); n++;
+  });
+  return n + '개 항목 원가 반영';
+}
+
+// 대표가 한 번 실행: 대표 드라이브(내 드라이브)의 「단가표 원가 v.15 (대표 전용 · 공유 금지)」에서 원가를 가져온다
+function importCostsV15() {
+  return importCosts('1_kkJwsyP075YU4hgQgJp0PL8OSJtCltXToTFhhz6ghU');
 }
