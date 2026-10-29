@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1F4E79">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="오늘의집 응대">
+<title>오늘의집 빠른 응대</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 상단 탭 3개(새 문의 / 회신 후 / 목록) + 설정. 폰 한 손 사용 기준 */
+:root{
+  --navy:#1F4E79; --navy2:#203864; --yellow:#FFC000;
+  --bg:#f4f6f9; --card:#fff; --ink:#18212b; --sub:#5b6673; --line:#dde3ea;
+  --ok:#1f7a4d; --warn:#b4560b; --chip:#eef3f8;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#10161d; --card:#18212b; --ink:#e8edf2; --sub:#9aa7b4; --line:#2a3644; --chip:#203040; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+[hidden]{display:none!important}
+header{background:var(--navy);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 0;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:18px;font-weight:900;letter-spacing:-.02em}
+header h1 b{color:var(--yellow)}
+header .s{font-size:12px;opacity:.8;margin-top:2px}
+nav{display:flex;gap:4px;margin-top:10px}
+nav button{flex:1;border:0;background:transparent;color:#cfe0f0;font:inherit;font-weight:700;padding:10px 4px;border-bottom:3px solid transparent}
+nav button.on{color:#fff;border-bottom-color:var(--yellow)}
+main{max-width:640px;margin:0 auto;padding:14px 16px 90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:15px;font-weight:900;color:var(--navy)}
+@media (prefers-color-scheme: dark){ .card h2{color:#8fbbe6} }
+.step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--yellow);color:#000;font-size:12px;font-weight:900;margin-right:6px}
+textarea,input,select{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+textarea{min-height:120px;resize:vertical}
+textarea.msg{min-height:260px;font-size:14px}
+label{display:block;font-size:12px;color:var(--sub);margin:8px 0 3px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.grid .full{grid-column:1/-1}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{flex:1 1 auto;border:0;border-radius:12px;padding:13px 12px;font:inherit;font-weight:700;background:var(--chip);color:var(--ink);text-align:center;text-decoration:none;min-width:30%}
+.btn.p{background:var(--navy);color:#fff}
+.btn.y{background:var(--yellow);color:#000}
+.btn.sm{padding:8px 10px;font-size:13px;flex:0 0 auto;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.hint{font-size:12px;color:var(--sub);margin-top:6px}
+.found{font-size:13px;margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.found span{background:var(--chip);border-radius:6px;padding:2px 8px}
+.found span.miss{background:transparent;border:1px dashed var(--line);color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:#000c;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.total{font-size:18px;font-weight:900;color:var(--navy);margin-top:8px}
+@media (prefers-color-scheme: dark){ .total{color:#8fbbe6} }
+.lead{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--card)}
+.lead .t{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.lead .m{font-size:12px;color:var(--sub)}
+.badge{font-size:11px;border-radius:6px;padding:2px 7px;background:var(--chip);white-space:nowrap}
+.badge.new{background:#fff3cc;color:#7a5a00}.badge.sent{background:#dbe9f7;color:#1F4E79}
+.badge.hand{background:#d9f0e3;color:#1f7a4d}.badge.hold{background:#eee;color:#666}
+.badge.late{background:#fde2d2;color:#b4560b}
+.flow{display:flex;gap:6px;font-size:12px;color:var(--sub);flex-wrap:wrap;margin-top:4px}
+.flow b{color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>오늘의집</b> 빠른 응대</h1>
+  <div class="s">ártico studio · 카톡 알림 → 붙여넣기 → 문자 보내기</div>
+  <nav>
+    <button data-tab="new" class="on">① 새 문의</button>
+    <button data-tab="reply">② 회신 후</button>
+    <button data-tab="list">③ 목록 <span id="cnt"></span></button>
+    <button data-tab="set">설정</button>
+  </nav>
+</header>
+
+<main>
+<!-- ① 새 문의 -->
+<section id="tab-new">
+  <div class="card">
+    <h2><span class="step">1</span>오늘의집 앱에서 수락</h2>
+    <div class="flow"><b>카톡 알림 누르기</b> → <b>앱에서 '수락'</b> → <b>고객 정보 화면 글자 길게 눌러 전체 복사</b></div>
+    <div class="hint">수락은 오늘의집 약관 때문에 직접 눌러야 해요. (자동 클릭은 계정 정지 위험)</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span>복사한 내용 붙여넣기</h2>
+    <textarea id="raw" placeholder="카톡 알림 문구나 오늘의집 앱의 고객 정보를 그대로 붙여넣으세요.&#10;예) 홍길동 고객님 / 010-1234-5678 / 구리 인창동 ○○아파트 32평 / 전체 리모델링 / 12월 착공"></textarea>
+    <div class="btns">
+      <button class="btn y" id="paste">📋 붙여넣기</button>
+      <button class="btn p" id="parse">정보 뽑기</button>
+      <button class="btn sm" id="sample">예시</button>
+    </div>
+    <div class="found" id="found"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">3</span>고객 정보 확인</h2>
+    <div class="grid">
+      <div><label>고객명</label><input id="f-name"></div>
+      <div><label>연락처</label><input id="f-phone" inputmode="tel"></div>
+      <div class="full"><label>현장 주소</label><input id="f-addr"></div>
+      <div><label>평형</label><input id="f-area" inputmode="decimal" placeholder="숫자만"></div>
+      <div><label>욕실 수</label><input id="f-baths" inputmode="numeric"></div>
+      <div class="full"><label>공사 범위</label><input id="f-scope" placeholder="전체 / 욕실 / 주방 / 도배·바닥 …"></div>
+      <div><label>희망 시기</label><input id="f-start"></div>
+      <div><label>예산(만원)</label><input id="f-budget" inputmode="numeric"></div>
+      <div class="full"><label>문의 내용·요청</label><textarea id="f-req" style="min-height:70px"></textarea></div>
+      <div><label>오늘의집 문의번호</label><input id="f-ref"></div>
+      <div><label>담당</label><select id="f-staff"></select></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">4</span>첫 문자 (빠진 정보만 질문)</h2>
+    <div class="chips" id="kind">
+      <button class="chip on" data-k="auto">자동</button>
+      <button class="chip" data-k="basic">기본</button>
+      <button class="chip" data-k="full">전체 리모델링</button>
+      <button class="chip" data-k="part">부분 공사</button>
+    </div>
+    <label>보낼 문자 (고쳐서 보내도 돼요)</label>
+    <textarea class="msg" id="msg1"></textarea>
+    <div class="btns">
+      <a class="btn p" id="sms1">💬 문자 보내기</a>
+      <button class="btn" id="copy1">복사</button>
+      <a class="btn" id="call1">📞 전화</a>
+    </div>
+    <div class="btns"><button class="btn y" id="save1">목록에 저장 (문자 보냄)</button></div>
+  </div>
+</section>
+
+<!-- ② 회신 후 -->
+<section id="tab-reply" hidden>
+  <div class="card">
+    <h2>고객 선택</h2>
+    <select id="r-pick"></select>
+    <div class="hint">목록에 저장한 고객을 고르면 정보가 채워져요. 없으면 ①에서 먼저 저장하세요.</div>
+  </div>
+  <div class="card">
+    <h2>고객 답장 붙여넣기</h2>
+    <textarea id="r-raw" placeholder="고객이 보낸 답장을 그대로 붙여넣으세요"></textarea>
+    <div class="btns"><button class="btn y" id="r-paste">📋 붙여넣기</button><button class="btn p" id="r-parse">정보 합치기</button></div>
+    <div class="grid">
+      <div><label>평형</label><input id="r-area" inputmode="decimal"></div>
+      <div><label>욕실 수</label><input id="r-baths" inputmode="numeric"></div>
+      <div class="full"><label>주소</label><input id="r-addr"></div>
+      <div><label>희망 시기</label><input id="r-start"></div>
+      <div><label>예산(만원)</label><input id="r-budget" inputmode="numeric"></div>
+      <div><label>연락 가능 시간</label><input id="r-call"></div>
+      <div><label>실측 희망일</label><input id="r-visit"></div>
+    </div>
+    <label>공사 범위</label>
+    <div class="chips" id="r-scope">
+      <button class="chip" data-s="full">전체</button>
+      <button class="chip" data-s="fullx">전체+샷시·확장</button>
+      <button class="chip" data-s="bath">욕실만</button>
+      <button class="chip" data-s="kitchen">주방 가구만</button>
+      <button class="chip" data-s="wall">도배·바닥만</button>
+    </div>
+    <label>등급</label>
+    <div class="chips" id="r-grade">
+      <button class="chip on" data-g="0">기본</button>
+      <button class="chip" data-g="1">중급</button>
+      <button class="chip" data-g="2">고급</button>
+    </div>
+    <label><input type="checkbox" id="r-urgent" style="width:auto"> 급함 (한 달 내 착공·오늘 연락 원함·타사 비교 중)</label>
+  </div>
+
+  <div class="card">
+    <h2>가견적</h2>
+    <div id="r-calc" class="hint">평형과 공사 범위를 넣으면 계산돼요.</div>
+  </div>
+
+  <div class="card">
+    <h2>고객 답변 문자</h2>
+    <textarea class="msg" id="msg2"></textarea>
+    <div class="btns"><a class="btn p" id="sms2">💬 고객에게 보내기</a><button class="btn" id="copy2">복사</button></div>
+  </div>
+
+  <div class="card">
+    <h2>정진혁 실장 인계 메모</h2>
+    <textarea class="msg" id="msg3" style="min-height:220px"></textarea>
+    <div class="btns"><a class="btn p" id="sms3">💬 실장님께 보내기</a><button class="btn" id="copy3">복사</button></div>
+    <div class="btns"><button class="btn y" id="save2">인계 완료로 저장</button></div>
+  </div>
+</section>
+
+<!-- ③ 목록 -->
+<section id="tab-list" hidden>
+  <div class="card">
+    <h2>상담 목록</h2>
+    <div class="hint">이 휴대폰 브라우저에만 저장돼요. 하루 지나도 답이 없으면 '미응답 문자'가 떠요 (한 번만).</div>
+    <div id="leads" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- 설정 -->
+<section id="tab-set" hidden>
+  <div class="card">
+    <h2>문자 끝에 붙는 연락처</h2>
+    <label><input type="checkbox" id="s-footer" style="width:auto" checked> 문자 끝에 담당자 번호 붙이기</label>
+    <label>대표전화</label><input id="s-main" value="1566-5904">
+    <div class="hint">담당자 이름·번호는 아래에서 고쳐요. ①의 '담당'에서 고른 사람 번호가 문자에 들어가요.</div>
+    <div id="s-staff"></div>
+    <div class="btns"><button class="btn sm" id="s-add">+ 담당자 추가</button></div>
+  </div>
+  <div class="card">
+    <h2>인계 받는 사람</h2>
+    <div class="grid">
+      <div><label>이름</label><input id="s-hname"></div>
+      <div><label>번호</label><input id="s-hphone" inputmode="tel"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>홈 화면에 추가</h2>
+    <div class="hint">아이폰: 공유 → '홈 화면에 추가' · 안드로이드: ⋮ → '홈 화면에 추가'. 앱처럼 바로 열려요.</div>
+  </div>
+  <div class="card">
+    <h2>데이터</h2>
+    <div class="btns"><button class="btn sm" id="s-export">백업 복사</button><button class="btn sm" id="s-clear">목록 전부 지우기</button></div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var KEY="ohouse-quick-v1";
+
+/* ---------- 저장 ---------- */
+var DEF={
+  staff:[{name:"최윤수 대표",phone:"010-9506-6066"},{name:"이봄이 실장",phone:"010-5119-3125"}],
+  staffIdx:0, footer:true, main:"1566-5904",
+  hand:{name:"정진혁 실장",phone:"010-8671-5578"},
+  leads:[]
+};
+var S=load();
+function load(){
+  try{var s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.staff)return Object.assign({},DEF,s);}catch(e){}
+  return JSON.parse(JSON.stringify(DEF));
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+function toast(t){var el=$("toast");el.textContent=t;el.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(function(){el.classList.remove("on")},1600);}
+function copy(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast("복사했어요")},fallback);}else fallback();
+  function fallback(){var t=document.createElement("textarea");t.value=text;document.body.appendChild(t);t.select();try{document.execCommand("copy");toast("복사했어요")}catch(e){toast("길게 눌러 복사해 주세요")}t.remove();}
+}
+function pasteInto(el,after){
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){el.value=t;after&&after();}).catch(function(){el.focus();toast("칸을 길게 눌러 붙여넣기 해주세요")});
+  }else{el.focus();toast("칸을 길게 눌러 붙여넣기 해주세요");}
+}
+function digits(p){return (p||"").replace(/[^0-9]/g,"");}
+function smsHref(phone,body){return "sms:"+digits(phone)+"?&body="+encodeURIComponent(body);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]});}
+
+/* ---------- 탭 ---------- */
+document.querySelectorAll("nav button").forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll("nav button").forEach(function(x){x.classList.toggle("on",x===b)});
+    ["new","reply","list","set"].forEach(function(t){$("tab-"+t).hidden=(t!==b.dataset.tab)});
+    if(b.dataset.tab==="list")renderLeads();
+    if(b.dataset.tab==="reply")fillPick();
+    window.scrollTo(0,0);
+  };
+});
+function goTab(t){document.querySelector('nav button[data-tab="'+t+'"]').click();}
+
+/* ---------- 글에서 정보 뽑기 ---------- */
+function parse(text){
+  var t=(text||"").replace(/\r/g,""), o={};
+  var m;
+  if(m=t.match(/01[016789][\s.\-]?\d{3,4}[\s.\-]?\d{4}/)){var d=digits(m[0]);o.phone=d.length===11?d.replace(/(\d{3})(\d{4})(\d{4})/,"$1-$2-$3"):d.replace(/(\d{3})(\d{3})(\d{4})/,"$1-$2-$3");}
+  if(m=t.match(/(?:고객명|고객 이름|이름|성함|신청자|의뢰인)\s*[:：]?\s*([가-힣]{2,4})/))o.name=m[1];
+  else if(m=t.match(/([가-힣]{2,4})\s*(?:고객)?님/))o.name=m[1];
+  if(o.name&&/^(고객|안녕|문의|상담|담당|실장|대표|파트너)/.test(o.name))delete o.name;
+  if(m=t.match(/(\d{1,3}(?:\.\d)?)\s*평/))o.area=m[1];
+  else if(m=t.match(/(\d{2,3}(?:\.\d+)?)\s*(?:㎡|m2|m²|제곱)/i))o.area=String(Math.round(parseFloat(m[1])/3.3058));
+  if(m=t.match(/(?:욕실|화장실)\s*(\d)\s*(?:개|칸)?/))o.baths=m[1];
+  else if(m=t.match(/(\d)\s*(?:개|칸)\s*(?:의\s*)?(?:욕실|화장실)/))o.baths=m[1];
+  if(m=t.match(/(?:주소|현장|위치|지역)\s*[:：]\s*([^\n]+)/))o.addr=m[1].trim();
+  else if(m=t.match(/((?:서울|경기|인천|부산|대구|대전|광주|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)[^\n,/]{2,40}|[가-힣]+(?:시|군|구)\s+[가-힣0-9]+(?:동|읍|면|로|길)[^\n,/]{0,30})/))o.addr=m[1].trim();
+  else if(m=t.match(/([가-힣A-Za-z0-9]+(?:아파트|빌라|오피스텔|캐슬|자이|힐스테이트|푸르지오|래미안|아이파크|e편한세상|더샵|롯데캐슬|센트럴|타운|마을)[^\n,/]{0,20})/))o.addr=m[1].trim();
+  if(m=t.match(/예산\s*[:：]?\s*(?:약|대략)?\s*([\d,.]+)\s*(억|천만|천|만)?/)){o.budget=money(m[1],m[2]);}
+  else if(m=t.match(/([\d,.]+)\s*(억|천만|천)\s*(?:원)?\s*(?:정도|이내|안팎|내외)?/)){o.budget=money(m[1],m[2]);}
+  if(m=t.match(/(?:착공|시공|공사|입주|이사)\s*(?:희망)?\s*(?:일|시기|날짜|예정)?\s*[:：]\s*([^\n]+)/))o.start=m[1].trim();
+  else if(m=t.match(/((?:\d{2,4}년\s*)?\d{1,2}\s*월\s*(?:초|중순|말|\d{1,2}일)?\s*(?:착공|시공|공사|입주|이사|예정)?)/))o.start=m[1].trim();
+  else if(m=t.match(/(\d{1,2}\s*[\/.]\s*\d{1,2})\s*(?:착공|입주|이사|공사)/))o.start=m[1].replace(/\s/g,"");
+  if(m=t.match(/(?:문의|요청|상담)\s*(?:번호|No\.?|ID)\s*[:：]?\s*([A-Za-z0-9\-]+)/i))o.ref=m[1];
+  if(m=t.match(/(오전|오후|저녁|평일|주말)[^\n]{0,14}(?:통화|연락|가능)/))o.call=m[0].trim();
+  // 공사 범위
+  var sc=[];
+  if(/전체|올수리|리모델링|전부|풀\s*인테리어|올\s*인테리어/.test(t))sc.push("전체");
+  if(/샷시|샤시|창호/.test(t))sc.push("샷시");
+  if(/확장/.test(t))sc.push("발코니 확장");
+  if(/욕실|화장실/.test(t)&&sc.indexOf("전체")<0)sc.push("욕실");
+  if(/주방|싱크|부엌/.test(t)&&sc.indexOf("전체")<0)sc.push("주방");
+  if(/도배/.test(t)&&sc.indexOf("전체")<0)sc.push("도배");
+  if(/바닥|마루|장판/.test(t)&&sc.indexOf("전체")<0)sc.push("바닥");
+  if(sc.length)o.scope=sc.join("·");
+  if(/고급|하이엔드|호텔|대리석|럭셔리/.test(t))o.grade=1;
+  if(/급해|급합|빨리|이번\s*달|다음\s*주|타\s*(?:업체|사)|비교/.test(t))o.urgent=true;
+  return o;
+}
+function money(n,u){
+  var v=parseFloat(String(n).replace(/,/g,""));if(isNaN(v))return "";
+  if(u==="억")v*=10000;else if(u==="천만"||u==="천")v*=1000;
+  else if(!u&&v<100)v*=1000; // "예산 5" 같은 짧은 표기는 천만 단위로 봄
+  return String(Math.round(v));
+}
+
+var FIELDS=["name","phone","addr","area","baths","scope","start","budget","req","ref"];
+var LABEL={name:"고객명",phone:"연락처",addr:"주소",area:"평형",baths:"욕실",scope:"범위",start:"시기",budget:"예산"};
+function doParse(){
+  var raw=$("raw").value, o=parse(raw);
+  FIELDS.forEach(function(k){if(o[k]&&!$("f-"+k).value)$("f-"+k).value=o[k];});
+  if(!$("f-req").value){
+    var line=raw.split("\n").map(function(s){return s.trim()}).filter(function(s){return s.length>8&&!/01[016789]|^\[|[:：]/.test(s)}).slice(0,3).join(" / ");
+    $("f-req").value=line.slice(0,200);
+  }
+  var h="";["name","phone","addr","area","baths","scope","start","budget"].forEach(function(k){
+    var v=$("f-"+k).value;h+=v?"<span>"+LABEL[k]+": "+esc(v)+"</span>":'<span class="miss">'+LABEL[k]+" 없음</span>";
+  });
+  $("found").innerHTML=h;
+  build1();
+}
+
+/* ---------- 첫 문자 ---------- */
+var kind="auto";
+document.querySelectorAll("#kind .chip").forEach(function(c){c.onclick=function(){kind=c.dataset.k;document.querySelectorAll("#kind .chip").forEach(function(x){x.classList.toggle("on",x===c)});build1();};});
+function staff(){return S.staff[S.staffIdx]||S.staff[0]||{name:"",phone:""};}
+function footer(){
+  if(!S.footer)return "";
+  var st=staff(), lines=["","","궁금하신 점은 편하게 연락 주세요."];
+  lines.push("ártico studio "+st.name+" "+st.phone);
+  if(S.main)lines.push("대표전화 "+S.main);
+  return lines.join("\n");
+}
+function v(id){return ($(id).value||"").trim();}
+function pickKind(){
+  if(kind!=="auto")return kind;
+  var s=v("f-scope");
+  if(/전체/.test(s))return "full";
+  if(s)return "part";
+  return "basic";
+}
+function build1(){
+  var name=v("f-name")||"고객", k=pickKind(), q=[], s=v("f-scope");
+  var hasAddr=!!v("f-addr"), hasArea=!!v("f-area");
+  var head;
+  if(k==="full"){
+    head="안녕하세요, "+name+" 고객님. 오늘의집 상담 요청 확인하고 연락드린 ártico studio입니다.\n고객님 집에 맞는 가견적을 드리려고 몇 가지 여쭙니다. 아시는 것만 편하게 적어주세요.\n";
+    if(!hasAddr)q.push("현장 주소 (단지명·동·호수)");
+    if(!hasArea||!v("f-baths"))q.push((hasArea?"":"평형 / ")+"욕실 개수");
+    q.push("현재 상태 (이사 전 공실 / 거주 중)");
+    if(!/샷시|확장/.test(s))q.push("샷시 교체·발코니 확장 생각 여부");
+    if(!v("f-start"))q.push("희망 착공 시기와 입주 날짜");
+    if(!v("f-budget"))q.push("예산 범위");
+    q.push("원하시는 분위기나 꼭 바꾸고 싶은 곳");
+    q.push("통화 편한 시간대, 실측 방문 가능한 날");
+    return out(head+"\n"+q.map(function(x){return "· "+x}).join("\n")+"\n\n집 사진(거실·주방·욕실)이나 마음에 드는 사진을 보내주시면 더 정확하게 안내드릴 수 있습니다.");
+  }
+  if(k==="part"){
+    head="안녕하세요, "+name+" 고객님. 오늘의집 문의 주신 ártico studio입니다.\n"+(s?s+" ":"")+"공사 가견적을 위해 아래만 알려주세요.\n";
+    if(!hasAddr||!hasArea)q.push([hasAddr?"":"현장 주소",hasArea?"":"평형"].filter(Boolean).join(" / "));
+    q.push("공사할 곳과 개수 (예: 욕실 2개)");
+    q.push("현재 사진 1~2장");
+    if(!v("f-start")||!v("f-budget"))q.push([v("f-start")?"":"희망 시기",v("f-budget")?"":"예산"].filter(Boolean).join("와 "));
+    return out(head+"\n"+q.map(function(x,i){return (i+1)+". "+x}).join("\n")+"\n\n받는 대로 가견적 정리해서 보내드리겠습니다.");
+  }
+  head="안녕하세요, "+name+" 고객님. 오늘의집으로 문의 주신 인테리어 상담을 맡게 된 ártico studio입니다.\n정확한 가견적 안내를 위해 아래 내용 회신 부탁드립니다.\n";
+  if(!hasAddr||!hasArea)q.push([hasAddr?"":"현장 주소(단지명·동)",hasArea?"":"평형"].filter(Boolean).join(" / "));
+  if(!s)q.push("공사 범위 (전체 / 욕실·주방 등 부분)");
+  if(!v("f-start"))q.push("희망 착공·입주 시기");
+  if(!v("f-budget"))q.push("생각하시는 예산");
+  if(!q.length)q.push("통화 편한 시간대");
+  out(head+"\n"+q.map(function(x,i){return (i+1)+". "+x}).join("\n")+"\n\n현재 집 사진이나 참고 이미지가 있으면 함께 보내주셔도 좋습니다. 확인 후 가견적 바로 안내드리겠습니다. 감사합니다.");
+  function out(body){$("msg1").value=body+footer();links1();}
+}
+function links1(){
+  var p=v("f-phone");
+  $("sms1").href=smsHref(p,$("msg1").value);
+  $("call1").href="tel:"+digits(p);
+}
+$("msg1").addEventListener("input",links1);
+["f-name","f-phone","f-addr","f-area","f-baths","f-scope","f-start","f-budget"].forEach(function(id){$(id).addEventListener("input",build1);});
+$("f-staff").addEventListener("change",function(){S.staffIdx=+this.value;save();build1();});
+$("paste").onclick=function(){pasteInto($("raw"),doParse);};
+$("parse").onclick=doParse;
+$("sample").onclick=function(){
+  $("raw").value="[오늘의집] 새 상담 요청이 도착했어요\n고객명: 홍길동\n연락처: 010-1234-5678\n주소: 경기 구리시 인창동 ○○아파트\n32평 / 전체 리모델링\n12월 중순 착공 희망, 예산 6천만원\n문의번호: 2026-1029-001";
+  FIELDS.forEach(function(k){$("f-"+k).value=""});doParse();
+};
+$("copy1").onclick=function(){copy($("msg1").value)};
+$("sms1").addEventListener("click",function(e){if(!v("f-phone")){e.preventDefault();toast("연락처를 넣어주세요");}});
+$("call1").addEventListener("click",function(e){if(!v("f-phone")){e.preventDefault();toast("연락처를 넣어주세요");}});
+
+$("save1").onclick=function(){
+  if(!v("f-name")&&!v("f-phone")){toast("고객명이나 연락처를 넣어주세요");return;}
+  var o=parse($("raw").value), now=Date.now();
+  var lead={id:"L"+now,staff:staff().name,source:"오늘의집",createdAt:now,updatedAt:now,status:"sent",sentAt:now,followed:false,
+    grade:o.grade||0,urgent:!!o.urgent,call:o.call||""};
+  FIELDS.forEach(function(k){lead[k]=v("f-"+k);});
+  S.leads.unshift(lead);save();
+  FIELDS.forEach(function(k){$("f-"+k).value=""});$("raw").value="";$("found").innerHTML="";$("msg1").value="";
+  toast("저장했어요");updCnt();
+};
+
+/* ---------- 단가표 (상담 스킬 기본값, 부가세 별도) ---------- */
+var P=[
+ ["design","설계·디자인","평",[55000,55000,70000]],
+ ["admin","행정·보양","식",[600000,600000,700000]],
+ ["demo","철거·폐기물","평",[280000,300000,330000]],
+ ["plumb","설비·방수","욕실",[1200000,1400000,1700000]],
+ ["sash","샷시 교체","평",[450000,550000,680000]],
+ ["ext","발코니 확장","개소",[2500000,2800000,3200000]],
+ ["wood","목공","평",[300000,360000,450000]],
+ ["elec","전기·조명","평",[120000,150000,200000]],
+ ["btile","욕실 타일","욕실",[1300000,1800000,2300000]],
+ ["ktile","현관·주방벽 타일","식",[700000,850000,1100000]],
+ ["film","필름","평",[100000,120000,150000]],
+ ["floor","바닥재","평",[140000,200000,300000]],
+ ["paper","도배","평",[110000,130000,180000]],
+ ["furn","제작가구(주방·붙박이장)","평",[400000,500000,650000]],
+ ["fixt","욕실 도기·수전","욕실",[1500000,1900000,2600000]],
+ ["etc","기타(도어락·청소 등)","평",[65000,70000,90000]],
+ ["mgmt","현장 관리·감리","평",[65000,65000,80000]]
+];
+var FULL=["design","admin","demo","plumb","wood","elec","btile","ktile","film","floor","paper","furn","fixt","etc","mgmt"];
+var BUNDLE={full:FULL,fullx:FULL.concat(["sash","ext"]),bath:["admin","plumb","btile","fixt","mgmt"],kitchen:["admin","furn","ktile"],wall:["admin","floor","paper"]};
+var SCOPE_NAME={full:"전체 리모델링",fullx:"전체 리모델링 + 샷시·확장",bath:"욕실",kitchen:"주방 가구",wall:"도배·바닥"};
+var GRADE=["기본","중급","고급"];
+
+var R={scope:"",grade:0,lead:null};
+document.querySelectorAll("#r-scope .chip").forEach(function(c){c.onclick=function(){R.scope=c.dataset.s;marks();calc();};});
+document.querySelectorAll("#r-grade .chip").forEach(function(c){c.onclick=function(){R.grade=+c.dataset.g;marks();calc();};});
+function marks(){
+  document.querySelectorAll("#r-scope .chip").forEach(function(x){x.classList.toggle("on",x.dataset.s===R.scope)});
+  document.querySelectorAll("#r-grade .chip").forEach(function(x){x.classList.toggle("on",+x.dataset.g===R.grade)});
+}
+function guessScope(s){
+  s=s||"";
+  if(/전체/.test(s))return /샷시|확장/.test(s)?"fullx":"full";
+  if(/욕실/.test(s))return "bath";
+  if(/주방/.test(s))return "kitchen";
+  if(/도배|바닥/.test(s))return "wall";
+  return "";
+}
+function fillPick(){
+  var sel=$("r-pick"),cur=sel.value;
+  sel.innerHTML='<option value="">— 고객 고르기 —</option>'+S.leads.filter(function(l){return l.status!=="hold"}).map(function(l){
+    return '<option value="'+l.id+'">'+esc((l.name||"이름없음")+" · "+(l.addr||l.phone||""))+'</option>';}).join("");
+  sel.value=cur;
+}
+$("r-pick").onchange=function(){
+  var l=S.leads.find(function(x){return x.id===this.value}.bind(this));R.lead=l||null;if(!l)return;
+  $("r-area").value=l.area||"";$("r-baths").value=l.baths||"";$("r-addr").value=l.addr||"";
+  $("r-start").value=l.start||"";$("r-budget").value=l.budget||"";$("r-call").value=l.call||"";$("r-visit").value=l.visit||"";
+  R.scope=l.scopeKey||guessScope(l.scope);R.grade=l.grade||0;$("r-urgent").checked=!!l.urgent;$("r-raw").value=l.replyRaw||"";
+  marks();calc();
+};
+$("r-paste").onclick=function(){pasteInto($("r-raw"),mergeReply);};
+$("r-parse").onclick=mergeReply;
+function mergeReply(){
+  var o=parse($("r-raw").value);
+  [["area","r-area"],["baths","r-baths"],["addr","r-addr"],["start","r-start"],["budget","r-budget"],["call","r-call"]].forEach(function(p){if(o[p[0]])$(p[1]).value=o[p[0]];});
+  var m=$("r-raw").value.match(/(?:실측|방문)[^\n]{0,20}/);if(m&&!$("r-visit").value)$("r-visit").value=m[0];
+  if(o.scope&&!R.scope)R.scope=guessScope(o.scope);
+  if(o.grade)R.grade=o.grade;
+  if(o.urgent)$("r-urgent").checked=true;
+  marks();calc();toast("합쳤어요");
+}
+["r-area","r-baths","r-addr","r-start","r-budget","r-call","r-visit"].forEach(function(id){$(id).addEventListener("input",calc);});
+$("r-urgent").addEventListener("change",calc);
+
+function man(won){return Math.round(won/10000).toLocaleString("ko-KR");}
+function calc(){
+  var area=parseFloat(v("r-area"))||0, baths=parseInt(v("r-baths"),10), l=R.lead||{};
+  if(isNaN(baths))baths=area>=30?2:1;
+  if(!area||!R.scope){$("r-calc").innerHTML='<span class="hint">평형과 공사 범위를 넣으면 계산돼요.</span>';$("msg2").value="";$("msg3").value="";return;}
+  var ids=BUNDLE[R.scope],rows=[],sum=0;
+  ids.forEach(function(id){
+    var p=P.find(function(x){return x[0]===id}), q=p[2]==="평"?area:p[2]==="욕실"?baths:1, a=p[3][R.grade]*q;
+    sum+=a;rows.push([p[1],q+(p[2]==="식"?"식":p[2]==="개소"?"개소":p[2]==="욕실"?"욕실":"평"),a]);
+  });
+  var tot=sum*1.1, lo=Math.round(tot*0.9/10000), hi=Math.round(tot*1.15/10000);
+  R.total=Math.round(tot/10000);R.lo=lo;R.hi=hi;R.sum=sum;R.rows=rows;
+  $("r-calc").innerHTML='<table><tr><th>공정</th><th class="n">수량</th><th class="n">금액(만원)</th></tr>'+
+    rows.map(function(r){return "<tr><td>"+esc(r[0])+'</td><td class="n">'+esc(r[1])+'</td><td class="n">'+man(r[2])+"</td></tr>"}).join("")+
+    '</table><div class="hint">공사비 '+man(sum)+'만원 (부가세 별도) · '+GRADE[R.grade]+' 등급 · 욕실 '+baths+'개 기준</div>'+
+    '<div class="total">안내 범위 약 '+lo.toLocaleString()+' ~ '+hi.toLocaleString()+'만원</div><div class="hint">부가세 포함 '+R.total.toLocaleString()+'만원의 90~115%</div>';
+  build2(area,baths,l);
+}
+function build2(area,baths,l){
+  var name=l.name||"고객", addr=v("r-addr")||"보내주신 현장", call=v("r-call");
+  var list=R.rows.map(function(r){return r[0]}).join(", ");
+  var note=(R.scope==="fullx")?"\n※ 샷시·확장·구조변경은 실측 후 확정됩니다.":"";
+  $("msg2").value=name+" 고객님, 안녕하세요. ártico studio입니다.\n보내주신 내용 기준으로 "+addr+" ("+area+"평) 가견적 안내드립니다.\n\n■ 예상 공사비: 약 "+R.lo.toLocaleString()+"만원 ~ "+R.hi.toLocaleString()+"만원 (부가세 포함)\n■ 공사 범위\n· "+SCOPE_NAME[R.scope]+": "+list+"\n\n※ 상담 내용 기준의 가견적이며, 실측 후 자재와 설계가 확정되면 금액이 달라질 수 있습니다."+note+"\n※ 담당 실장님이 "+(call||"편하신 시간")+"에 연락드려 실측 일정을 잡아드리겠습니다."+footer();
+  var urgent=$("r-urgent").checked;
+  $("msg3").value="[정진혁 실장 인계] "+(urgent?"급함 · ":"")+"실장 인계 대기\n"+
+    "고객: "+(l.name||"미확인")+" / "+(l.phone||"미확인")+"\n"+
+    "현장: "+(v("r-addr")||"미확인")+" · "+area+"평 · 욕실 "+baths+"\n"+
+    "유입: 오늘의집 ("+(l.ref||"번호 미확인")+") · 상담: "+(l.staff||staff().name)+"\n"+
+    "착공: "+(v("r-start")||"미확인")+" · 예산: "+(v("r-budget")?v("r-budget")+"만원":"미확인")+"\n"+
+    "가견적: "+R.total.toLocaleString()+"만원 (부가세 포함, "+GRADE[R.grade]+" 기준)\n"+
+    "범위: "+SCOPE_NAME[R.scope]+"\n"+
+    "요청: "+(l.req||"미확인")+"\n"+
+    "연락 가능: "+(call||"미확인")+" · 실측 희망: "+(v("r-visit")||"미확인")+"\n"+
+    "전달: 실측 일정 잡고 확정 견적 부탁드립니다.";
+  links2();
+}
+function links2(){
+  var l=R.lead||{};
+  $("sms2").href=smsHref(l.phone||"",$("msg2").value);
+  $("sms3").href=smsHref(S.hand.phone,$("msg3").value);
+}
+$("msg2").addEventListener("input",links2);$("msg3").addEventListener("input",links2);
+$("copy2").onclick=function(){copy($("msg2").value)};
+$("copy3").onclick=function(){copy($("msg3").value)};
+$("save2").onclick=function(){
+  var l=R.lead;if(!l){toast("고객을 먼저 골라주세요");return;}
+  Object.assign(l,{area:v("r-area"),baths:v("r-baths"),addr:v("r-addr"),start:v("r-start"),budget:v("r-budget"),call:v("r-call"),visit:v("r-visit"),
+    scopeKey:R.scope,grade:R.grade,urgent:$("r-urgent").checked,total:R.total||"",replyRaw:$("r-raw").value,handNote:$("msg3").value,status:"hand",updatedAt:Date.now()});
+  save();toast("인계 완료로 저장했어요");updCnt();
+};
+
+/* ---------- 목록 ---------- */
+var ST={new:"신규",sent:"문자 보냄",hand:"실장 인계",hold:"보류·종료"};
+function follow(l){
+  return "안녕하세요, "+(l.name||"")+" 고객님. ártico studio입니다.\n어제 보내드린 가견적 안내 관련해 다시 연락드립니다. 문자가 번거로우시면 통화 편한 시간만 알려주세요. 담당 실장님이 직접 연락드려 상담 도와드리겠습니다."+footer();
+}
+function renderLeads(){
+  var box=$("leads");
+  if(!S.leads.length){box.innerHTML='<div class="hint">아직 저장한 고객이 없어요.</div>';return;}
+  var DAY=20*3600*1000, now=Date.now();
+  box.innerHTML=S.leads.map(function(l){
+    var late=l.status==="sent"&&!l.followed&&now-l.sentAt>DAY;
+    var d=new Date(l.createdAt);
+    return '<div class="lead"><div class="t"><span>'+esc(l.name||"이름없음")+(l.urgent?" 🔥":"")+'</span><span class="badge '+(late?"late":l.status)+'">'+(late?"미응답":ST[l.status])+'</span></div>'+
+      '<div class="m">'+(d.getMonth()+1)+"/"+d.getDate()+" · "+esc([l.addr,l.area&&l.area+"평",l.scope,l.total&&("가견적 "+Number(l.total).toLocaleString()+"만")].filter(Boolean).join(" · "))+'</div>'+
+      '<div class="btns">'+
+        (l.phone?'<a class="btn sm" href="tel:'+digits(l.phone)+'">📞 전화</a>':"")+
+        (late?'<a class="btn sm y" data-f="'+l.id+'" href="'+smsHref(l.phone,follow(l))+'">미응답 문자</a>':"")+
+        '<button class="btn sm" data-r="'+l.id+'">회신 처리</button>'+
+        '<button class="btn sm" data-h="'+l.id+'">'+(l.status==="hold"?"되살리기":"보류")+'</button>'+
+        '<button class="btn sm" data-d="'+l.id+'">삭제</button>'+
+      '</div></div>';
+  }).join("");
+}
+$("leads").addEventListener("click",function(e){
+  var b=e.target.closest("[data-f],[data-r],[data-h],[data-d]");if(!b)return;
+  var id=b.dataset.f||b.dataset.r||b.dataset.h||b.dataset.d, l=S.leads.find(function(x){return x.id===id});if(!l)return;
+  if(b.dataset.f){l.followed=true;save();setTimeout(renderLeads,300);return;}
+  if(b.dataset.r){goTab("reply");$("r-pick").value=id;$("r-pick").onchange();return;}
+  if(b.dataset.h){l.status=l.status==="hold"?"sent":"hold";save();renderLeads();updCnt();return;}
+  if(b.dataset.d){if(confirm((l.name||"이 고객")+" 삭제할까요?")){S.leads=S.leads.filter(function(x){return x!==l});save();renderLeads();updCnt();}}
+});
+function updCnt(){var n=S.leads.filter(function(l){return l.status==="sent"}).length;$("cnt").textContent=n?"("+n+")":"";}
+
+/* ---------- 설정 ---------- */
+function renderStaff(){
+  $("s-staff").innerHTML=S.staff.map(function(s,i){
+    return '<div class="grid"><div><label>담당자 '+(i+1)+'</label><input data-sn="'+i+'" value="'+esc(s.name)+'"></div><div><label>번호</label><input data-sp="'+i+'" inputmode="tel" value="'+esc(s.phone)+'"></div></div>';
+  }).join("");
+  $("f-staff").innerHTML=S.staff.map(function(s,i){return '<option value="'+i+'">'+esc(s.name)+'</option>'}).join("");
+  $("f-staff").value=String(S.staffIdx);
+}
+$("s-staff").addEventListener("input",function(e){
+  var t=e.target;if(t.dataset.sn)S.staff[+t.dataset.sn].name=t.value;if(t.dataset.sp)S.staff[+t.dataset.sp].phone=t.value;
+  save();$("f-staff").options[+(t.dataset.sn||t.dataset.sp)].textContent=S.staff[+(t.dataset.sn||t.dataset.sp)].name;build1();
+});
+$("s-add").onclick=function(){S.staff.push({name:"",phone:""});save();renderStaff();};
+$("s-footer").checked=S.footer;$("s-footer").onchange=function(){S.footer=this.checked;save();build1();};
+$("s-main").value=S.main;$("s-main").oninput=function(){S.main=this.value.trim();save();build1();};
+$("s-hname").value=S.hand.name;$("s-hphone").value=S.hand.phone;
+$("s-hname").oninput=function(){S.hand.name=this.value;save();};
+$("s-hphone").oninput=function(){S.hand.phone=this.value;save();links2();};
+$("s-export").onclick=function(){copy(JSON.stringify(S.leads,null,1));};
+$("s-clear").onclick=function(){if(confirm("목록을 전부 지울까요? 되돌릴 수 없어요.")){S.leads=[];save();renderLeads();updCnt();}};
+
+renderStaff();updCnt();build1();
+})();
+</script>
+</body></html>
