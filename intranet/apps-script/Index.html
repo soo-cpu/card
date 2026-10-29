@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko"><head><base target="_top"><meta charset="utf-8">
+<title>홈퍼니싱 인트라넷</title>
+<style>
+:root{--navy:#1F4E79;--deep:#203864;--yellow:#FFC000;--gray:#F2F2F2;--lblue:#D1E3F3;--ink:#111;--sub:#5f6670;--line:#dde3ea;--ok:#1f7a4d;--bad:#c62828}
+*{box-sizing:border-box}body{margin:0;font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;font-size:15px;color:var(--ink);background:#fff;word-break:keep-all}
+header{background:var(--deep);color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header b{font-size:17px}header small{opacity:.75}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav button{background:transparent;color:#fff;border:0;padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer;opacity:.8}
+nav button.on{background:rgba(255,255,255,.15);opacity:1;box-shadow:inset 0 -3px 0 var(--yellow)}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 40px;display:grid;gap:14px}
+h1{font-size:21px;margin:0}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.f{display:grid;gap:4px;min-width:0}.f.w{grid-column:1/-1}
+label{font-size:12px;color:var(--sub);font-weight:700}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0;background:#fff}
+textarea{min-height:70px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+.btn.p{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}.btn.no{color:var(--bad);border-color:var(--bad)}
+.box{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;white-space:nowrap;font-weight:600}
+td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even) td{background:var(--gray)}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--lblue)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lines td{padding:4px}.lines input{padding:6px}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--gray)}
+.pill.w{background:#fff4d6;color:#8a5a00}.pill.ok{background:#e3f3ea;color:var(--ok)}.pill.no{background:#fde8e8;color:var(--bad)}
+.note{font-size:12px;color:#8a5a00;background:#fff4d6;border-radius:8px;padding:8px 10px}
+.muted{color:var(--sub);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.veil{position:fixed;inset:0;background:rgba(10,18,32,.45);display:grid;place-items:center;padding:16px}
+.sheet{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:18px;display:grid;gap:12px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 16px;border-radius:10px}
+footer{color:var(--sub);font-size:12px;text-align:center}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><b>홈퍼니싱 인트라넷</b><small id="who">불러오는 중…</small>
+<nav id="nav"></nav></header>
+<main id="view"><p class="muted">불러오는 중…</p></main>
+<div id="layer"></div>
+<script>
+let B=null, AP=[], tab=(location.hash||'#new').slice(1);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won=n=>Number(n)?Number(n).toLocaleString('ko-KR')+'원':'—';
+const num=v=>Number(String(v||'').replace(/[^\d.-]/g,''))||0;
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2800)}
+function call(fn,...a){return new Promise((ok,no)=>google.script.run.withSuccessHandler(ok).withFailureHandler(e=>{toast(e.message||'오류가 났어요');no(e)})[fn](...a))}
+function pill(s){return `<span class="pill ${s==='승인'?'ok':s==='반려'?'no':'w'}">${esc(s)}</span>`}
+
+async function boot(){
+  try{B=await call('getBoot')}catch(e){$('#view').innerHTML=`<div class="card"><b>열 수 없어요</b><p class="muted">${esc(e.message)}</p></div>`;$('#who').textContent='';return}
+  $('#who').textContent=B.me+(B.isOwner?' · 대표':'')+' · '+B.email;
+  render();
+}
+function render(){
+  const tabs=[['new','결재 올리기'],['approvals',B.isOwner?'결재함 (전체)':'내 결재'],['staff','인사']];
+  $('#nav').innerHTML=tabs.map(([k,t])=>`<button class="${tab===k?'on':''}" data-tab="${k}">${t}</button>`).join('');
+  if(tab==='new')viewNew();else if(tab==='approvals')viewApprovals();else viewStaff();
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;location.hash=tab;render()}});
+
+/* ---------- 결재 올리기 (본사 기안·품의서 칸 그대로) ---------- */
+function viewNew(){
+  $('#view').innerHTML=`<h1>결재 올리기</h1>
+  <div class="note">본사 「기안·품의서」와 같은 칸이에요. 계좌번호는 대표 전용 시트에 따로 저장되고, 직원 화면·메일에는 나오지 않아요.</div>
+  <div class="card grid">
+    <div class="f"><label>서류 종류</label><select id="kind">${B.kinds.map(k=>`<option>${k}</option>`).join('')}</select></div>
+    <div class="f"><label>현장 (현장코드)</label><select id="site"><option value="">현장 없음 (본사 경비 등)</option>${B.sites.map(s=>`<option value="${esc(s.현장코드)}">${esc(s.현장코드)} ${esc(s.현장명)}</option>`).join('')}<option value="__new">+ 새 현장 등록</option></select></div>
+    <div class="f w" id="siteNew" hidden><label>새 현장명 (등록하면 현장코드 S26-001 형식이 자동으로 붙어요)</label><div class="row"><input id="siteName" placeholder="예: 구리 롯데캐슬 101동"><button class="btn" id="siteAdd">등록</button></div></div>
+    <div class="f w"><label>제목</label><input id="title" placeholder="예: 타일 자재비 지급 건."></div>
+    <div id="payPart" class="f w" style="display:grid;gap:10px">
+      <div class="f"><label>1. 지출내역</label>
+        <div class="box"><table class="lines"><thead><tr><th>일자</th><th>구분</th><th>지출내역</th><th>공급가</th><th>부가세</th><th></th></tr></thead><tbody id="lines"></tbody>
+        <tfoot><tr><td colspan="3" style="text-align:right"><b>합계</b></td><td class="n" id="sumS">0</td><td class="n" id="sumV">0</td><td></td></tr></tfoot></table></div>
+        <div class="row"><button class="btn" id="addLine">+ 한 줄</button><span class="muted">부가세 칸을 비우면 공급가의 10%로 채워요</span></div></div>
+      <div class="grid">
+        <div class="f"><label>2. 업체명(연락처)</label><input id="vendor"></div>
+        <div class="f"><label>3. 금액(VAT포함)</label><input id="amount" readonly placeholder="지출내역 합계로 자동"></div>
+        <div class="f"><label>4. 지급요청일</label><input id="due" type="date"></div>
+        <div class="f"><label>5. 계좌번호 (대표만 봄)</label><input id="acct" autocomplete="off"></div>
+        <div class="f w"><label>6. 증빙자료 여부</label><input id="proof" placeholder="예: 견적서/세금계산서"></div>
+      </div>
+    </div>
+    <div id="leavePart" class="grid f w" hidden>
+      <div class="f"><label>휴가 구분</label><select id="lk"><option>연차</option><option>반차</option><option>병가</option><option>경조</option><option>공가</option><option>기타</option></select></div>
+      <div class="f"><label>일수</label><input id="ld" type="number" step="0.5" value="1"></div>
+      <div class="f"><label>시작일</label><input id="ls" type="date"></div>
+      <div class="f"><label>종료일</label><input id="le" type="date"></div>
+    </div>
+    <div class="f w"><label>증빙 파일 (견적서·세금계산서 사진·PDF, 파일당 10MB까지)</label><input id="files" type="file" multiple accept="image/*,application/pdf,.xls,.xlsx,.hwp,.doc,.docx"></div>
+    <div class="f w"><label>비고</label><textarea id="memo"></textarea></div>
+    <div class="f w row"><button class="btn p" id="send">결재 올리기 (대표에게 메일 알림)</button></div>
+  </div>`;
+  const lines=$('#lines');
+  const addLine=()=>{const tr=document.createElement('tr');tr.innerHTML=`<td><input data-c="일자" placeholder="10/29"></td><td><input data-c="구분" placeholder="타일자재"></td><td><input data-c="지출내역" placeholder="현장명-담당"></td><td><input data-c="공급가" inputmode="numeric"></td><td><input data-c="부가세" inputmode="numeric"></td><td><button class="btn" data-rm>✕</button></td>`;lines.appendChild(tr);sum()};
+  const sum=()=>{let s=0,v=0;lines.querySelectorAll('tr').forEach(tr=>{const g=c=>tr.querySelector(`[data-c="${c}"]`);const sp=num(g('공급가').value);let vv=g('부가세').value===''?Math.round(sp*0.1):num(g('부가세').value);s+=sp;v+=vv});$('#sumS').textContent=s.toLocaleString('ko-KR');$('#sumV').textContent=v.toLocaleString('ko-KR');$('#amount').value=s+v?(s+v).toLocaleString('ko-KR')+'원':''};
+  addLine();
+  $('#addLine').onclick=addLine;
+  lines.addEventListener('input',sum);
+  lines.addEventListener('click',e=>{if(e.target.matches('[data-rm]')){e.target.closest('tr').remove();sum()}});
+  const kind=()=>{const lv=$('#kind').value==='휴가신청서';$('#payPart').hidden=lv;$('#leavePart').hidden=!lv};
+  $('#kind').onchange=kind;
+  $('#site').onchange=()=>{$('#siteNew').hidden=$('#site').value!=='__new'};
+  $('#siteAdd').onclick=async()=>{const n=$('#siteName').value.trim();if(!n)return;const code=await call('addSite',n,'');B.sites.push({현장코드:code,현장명:n});toast('현장코드 '+code+' 등록');viewNew()};
+  $('#send').onclick=async()=>{
+    const btn=$('#send');if(btn.disabled)return;
+    const site=$('#site').value&&$('#site').value!=='__new'?B.sites.find(s=>s.현장코드===$('#site').value):null;
+    const rows=[...lines.querySelectorAll('tr')].map(tr=>{const o={};tr.querySelectorAll('[data-c]').forEach(i=>o[i.dataset.c]=i.value.trim());o.공급가=num(o.공급가);o.부가세=o.부가세===''?Math.round(o.공급가*0.1):num(o.부가세);return o});
+    const files=[];for(const f of $('#files').files){if(f.size>10*1024*1024){toast(f.name+' : 10MB가 넘어요');return}files.push({name:f.name,type:f.type,data:await b64(f)})}
+    const lv=$('#kind').value==='휴가신청서';
+    const f={종류:$('#kind').value,현장코드:site?site.현장코드:'',현장명:site?site.현장명:'',제목:$('#title').value.trim(),
+      지출내역:lv?[]:rows,업체명:$('#vendor').value.trim(),지급요청일:$('#due').value,계좌번호:$('#acct').value.trim(),증빙자료:$('#proof').value.trim(),
+      휴가구분:lv?$('#lk').value:'',휴가일수:lv?$('#ld').value:'',휴가시작:lv?$('#ls').value:'',휴가종료:lv?$('#le').value:'',비고:$('#memo').value.trim(),files};
+    btn.disabled=true;btn.textContent='올리는 중…';
+    try{const no=await call('submitApproval',f);toast('결재를 올렸어요 · 문서번호 '+no);tab='approvals';location.hash=tab;render()}
+    catch(e){btn.disabled=false;btn.textContent='결재 올리기 (대표에게 메일 알림)'}
+  };
+}
+function b64(f){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(String(fr.result).split(',')[1]);fr.readAsDataURL(f)})}
+
+/* ---------- 결재함 ---------- */
+async function viewApprovals(){
+  $('#view').innerHTML='<p class="muted">불러오는 중…</p>';
+  AP=await call('listApprovals');
+  const wait=AP.filter(a=>a.상태==='결재 대기').length;
+  $('#view').innerHTML=`<h1>${B.isOwner?'결재함':'내 결재'} <span class="muted">대기 ${wait}건</span></h1>
+  ${AP.length?`<div class="box"><table><thead><tr><th>문서번호</th><th>종류</th><th>현장</th><th>제목</th><th>기안자</th><th>금액</th><th>기안일</th><th>상태</th></tr></thead><tbody>
+  ${AP.map((a,i)=>`<tr class="click" data-i="${i}"><td>${esc(a.문서번호)}</td><td>${esc(a.종류.replace('기안·품의',''))}</td><td>${esc(a.현장코드)} ${esc(a.현장명)}</td><td>${esc(a.제목)}</td><td>${esc(a.기안자)}</td><td class="n">${won(a['금액(VAT포함)'])}</td><td>${esc(a.기안일자)}</td><td>${pill(a.상태)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card muted">아직 결재가 없어요. ‘결재 올리기’에서 첫 결재를 올려 주세요.</div>'}`;
+  $('#view').onclick=e=>{const tr=e.target.closest('tr[data-i]');if(tr)openAp(AP[+tr.dataset.i])};
+}
+async function openAp(a){
+  const acct=B.isOwner?await call('getAccount',a.문서번호):'';
+  const lv=a.종류==='휴가신청서';
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet">
+   <div class="row" style="justify-content:space-between"><b>${esc(a.문서번호)} · ${esc(a.종류)}</b><button class="btn" id="x">닫기</button></div>
+   <div>${pill(a.상태)} <span class="muted">기안 ${esc(a.기안자)} · ${esc(a.기안일자)}${a.결재일시?' · 결재 '+esc(a.결재일시):''}</span></div>
+   <div class="grid">
+    <div class="f w"><label>현장</label><div>${esc(a.현장코드)} ${esc(a.현장명)||'—'}</div></div>
+    <div class="f w"><label>제목</label><div>${esc(a.제목)}</div></div>
+    ${lv?`<div class="f"><label>휴가</label><div>${esc(a.휴가구분)} ${esc(a.휴가일수)}일</div></div><div class="f"><label>기간</label><div>${esc(a.휴가시작)} ~ ${esc(a.휴가종료)}</div></div>`:
+    `<div class="f w"><label>1. 지출내역</label><div class="box"><table><thead><tr><th>일자</th><th>구분</th><th>지출내역</th><th>공급가</th><th>부가세</th></tr></thead><tbody>${(a.지출내역||[]).map(l=>`<tr><td>${esc(l.일자)}</td><td>${esc(l.구분)}</td><td>${esc(l.지출내역)}</td><td class="n">${won(l.공급가)}</td><td class="n">${won(l.부가세)}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="f"><label>2. 업체명(연락처)</label><div>${esc(a['업체명(연락처)'])||'—'}</div></div>
+    <div class="f"><label>3. 금액(VAT포함)</label><div>${won(a['금액(VAT포함)'])}</div></div>
+    <div class="f"><label>4. 지급요청일</label><div>${esc(a.지급요청일)||'—'}</div></div>
+    <div class="f"><label>5. 계좌번호</label><div>${B.isOwner?(esc(acct)||'—'):'대표만 볼 수 있어요'}</div></div>
+    <div class="f w"><label>6. 증빙자료</label><div>${esc(a.증빙자료)||'—'}</div></div>`}
+    <div class="f w"><label>증빙 파일</label><div>${String(a.증빙파일||'').split('\n').filter(Boolean).map((u,i)=>`<a href="${esc(u)}" target="_blank">파일 ${i+1}</a>`).join(' · ')||'—'}</div></div>
+    <div class="f w"><label>비고</label><div>${esc(a.비고)||'—'}</div></div>
+    ${a.결재의견?`<div class="f w"><label>결재 의견</label><div>${esc(a.결재의견)}</div></div>`:''}
+   </div>
+   ${B.isOwner&&a.상태==='결재 대기'?`<div class="f"><label>결재 의견</label><input id="note"></div><div class="row"><button class="btn ok" data-d="승인">승인</button><button class="btn no" data-d="반려">반려</button></div>`:''}
+  </div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{b.disabled=true;await call('decide',a.문서번호,b.dataset.d,$('#note').value);$('#layer').innerHTML='';toast(b.dataset.d+'했어요 · 결과 시트에 기록됨');viewApprovals()});
+}
+
+/* ---------- 인사 ---------- */
+const SF=[['이름','text'],['직급','text'],['부서','text'],['입사일','date'],['회사이메일','email'],['연락처','text'],['담당업무','text'],['재직상태','sel',['재직','휴직','퇴사']],['권한','sel',['직원','대표']]];
+const SECF=[['주민등록번호','text'],['주소','text'],['급여(연봉)','text'],['급여계좌','text'],['근로계약서 링크','url'],['인사기록 폴더 링크','url'],['비고','text']];
+async function viewStaff(){
+  const S=await call('listStaff');B.staff=S;
+  $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>인사 · 직원</h1>${B.isOwner?'<button class="btn p" id="addS">직원 등록</button>':''}</div>
+  <div class="note">연차는 입사일 기준 근로기준법(1년 미만 매월 1일·최대 11일 / 1년 이상 15일, 3년차부터 2년마다 +1일·최대 25일)으로 자동 계산하고, 승인된 휴가신청서(연차·반차)를 사용일수로 뺍니다. 주민번호·주소·급여·계좌·근로계약서는 대표 전용 시트에만 있어요.</div>
+  <div class="box"><table><thead><tr><th>이름</th><th>직급</th><th>부서</th><th>입사일</th><th>연락처</th><th>담당업무</th><th>연차 (발생/사용/잔여)</th><th>연차 기간</th><th>상태</th></tr></thead><tbody>
+  ${S.map((s,i)=>`<tr class="${B.isOwner?'click':''}" data-s="${i}"><td>${esc(s.이름)}</td><td>${esc(s.직급)}</td><td>${esc(s.부서)}</td><td>${esc(s.입사일)}</td><td>${esc(s.연락처)}</td><td>${esc(s.담당업무)}</td><td class="n">${s.연차.발생===''?'—':`${s.연차.발생} / ${s.연차.사용} / <b>${s.연차.잔여}</b>일`}</td><td class="muted">${esc(s.연차.기간)}</td><td>${esc(s.재직상태)}</td></tr>`).join('')}</tbody></table></div>`;
+  if(B.isOwner){$('#addS').onclick=()=>editStaff({});$('#view').onclick=e=>{const tr=e.target.closest('tr[data-s]');if(tr)editStaff(S[+tr.dataset.s])}}
+}
+async function editStaff(s){
+  const sec=s.직원ID?await call('getSecret',s.직원ID):{};
+  const fld=(f,o,p)=>{const [k,t,opt]=f;const v=o[k]??'';return `<div class="f"><label>${k}</label>${t==='sel'?`<select data-${p}="${k}">${opt.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-${p}="${k}" type="${t}" value="${esc(v)}">`}</div>`};
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet">
+   <div class="row" style="justify-content:space-between"><b>${esc(s.이름||'직원 등록')}</b><button class="btn" id="x">닫기</button></div>
+   <b>직원 시트 (직원 모두 봄)</b><div class="grid">${SF.map(f=>fld(f,s,'p')).join('')}<div class="f w"><label>회사이메일</label><span class="muted">이 이메일로 로그인해야 결재를 올릴 수 있어요</span></div></div>
+   <b>민감정보 (대표 전용 시트)</b><div class="note">근로계약서는 공유드라이브 원본 파일의 링크만 붙여 넣으세요. 원본은 옮기지 않습니다.</div><div class="grid">${SECF.map(f=>fld(f,sec,'s')).join('')}</div>
+   <div class="row"><button class="btn p" id="save">저장</button></div></div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';
+  $('#save').onclick=async()=>{
+    const p={직원ID:s.직원ID||''};document.querySelectorAll('[data-p]').forEach(i=>p[i.dataset.p]=i.value.trim());
+    const id=await call('saveStaff',p);
+    const q={직원ID:id,이름:p.이름};document.querySelectorAll('[data-s]').forEach(i=>q[i.dataset.s]=i.value.trim());
+    await call('saveSecret',q);$('#layer').innerHTML='';toast('저장했어요');viewStaff();
+  };
+}
+boot();
+</script>
+<footer>ⓒ HOME FURNISHING CO. all rights reserved.</footer>
+</body></html>
