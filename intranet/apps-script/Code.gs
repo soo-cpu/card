@@ -30,6 +30,11 @@ const H = {
   서식: ['분류', '서식명', '링크', '결재종류'],
   직원_민감: ['직원ID', '이름', '주민등록번호', '주소', '혼인여부', '급여(연봉)', '급여계좌', '근로계약서 링크', '인사기록 폴더 링크', '비고', '수정일'],
   결재_계좌: ['문서번호', '업체명', '계좌번호', '작성일시'],
+  // ── 인사 추가 (2026-10-30) ──
+  // 연차 사용: 결재 전 기록·과거 사용분을 대표가 직접 넣는 곳 (승인된 휴가신청서는 결재 시트에서 자동으로 셈)
+  연차사용: ['기록ID', '직원ID', '이름', '구분', '시작일', '종료일', '일수', '메모', '등록일'],
+  // 급여·인상 이력 — 민감정보 시트(대표 전용)에만
+  급여이력: ['이력ID', '직원ID', '이름', '적용일', '구분', '연봉', '월급여', '인상액', '인상률(%)', '사유', '등록일'],
   // ── 견적 모듈 ── 고객 데이터는 이 한 곳에만 (견적·상담·계약이 같이 씀)
   고객: ['고객코드', '고객명', '연락처뒤4', '아파트명', '동', '호수', '평형', '욕실수', '문의경로', '담당', '현장코드', '상태', '등록일', '메모'],
   단가표: ['키', '공정', '품목', '설명', '단위', '기본수량', '기본체크', '택1그룹', '기준판매가', '판매가', '하한가', '마진적용', '원가', '실비', '고정', '원가근거', '사용', '출처'],
@@ -58,7 +63,7 @@ function setup() {
   }
   // 이미 만든 DB에 새 시트가 빠져 있으면 추가 (기존 데이터는 그대로)
   const dbx = SpreadsheetApp.openById(p.getProperty('DB_ID'));
-  ['직원', '인사이력', '결재', '결재_지출내역', '현장', '업체', '서식', '고객', '단가표', '견적', '견적_항목'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
+  ['직원', '인사이력', '연차사용', '결재', '결재_지출내역', '현장', '업체', '서식', '고객', '단가표', '견적', '견적_항목'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
   if (!p.getProperty('SECRET_ID')) {
     const sec = SpreadsheetApp.create('홈퍼니싱 민감정보(대표 전용) — 공유 금지');
     ['직원_민감', '결재_계좌'].forEach((n, i) => {
@@ -67,6 +72,8 @@ function setup() {
     });
     p.setProperty('SECRET_ID', sec.getId());
   }
+  const secx = SpreadsheetApp.openById(p.getProperty('SECRET_ID'));
+  ['직원_민감', '결재_계좌', '급여이력'].forEach(n => { if (!secx.getSheetByName(n)) initSheet_(secx.insertSheet(n), H[n]); });
   if (!p.getProperty('FILES_ID')) {
     p.setProperty('FILES_ID', DriveApp.createFolder('홈퍼니싱 인트라넷 결재 증빙').getId());
   }
@@ -123,7 +130,7 @@ function requireOwner_() {
  * 1년 이상: 15일, 3년차부터 2년마다 1일 가산 (최대 25일)
  * 사용일수: 승인된 휴가신청서(연차·반차) 중 '이번 연차년도'(입사 기념일 ~ 다음 기념일 전날) 것
  */
-function leaveInfo_(joinStr, approvals, email) {
+function leaveInfo_(joinStr, approvals, email, manual) {
   if (!joinStr) return { 발생: '', 사용: '', 잔여: '', 기간: '입사일 필요' };
   const join = new Date(joinStr + 'T00:00:00+09:00');
   const t = new Date(today_() + 'T00:00:00+09:00');
@@ -143,7 +150,9 @@ function leaveInfo_(joinStr, approvals, email) {
   const f = d_(from), e = d_(to);
   const used = approvals.filter(a => a.종류 === '휴가신청서' && a.상태 === '승인' && String(a.기안자이메일).toLowerCase() === String(email).toLowerCase()
       && ['연차', '반차'].includes(a.휴가구분) && d_(a.휴가시작) >= f && d_(a.휴가시작) <= e)
-    .reduce((s, a) => s + (a.휴가구분 === '반차' ? 0.5 : Number(a.휴가일수) || 1), 0);
+    .reduce((s, a) => s + (a.휴가구분 === '반차' ? 0.5 : Number(a.휴가일수) || 1), 0)
+    + (manual || []).filter(m => ['연차', '반차'].includes(m.구분) && d_(m.시작일) >= f && d_(m.시작일) <= e)
+      .reduce((s, m) => s + (m.구분 === '반차' ? 0.5 : Number(m.일수) || 1), 0);
   return { 발생: grant, 사용: used, 잔여: grant - used, 기간: f + ' ~ ' + e, 근속년수: years };
 }
 
@@ -158,9 +167,11 @@ function getBoot() {
 function listStaff() {
   requireStaff_();
   const ap = rows_(db_().getSheetByName('결재'), H.결재);
+  const man = rows_(db_().getSheetByName('연차사용'), H.연차사용);
   return rows_(db_().getSheetByName('직원'), H.직원).map(s => {
     const o = {}; H.직원.forEach(h => o[h] = s[h]);
-    o.연차 = leaveInfo_(d_(s.입사일), ap, s.회사이메일);
+    o.입사일 = d_(s.입사일); o.현직위승진일 = d_(s.현직위승진일);
+    o.연차 = leaveInfo_(o.입사일, ap, s.회사이메일, man.filter(m => m.직원ID === s.직원ID));
     return o;
   });
 }
@@ -191,6 +202,85 @@ function saveSecret(o) {
   const row = {}; H.직원_민감.forEach(h => row[h] = o[h] || ''); row.수정일 = now_();
   cur ? update_(sh, H.직원_민감, cur._row, row) : append_(sh, H.직원_민감, row);
   return true;
+}
+
+// 연차 사용 내역 — 대표는 모든 직원, 직원은 본인 것만
+const LEAVE_KINDS = ['연차', '반차', '경조휴가', '병가', '기타'];
+function listLeave(staffId) {
+  const v = requireStaff_();
+  if (!v.isOwner && !(v.staff && v.staff.직원ID === staffId)) throw new Error('본인 연차 내역만 볼 수 있어요.');
+  const st = rows_(db_().getSheetByName('직원'), H.직원).find(s => s.직원ID === staffId);
+  if (!st) throw new Error('직원을 찾을 수 없어요.');
+  const em = String(st.회사이메일 || '').toLowerCase();
+  const fromAp = em ? rows_(db_().getSheetByName('결재'), H.결재)
+    .filter(a => a.종류 === '휴가신청서' && a.상태 === '승인' && String(a.기안자이메일).toLowerCase() === em)
+    .map(a => ({ 기록ID: '', 구분: a.휴가구분, 시작일: d_(a.휴가시작), 종료일: d_(a.휴가종료), 일수: a.휴가구분 === '반차' ? 0.5 : (Number(a.휴가일수) || 1), 메모: '', 출처: '결재 ' + a.문서번호 })) : [];
+  const fromMan = rows_(db_().getSheetByName('연차사용'), H.연차사용).filter(m => m.직원ID === staffId)
+    .map(m => ({ 기록ID: m.기록ID, 구분: m.구분, 시작일: d_(m.시작일), 종료일: d_(m.종료일), 일수: Number(m.일수) || 0, 메모: m.메모, 출처: '직접 입력' }));
+  return fromAp.concat(fromMan).sort((a, b) => a.시작일 < b.시작일 ? 1 : -1);
+}
+function saveLeave(o) {
+  requireOwner_();
+  if (!o.직원ID || !o.시작일) throw new Error('직원과 시작일을 적어 주세요.');
+  if (LEAVE_KINDS.indexOf(o.구분) < 0) throw new Error('구분을 골라 주세요.');
+  const st = rows_(db_().getSheetByName('직원'), H.직원).find(s => s.직원ID === o.직원ID);
+  if (!st) throw new Error('직원을 찾을 수 없어요.');
+  const 일수 = o.구분 === '반차' ? 0.5 : (Number(o.일수) || 1);
+  append_(db_().getSheetByName('연차사용'), H.연차사용, { 기록ID: newId_('L'), 직원ID: o.직원ID, 이름: st.이름, 구분: o.구분,
+    시작일: o.시작일, 종료일: o.종료일 || o.시작일, 일수, 메모: o.메모 || '', 등록일: now_() });
+  return true;
+}
+function deleteLeave(id) {
+  requireOwner_();
+  const sh = db_().getSheetByName('연차사용');
+  const r = rows_(sh, H.연차사용).find(x => x.기록ID === id);
+  if (r) sh.deleteRow(r._row);
+  return true;
+}
+
+// 급여·인상 이력 — 대표만 (민감정보 시트)
+const PAY_KINDS = ['입사', '정기인상', '수시인상', '승진', '조정', '삭감'];
+function listPay(staffId) {
+  requireOwner_();
+  return rows_(secret_().getSheetByName('급여이력'), H.급여이력).filter(r => r.직원ID === staffId)
+    .map(r => { const o = {}; H.급여이력.forEach(h => o[h] = r[h]); o.적용일 = d_(r.적용일); return o; })
+    .sort((a, b) => a.적용일 < b.적용일 ? 1 : -1);
+}
+// 인상액·인상률은 바로 전 기록과 비교해 자동 계산, 가장 최근 연봉은 직원_민감 '급여(연봉)'에도 반영
+function savePay(o) {
+  requireOwner_();
+  const 연봉 = Number(String(o.연봉 || '').replace(/[^0-9]/g, ''));
+  if (!o.직원ID || !o.적용일 || !연봉) throw new Error('적용일과 연봉(원)을 적어 주세요.');
+  const ss = secret_(), sh = ss.getSheetByName('급여이력');
+  const prev = rows_(sh, H.급여이력).filter(r => r.직원ID === o.직원ID && d_(r.적용일) < o.적용일)
+    .sort((a, b) => d_(a.적용일) < d_(b.적용일) ? 1 : -1)[0];
+  const before = prev ? Number(prev.연봉) || 0 : 0;
+  const st = rows_(db_().getSheetByName('직원'), H.직원).find(s => s.직원ID === o.직원ID);
+  if (!st) throw new Error('직원을 찾을 수 없어요.');
+  const 월급여 = Number(String(o.월급여 || '').replace(/[^0-9]/g, '')) || Math.round(연봉 / 12);
+  append_(sh, H.급여이력, { 이력ID: newId_('P'), 직원ID: o.직원ID, 이름: st.이름, 적용일: o.적용일,
+    구분: PAY_KINDS.indexOf(o.구분) >= 0 ? o.구분 : (prev ? '정기인상' : '입사'), 연봉, 월급여,
+    인상액: before ? 연봉 - before : '', '인상률(%)': before ? Math.round((연봉 - before) / before * 1000) / 10 : '',
+    사유: o.사유 || '', 등록일: now_() });
+  syncPay_(o.직원ID, st.이름);
+  return true;
+}
+function deletePay(id) {
+  requireOwner_();
+  const sh = secret_().getSheetByName('급여이력');
+  const r = rows_(sh, H.급여이력).find(x => x.이력ID === id);
+  if (r) { sh.deleteRow(r._row); syncPay_(r.직원ID, r.이름); }
+  return true;
+}
+function syncPay_(staffId, name) {
+  const last = rows_(secret_().getSheetByName('급여이력'), H.급여이력).filter(r => r.직원ID === staffId && d_(r.적용일) <= today_())
+    .sort((a, b) => d_(a.적용일) < d_(b.적용일) ? 1 : -1)[0];
+  if (!last) return;
+  const sh = secret_().getSheetByName('직원_민감');
+  const cur = rows_(sh, H.직원_민감).find(x => x.직원ID === staffId);
+  const row = {}; H.직원_민감.forEach(h => row[h] = cur ? cur[h] : '');
+  row.직원ID = staffId; row.이름 = row.이름 || name; row['급여(연봉)'] = last.연봉; row.수정일 = now_();
+  cur ? update_(sh, H.직원_민감, cur._row, row) : append_(sh, H.직원_민감, row);
 }
 
 // 인사이력 (인사기록부 표 항목) — 대표만

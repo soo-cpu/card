@@ -34,6 +34,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .veil{position:fixed;inset:0;background:rgba(10,18,32,.45);display:grid;place-items:center;padding:16px}
 .sheet{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:18px;display:grid;gap:12px}
+.sheet>*{min-width:0}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 16px;border-radius:10px}
 .qbar{position:sticky;bottom:0;background:var(--deep);color:#fff;border-radius:12px;padding:10px 14px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .qbar b{font-size:20px;font-variant-numeric:tabular-nums}.qbar small{opacity:.8}
@@ -177,10 +178,11 @@ const SECF=[['주민등록번호','text'],['주소','text'],['혼인여부','sel
 async function viewStaff(){
   const S=await call('listStaff');B.staff=S;
   $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>인사 · 직원</h1>${B.isOwner?'<button class="btn p" id="addS">직원 등록</button>':''}</div>
-  <div class="note">연차는 입사일 기준 근로기준법(1년 미만 매월 1일·최대 11일 / 1년 이상 15일, 3년차부터 2년마다 +1일·최대 25일)으로 자동 계산하고, 승인된 휴가신청서(연차·반차)를 사용일수로 뺍니다. 주민번호·주소·급여·계좌·근로계약서는 대표 전용 시트에만 있어요.</div>
+  <div class="note">연차는 입사일 기준 근로기준법(1년 미만 매월 1일·최대 11일 / 1년 이상 15일, 3년차부터 2년마다 +1일·최대 25일)으로 자동 계산하고, 승인된 휴가신청서(연차·반차)를 사용일수로 뺍니다. 주민번호·주소·급여·계좌·근로계약서는 대표 전용 시트에만 있어요. ${B.isOwner?'직원을 누르면 인사기록·연차 사용 내역·급여·인상 이력을 볼 수 있어요.':'내 이름을 누르면 내 연차 사용 내역이 보여요.'}</div>
   <div class="box"><table><thead><tr><th>이름</th><th>소속</th><th>직급</th><th>직책</th><th>입사일</th><th>연락처</th><th>담당업무</th><th>연차 (발생/사용/잔여)</th><th>연차 기간</th><th>상태</th></tr></thead><tbody>
-  ${S.map((s,i)=>`<tr class="${B.isOwner?'click':''}" data-s="${i}"><td>${esc(s.이름)}</td><td>${esc(s.소속)}</td><td>${esc(s.직급)}</td><td>${esc(s.직책)}</td><td>${esc(s.입사일)}</td><td>${esc(s.연락처)}</td><td>${esc(s.담당업무)}</td><td class="n">${s.연차.발생===''?'—':`${s.연차.발생} / ${s.연차.사용} / <b>${s.연차.잔여}</b>일`}</td><td class="muted">${esc(s.연차.기간)}</td><td>${esc(s.재직상태)}</td></tr>`).join('')}</tbody></table></div>`;
+  ${S.map((s,i)=>`<tr class="${B.isOwner||(s.회사이메일&&String(s.회사이메일).toLowerCase()===String(B.email).toLowerCase())?'click':''}" data-s="${i}"><td>${esc(s.이름)}</td><td>${esc(s.소속)}</td><td>${esc(s.직급)}</td><td>${esc(s.직책)}</td><td>${esc(s.입사일)}</td><td>${esc(s.연락처)}</td><td>${esc(s.담당업무)}</td><td class="n">${s.연차.발생===''?'—':`${s.연차.발생} / ${s.연차.사용} / <b>${s.연차.잔여}</b>일`}</td><td class="muted">${esc(s.연차.기간)}</td><td>${esc(s.재직상태)}</td></tr>`).join('')}</tbody></table></div>`;
   if(B.isOwner){$('#addS').onclick=()=>editStaff({});$('#view').onclick=e=>{const tr=e.target.closest('tr[data-s]');if(tr)editStaff(S[+tr.dataset.s])}}
+  else $('#view').onclick=e=>{const tr=e.target.closest('tr.click[data-s]');if(tr)myLeave(S[+tr.dataset.s])};
 }
 async function editStaff(s){
   const sec=s.직원ID?await call('getSecret',s.직원ID):{};
@@ -190,10 +192,13 @@ async function editStaff(s){
    <div class="row" style="justify-content:space-between"><b>${esc(s.이름||'직원 등록')}</b><button class="btn" id="x">닫기</button></div>
    <b>직원 시트 (직원 모두 봄)</b><div class="grid">${SF.map(f=>fld(f,s,'p')).join('')}<div class="f w"><label>회사이메일</label><span class="muted">이 이메일로 로그인해야 결재를 올릴 수 있어요</span></div></div>
    <b>인사기록 (본사 인사기록부 표 항목 · 대표만 봄)</b><div id="hist" style="display:grid;gap:10px"></div>
+   ${s.직원ID?`<b>연차 사용 내역</b><div class="note">승인된 휴가신청서는 자동으로 들어와요. 인트라넷 전에 쓴 연차는 아래에서 직접 넣으세요. 연차·반차만 잔여 연차에서 빠져요.</div><div id="lv"></div>
+   <b>급여·인상 이력 (대표 전용 시트)</b><div class="note">새 연봉을 넣으면 바로 전 기록과 비교해 인상액·인상률을 자동 계산하고, 가장 최근 연봉이 아래 '급여(연봉)' 칸에도 들어가요. 월급여를 비우면 연봉÷12로 넣어요.</div><div id="pay"></div>`:''}
    <b>민감정보 (대표 전용 시트)</b><div class="note">근로계약서는 공유드라이브 원본 파일의 링크만 붙여 넣으세요. 원본은 옮기지 않습니다.</div><div class="grid">${SECF.map(f=>fld(f,sec,'sec')).join('')}</div>
    <div class="row"><button class="btn p" id="save">저장</button></div></div></div>`;
   $('#x').onclick=()=>$('#layer').innerHTML='';
   drawHist(hist);
+  if(s.직원ID){drawLeave(s,true);drawPay(s)}
   $('#save').onclick=async()=>{
     const p={직원ID:s.직원ID||''};document.querySelectorAll('[data-p]').forEach(i=>p[i.dataset.p]=i.value.trim());
     const id=await call('saveStaff',p);
@@ -201,6 +206,35 @@ async function editStaff(s){
     await call('saveSecret',q);await call('saveHistory',id,readHist());$('#layer').innerHTML='';toast('저장했어요');viewStaff();
   };
 }
+/* ---------- 연차 사용 · 급여 이력 ---------- */
+const wn=n=>n===''||n===undefined||n===null?'':Number(n).toLocaleString('ko-KR');
+async function myLeave(s){
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet"><div class="row" style="justify-content:space-between"><b>${esc(s.이름)} · 연차 사용 내역</b><button class="btn" id="x">닫기</button></div>
+   <div class="note">이번 연차 기간 ${esc(s.연차.기간)} · 발생 ${s.연차.발생}일 / 사용 ${s.연차.사용}일 / 잔여 <b>${s.연차.잔여}</b>일</div><div id="lv"></div></div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';drawLeave(s,false);
+}
+async function drawLeave(s,owner){
+  const box=$('#lv');box.innerHTML='<p class="muted">불러오는 중…</p>';const L=await call('listLeave',s.직원ID);
+  box.innerHTML=`<div class="box"><table><thead><tr><th>구분</th><th>시작일</th><th>종료일</th><th>일수</th><th>출처</th><th>메모</th>${owner?'<th></th>':''}</tr></thead><tbody>
+   ${L.length?L.map(l=>`<tr><td>${esc(l.구분)}</td><td>${esc(l.시작일)}</td><td>${esc(l.종료일)}</td><td class="n">${l.일수}</td><td class="muted">${esc(l.출처)}</td><td>${esc(l.메모)}</td>${owner?`<td>${l.기록ID?`<button class="btn no" data-dl="${esc(l.기록ID)}">삭제</button>`:''}</td>`:''}</tr>`).join(''):`<tr><td colspan="7" class="muted">아직 기록이 없어요</td></tr>`}</tbody></table></div>
+   ${owner?`<div class="grid" style="margin-top:8px"><div class="f"><label>구분</label><select id="lk">${['연차','반차','경조휴가','병가','기타'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="f"><label>일수</label><input id="ln" type="number" step="0.5" min="0.5" value="1"></div>
+   <div class="f"><label>시작일</label><input id="ls" type="date"></div><div class="f"><label>종료일</label><input id="le" type="date"></div><div class="f w"><label>메모</label><input id="lm"></div></div><div class="row"><button class="btn" id="la">연차 사용 추가</button></div>`:''}`;
+  if(!owner)return;
+  box.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{if(!confirm('이 기록을 지울까요?'))return;await call('deleteLeave',b.dataset.dl);toast('지웠어요');drawLeave(s,true)});
+  $('#la').onclick=async()=>{await call('saveLeave',{직원ID:s.직원ID,구분:$('#lk').value,일수:$('#ln').value,시작일:$('#ls').value,종료일:$('#le').value,메모:$('#lm').value.trim()});toast('추가했어요 (목록의 연차는 새로고침 후 반영)');drawLeave(s,true)};
+}
+async function drawPay(s){
+  const box=$('#pay');box.innerHTML='<p class="muted">불러오는 중…</p>';const P=await call('listPay',s.직원ID);
+  box.innerHTML=`<div class="box"><table><thead><tr><th>적용일</th><th>구분</th><th>연봉</th><th>월급여</th><th>인상액</th><th>인상률</th><th>사유</th><th></th></tr></thead><tbody>
+   ${P.length?P.map(p=>`<tr><td>${esc(p.적용일)}</td><td>${esc(p.구분)}</td><td class="n">${wn(p.연봉)}</td><td class="n">${wn(p.월급여)}</td><td class="n">${wn(p.인상액)}</td><td class="n">${p['인상률(%)']===''?'':esc(p['인상률(%)'])+'%'}</td><td>${esc(p.사유)}</td><td><button class="btn no" data-dp="${esc(p.이력ID)}">삭제</button></td></tr>`).join(''):`<tr><td colspan="8" class="muted">아직 기록이 없어요 (입사 연봉부터 넣어 주세요)</td></tr>`}</tbody></table></div>
+   <div class="grid" style="margin-top:8px"><div class="f"><label>적용일</label><input id="pd" type="date"></div><div class="f"><label>구분</label><select id="pk">${['입사','정기인상','수시인상','승진','조정','삭감'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+   <div class="f"><label>연봉 (원)</label><input id="py" inputmode="numeric" placeholder="예: 36000000"></div><div class="f"><label>월급여 (원, 비우면 연봉÷12)</label><input id="pm" inputmode="numeric"></div><div class="f w"><label>사유</label><input id="pr"></div></div>
+   <div class="row"><button class="btn" id="pa">급여 기록 추가</button></div>`;
+  box.querySelectorAll('[data-dp]').forEach(b=>b.onclick=async()=>{if(!confirm('이 급여 기록을 지울까요?'))return;await call('deletePay',b.dataset.dp);toast('지웠어요');drawPay(s);refreshSal(s)});
+  $('#pa').onclick=async()=>{await call('savePay',{직원ID:s.직원ID,적용일:$('#pd').value,구분:$('#pk').value,연봉:$('#py').value,월급여:$('#pm').value,사유:$('#pr').value.trim()});toast('추가했어요');drawPay(s);refreshSal(s)};
+}
+// 급여 기록이 바뀌면 민감정보의 '급여(연봉)' 칸도 최신 값으로 (저장 버튼이 옛 값으로 덮지 않게)
+async function refreshSal(s){const sec=await call('getSecret',s.직원ID);const i=document.querySelector('[data-sec="급여(연봉)"]');if(i)i.value=sec['급여(연봉)']||''}
 /* ---------- 현장 · 업체 · 서식 (공유드라이브 「0. 홈퍼니싱」에서 옮긴 목록, 원본은 링크만) ---------- */
 function listView(title,note,rows,cols,keyName){
   $('#view').innerHTML=`<h1>${title} <span class="muted">${rows.length}</span></h1>${note?`<div class="note">${note}</div>`:''}
