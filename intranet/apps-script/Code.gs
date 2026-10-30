@@ -327,11 +327,12 @@ function addSite(name, customerCode) {
 // 결재 목록 — 직원은 본인 것, 대표는 전체. 계좌번호는 여기 없음
 function listApprovals() {
   const v = requireStaff_();
-  const lines = rows_(db_().getSheetByName('결재_지출내역'), H.결재_지출내역);
+  const by = {};
+  rows_(db_().getSheetByName('결재_지출내역'), H.결재_지출내역).forEach(l => { (by[l.문서번호] = by[l.문서번호] || []).push(l); });
   return rows_(db_().getSheetByName('결재'), H.결재)
     .filter(a => v.isOwner || String(a.기안자이메일).toLowerCase() === v.email)
-    .map(a => { const o = {}; H.결재.forEach(h => o[h] = a[h]); o.지출내역 = lines.filter(l => l.문서번호 === a.문서번호); return o; })
-    .reverse();
+    .map(a => { const o = {}; H.결재.forEach(h => o[h] = a[h] instanceof Date ? d_(a[h]) : a[h]); o.지출내역 = (by[a.문서번호] || []).map(l => ({ 일자: d_(l.일자), 구분: l.구분, 지출내역: l.지출내역, 공급가: l.공급가, 부가세: l.부가세 })); return o; })
+    .sort((a, b) => ((b.상태 === '결재 대기') - (a.상태 === '결재 대기')) || String(b.기안일자).localeCompare(String(a.기안일자)));
 }
 
 // 결재 올리기: 직원 기안 → 결과 시트 기록 → 대표에게 메일
@@ -345,7 +346,9 @@ function submitApproval(f) {
     const d = db_();
     const sh = d.getSheetByName('결재');
     const ym = Utilities.formatDate(new Date(), TZ, 'yy-MM');
-    const n = rows_(sh, H.결재).filter(a => String(a.문서번호).indexOf(ym + '-') === 0).length + 1;
+    // 같은 달 번호 중 가장 큰 것 + 1 (과거 종이 기안 26-10-xx 와 겹치지 않게)
+    const n = rows_(sh, H.결재).map(a => String(a.문서번호)).filter(x => x.indexOf(ym + '-') === 0)
+      .reduce((m, x) => Math.max(m, parseInt(x.slice(ym.length + 1), 10) || 0), 0) + 1;
     no = ym + '-' + ('0' + n).slice(-2);                       // 원본과 같은 26-01-01 형식
     const lines = (f.지출내역 || []).filter(l => l.지출내역 || l.구분 || Number(l.공급가));
     const sup = lines.reduce((s, l) => s + (Number(l.공급가) || 0), 0);
@@ -661,4 +664,137 @@ function listVendors() {
 function listForms() {
   requireStaff_();
   return rows_(db_().getSheetByName('서식'), H.서식).map(x => { const o = {}; H.서식.forEach(h => o[h] = x[h]); return o; });
+}
+
+/* ================= 과거 기안품의서 가져오기 (2026-10-30 · 대표가 실행) =================
+ * 원본 월별/연도별 기안품의서 엑셀(.xls)을 읽기만 한다. 원본은 이동·수정·삭제하지 않는다.
+ * 방법: 원본을 대표 내 드라이브에 '임시 구글시트 사본'으로 만들어 읽고 → 결재 시트에 한 건씩 기록 → 임시 사본은 휴지통으로.
+ * 계좌번호는 대표 전용 시트(결재_계좌)로만. 상태는 '과거 기록', 직원 화면에는 나오지 않음(대표 결재함에만).
+ * 6분 실행 제한이 있어 한 번에 다 못 끝나면 "다시 실행하세요"라고 나옴 → 같은 함수를 다시 실행 (중복 없이 이어서 함).
+ * 고급 서비스 Drive API(v3) 사용 — appsscript.json 에 이미 켜 둠.
+ */
+const AP_HISTORY = [
+  ['20년6월', '18NvglFaqGCDdlo495MJYNQfqorQoyXYb'],
+  ['20년7월', '1Pu56lwx1XsWiDcXZgvk6sRBFia0sr1L_'],
+  ['20년8,9월', '1HYmyjSvbRqSGJfXwvXh7WSoRwuWHAcdL'],
+  ['20년11,12월', '1xkFJQ_nq4SF-HK87zI5dFTdwAbAsNOG9'],
+  ['21년(본사,기성)', '1ki7hyo5lYh6RGG-BB8j7gdxk0jb91DiA'],
+  ['23년(현장)', '1BRiXXMLCvJd3JUJdxAlRQx-udPwu0JaJ'],
+  ['24년(현장)', '1VFGYWMfiQQ_ZvcZ80CVjq1iZW_Q4ll29'],
+  ['26년(본사,기성)', '1AZyIjyqOIGNkIEiB0u4EuSNP-QdxjbwA']
+];
+function importApprovalHistory() {
+  requireOwner_();
+  const t0 = Date.now(), p = PropertiesService.getScriptProperties();
+  const done = JSON.parse(p.getProperty('AP_HIST_DONE') || '[]');
+  const d = db_(), sh = d.getSheetByName('결재'), ls = d.getSheetByName('결재_지출내역');
+  const acc = secret_().getSheetByName('결재_계좌');
+  let ks = d.getSheetByName('결재_가져오기');
+  if (!ks) { ks = d.insertSheet('결재_가져오기'); initSheet_(ks, ['키', '문서번호']); }
+  const keys = new Set(ks.getDataRange().getValues().slice(1).map(r => String(r[0])));
+  const used = new Set(rows_(sh, H.결재).map(r => String(r.문서번호)));
+  const out = [];
+  for (const [name, id] of AP_HISTORY) {
+    if (done.indexOf(id) >= 0) continue;
+    if (Date.now() - t0 > 4 * 60 * 1000) { out.push('시간이 다 돼서 멈춤 → importApprovalHistory 를 한 번 더 실행하세요'); break; }
+    const tmp = Drive.Files.copy({ name: '[임시·읽기용] ' + name, mimeType: MimeType.GOOGLE_SHEETS }, id, { supportsAllDrives: true });
+    let docs;
+    try { docs = parseApprovalBook_(SpreadsheetApp.openById(tmp.id), name, 'https://drive.google.com/file/d/' + id + '/view'); }
+    finally { DriveApp.getFileById(tmp.id).setTrashed(true); }
+    const rowsA = [], rowsL = [], rowsC = [], rowsK = [];
+    docs.forEach(x => {
+      const key = [x.종류, x.문서번호, x.제목, x['금액(VAT포함)'], x.현장명].join('|');
+      if (keys.has(key)) return;
+      keys.add(key);
+      apFinish_(x, used);
+      rowsA.push(H.결재.map(h => x[h] === undefined ? '' : x[h]));
+      x._items.forEach((it, i) => rowsL.push([x.문서번호, i + 1, it.일자, it.구분, it.지출내역, it.공급가, it.부가세]));
+      if (x._계좌) rowsC.push([x.문서번호, x['업체명(연락처)'], x._계좌, '원본 ' + name]);
+      rowsK.push([key, x.문서번호]);
+    });
+    putRows_(sh, rowsA); putRows_(ls, rowsL); putRows_(acc, rowsC); putRows_(ks, rowsK);
+    done.push(id); p.setProperty('AP_HIST_DONE', JSON.stringify(done));
+    out.push(name + ' ' + rowsA.length + '건');
+  }
+  if (done.length === AP_HISTORY.length) out.push('과거 기안품의서 가져오기 완료');
+  Logger.log(out.join(' · '));
+  return out.join(' · ');
+}
+function putRows_(sh, rows) { if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows); }
+
+// 문서 한 묶음 = '문서번호' 줄부터 다음 '문서번호' 줄 전까지 (본사 양식 그대로)
+function parseApprovalBook_(ss, src, link) {
+  const docs = [];
+  const sv = x => x instanceof Date ? d_(x) : (typeof x === 'number' ? String(Math.round(x * 100) / 100) : String(x == null ? '' : x).trim());
+  const ns = x => sv(x).replace(/\s/g, '');
+  // 글에서 금액을 뽑을 때는 첫 번째 숫자 묶음만 (예: "1,000,000원(공급가 909,091…)" → 1000000)
+  const num = x => { if (typeof x === 'number') return Math.round(x); const m = String(x || '').match(/-?\d[\d,]*/); return m ? Number(m[0].replace(/,/g, '')) : ''; };
+  const after = t => t.indexOf(':') >= 0 ? t.slice(t.indexOf(':') + 1).trim() : '';
+  ss.getSheets().forEach(s => {
+    const nm = s.getName(); if (nm.indexOf('기안') < 0) return;
+    const kind = '기안·품의' + nm.replace('기안.품의', '').replace(/\s*\(\d\)$/, '');
+    const v = s.getDataRange().getValues();
+    const starts = []; v.forEach((r, i) => { if (ns(r[0]) === '문서번호') starts.push(i); });
+    starts.forEach((r0, k) => {
+      const r1 = k + 1 < starts.length ? starts[k + 1] : v.length;
+      const x = { 문서번호: sv(v[r0][1]), 종류: kind, 현장명: '', 기안일자: '', 기안부서: '', 기안자: '', 제목: '', '업체명(연락처)': '', 공급가합계: '', 부가세합계: '',
+        '금액(VAT포함)': '', 지급요청일: '', 증빙자료: '', 비고: '', _요약: '', _items: [], _src: src, _link: link };
+      v[r0].forEach((c, j) => { if (ns(c) === '현장명') x.현장명 = (v[r0].slice(j + 1).map(sv).find(t => t) || ''); });
+      let hdr = null, table = false;
+      for (let r = r0 + 1; r < r1; r++) {
+        const row = v[r], c0 = ns(row[0]);
+        if (c0 === '기안일자') x.기안일자 = sv(row[1]);
+        else if (c0 === '기안부서') x.기안부서 = sv(row[1]);
+        else if (c0 === '기안자') x.기안자 = sv(row[1]);
+        else if (c0 === '제목') x.제목 = sv(row[1]);
+        else if (c0 === '비고') x.비고 = row.slice(1).map(sv).filter(t => t).join(' ');
+        else if (c0 === '일자' && row.some(c => ns(c) === '공급가')) { hdr = {}; row.forEach((c, j) => { if (ns(c)) hdr[ns(c)] = j; }); table = true; }
+        else if (table) {
+          if (row.slice(0, 4).some(c => sv(c).indexOf('合') >= 0 || ['합계', '計'].indexOf(ns(c)) >= 0)) {
+            table = false;
+            if (hdr.공급가 !== undefined) { x.공급가합계 = num(row[hdr.공급가]); x.부가세합계 = num(row[hdr.부가세 !== undefined ? hdr.부가세 : hdr.공급가 + 1]); }
+            continue;
+          }
+          if (c0.indexOf('2.') === 0) table = false;
+          else {
+            const g = key => hdr[key] !== undefined ? row[hdr[key]] : '';
+            const desc = sv(g('지출내역')), a = num(g('공급가'));
+            if (desc || a !== '') x._items.push({ 일자: sv(row[0]), 구분: sv(row[hdr.구분 !== undefined ? hdr.구분 : 1]), 지출내역: desc, 공급가: a, 부가세: num(g('부가세')) });
+            continue;
+          }
+        }
+        const t = sv(row[0]);
+        if (/^1\./.test(t) && t.indexOf('지출') >= 0) x._요약 = after(t);
+        else if (/^2\./.test(t) && t.indexOf('업체') >= 0) x['업체명(연락처)'] = after(t);
+        else if (/^3\./.test(t) && t.indexOf('금') >= 0) {
+          const n = row.slice(1).find(c => typeof c === 'number'); x['금액(VAT포함)'] = n !== undefined ? Math.round(n) : num(after(t));
+          const m = after(t).match(/\d[\d,]*/);   // "67,000,0000원" 처럼 쉼표 자리가 틀린 원본은 표시만 해 둠 (금액은 원본 그대로)
+          if (n === undefined && m && m[0].indexOf(',') >= 0 && !/^\d{1,3}(,\d{3})+$/.test(m[0])) x._확인 = '원본 금액 표기 확인 필요(' + m[0] + ')';
+        }
+        else if (/^4\./.test(t) && t.indexOf('지급') >= 0) x.지급요청일 = after(t);
+        else if (/^5\./.test(t) && t.indexOf('계좌') >= 0) x._계좌 = after(t);
+        else if (/^6\./.test(t) && t.indexOf('증빙') >= 0) x.증빙자료 = after(t);
+      }
+      if (!x.문서번호 && !x.제목) return;
+      if (x['금액(VAT포함)'] === '' && x.공급가합계 !== '') x['금액(VAT포함)'] = (x.공급가합계 || 0) + (x.부가세합계 || 0);
+      docs.push(x);
+    });
+  });
+  return docs;
+}
+// 날짜 형식 통일, 제목 없으면 지출내역으로, 문서번호가 겹치면 -b -c (원본 번호는 비고에)
+function apFinish_(x, used) {
+  const t = String(x.기안일자 || '').trim();
+  let m = t.match(/^(\d{2,4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})/);
+  const p2 = n => ('0' + n).slice(-2);
+  if (m) { let y = +m[1]; if (y < 100) y += 2000; x.기안일자 = y + '-' + p2(m[2]) + '-' + p2(m[3]); }
+  else if ((m = t.match(/^(\d{1,2})\/(\d{1,2})/)) && /^\d{2}-/.test(x.문서번호)) x.기안일자 = '20' + x.문서번호.slice(0, 2) + '-' + p2(m[1]) + '-' + p2(m[2]);
+  if (!x.제목) x.제목 = x._요약 || '(제목 없음)';
+  if (x._요약 && x._요약 !== x.제목 && !x._items.length) x.비고 = '지출내역: ' + x._요약 + (x.비고 ? ' / ' + x.비고 : '');
+  const base = x.문서번호 || '무번호'; let no = base, k = 1;
+  while (used.has(no)) { k++; no = base + '-' + String.fromCharCode(96 + k); }
+  if (no !== base) x.비고 = (x.비고 ? x.비고 + ' / ' : '') + '원본 문서번호 ' + base;
+  used.add(no); x.문서번호 = no;
+  if (x._확인) x.비고 = (x.비고 ? x.비고 + ' / ' : '') + x._확인;
+  x.증빙파일 = x._link; x.상태 = '과거 기록'; x.결재자 = '(종이 결재)'; x.작성일시 = '원본 ' + x._src;
 }
