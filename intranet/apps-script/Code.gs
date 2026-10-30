@@ -25,7 +25,9 @@ const H = {
   인사이력: ['이력ID', '직원ID', '구분', '기간/일자', '항목1', '항목2', '항목3', '항목4', '비고'],
   결재: ['문서번호', '종류', '현장코드', '현장명', '기안일자', '기안부서', '기안자', '기안자이메일', '제목', '업체명(연락처)', '공급가합계', '부가세합계', '금액(VAT포함)', '지급요청일', '증빙자료', '증빙파일', '비고', '휴가구분', '휴가시작', '휴가종료', '휴가일수', '상태', '결재자', '결재일시', '결재의견', '작성일시'],
   결재_지출내역: ['문서번호', '순번', '일자', '구분', '지출내역', '공급가', '부가세'],
-  현장: ['현장코드', '현장명', '고객코드', '상태', '등록일', '비고'],
+  현장: ['현장코드', '현장명', '발주처', '연도', '구분', '고객코드', '상태', '등록일', '폴더링크', '메모'],
+  업체: ['업체코드', '업체명', '분류', '주요품목', '연락처', '결재건수', '출처', '메모'],
+  서식: ['분류', '서식명', '링크', '결재종류'],
   직원_민감: ['직원ID', '이름', '주민등록번호', '주소', '혼인여부', '급여(연봉)', '급여계좌', '근로계약서 링크', '인사기록 폴더 링크', '비고', '수정일'],
   결재_계좌: ['문서번호', '업체명', '계좌번호', '작성일시'],
   // ── 견적 모듈 ── 고객 데이터는 이 한 곳에만 (견적·상담·계약이 같이 씀)
@@ -42,7 +44,7 @@ function setup() {
   const p = PropertiesService.getScriptProperties();
   if (!p.getProperty('DB_ID')) {
     const db = SpreadsheetApp.create('홈퍼니싱 인트라넷 DB');
-    ['직원', '인사이력', '결재', '결재_지출내역', '현장', '고객', '단가표', '견적', '견적_항목'].forEach((n, i) => {
+    ['직원', '인사이력', '결재', '결재_지출내역', '현장', '업체', '서식', '고객', '단가표', '견적', '견적_항목'].forEach((n, i) => {
       const sh = i === 0 ? db.getSheets()[0].setName(n) : db.insertSheet(n);
       initSheet_(sh, H[n]);
     });
@@ -56,7 +58,7 @@ function setup() {
   }
   // 이미 만든 DB에 새 시트가 빠져 있으면 추가 (기존 데이터는 그대로)
   const dbx = SpreadsheetApp.openById(p.getProperty('DB_ID'));
-  ['직원', '인사이력', '결재', '결재_지출내역', '현장', '고객', '단가표', '견적', '견적_항목'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
+  ['직원', '인사이력', '결재', '결재_지출내역', '현장', '업체', '서식', '고객', '단가표', '견적', '견적_항목'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
   if (!p.getProperty('SECRET_ID')) {
     const sec = SpreadsheetApp.create('홈퍼니싱 민감정보(대표 전용) — 공유 금지');
     ['직원_민감', '결재_계좌'].forEach((n, i) => {
@@ -212,7 +214,7 @@ function saveHistory(staffId, list) {
 // 현장 (2단계 대비: 지금부터 현장코드 S26-001 사용)
 function listSites() {
   requireStaff_();
-  return rows_(db_().getSheetByName('현장'), H.현장).map(s => ({ 현장코드: s.현장코드, 현장명: s.현장명, 상태: s.상태 }));
+  return rows_(db_().getSheetByName('현장'), H.현장).map(s => { const o = {}; H.현장.forEach(h => o[h] = s[h]); return o; }).reverse();
 }
 function addSite(name, customerCode) {
   requireStaff_();
@@ -223,7 +225,7 @@ function addSite(name, customerCode) {
     const yy = Utilities.formatDate(new Date(), TZ, 'yy');
     const n = rows_(sh, H.현장).filter(s => String(s.현장코드).indexOf('S' + yy + '-') === 0).length + 1;
     const code = 'S' + yy + '-' + ('00' + n).slice(-3);
-    append_(sh, H.현장, { 현장코드: code, 현장명: name, 고객코드: customerCode || '', 상태: '진행', 등록일: today_() });
+    append_(sh, H.현장, { 현장코드: code, 현장명: name, 연도: Number('20' + yy), 고객코드: customerCode || '', 상태: '진행', 등록일: today_() });
     return code;
   } finally { lock.releaseLock(); }
 }
@@ -514,4 +516,55 @@ function importCosts(sheetId) {
 // 대표가 한 번 실행: 대표 드라이브(내 드라이브)의 「단가표 원가 v.15 (대표 전용 · 공유 금지)」에서 원가를 가져온다
 function importCostsV15() {
   return importCosts('1_kkJwsyP075YU4hgQgJp0PL8OSJtCltXToTFhhz6ghU');
+}
+
+
+/* ================= 초기 데이터 가져오기 (대표가 한 번 실행) =================
+ * 공유드라이브 「홈퍼니싱 본사 결재 서류 › 0. 홈퍼니싱」을 읽기만 해서 만든 표 3개
+ * (대표 내 드라이브 「인트라넷 초기 데이터 (대표 전용)」 폴더)를 인트라넷 시트로 옮긴다.
+ * 원본 공유드라이브 파일은 건드리지 않는다. 이미 있는 코드는 건너뛴다(다시 실행해도 중복 없음).
+ */
+const SEED = {
+  현장: '1VOoX7nzDrv9dguaZV7C5LjyAwIW-uUNz07TddPFWL-c',
+  업체: '1Nk9Gju0_aJC3NicgAW5NImBJDHj6_8xlV3BrdnqS6bI',
+  서식: '1c8zwXq9bU7lj8GqAKAtUYnRCwbqpUlvI-NGZNXAqsYc'
+};
+function seedRows_(id) {
+  const v = SpreadsheetApp.openById(id).getSheets()[0].getDataRange().getValues();
+  const head = v[0].map(h => String(h).trim());
+  return v.slice(1).filter(r => r.some(x => String(x).trim() !== '')).map(r => { const o = {}; head.forEach((h, i) => o[h] = typeof r[i] === 'string' ? r[i].trim() : r[i]); return o; });
+}
+function importSeed() {
+  requireOwner_();
+  const d = db_(), out = [];
+  // 현장
+  const sh = d.getSheetByName('현장'), have = new Set(rows_(sh, H.현장).map(x => x.현장코드));
+  let n = 0;
+  seedRows_(SEED.현장).forEach(r => {
+    if (have.has(r.현장코드)) return;
+    append_(sh, H.현장, { 현장코드: r.현장코드, 현장명: r.현장명, 발주처: r.발주처, 연도: r.연도, 구분: r.구분, 상태: '', 등록일: today_(),
+      폴더링크: r.폴더ID ? 'https://drive.google.com/drive/folders/' + r.폴더ID : '', 메모: r.메모 || '' });
+    n++;
+  });
+  out.push('현장 ' + n + '곳');
+  // 업체 (계좌번호 없음)
+  const vs = d.getSheetByName('업체'), hv = new Set(rows_(vs, H.업체).map(x => x.업체코드));
+  n = 0;
+  seedRows_(SEED.업체).forEach(r => { if (hv.has(r.업체코드)) return; append_(vs, H.업체, r); n++; });
+  out.push('업체 ' + n + '곳');
+  // 서식
+  const fs = d.getSheetByName('서식'), hf = new Set(rows_(fs, H.서식).map(x => x.서식명));
+  n = 0;
+  seedRows_(SEED.서식).forEach(r => { if (hf.has(r.서식명)) return; append_(fs, H.서식, { 분류: r.분류, 서식명: r.서식명, 링크: 'https://drive.google.com/file/d/' + r.파일ID + '/view', 결재종류: r.결재종류 }); n++; });
+  out.push('서식 ' + n + '개');
+  return out.join(' · ') + ' 가져옴';
+}
+
+function listVendors() {
+  requireStaff_();
+  return rows_(db_().getSheetByName('업체'), H.업체).map(x => { const o = {}; H.업체.forEach(h => o[h] = x[h]); return o; });
+}
+function listForms() {
+  requireStaff_();
+  return rows_(db_().getSheetByName('서식'), H.서식).map(x => { const o = {}; H.서식.forEach(h => o[h] = x[h]); return o; });
 }

@@ -68,9 +68,9 @@ async function boot(){
   render();
 }
 function render(){
-  const tabs=[['quote','견적'],['new','결재 올리기'],['approvals',B.isOwner?'결재함 (전체)':'내 결재'],['staff','인사']];
+  const tabs=[['quote','견적'],['sites','현장'],['vendors','업체'],['forms','서식'],['new','결재 올리기'],['approvals',B.isOwner?'결재함 (전체)':'내 결재'],['staff','인사']];
   $('#nav').innerHTML=tabs.map(([k,t])=>`<button class="${tab===k?'on':''}" data-tab="${k}">${t}</button>`).join('');
-  if(tab==='quote')viewQuote();else if(tab==='new')viewNew();else if(tab==='approvals')viewApprovals();else viewStaff();
+  if(tab==='quote')viewQuote();else if(tab==='sites')viewSites();else if(tab==='vendors')viewVendors();else if(tab==='forms')viewForms();else if(tab==='new')viewNew();else if(tab==='approvals')viewApprovals();else viewStaff();
 }
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;location.hash=tab;render()}});
 
@@ -201,6 +201,20 @@ async function editStaff(s){
     await call('saveSecret',q);await call('saveHistory',id,readHist());$('#layer').innerHTML='';toast('저장했어요');viewStaff();
   };
 }
+/* ---------- 현장 · 업체 · 서식 (공유드라이브 「0. 홈퍼니싱」에서 옮긴 목록, 원본은 링크만) ---------- */
+function listView(title,note,rows,cols,keyName){
+  $('#view').innerHTML=`<h1>${title} <span class="muted">${rows.length}</span></h1>${note?`<div class="note">${note}</div>`:''}
+  <div class="row"><input id="lq" placeholder="검색" style="flex:1"></div><div class="box"><table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody id="lb"></tbody></table></div>`;
+  const draw=q=>{$('#lb').innerHTML=rows.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q)).map(r=>`<tr>${cols.map(([k,,t])=>`<td>${t==='link'&&r[k]?`<a href="${esc(r[k])}" target="_blank">열기</a>`:esc(r[k])}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="muted">없음</td></tr>`};
+  draw('');$('#lq').oninput=e=>draw(e.target.value.trim().toLowerCase());
+}
+async function viewSites(){$('#view').innerHTML='<p class="muted">불러오는 중…</p>';const r=await call('listSites');
+  listView('현장',"현장코드(S26-001)로 견적·결재·사진을 묶어요. 폴더는 공유드라이브 원본 링크(읽기만).",r,[['현장코드','코드'],['현장명','현장명'],['발주처','발주처'],['연도','연도'],['구분','구분'],['상태','상태'],['폴더링크','폴더','link'],['메모','메모']])}
+async function viewVendors(){$('#view').innerHTML='<p class="muted">불러오는 중…</p>';const r=await call('listVendors');
+  listView('업체',"26년 기안품의서에서 뽑은 거래처 목록. 계좌번호는 넣지 않았어요(대표 전용 시트에서만).",r,[['업체코드','코드'],['업체명','업체명'],['분류','분류'],['주요품목','주요 품목'],['연락처','연락처'],['결재건수','결재 건수']])}
+async function viewForms(){$('#view').innerHTML='<p class="muted">불러오는 중…</p>';const r=await call('listForms');
+  listView('서식 자료실',"본사 서식 원본 링크. 원본은 고치지 말고 ‘사본 만들기’로 쓰세요.",r,[['분류','분류'],['서식명','서식명'],['링크','원본','link'],['결재종류','전자결재 종류']])}
+
 /* ---------- 견적 모듈 (상담견적 v.15 단가 계산과 같음) ---------- */
 let CAT=null, CUS=[], Q=null;
 const INSUL={pl_living:'wd_ins_lv',pl_room:'wd_ins_rm',pl_kitexp:'wd_ins_rm'};
