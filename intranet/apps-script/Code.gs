@@ -732,11 +732,12 @@ function parseApprovalBook_(ss, src, link) {
   const after = t => t.indexOf(':') >= 0 ? t.slice(t.indexOf(':') + 1).trim() : '';
   // "3. 금 액" 글에서 최종 금액 고르기
   //  "90,000*2일= 180,000원" → 180,000 (= 뒤) / "계약:15,000원+선급금: 62,740원 ( 77,740원 )" → 77,740 (괄호 안 합계)
-  //  "100,000 원(승강기) / 300,000 원(예치금)" → 400,000 (나눠 적은 금액 더함) / "…=> 공제 후 지급액: 1,220,000원" → 1,220,000
+  //  "100,000 원(승강기) / 300,000 원(예치금)" → 400,000 (나눠 적은 금액 더함)
+  //  "1,250,560원=> 공제 후 지급액: 1,220,000원" → 1,250,560 (일용직·3.3%는 공제 전 금액으로 통일)
   const amtOf = t => {
-    const s = String(t || '').replace(/\s/g, '');
-    let m = s.match(/공제후지급액:?(-?\d[\d,]*)/); if (m) return num(m[1]);
-    m = s.match(/\((-?\d[\d,]*)원?\)$/); if (m) return num(m[1]);
+    let s = String(t || '').replace(/\s/g, '');
+    if (/[=-]>/.test(s)) s = s.split(/[=-]>/)[0];
+    let m = s.match(/\((-?\d[\d,]*)원?\)$/); if (m) return num(m[1]);
     if (s.indexOf('=') >= 0) { const r = num(s.slice(s.lastIndexOf('=') + 1)); if (r !== '') return r; }
     const parts = s.replace(/\([^)]*\)/g, '').split(/[\/+]/).map(num).filter(n => n !== '');
     return parts.length > 1 ? parts.reduce((a, b) => a + b, 0) : num(s);
