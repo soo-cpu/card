@@ -42,6 +42,10 @@ const H = {
   견적_항목: ['견적번호', '버전', '키', '공정', '품목', '단위', '수량', '단가', '금액', '원가단가', '원가금액', '직접수정']
 };
 
+// 직원 명단 (이름, 직급, 권한 표시). 실제 대표 권한은 OWNER_EMAIL 로만 판단
+const STAFF_SEED = [['최윤수', '대표이사', '대표'], ['신혜현', '대표', '대표'], ['최남수', '실장', '직원'], ['유효성', '부장', '직원'],
+  ['정진혁', '실장', '직원'], ['채진아', '', '직원'], ['이봄이', '', '직원']];
+
 /* ================= 설치 (대표 계정으로 한 번만 실행) ================= */
 function setup() {
   const me = Session.getEffectiveUser().getEmail();
@@ -54,16 +58,16 @@ function setup() {
       initSheet_(sh, H[n]);
     });
     p.setProperty('DB_ID', db.getId());
-    // 기존 직원 이름만 미리 넣음 (나머지 칸은 대표가 채움)
-    const st = db.getSheetByName('직원');
-    [['최윤수', '대표이사', '대표'], ['정진혁', '실장', '직원'], ['채진아', '', '직원'], ['이봄이', '', '직원']].forEach(r => {
-      const o = { 직원ID: newId_('E'), 이름: r[0], 직급: r[1], 회사이메일: r[0] === '최윤수' ? OWNER_EMAIL : '', 재직상태: '재직', 권한: r[2], 수정일: now_() };
-      append_(st, H.직원, o);
-    });
   }
   // 이미 만든 DB에 새 시트가 빠져 있으면 추가 (기존 데이터는 그대로)
   const dbx = SpreadsheetApp.openById(p.getProperty('DB_ID'));
   ['직원', '인사이력', '연차사용', '결재', '결재_지출내역', '현장', '업체', '서식', '고객', '단가표', '견적', '견적_항목'].forEach(n => { if (!dbx.getSheetByName(n)) initSheet_(dbx.insertSheet(n), H[n]); });
+  // 기존 직원 이름만 미리 넣음 (나머지 칸은 대표가 채움). 다시 실행해도 없는 사람만 추가
+  const st = dbx.getSheetByName('직원');
+  const have = rows_(st, H.직원).map(r => String(r.이름).trim());
+  STAFF_SEED.filter(r => have.indexOf(r[0]) < 0).forEach(r => {
+    append_(st, H.직원, { 직원ID: newId_('E'), 이름: r[0], 직급: r[1], 회사이메일: r[0] === '최윤수' ? OWNER_EMAIL : '', 재직상태: '재직', 권한: r[2], 수정일: now_() });
+  });
   if (!p.getProperty('SECRET_ID')) {
     const sec = SpreadsheetApp.create('홈퍼니싱 민감정보(대표 전용) — 공유 금지');
     ['직원_민감', '결재_계좌'].forEach((n, i) => {
