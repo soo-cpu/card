@@ -730,6 +730,17 @@ function parseApprovalBook_(ss, src, link) {
   // 글에서 금액을 뽑을 때는 첫 번째 숫자 묶음만 (예: "1,000,000원(공급가 909,091…)" → 1000000)
   const num = x => { if (typeof x === 'number') return Math.round(x); const m = String(x || '').match(/-?\d[\d,]*/); return m ? Number(m[0].replace(/,/g, '')) : ''; };
   const after = t => t.indexOf(':') >= 0 ? t.slice(t.indexOf(':') + 1).trim() : '';
+  // "3. 금 액" 글에서 최종 금액 고르기
+  //  "90,000*2일= 180,000원" → 180,000 (= 뒤) / "계약:15,000원+선급금: 62,740원 ( 77,740원 )" → 77,740 (괄호 안 합계)
+  //  "100,000 원(승강기) / 300,000 원(예치금)" → 400,000 (나눠 적은 금액 더함) / "…=> 공제 후 지급액: 1,220,000원" → 1,220,000
+  const amtOf = t => {
+    const s = String(t || '').replace(/\s/g, '');
+    let m = s.match(/공제후지급액:?(-?\d[\d,]*)/); if (m) return num(m[1]);
+    m = s.match(/\((-?\d[\d,]*)원?\)$/); if (m) return num(m[1]);
+    if (s.indexOf('=') >= 0) { const r = num(s.slice(s.lastIndexOf('=') + 1)); if (r !== '') return r; }
+    const parts = s.replace(/\([^)]*\)/g, '').split(/[\/+]/).map(num).filter(n => n !== '');
+    return parts.length > 1 ? parts.reduce((a, b) => a + b, 0) : num(s);
+  };
   ss.getSheets().forEach(s => {
     const nm = s.getName(); if (nm.indexOf('기안') < 0) return;
     const kind = '기안·품의' + nm.replace('기안.품의', '').replace(/\s*\(\d\)$/, '');
@@ -767,7 +778,9 @@ function parseApprovalBook_(ss, src, link) {
         if (/^1\./.test(t) && t.indexOf('지출') >= 0) x._요약 = after(t);
         else if (/^2\./.test(t) && t.indexOf('업체') >= 0) x['업체명(연락처)'] = after(t);
         else if (/^3\./.test(t) && t.indexOf('금') >= 0) {
-          const n = row.slice(1).find(c => typeof c === 'number'); x['금액(VAT포함)'] = n !== undefined ? Math.round(n) : num(after(t));
+          // 한 서류에 지급 칸(3. 금액)이 여러 번 있으면 더함 (예: 일용직 두 사람)
+          const n = row.slice(1).find(c => typeof c === 'number'), a = n !== undefined ? Math.round(n) : amtOf(after(t));
+          x['금액(VAT포함)'] = (x._금액칸 && a !== '' && x['금액(VAT포함)'] !== '') ? x['금액(VAT포함)'] + a : a; x._금액칸 = (x._금액칸 || 0) + 1;
           const m = after(t).match(/\d[\d,]*/);   // "67,000,0000원" 처럼 쉼표 자리가 틀린 원본은 표시만 해 둠 (금액은 원본 그대로)
           if (n === undefined && m && m[0].indexOf(',') >= 0 && !/^\d{1,3}(,\d{3})+$/.test(m[0])) x._확인 = '원본 금액 표기 확인 필요(' + m[0] + ')';
         }
