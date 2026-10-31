@@ -1,0 +1,1 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage();await p.goto('file:///tmp/rpt/report.html');await p.waitForTimeout(500);await p.pdf({path:process.argv[2],format:'A4',printBackground:true,margin:{top:'14mm',bottom:'16mm',left:'12mm',right:'12mm'}});await b.close();})();
