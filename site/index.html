@@ -1,109 +1,160 @@
 <!doctype html>
+<!-- 홈페이지 2026-10-31 v1 · 모바일 기준 가상 구축 (도메인 연결 전) -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>홈퍼니싱 · 아르띠꼬 스튜디오 | 공간을 설계하고 취향을 디자인합니다</title>
 <meta name="description" content="주식회사 홈퍼니싱 · 아르띠꼬 스튜디오. 디자인 · 설계 · 실내건축 · 한샘리하우스 대리점. 구리 본사, 상봉 전시장.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f3f0ec">
 <meta property="og:title" content="홈퍼니싱 · 아르띠꼬 스튜디오"><meta property="og:description" content="공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬"><meta property="og:type" content="website"><meta property="og:url" content="https://soo-cpu.github.io/card/site/"><meta property="og:image" content="https://soo-cpu.github.io/card/soo/card.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Jost:wght@300;400&display=swap">
 <style>
-/* 명함과 같은 색·글꼴 */
-:root{--bg:#f3f0ec;--card:#fbfaf8;--ink:#4a423b;--taupe:#9a8b7e;--line:#e4ded6;--olive:#6f7247;--gold:#b49a5e;--navy:#1f2f4f;--on:#fbfaf8;
-  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-logo:"Jost","Futura","Century Gothic",sans-serif}
+/* 명함과 같은 색·글꼴 — 휴대폰 세로 화면을 먼저 맞추고, 넓은 화면은 아래 @media에서 늘림 */
+:root{--bg:#f3f0ec;--card:#fbfaf8;--ink:#4a423b;--taupe:#857769;--line:#e4ded6;--olive:#6f7247;--gold:#b49a5e;--navy:#1f2f4f;--on:#fbfaf8;--kakao:#fee500;--kakao-ink:#191600;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-logo:"Jost","Futura","Century Gothic",sans-serif;
+  --bar:68px}
 @media (prefers-color-scheme:dark){:root{--bg:#1c1a18;--card:#262321;--ink:#ece6df;--taupe:#b8a898;--line:#3a3531;--olive:#8d9160;--gold:#d0b679;--navy:#9fb2d6;color-scheme:dark}}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:64px}
-body{margin:0;overflow-wrap:anywhere;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.6;word-break:keep-all}
-a{color:inherit}img{max-width:100%;display:block}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:108px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;word-break:keep-all;
+  padding-bottom:calc(var(--bar) + env(safe-area-inset-bottom))}
+body{overflow-wrap:anywhere}
+a{color:inherit;-webkit-tap-highlight-color:transparent}img{max-width:100%;display:block}
 .in{max-width:1080px;margin:0 auto;padding:0 20px}
-.logo{font-family:var(--f-logo);font-weight:300;font-size:19px;color:var(--taupe);text-decoration:none;white-space:nowrap}
+.logo{font-family:var(--f-logo);font-weight:300;font-size:18px;color:var(--taupe);text-decoration:none;white-space:nowrap}
 .logo b{font-weight:400;color:var(--navy);letter-spacing:.02em}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-/* 상단 메뉴 */
-header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-header .in{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
-nav.menu{display:flex;gap:22px;font-size:14px}
-nav.menu a{text-decoration:none;color:var(--ink)}nav.menu a:hover{color:var(--olive)}
-.cta{background:var(--olive);color:var(--on)!important;text-decoration:none;border-radius:6px;padding:8px 14px;font-size:14px;font-weight:500;white-space:nowrap}
-@media (max-width:760px){nav.menu{display:none}}
-@media (max-width:480px){.hero{padding:56px 0 48px}section.s{padding:52px 0}.facts{grid-template-columns:1fr 1fr}.fact .v{font-size:15px}.works{grid-template-columns:1fr}.btns .btn{flex:1;justify-content:center}.logo{font-size:17px}}
-input,select,textarea{min-width:0}
+/* 채울 곳 표시 — 나중에 실제 내용으로 바꿀 자리 */
+.fill{display:inline-block;border:1px dashed var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent);border-radius:4px;padding:0 6px;font-size:.92em}
+
+/* 상단: 로고 + 가로로 밀어 보는 메뉴 */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 20px;max-width:1080px;margin:0 auto}
+.top .tel{font-size:15px;font-weight:500;text-decoration:none;color:var(--olive);padding:10px 0 10px 12px}
+nav.menu{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 20px 10px;margin:0 auto;max-width:1080px}
+nav.menu::-webkit-scrollbar{display:none}
+nav.menu a{flex:0 0 auto;text-decoration:none;font-size:14.5px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
 
 /* 메인 */
-.hero{padding:88px 0 72px;border-bottom:1px solid var(--line)}
+.hero{padding:44px 0 40px;border-bottom:1px solid var(--line)}
 .eyebrow{font-family:var(--f-logo);letter-spacing:.2em;font-size:12px;color:var(--taupe);text-transform:uppercase}
-.hero h1{margin:14px 0 18px;font-size:clamp(30px,5.4vw,54px);line-height:1.25;font-weight:600;letter-spacing:-.01em}
+.hero h1{margin:12px 0 16px;font-size:clamp(27px,7.6vw,54px);line-height:1.3;font-weight:600;letter-spacing:-.01em}
 .hero h1 .h{color:var(--navy)}.hero h1 .a{color:var(--olive)}
-.hero p{max-width:560px;color:var(--taupe);font-size:17px;margin:0 0 28px}
-.btns{display:flex;flex-wrap:wrap;gap:10px}
-.btn{display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:6px;text-decoration:none;font-weight:500;border:1px solid var(--line);background:var(--card)}
+.hero p{color:var(--taupe);font-size:16.5px;margin:0 0 24px}
+.btns{display:grid;gap:10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 20px;border-radius:8px;text-decoration:none;font-weight:500;font-size:16px;border:1px solid var(--line);background:var(--card);text-align:center}
 .btn.p{background:var(--olive);border-color:var(--olive);color:var(--on)}
+.btn.k{background:var(--kakao);border-color:var(--kakao);color:var(--kakao-ink)}
 
-section.s{padding:72px 0;border-bottom:1px solid var(--line)}
-.s h2{margin:6px 0 10px;font-size:clamp(24px,3.4vw,32px);font-weight:600}
-.s .lead{color:var(--taupe);margin:0 0 32px;max-width:620px}
+section.s{padding:48px 0;border-bottom:1px solid var(--line)}
+.s h2{margin:6px 0 8px;font-size:clamp(23px,6vw,32px);line-height:1.35;font-weight:600}
+.s .lead{color:var(--taupe);margin:0 0 24px}
 
 /* 회사 소개 */
-.about{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:start}
+.about{display:grid;gap:24px}
 .facts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fact{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
-.fact .k{font-size:12px;color:var(--taupe)}.fact .v{font-size:17px;font-weight:500;margin-top:2px}
-@media (max-width:760px){.about{grid-template-columns:1fr}}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.fact .k{font-size:12.5px;color:var(--taupe)}.fact .v{font-size:16.5px;font-weight:500;margin-top:2px}
 
-/* 카드 그리드 */
-.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
-.box{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px}
+/* 하는 일 */
+.grid{display:grid;gap:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px}
 .box .no{font-family:var(--f-logo);color:var(--gold);font-size:14px}
-.box h3{margin:8px 0 6px;font-size:18px;font-weight:600}
-.box p{margin:0;color:var(--taupe);font-size:14.5px}
+.box h3{margin:6px 0 4px;font-size:18px;font-weight:600}
+.box p{margin:0;color:var(--taupe);font-size:15px}
 
-/* 시공 사례 */
-.works{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
-.work{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.ph{aspect-ratio:4/3;position:relative;display:grid;place-items:center;background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 14px);color:var(--taupe);font-size:13px}
+/* 시공 사례 — 휴대폰은 한 줄에 하나, 사진 크게 */
+.works{display:grid;gap:14px}
+.work{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ph{aspect-ratio:4/3;position:relative;display:grid;place-items:center;background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 14px)}
 .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.work .t{padding:12px 16px}.work .t b{display:block;font-weight:500}
-.work dl{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;font-size:13px}.work dl div{display:flex;gap:5px}.work dt{color:var(--taupe)}.work dd{margin:0}
-.more{margin-top:20px}
+.work dl{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;font-size:14px}.work dl div{display:flex;gap:5px}.work dt{color:var(--taupe)}.work dd{margin:0}
+.work .t{padding:12px 16px 14px}.work .t b{display:block;font-weight:500;font-size:16.5px}.work .t span{font-size:14px;color:var(--taupe)}
+.more{margin-top:18px}
 
-/* 진행 과정 */
-.steps{list-style:none;margin:0;padding:0;display:grid;gap:12px;grid-template-columns:repeat(5,1fr);counter-reset:s}
-.steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px}
-.steps li::before{content:"0" counter(s);font-family:var(--f-logo);color:var(--olive);font-size:22px;font-weight:300;display:block}
-.steps b{display:block;margin:4px 0}.steps span{font-size:13.5px;color:var(--taupe)}
-@media (max-width:900px){.steps{grid-template-columns:1fr 1fr}}@media (max-width:480px){.steps{grid-template-columns:1fr}}
+/* 진행 과정 — 휴대폰은 세로 줄 */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:0;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:0 0 22px 52px}
+.steps li::before{content:"0" counter(s);position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);font-family:var(--f-logo);color:var(--olive);font-size:15px}
+.steps li::after{content:"";position:absolute;left:19px;top:40px;bottom:2px;width:1px;background:var(--line)}
+.steps li:last-child{padding-bottom:0}.steps li:last-child::after{display:none}
+.steps b{display:block;font-size:17px;line-height:38px}.steps span{font-size:15px;color:var(--taupe)}
 
 /* 팀 */
-.team{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.member{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;text-decoration:none;display:block}
-.member .n{font-size:22px;font-weight:600;letter-spacing:.2em;color:var(--taupe)}
+.team{display:grid;gap:12px}
+.member{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px 20px;text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.member .n{font-size:20px;font-weight:600;letter-spacing:.18em;color:var(--ink)}
 .member .en{font-family:var(--f-logo);font-weight:300;font-size:13px;color:var(--taupe)}
-.member .r{margin-top:8px;font-size:14px}.member .go{margin-top:12px;font-size:13px;color:var(--olive)}
-.member:hover{border-color:var(--olive)}
+.member .r{margin-top:4px;font-size:14.5px;color:var(--taupe)}.member .go{font-size:14px;color:var(--olive);white-space:nowrap}
 
 /* 상담 */
-.contact{display:grid;grid-template-columns:1fr 1.2fr;gap:40px}
-@media (max-width:760px){.contact{grid-template-columns:1fr}}
-.info p{margin:0 0 14px}.info .k{display:block;font-size:12px;color:var(--taupe)}
-form{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;display:grid;gap:12px}
-label{font-size:13px;color:var(--taupe);display:grid;gap:4px}
-input,select,textarea{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%}
-textarea{min-height:110px;resize:vertical}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:480px){.row2{grid-template-columns:1fr}}
-.agree{flex-direction:row;display:flex;gap:8px;align-items:center;font-size:13px}.agree input{width:auto}
-button.btn{cursor:pointer;font:inherit;font-weight:500;justify-content:center}
-.note{font-size:12px;color:var(--taupe);margin:0}
+.contact{display:grid;gap:24px}
+.cbtns{display:grid;gap:10px;margin-top:14px}
+.form{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;display:grid;gap:12px}
+.form label{font-size:13.5px;color:var(--taupe);display:grid;gap:4px;min-width:0}
+.form input,.form select,.form textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;min-width:0}
+.form textarea{min-height:110px;resize:vertical}
+.row2{display:grid;gap:12px}@media (min-width:420px){.row2{grid-template-columns:1fr 1fr}}
+.form .agree{display:flex;gap:8px;align-items:center}.form .agree input{width:20px;height:20px;flex:0 0 auto}
+.form button{cursor:pointer;font:inherit;font-weight:500;font-size:16px;width:100%}.form button:disabled{opacity:.6}
+.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}
+.info{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
+.info p{margin:0 0 12px}.info p:last-child{margin:0}.info .k{display:block;font-size:12.5px;color:var(--taupe)}
+.note{font-size:13px;color:var(--taupe);margin:0}
 
-footer{padding:40px 0 56px;font-size:13px;color:var(--taupe)}
-footer .in{display:grid;gap:14px}
-.biz{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));line-height:1.7}.biz b{color:var(--ink);font-weight:500}footer a{color:var(--taupe)}
-.ch{display:flex;flex-wrap:wrap;gap:14px}
+/* 하단 회사 정보 — 두 사업자 */
+footer{padding:36px 0 32px;font-size:13.5px;color:var(--taupe)}
+footer .in{display:grid;gap:18px}footer a{color:var(--taupe)}
+.biz{display:grid;gap:12px}
+.co{border-top:1px solid var(--line);padding-top:12px}
+.co small{font-weight:400;color:var(--taupe);font-size:12.5px}
+.co b{display:block;color:var(--ink);font-size:14.5px;font-weight:600;margin-bottom:2px}
+.co div{margin:2px 0}
+.ch{display:flex;flex-wrap:wrap;gap:8px}
+.ch a{text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+/* 휴대폰 아래 고정 버튼: 전화 · 카카오톡 */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 96%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.bar .btn{min-height:50px}
+
+/* 넓은 화면(태블릿·PC)에서는 그대로 늘리기만 */
+@media (min-width:760px){
+  html{scroll-padding-top:72px}
+  body{padding-bottom:0}
+  .bar{display:none}
+  header{display:flex;align-items:center;max-width:none}
+  header .top{flex:1;max-width:1080px;margin:0 auto;padding:0 20px;height:60px}
+  nav.menu{position:absolute;left:50%;top:0;height:60px;transform:translateX(-50%);align-items:center;padding:0;gap:4px}
+  nav.menu a{border:0;background:none}nav.menu a:hover{color:var(--olive)}
+  .hero{padding:88px 0 72px}.hero p{max-width:560px;font-size:17px}
+  .btns{display:flex;flex-wrap:wrap}.btns .btn{min-width:180px}
+  section.s{padding:72px 0}
+  .about{grid-template-columns:1.2fr 1fr;gap:40px}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .works{grid-template-columns:repeat(2,1fr)}
+  .team{grid-template-columns:repeat(2,1fr)}
+  .contact{grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+  .biz{grid-template-columns:repeat(3,1fr);gap:24px}
+  .more .btn{display:inline-flex}
+}
+@media (min-width:1000px){
+  .grid{grid-template-columns:repeat(4,1fr)}
+  .works{grid-template-columns:repeat(3,1fr)}
+  .steps{grid-template-columns:repeat(5,1fr);gap:12px}
+  .steps li{padding:18px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+  .steps li::before{position:static;margin-bottom:6px}.steps li::after{display:none}
+  .steps b{line-height:1.5}
+}
 </style></head><body>
 
-<header><div class="in">
-  <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
-  <nav class="menu" aria-label="메뉴"><a href="#about">회사 소개</a><a href="#service">서비스</a><a href="#works">시공 사례</a><a href="#process">진행 과정</a><a href="#team">팀</a></nav>
-  <a class="cta" href="#contact">상담 신청</a>
-</div></header>
+<header>
+  <div class="top">
+    <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
+    <a class="tel" href="tel:15665904">1566-5904</a>
+  </div>
+  <nav class="menu" aria-label="메뉴"><a href="#about">회사 소개</a><a href="#service">하는 일</a><a href="#works">시공 사례</a><a href="#process">진행 과정</a><a href="#team">담당자</a><a href="#contact">상담</a></nav>
+</header>
 
 <main id="top">
 <section class="hero"><div class="in">
@@ -117,13 +168,13 @@ footer .in{display:grid;gap:14px}
   <div>
     <div class="eyebrow">About</div>
     <h2>살기 좋은 공간을 디자인하고 설계합니다</h2>
-    <p class="lead">주식회사 홈퍼니싱은 한샘리하우스 대리점이자 인테리어 디자인 스튜디오 ‘아르띠꼬’를 함께 운영합니다. 상봉 전시장에서 실제 자재와 가구를 직접 보고 고르실 수 있습니다.</p>
+    <p class="lead" style="margin:0">주식회사 홈퍼니싱은 한샘리하우스 대리점이자 인테리어 디자인 스튜디오 ‘아르띠꼬’를 함께 운영합니다. 상봉 전시장에서 실제 자재와 가구를 직접 보고 고르실 수 있습니다.</p>
   </div>
   <div class="facts">
     <div class="fact"><div class="k">본사</div><div class="v">경기 구리</div></div>
     <div class="fact"><div class="k">전시장</div><div class="v">서울 상봉</div></div>
     <div class="fact"><div class="k">제휴</div><div class="v">한샘리하우스</div></div>
-    <div class="fact"><div class="k">대표번호</div><div class="v">1566-5904</div></div>
+    <div class="fact"><div class="k">대표번호</div><div class="v"><a href="tel:15665904" style="text-decoration:none">1566-5904</a></div></div>
   </div>
 </div></section>
 
@@ -143,37 +194,37 @@ footer .in{display:grid;gap:14px}
   <div class="eyebrow">Portfolio</div><h2>시공 사례</h2>
   <p class="lead">최근 완공한 현장입니다.</p>
   <div class="works">
-    <!-- 사진 바꾸는 법: site/images 폴더에 work-1.jpg ~ work-6.jpg 이름으로 사진을 넣으면 그 칸에 바로 나옵니다.
-         사진이 없으면 "사진 준비중"이 보입니다. 글자는 아래 칸의 사례 이름·지역·평형·공사 종류만 고치면 됩니다. -->
+    <!-- 사진 바꾸는 법: site/images 폴더에 work-1.jpg ~ work-6.jpg 이름으로 사진만 넣으면 그 칸에 바로 나옵니다.
+         사진이 없으면 "사진 준비중"이 보입니다. 글자는 각 칸의 사례 이름·지역·평형·공사 종류만 고치면 됩니다. -->
     <article class="work">
-      <div class="ph"><span>사진 준비중</span><img src="images/work-1.jpg" alt="현장 이름 1" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b class="name">현장 이름 1</b>
-        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>32평</dd></div><div><dt>공사</dt><dd>전체 리모델링</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-1.jpg" alt="시공 사례 1" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b><span class="fill">사례 이름</span></b>
+        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>32평</dd></div><div><dt>공사</dt><dd>아파트 · 전체 리모델링</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span>사진 준비중</span><img src="images/work-2.jpg" alt="현장 이름 2" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b class="name">현장 이름 2</b>
-        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>24평</dd></div><div><dt>공사</dt><dd>부엌·욕실</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-2.jpg" alt="시공 사례 2" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b><span class="fill">사례 이름</span></b>
+        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>24평</dd></div><div><dt>공사</dt><dd>아파트 · 부엌·욕실</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span>사진 준비중</span><img src="images/work-3.jpg" alt="현장 이름 3" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b class="name">현장 이름 3</b>
-        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>45평</dd></div><div><dt>공사</dt><dd>전체 리모델링</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-3.jpg" alt="시공 사례 3" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b><span class="fill">사례 이름</span></b>
+        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>45평</dd></div><div><dt>공사</dt><dd>주택 · 전체 리모델링</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span>사진 준비중</span><img src="images/work-4.jpg" alt="현장 이름 4" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b class="name">현장 이름 4</b>
-        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>34평</dd></div><div><dt>공사</dt><dd>붙박이장·수납</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-4.jpg" alt="시공 사례 4" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b><span class="fill">사례 이름</span></b>
+        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>34평</dd></div><div><dt>공사</dt><dd>아파트 · 붙박이장·수납</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span>사진 준비중</span><img src="images/work-5.jpg" alt="현장 이름 5" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b class="name">현장 이름 5</b>
-        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>18평</dd></div><div><dt>공사</dt><dd>부분 시공</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-5.jpg" alt="시공 사례 5" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b><span class="fill">사례 이름</span></b>
+        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>18평</dd></div><div><dt>공사</dt><dd>오피스텔 · 부분 시공</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span>사진 준비중</span><img src="images/work-6.jpg" alt="현장 이름 6" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b class="name">현장 이름 6</b>
-        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>—</dd></div><div><dt>공사</dt><dd>상업 공간 인테리어</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-6.jpg" alt="시공 사례 6" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b><span class="fill">사례 이름</span></b>
+        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>—</dd></div><div><dt>공사</dt><dd>상업 공간 · 카페 인테리어</dd></div></dl></div>
     </article>
   </div>
   <div class="more"><a class="btn" href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener">블로그에서 더 보기 →</a></div>
@@ -183,7 +234,7 @@ footer .in{display:grid;gap:14px}
   <div class="eyebrow">Process</div><h2>진행 과정</h2>
   <p class="lead">처음 연락부터 입주 후까지 다섯 단계.</p>
   <ol class="steps">
-    <li><b>상담</b><span>전화·온라인으로 원하는 공간과 예산을 듣습니다.</span></li>
+    <li><b>상담</b><span>전화·카카오톡으로 원하는 공간과 예산을 듣습니다.</span></li>
     <li><b>실측 · 방문</b><span>현장을 직접 재고 전시장에서 자재를 봅니다.</span></li>
     <li><b>디자인 · 견적</b><span>도면·3D와 항목별 견적서를 드립니다.</span></li>
     <li><b>시공</b><span>일정표대로 공정을 진행하고 매일 공유합니다.</span></li>
@@ -193,51 +244,86 @@ footer .in{display:grid;gap:14px}
 
 <section class="s" id="team"><div class="in">
   <div class="eyebrow">Team</div><h2>담당자</h2>
-  <p class="lead">이름을 누르면 모바일 명함이 열립니다.</p>
+  <p class="lead">누르면 모바일 명함이 열립니다.</p>
   <div class="team">
-    <a class="member" href="../jung/"><div class="n">정진혁</div><div class="en">Chung Jin Hyuk</div><div class="r">실장 · 설계 · 시공 관리</div><div class="go">명함 보기 →</div></a>
-    <a class="member" href="../lee/"><div class="n">이봄이</div><div class="en">Lee Bom Yi</div><div class="r">실장 · 공간 디자인</div><div class="go">명함 보기 →</div></a>
+    <a class="member" href="../jung/"><div><div class="n">정진혁</div><div class="en">Chung Jin Hyuk</div><div class="r">실장 · 설계 · 시공 관리</div></div><div class="go">명함 →</div></a>
+    <a class="member" href="../lee/"><div><div class="n">이봄이</div><div class="en">Lee Bom Yi</div><div class="r">실장 · 공간 디자인</div></div><div class="go">명함 →</div></a>
   </div>
 </div></section>
 
 <section class="s" id="contact"><div class="in contact">
-  <div class="info">
+  <div>
     <div class="eyebrow">Contact</div><h2>상담 신청</h2>
-    <p class="lead" style="margin-bottom:24px">남겨주시면 영업일 기준 하루 안에 연락드립니다.</p>
+    <p class="lead">아래 칸을 채워 보내시면 바로 접수됩니다. 영업일 기준 하루 안에 연락드립니다.</p>
+    <!-- 접수 방식: FormSubmit (formsubmit.co) · 받는 메일 artico_studio@naver.com
+         처음 1번 신청이 들어오면 그 메일로 "Activate Form" 확인 메일이 옵니다. 버튼을 한 번 눌러야 그 뒤 신청이 메일로 들어옵니다. -->
+    <form id="f" class="form" novalidate>
+      <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="row2"><label>이름<input name="이름" required autocomplete="name"></label><label>연락처<input name="연락처" type="tel" required autocomplete="tel" placeholder="010-0000-0000"></label></div>
+      <div class="row2"><label>공간 종류<select name="공간"><option>아파트</option><option>주택</option><option>오피스텔</option><option>상업 공간</option><option>기타</option></select></label><label>평수<input name="평수" inputmode="numeric" placeholder="예: 32"></label></div>
+      <label>현장 주소<input name="주소" placeholder="시·구·동까지만 적어도 됩니다"></label>
+      <label>원하는 내용<textarea name="내용" placeholder="예: 부엌과 욕실 리모델링, 12월 입주 예정"></textarea></label>
+      <label class="agree"><input type="checkbox" name="개인정보동의" value="예" required> 상담을 위한 개인정보 수집에 동의합니다</label>
+      <button class="btn p" type="submit">상담 신청하기</button>
+      <p class="note" id="msg" role="status" aria-live="polite">버튼을 누르면 바로 접수됩니다.</p>
+    </form>
+    <div class="cbtns">
+      <a class="btn p" href="tel:15665904">전화 걸기 · 1566-5904</a>
+      <!-- 카카오톡 채널 주소가 나오면 href="#kakao" 를 https://pf.kakao.com/… 로 바꾸기 -->
+      <a class="btn k" href="#kakao" data-fill="kakao">카카오톡 문의 <span class="fill" style="border-color:var(--kakao-ink);color:var(--kakao-ink)">링크 채울 곳</span></a>
+      <a class="btn" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집에서 상담하기</a>
+    </div>
+  </div>
+  <div class="info">
     <p><span class="k">대표번호</span><a href="tel:15665904">1566-5904</a></p>
     <p><span class="k">이메일</span><a href="mailto:artico_studio@naver.com">artico_studio@naver.com</a></p>
     <p><span class="k">전시장</span>서울특별시 중랑구 상봉로 131 듀오트리스 2F</p>
     <p><span class="k">본사</span>경기도 구리시 동구릉로129번길 2-1, 1층 1호</p>
-    <p><a class="btn" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집에서 상담하기</a></p>
   </div>
-  <!-- 접수 방식: FormSubmit (formsubmit.co). 받는 메일 = artico_studio@naver.com
-       처음 1번 신청이 들어오면 그 메일로 "Activate" 확인 메일이 옵니다. 그 버튼을 한 번 눌러야 이후 신청이 메일로 들어옵니다. -->
-  <form id="f" novalidate>
-    <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
-    <div class="row2"><label>이름<input name="이름" required autocomplete="name"></label><label>연락처<input name="연락처" type="tel" required autocomplete="tel" placeholder="010-0000-0000"></label></div>
-    <div class="row2"><label>공간 종류<select name="공간"><option>아파트</option><option>주택</option><option>오피스텔</option><option>상업 공간</option><option>기타</option></select></label><label>평수<input name="평수" inputmode="numeric" placeholder="예: 32"></label></div>
-    <label>현장 주소<input name="주소" placeholder="시·구·동까지만 적어도 됩니다"></label>
-    <label>원하는 내용<textarea name="내용" placeholder="예: 부엌과 욕실 리모델링, 12월 입주 예정"></textarea></label>
-    <label class="agree"><input type="checkbox" name="동의" value="예" required> 상담을 위한 개인정보 수집에 동의합니다</label>
-    <button class="btn p" type="submit">상담 신청하기</button>
-    <p class="note" id="msg" role="status" aria-live="polite">버튼을 누르면 바로 접수됩니다. 급하시면 1566-5904로 전화 주세요.</p>
-  </form>
 </div></section>
 </main>
 
 <footer><div class="in">
   <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
-  <!-- 출처: 구글 드라이브 '홈페이지 초안' md 파일에 정리. 두 사업자 번호를 섞지 마세요. -->
+  <!-- 출처는 구글 드라이브 '홈페이지 초안' md 파일에 정리. 두 사업자 번호를 섞지 마세요. -->
   <div class="biz">
-    <div><b>주식회사 홈퍼니싱</b> (법인)<br>각자대표 최윤수, 신혜현<br>사업자등록번호 449-81-01936<br>경기도 구리시 동구릉로129번길 2-1, 1층 1호(인창동)<br>전화 031-513-9560 · 팩스 031-513-9561</div>
-    <div><b>아르띠꼬 스튜디오</b> (개인)<br>대표 신혜현 · 공동사업자 최윤수<br>사업자등록번호 132-28-10060<br>경기도 구리시 동구릉로129번길 2-1, 옥탑(인창동)</div>
-    <div><b>전시장</b><br>서울특별시 중랑구 상봉로 131 듀오트리스 2F<br>대표번호 <a href="tel:15665904">1566-5904</a><br>이메일 <a href="mailto:artico_studio@naver.com">artico_studio@naver.com</a></div>
+    <div class="co">
+      <b>주식회사 홈퍼니싱 <small>(법인)</small></b>
+      <div>각자대표 최윤수, 신혜현</div>
+      <div>사업자등록번호 449-81-01936</div>
+      <div>경기도 구리시 동구릉로129번길 2-1, 1층 1호(인창동)</div>
+      <div>T 031-513-9560 · F 031-513-9561</div>
+    </div>
+    <div class="co">
+      <b>아르띠꼬 스튜디오 <small>(개인)</small></b>
+      <div>대표 신혜현 · 공동사업자 최윤수</div>
+      <div>사업자등록번호 132-28-10060</div>
+      <div>경기도 구리시 동구릉로129번길 2-1, 옥탑(인창동)</div>
+      <div>E artico_studio@naver.com</div>
+    </div>
+    <div class="co">
+      <b>전시장 · 대표번호</b>
+      <div>서울특별시 중랑구 상봉로 131 듀오트리스 2F</div>
+      <div>대표번호 <a href="tel:15665904">1566-5904</a></div>
+    </div>
   </div>
   <div class="ch"><a href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener">블로그</a><a href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener">인스타그램</a><a href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew" target="_blank" rel="noopener">유튜브</a><a href="https://blog.naver.com/soo17115" target="_blank" rel="noopener">한샘 대리점</a></div>
-  <div>© 2026 Home Furnishing. All rights reserved.</div>
+  <div>© 2026 Home Furnishing · Artico Studio</div>
 </div></footer>
 
+<!-- 휴대폰 아래 고정 버튼 -->
+<div class="bar">
+  <a class="btn p" href="tel:15665904">전화 걸기</a>
+  <a class="btn k" href="#kakao" data-fill="kakao">카카오톡 문의</a>
+</div>
+
 <script>
+// 카카오톡 링크가 아직 없을 때: 누르면 안내만 띄우지 않고 상담 칸으로 이동
+document.querySelectorAll('[data-fill="kakao"]').forEach(function(a){
+  if(a.getAttribute('href')==='#kakao'){a.addEventListener('click',function(e){e.preventDefault();location.hash='contact';});}
+});
+
+// 상담 폼: FormSubmit 으로 바로 접수
 var f=document.getElementById('f'),msg=document.getElementById('msg'),btn=f.querySelector('button');
 f.addEventListener('submit',function(e){
   e.preventDefault();
@@ -246,7 +332,7 @@ f.addEventListener('submit',function(e){
   btn.disabled=true;btn.textContent='보내는 중…';
   fetch('https://formsubmit.co/ajax/artico_studio@naver.com',{method:'POST',headers:{'Accept':'application/json'},body:d})
     .then(function(r){return r.json()}).then(function(j){
-      if(j.success!=='true'&&j.success!==true)throw 0;
+      if(String(j.success)!=='true')throw 0;
       f.reset();msg.textContent='접수되었습니다. 영업일 기준 하루 안에 연락드릴게요.';btn.textContent='접수 완료';
     }).catch(function(){
       msg.innerHTML='전송에 실패했어요. <a href="tel:15665904">1566-5904</a>로 전화 주시거나 잠시 후 다시 시도해 주세요.';
