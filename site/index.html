@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 홈페이지 2026-10-31 v2 · 모바일 기준 (도메인 연결 전) -->
+<!-- 홈페이지 2026-10-31 v3 · 모바일 기준 (도메인 연결 전) -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>홈퍼니싱 · 아르띠꼬 스튜디오 | 공간을 설계하고 취향을 디자인합니다</title>
 <meta name="description" content="주식회사 홈퍼니싱 · 아르띠꼬 스튜디오. 디자인 · 설계 · 실내건축 · 한샘리하우스 대리점. 구리 본사, 상봉 전시장.">
@@ -50,6 +50,22 @@ nav.menu a{flex:0 0 auto;text-decoration:none;font-size:14.5px;padding:8px 14px;
 section.s{padding:48px 0;border-bottom:1px solid var(--line)}
 .s h2{margin:6px 0 8px;font-size:clamp(23px,6vw,32px);line-height:1.35;font-weight:600}
 .s .lead{color:var(--taupe);margin:0 0 24px}
+
+/* 대표 영상 */
+.hero-in{display:grid;gap:28px}
+.hero-media{position:relative;aspect-ratio:9/16;max-height:78vh;margin:0 auto;width:100%;max-width:440px;border-radius:12px;overflow:hidden;background:#1f2f4f}
+.hero-media img,.hero-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-media video:not([src]){display:none}
+.hero-media.wide{aspect-ratio:16/9;max-width:none;max-height:none}
+
+/* 실적 · 대표 */
+.split{display:grid;gap:24px;align-items:center}
+.pic{margin:0;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+.pic img{width:100%;height:auto}
+.pic.tall{max-width:360px;width:100%;margin:0 auto}
+.pic.portrait{max-width:300px;width:100%;margin:0 auto}
+.greet p{margin:0 0 10px;font-size:16.5px}
+.sign{margin:18px 0 0;color:var(--taupe);font-size:15px}.sign b{color:var(--ink);font-size:18px;letter-spacing:.15em;margin-left:6px}
 
 /* 회사 소개 */
 .about{display:grid;gap:24px}
@@ -131,6 +147,11 @@ footer .in{display:grid;gap:18px}footer a{color:var(--taupe)}
   .btns{display:flex;flex-wrap:wrap}.btns .btn{min-width:180px}
   section.s{padding:72px 0}
   .about{grid-template-columns:1.2fr 1fr;gap:40px}
+  .hero-in{grid-template-columns:1.1fr .9fr;align-items:center;gap:48px}
+  .hero-in.has-wide{grid-template-columns:1fr}
+  .hero-media{max-height:640px}
+  .split{grid-template-columns:1.1fr .9fr;gap:48px}
+  .split.ceo{grid-template-columns:.8fr 1.2fr}
   .grid{grid-template-columns:repeat(2,1fr)}
   .works{grid-template-columns:repeat(2,1fr)}
   .team{grid-template-columns:repeat(2,1fr)}
@@ -153,15 +174,23 @@ footer .in{display:grid;gap:18px}footer a{color:var(--taupe)}
     <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
     <a class="tel" href="tel:15665904">1566-5904</a>
   </div>
-  <nav class="menu" aria-label="메뉴"><a href="#about">회사 소개</a><a href="#service">하는 일</a><a href="#works">시공 사례</a><a href="#process">진행 과정</a><a href="#team">담당자</a><a href="#contact">상담</a></nav>
+  <nav class="menu" aria-label="메뉴"><a href="#about">회사 소개</a><a href="#record">실적</a><a href="#ceo">대표 인사</a><a href="#service">하는 일</a><a href="#works">시공 사례</a><a href="#process">진행 과정</a><a href="#team">담당자</a><a href="#contact">상담</a></nav>
 </header>
 
 <main id="top">
-<section class="hero"><div class="in">
+<section class="hero"><div class="in hero-in">
+  <div class="hero-txt">
   <div class="eyebrow">Home Furnishing · Artico Studio</div>
   <h1>공간을 설계하는 <span class="h">홈퍼니싱</span><br>취향을 디자인하는 <span class="a">아르띠꼬</span></h1>
   <p>디자인부터 설계, 실내건축, 가구까지. 생활 방식에 맞춰 공간을 디자인하고, 처음부터 끝까지 한 팀이 책임집니다.</p>
   <div class="btns"><a class="btn p" href="#contact">무료 상담 신청</a><a class="btn" href="#works">시공 사례 보기</a></div>
+  </div>
+  <!-- 대표 영상: images/hero-vertical.mp4(휴대폰·세로) / images/hero-wide.mp4(PC·가로)를 넣으면 소리 없이 자동 반복 재생.
+       영상이 없거나 재생이 안 되면 images/hero-poster.jpg 정지 사진이 보입니다. -->
+  <div class="hero-media" id="heroMedia">
+    <img src="images/hero-poster.jpg" alt="관공서와 학교가 믿고 맡긴 인테리어 회사 · 주식회사 홈퍼니싱" width="1080" height="1920">
+    <video id="heroVideo" muted autoplay loop playsinline preload="metadata" poster="images/hero-poster.jpg" aria-hidden="true"></video>
+  </div>
 </div></section>
 
 <section class="s" id="about"><div class="in about">
@@ -175,6 +204,28 @@ footer .in{display:grid;gap:18px}footer a{color:var(--taupe)}
     <div class="fact"><div class="k">전시장</div><div class="v">서울 상봉</div></div>
     <div class="fact"><div class="k">제휴</div><div class="v">한샘리하우스</div></div>
     <div class="fact"><div class="k">대표번호</div><div class="v"><a href="tel:15665904" style="text-decoration:none">1566-5904</a></div></div>
+  </div>
+</div></section>
+
+<section class="s" id="record"><div class="in split">
+  <div>
+    <div class="eyebrow">Government · School</div><h2>관공서 · 학교 실적</h2>
+    <p class="lead">2020년부터 2025년까지 관공서와 학교 공간 50건 이상을 맡아 왔습니다. 구리시청을 비롯한 공공 공간에서 일정과 안전 기준을 지키며 마무리했습니다.</p>
+    <a class="btn" href="#contact">공공 공사 문의하기</a>
+  </div>
+  <figure class="pic tall"><img src="images/record.jpg" alt="관공서·학교 프로젝트 50건 이상 (2020~2025) · 구리시청 공드린 주방" loading="lazy" width="1080" height="1920"></figure>
+</div></section>
+
+<section class="s" id="ceo"><div class="in split ceo">
+  <figure class="pic portrait"><img src="images/ceo.jpg" alt="주식회사 홈퍼니싱 대표 최윤수" loading="lazy" width="800" height="1000"></figure>
+  <div>
+    <div class="eyebrow">CEO</div><h2>대표 인사말</h2>
+    <div class="greet">
+      <p>2014년 작은 인테리어 스튜디오로 시작해, 2020년 주식회사 홈퍼니싱을 세웠습니다.</p>
+      <p>그동안 관공서와 학교, 그리고 여러 가정의 주거 공간을 함께 만들어 왔습니다.</p>
+      <p>쓰는 사람의 이야기를 먼저 듣고, 약속한 대로 만들고, 끝난 뒤에도 책임지겠습니다.</p>
+    </div>
+    <p class="sign">주식회사 홈퍼니싱 대표 <b>최윤수</b></p>
   </div>
 </div></section>
 
@@ -197,19 +248,19 @@ footer .in{display:grid;gap:18px}footer a{color:var(--taupe)}
     <!-- 사진 바꾸는 법: site/images 폴더에 work-1.jpg ~ work-6.jpg 이름으로 사진만 넣으면 그 칸에 바로 나옵니다.
          사진이 없으면 "사진 준비중"이 보입니다. 글자는 각 칸의 사례 이름·지역·평형·공사 종류만 고치면 됩니다. -->
     <article class="work">
-      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-1.jpg" alt="시공 사례 1" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b><span class="fill">사례 이름</span></b>
-        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>32평</dd></div><div><dt>공사</dt><dd>아파트 · 전체 리모델링</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-1.jpg" alt="구리역 롯데캐슬 시그니처 거실" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b>구리역 롯데캐슬 시그니처</b>
+        <dl><div><dt>지역</dt><dd>경기 구리</dd></div><div><dt>평형</dt><dd>37평</dd></div><div><dt>공사</dt><dd>아파트 · 전체 인테리어</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-2.jpg" alt="시공 사례 2" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b><span class="fill">사례 이름</span></b>
-        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>24평</dd></div><div><dt>공사</dt><dd>아파트 · 부엌·욕실</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-2.jpg" alt="구의 현대 거실" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b>구의 현대</b>
+        <dl><div><dt>지역</dt><dd>서울 광진</dd></div><div><dt>공사</dt><dd>아파트 · 리모델링</dd></div></dl></div>
     </article>
     <article class="work">
-      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-3.jpg" alt="시공 사례 3" loading="lazy" onerror="this.remove()"></div>
-      <div class="t"><b><span class="fill">사례 이름</span></b>
-        <dl><div><dt>지역</dt><dd><span class="fill">지역</span></dd></div><div><dt>평형</dt><dd>45평</dd></div><div><dt>공사</dt><dd>주택 · 전체 리모델링</dd></div></dl></div>
+      <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-3.jpg" alt="구리갈매 루샵 매장 2층으로 올라가는 계단" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b>구리갈매 루샵 매장</b>
+        <dl><div><dt>지역</dt><dd>경기 구리</dd></div><div><dt>공사</dt><dd>상업 공간 · 매장 인테리어</dd></div></dl></div>
     </article>
     <article class="work">
       <div class="ph"><span class="fill">사진 준비중</span><img src="images/work-4.jpg" alt="시공 사례 4" loading="lazy" onerror="this.remove()"></div>
@@ -322,6 +373,20 @@ footer .in{display:grid;gap:18px}footer a{color:var(--taupe)}
 document.querySelectorAll('[data-fill="kakao"]').forEach(function(a){
   if(a.getAttribute('href')==='#kakao'){a.addEventListener('click',function(e){e.preventDefault();location.hash='contact';});}
 });
+
+// 대표 영상: PC는 가로 영상, 휴대폰은 세로 영상. 파일이 없으면 정지 사진 유지
+(function(){
+  var v=document.getElementById('heroVideo'),box=document.getElementById('heroMedia');if(!v)return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var wide=window.matchMedia('(min-width:760px)').matches;
+  var list=wide?['images/hero-wide.mp4','images/hero-vertical.mp4']:['images/hero-vertical.mp4'];
+  function tryNext(){
+    var src=list.shift();if(!src){v.removeAttribute('src');box.classList.remove('wide');box.parentNode.classList.remove('has-wide');return}
+    var isWide=src.indexOf('wide')>-1;box.classList.toggle('wide',isWide);box.parentNode.classList.toggle('has-wide',isWide);
+    v.src=src;var p=v.play();if(p&&p.catch)p.catch(function(){});
+  }
+  v.addEventListener('error',tryNext);tryNext();
+})();
 
 // 상담 폼: FormSubmit 으로 바로 접수
 var f=document.getElementById('f'),msg=document.getElementById('msg'),btn=f.querySelector('button');
