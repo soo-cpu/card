@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>홈퍼니싱 · 아르띠꼬 스튜디오 | 공간을 설계하고 취향을 디자인합니다</title>
+<meta name="description" content="주식회사 홈퍼니싱 · 아르띠꼬 스튜디오. 디자인 · 설계 · 실내건축 · 한샘리하우스 대리점. 구리 본사, 상봉 전시장.">
+<meta property="og:title" content="홈퍼니싱 · 아르띠꼬 스튜디오"><meta property="og:description" content="공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬"><meta property="og:type" content="website"><meta property="og:url" content="https://soo-cpu.github.io/card/site/"><meta property="og:image" content="https://soo-cpu.github.io/card/soo/card.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Jost:wght@300;400&display=swap">
+<style>
+/* 명함과 같은 색·글꼴 */
+:root{--bg:#f3f0ec;--card:#fbfaf8;--ink:#4a423b;--taupe:#9a8b7e;--line:#e4ded6;--olive:#6f7247;--gold:#b49a5e;--navy:#1f2f4f;--on:#fbfaf8;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-logo:"Jost","Futura","Century Gothic",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1a18;--card:#262321;--ink:#ece6df;--taupe:#b8a898;--line:#3a3531;--olive:#8d9160;--gold:#d0b679;--navy:#9fb2d6;color-scheme:dark}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.6;word-break:keep-all}
+a{color:inherit}img{max-width:100%;display:block}
+.in{max-width:1080px;margin:0 auto;padding:0 20px}
+.logo{font-family:var(--f-logo);font-weight:300;font-size:19px;color:var(--taupe);text-decoration:none;white-space:nowrap}
+.logo b{font-weight:400;color:var(--navy);letter-spacing:.02em}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* 상단 메뉴 */
+header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .in{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
+nav.menu{display:flex;gap:22px;font-size:14px}
+nav.menu a{text-decoration:none;color:var(--ink)}nav.menu a:hover{color:var(--olive)}
+.cta{background:var(--olive);color:var(--on)!important;text-decoration:none;border-radius:6px;padding:8px 14px;font-size:14px;font-weight:500;white-space:nowrap}
+@media (max-width:760px){nav.menu{display:none}}
+
+/* 메인 */
+.hero{padding:88px 0 72px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--f-logo);letter-spacing:.2em;font-size:12px;color:var(--taupe);text-transform:uppercase}
+.hero h1{margin:14px 0 18px;font-size:clamp(30px,5.4vw,54px);line-height:1.25;font-weight:600;letter-spacing:-.01em}
+.hero h1 .h{color:var(--navy)}.hero h1 .a{color:var(--olive)}
+.hero p{max-width:560px;color:var(--taupe);font-size:17px;margin:0 0 28px}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:6px;text-decoration:none;font-weight:500;border:1px solid var(--line);background:var(--card)}
+.btn.p{background:var(--olive);border-color:var(--olive);color:var(--on)}
+
+section.s{padding:72px 0;border-bottom:1px solid var(--line)}
+.s h2{margin:6px 0 10px;font-size:clamp(24px,3.4vw,32px);font-weight:600}
+.s .lead{color:var(--taupe);margin:0 0 32px;max-width:620px}
+
+/* 회사 소개 */
+.about{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:start}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+.fact .k{font-size:12px;color:var(--taupe)}.fact .v{font-size:17px;font-weight:500;margin-top:2px}
+@media (max-width:760px){.about{grid-template-columns:1fr}}
+
+/* 카드 그리드 */
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.box{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px}
+.box .no{font-family:var(--f-logo);color:var(--gold);font-size:14px}
+.box h3{margin:8px 0 6px;font-size:18px;font-weight:600}
+.box p{margin:0;color:var(--taupe);font-size:14.5px}
+
+/* 시공 사례 */
+.works{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.work{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.ph{aspect-ratio:4/3;display:grid;place-items:center;background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 14px);color:var(--taupe);font-size:13px}
+.work .t{padding:12px 16px}.work .t b{display:block;font-weight:500}.work .t span{font-size:13px;color:var(--taupe)}
+.more{margin-top:20px}
+
+/* 진행 과정 */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:12px;grid-template-columns:repeat(5,1fr);counter-reset:s}
+.steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px}
+.steps li::before{content:"0" counter(s);font-family:var(--f-logo);color:var(--olive);font-size:22px;font-weight:300;display:block}
+.steps b{display:block;margin:4px 0}.steps span{font-size:13.5px;color:var(--taupe)}
+@media (max-width:900px){.steps{grid-template-columns:1fr 1fr}}@media (max-width:480px){.steps{grid-template-columns:1fr}}
+
+/* 팀 */
+.team{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.member{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;text-decoration:none;display:block}
+.member .n{font-size:22px;font-weight:600;letter-spacing:.2em;color:var(--taupe)}
+.member .en{font-family:var(--f-logo);font-weight:300;font-size:13px;color:var(--taupe)}
+.member .r{margin-top:8px;font-size:14px}.member .go{margin-top:12px;font-size:13px;color:var(--olive)}
+.member:hover{border-color:var(--olive)}
+
+/* 상담 */
+.contact{display:grid;grid-template-columns:1fr 1.2fr;gap:40px}
+@media (max-width:760px){.contact{grid-template-columns:1fr}}
+.info p{margin:0 0 14px}.info .k{display:block;font-size:12px;color:var(--taupe)}
+form{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;display:grid;gap:12px}
+label{font-size:13px;color:var(--taupe);display:grid;gap:4px}
+input,select,textarea{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%}
+textarea{min-height:110px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:480px){.row2{grid-template-columns:1fr}}
+.agree{flex-direction:row;display:flex;gap:8px;align-items:center;font-size:13px}.agree input{width:auto}
+button.btn{cursor:pointer;font:inherit;font-weight:500;justify-content:center}
+.note{font-size:12px;color:var(--taupe);margin:0}
+
+footer{padding:40px 0 56px;font-size:13px;color:var(--taupe)}
+footer .in{display:grid;gap:10px}footer a{color:var(--taupe)}
+.ch{display:flex;flex-wrap:wrap;gap:14px}
+</style></head><body>
+
+<header><div class="in">
+  <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
+  <nav class="menu" aria-label="메뉴"><a href="#about">회사 소개</a><a href="#service">서비스</a><a href="#works">시공 사례</a><a href="#process">진행 과정</a><a href="#team">팀</a></nav>
+  <a class="cta" href="#contact">상담 신청</a>
+</div></header>
+
+<main id="top">
+<section class="hero"><div class="in">
+  <div class="eyebrow">Home Furnishing · Artico Studio</div>
+  <h1>공간을 설계하는 <span class="h">홈퍼니싱</span><br>취향을 디자인하는 <span class="a">아르띠꼬</span></h1>
+  <p>디자인부터 설계, 실내건축, 가구까지. 한 팀이 처음부터 끝까지 책임지고 우리 집을 완성합니다.</p>
+  <div class="btns"><a class="btn p" href="#contact">무료 상담 신청</a><a class="btn" href="#works">시공 사례 보기</a></div>
+</div></section>
+
+<section class="s" id="about"><div class="in about">
+  <div>
+    <div class="eyebrow">About</div>
+    <h2>살기 좋은 집을 함께 짓습니다</h2>
+    <p class="lead">주식회사 홈퍼니싱은 한샘리하우스 대리점이자 인테리어 디자인 스튜디오 ‘아르띠꼬’를 함께 운영합니다. 상봉 전시장에서 실제 자재와 가구를 직접 보고 고르실 수 있습니다.</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><div class="k">본사</div><div class="v">경기 구리</div></div>
+    <div class="fact"><div class="k">전시장</div><div class="v">서울 상봉</div></div>
+    <div class="fact"><div class="k">제휴</div><div class="v">한샘리하우스</div></div>
+    <div class="fact"><div class="k">대표번호</div><div class="v">1566-5904</div></div>
+  </div>
+</div></section>
+
+<section class="s" id="service"><div class="in">
+  <div class="eyebrow">Service</div><h2>하는 일</h2>
+  <p class="lead">상담부터 사후 관리까지 한 곳에서.</p>
+  <div class="grid">
+    <div class="box"><div class="no">01</div><h3>공간 디자인</h3><p>생활 방식과 취향을 듣고 집 전체의 컨셉과 색, 자재를 제안합니다.</p></div>
+    <div class="box"><div class="no">02</div><h3>설계 · 3D 도면</h3><p>실측 후 평면도와 3D로 완성된 모습을 먼저 보여드립니다.</p></div>
+    <div class="box"><div class="no">03</div><h3>실내건축 시공</h3><p>철거·설비·목공·타일·도장까지 전체 리모델링을 직접 관리합니다.</p></div>
+    <div class="box"><div class="no">04</div><h3>한샘 가구 · 수납</h3><p>한샘리하우스 부엌·욕실·붙박이장을 공간에 맞춰 설치합니다.</p></div>
+  </div>
+</div></section>
+
+<section class="s" id="works"><div class="in">
+  <div class="eyebrow">Portfolio</div><h2>시공 사례</h2>
+  <p class="lead">최근 완공한 현장입니다.</p>
+  <div class="works">
+    <!-- 사진 넣기: <div class="ph"> 대신 <img src="사진.jpg" alt="현장 이름"> -->
+    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 1</b><span>아파트 · 32평 · 전체 리모델링</span></div></article>
+    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 2</b><span>아파트 · 24평 · 부엌·욕실</span></div></article>
+    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 3</b><span>주택 · 45평 · 전체 리모델링</span></div></article>
+    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 4</b><span>아파트 · 34평 · 붙박이장·수납</span></div></article>
+    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 5</b><span>오피스텔 · 18평 · 부분 시공</span></div></article>
+    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 6</b><span>상업 공간 · 카페 · 인테리어</span></div></article>
+  </div>
+  <div class="more"><a class="btn" href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener">블로그에서 더 보기 →</a></div>
+</div></section>
+
+<section class="s" id="process"><div class="in">
+  <div class="eyebrow">Process</div><h2>진행 과정</h2>
+  <p class="lead">처음 연락부터 입주 후까지 다섯 단계.</p>
+  <ol class="steps">
+    <li><b>상담</b><span>전화·온라인으로 원하는 공간과 예산을 듣습니다.</span></li>
+    <li><b>실측 · 방문</b><span>현장을 직접 재고 전시장에서 자재를 봅니다.</span></li>
+    <li><b>디자인 · 견적</b><span>도면·3D와 항목별 견적서를 드립니다.</span></li>
+    <li><b>시공</b><span>일정표대로 공정을 진행하고 매일 공유합니다.</span></li>
+    <li><b>입주 · A/S</b><span>마감 점검 후 입주, 이후에도 책임지고 관리합니다.</span></li>
+  </ol>
+</div></section>
+
+<section class="s" id="team"><div class="in">
+  <div class="eyebrow">Team</div><h2>담당자</h2>
+  <p class="lead">이름을 누르면 모바일 명함이 열립니다.</p>
+  <div class="team">
+    <a class="member" href="../jung/"><div class="n">정진혁</div><div class="en">Chung Jin Hyuk</div><div class="r">실장 · 설계 · 시공 관리</div><div class="go">명함 보기 →</div></a>
+    <a class="member" href="../lee/"><div class="n">이봄이</div><div class="en">Lee Bom Yi</div><div class="r">실장 · 공간 디자인</div><div class="go">명함 보기 →</div></a>
+  </div>
+</div></section>
+
+<section class="s" id="contact"><div class="in contact">
+  <div class="info">
+    <div class="eyebrow">Contact</div><h2>상담 신청</h2>
+    <p class="lead" style="margin-bottom:24px">남겨주시면 영업일 기준 하루 안에 연락드립니다.</p>
+    <p><span class="k">대표번호</span><a href="tel:15665904">1566-5904</a></p>
+    <p><span class="k">이메일</span><a href="mailto:artico_studio@naver.com">artico_studio@naver.com</a></p>
+    <p><span class="k">전시장</span>서울특별시 중랑구 상봉로 131 듀오트리스 2F</p>
+    <p><span class="k">본사</span>경기도 구리시 동구릉로 129번길 2-1</p>
+    <p><a class="btn" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집에서 상담하기</a></p>
+  </div>
+  <form id="f">
+    <div class="row2"><label>이름<input name="name" required autocomplete="name"></label><label>연락처<input name="phone" type="tel" required autocomplete="tel" placeholder="010-0000-0000"></label></div>
+    <div class="row2"><label>공간 종류<select name="type"><option>아파트</option><option>주택</option><option>오피스텔</option><option>상업 공간</option><option>기타</option></select></label><label>평수<input name="size" inputmode="numeric" placeholder="예: 32"></label></div>
+    <label>현장 주소<input name="addr" placeholder="시·구·동까지만 적어도 됩니다"></label>
+    <label>원하는 내용<textarea name="msg" placeholder="예: 부엌과 욕실 리모델링, 12월 입주 예정"></textarea></label>
+    <label class="agree"><input type="checkbox" required> 상담을 위한 개인정보 수집에 동의합니다</label>
+    <button class="btn p" type="submit">상담 신청하기</button>
+    <p class="note">지금은 신청 내용이 메일 앱으로 열립니다. (초안)</p>
+  </form>
+</div></section>
+</main>
+
+<footer><div class="in">
+  <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
+  <div>주식회사 홈퍼니싱 · 아르띠꼬 스튜디오 | 대표 최윤수 | 사업자등록번호 000-00-00000</div>
+  <div>본사 경기도 구리시 동구릉로 129번길 2-1 · 전시장 서울특별시 중랑구 상봉로 131 듀오트리스 2F · T 1566-5904 · F 031-513-9561</div>
+  <div class="ch"><a href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener">블로그</a><a href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener">인스타그램</a><a href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew" target="_blank" rel="noopener">유튜브</a><a href="https://blog.naver.com/soo17115" target="_blank" rel="noopener">한샘 대리점</a></div>
+  <div>© 2026 Home Furnishing. All rights reserved.</div>
+</div></footer>
+
+<script>
+document.getElementById('f').addEventListener('submit',function(e){
+  e.preventDefault();var d=new FormData(this);
+  var body=['이름: '+d.get('name'),'연락처: '+d.get('phone'),'공간: '+d.get('type')+' / '+(d.get('size')||'-')+'평','주소: '+(d.get('addr')||'-'),'','내용:',d.get('msg')||'-'].join('\n');
+  location.href='mailto:artico_studio@naver.com?subject='+encodeURIComponent('[홈페이지 상담] '+d.get('name'))+'&body='+encodeURIComponent(body);
+});
+</script>
+</body></html>
