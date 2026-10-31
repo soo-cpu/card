@@ -11,7 +11,7 @@
   --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-logo:"Jost","Futura","Century Gothic",sans-serif}
 @media (prefers-color-scheme:dark){:root{--bg:#1c1a18;--card:#262321;--ink:#ece6df;--taupe:#b8a898;--line:#3a3531;--olive:#8d9160;--gold:#d0b679;--navy:#9fb2d6;color-scheme:dark}}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:64px}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.6;word-break:keep-all}
+body{margin:0;overflow-wrap:anywhere;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.6;word-break:keep-all}
 a{color:inherit}img{max-width:100%;display:block}
 .in{max-width:1080px;margin:0 auto;padding:0 20px}
 .logo{font-family:var(--f-logo);font-weight:300;font-size:19px;color:var(--taupe);text-decoration:none;white-space:nowrap}
@@ -25,6 +25,8 @@ nav.menu{display:flex;gap:22px;font-size:14px}
 nav.menu a{text-decoration:none;color:var(--ink)}nav.menu a:hover{color:var(--olive)}
 .cta{background:var(--olive);color:var(--on)!important;text-decoration:none;border-radius:6px;padding:8px 14px;font-size:14px;font-weight:500;white-space:nowrap}
 @media (max-width:760px){nav.menu{display:none}}
+@media (max-width:480px){.hero{padding:56px 0 48px}section.s{padding:52px 0}.facts{grid-template-columns:1fr 1fr}.fact .v{font-size:15px}.works{grid-template-columns:1fr}.btns .btn{flex:1;justify-content:center}.logo{font-size:17px}}
+input,select,textarea{min-width:0}
 
 /* 메인 */
 .hero{padding:88px 0 72px;border-bottom:1px solid var(--line)}
@@ -57,8 +59,10 @@ section.s{padding:72px 0;border-bottom:1px solid var(--line)}
 /* 시공 사례 */
 .works{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 .work{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.ph{aspect-ratio:4/3;display:grid;place-items:center;background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 14px);color:var(--taupe);font-size:13px}
-.work .t{padding:12px 16px}.work .t b{display:block;font-weight:500}.work .t span{font-size:13px;color:var(--taupe)}
+.ph{aspect-ratio:4/3;position:relative;display:grid;place-items:center;background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 14px);color:var(--taupe);font-size:13px}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.work .t{padding:12px 16px}.work .t b{display:block;font-weight:500}
+.work dl{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;font-size:13px}.work dl div{display:flex;gap:5px}.work dt{color:var(--taupe)}.work dd{margin:0}
 .more{margin-top:20px}
 
 /* 진행 과정 */
@@ -90,7 +94,8 @@ button.btn{cursor:pointer;font:inherit;font-weight:500;justify-content:center}
 .note{font-size:12px;color:var(--taupe);margin:0}
 
 footer{padding:40px 0 56px;font-size:13px;color:var(--taupe)}
-footer .in{display:grid;gap:10px}footer a{color:var(--taupe)}
+footer .in{display:grid;gap:14px}
+.biz{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));line-height:1.7}.biz b{color:var(--ink);font-weight:500}footer a{color:var(--taupe)}
 .ch{display:flex;flex-wrap:wrap;gap:14px}
 </style></head><body>
 
@@ -128,6 +133,7 @@ footer .in{display:grid;gap:10px}footer a{color:var(--taupe)}
   <div class="grid">
     <div class="box"><div class="no">01</div><h3>공간 디자인</h3><p>생활 방식과 취향을 듣고 집 전체의 컨셉과 색, 자재를 제안합니다.</p></div>
     <div class="box"><div class="no">02</div><h3>설계 · 3D 도면</h3><p>실측 후 평면도와 3D로 완성된 모습을 먼저 보여드립니다.</p></div>
+    <!-- 대안 문구: ① "공간 디자인·시공"  ② "인테리어 설계·시공" (지금은 '실내건축 시공' 유지) -->
     <div class="box"><div class="no">03</div><h3>실내건축 시공</h3><p>철거·설비·목공·타일·도장까지 전체 리모델링을 직접 관리합니다.</p></div>
     <div class="box"><div class="no">04</div><h3>한샘 가구 · 수납</h3><p>한샘리하우스 부엌·욕실·붙박이장을 공간에 맞춰 설치합니다.</p></div>
   </div>
@@ -137,13 +143,38 @@ footer .in{display:grid;gap:10px}footer a{color:var(--taupe)}
   <div class="eyebrow">Portfolio</div><h2>시공 사례</h2>
   <p class="lead">최근 완공한 현장입니다.</p>
   <div class="works">
-    <!-- 사진 넣기: <div class="ph"> 대신 <img src="사진.jpg" alt="현장 이름"> -->
-    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 1</b><span>아파트 · 32평 · 전체 리모델링</span></div></article>
-    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 2</b><span>아파트 · 24평 · 부엌·욕실</span></div></article>
-    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 3</b><span>주택 · 45평 · 전체 리모델링</span></div></article>
-    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 4</b><span>아파트 · 34평 · 붙박이장·수납</span></div></article>
-    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 5</b><span>오피스텔 · 18평 · 부분 시공</span></div></article>
-    <article class="work"><div class="ph">사진 준비 중</div><div class="t"><b>현장 이름 6</b><span>상업 공간 · 카페 · 인테리어</span></div></article>
+    <!-- 사진 바꾸는 법: site/images 폴더에 work-1.jpg ~ work-6.jpg 이름으로 사진을 넣으면 그 칸에 바로 나옵니다.
+         사진이 없으면 "사진 준비중"이 보입니다. 글자는 아래 칸의 사례 이름·지역·평형·공사 종류만 고치면 됩니다. -->
+    <article class="work">
+      <div class="ph"><span>사진 준비중</span><img src="images/work-1.jpg" alt="현장 이름 1" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b class="name">현장 이름 1</b>
+        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>32평</dd></div><div><dt>공사</dt><dd>전체 리모델링</dd></div></dl></div>
+    </article>
+    <article class="work">
+      <div class="ph"><span>사진 준비중</span><img src="images/work-2.jpg" alt="현장 이름 2" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b class="name">현장 이름 2</b>
+        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>24평</dd></div><div><dt>공사</dt><dd>부엌·욕실</dd></div></dl></div>
+    </article>
+    <article class="work">
+      <div class="ph"><span>사진 준비중</span><img src="images/work-3.jpg" alt="현장 이름 3" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b class="name">현장 이름 3</b>
+        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>45평</dd></div><div><dt>공사</dt><dd>전체 리모델링</dd></div></dl></div>
+    </article>
+    <article class="work">
+      <div class="ph"><span>사진 준비중</span><img src="images/work-4.jpg" alt="현장 이름 4" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b class="name">현장 이름 4</b>
+        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>34평</dd></div><div><dt>공사</dt><dd>붙박이장·수납</dd></div></dl></div>
+    </article>
+    <article class="work">
+      <div class="ph"><span>사진 준비중</span><img src="images/work-5.jpg" alt="현장 이름 5" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b class="name">현장 이름 5</b>
+        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>18평</dd></div><div><dt>공사</dt><dd>부분 시공</dd></div></dl></div>
+    </article>
+    <article class="work">
+      <div class="ph"><span>사진 준비중</span><img src="images/work-6.jpg" alt="현장 이름 6" loading="lazy" onerror="this.remove()"></div>
+      <div class="t"><b class="name">현장 이름 6</b>
+        <dl><div><dt>지역</dt><dd>지역</dd></div><div><dt>평형</dt><dd>—</dd></div><div><dt>공사</dt><dd>상업 공간 인테리어</dd></div></dl></div>
+    </article>
   </div>
   <div class="more"><a class="btn" href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener">블로그에서 더 보기 →</a></div>
 </div></section>
@@ -176,34 +207,51 @@ footer .in{display:grid;gap:10px}footer a{color:var(--taupe)}
     <p><span class="k">대표번호</span><a href="tel:15665904">1566-5904</a></p>
     <p><span class="k">이메일</span><a href="mailto:artico_studio@naver.com">artico_studio@naver.com</a></p>
     <p><span class="k">전시장</span>서울특별시 중랑구 상봉로 131 듀오트리스 2F</p>
-    <p><span class="k">본사</span>경기도 구리시 동구릉로 129번길 2-1</p>
+    <p><span class="k">본사</span>경기도 구리시 동구릉로129번길 2-1, 1층 1호</p>
     <p><a class="btn" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집에서 상담하기</a></p>
   </div>
-  <form id="f">
-    <div class="row2"><label>이름<input name="name" required autocomplete="name"></label><label>연락처<input name="phone" type="tel" required autocomplete="tel" placeholder="010-0000-0000"></label></div>
-    <div class="row2"><label>공간 종류<select name="type"><option>아파트</option><option>주택</option><option>오피스텔</option><option>상업 공간</option><option>기타</option></select></label><label>평수<input name="size" inputmode="numeric" placeholder="예: 32"></label></div>
-    <label>현장 주소<input name="addr" placeholder="시·구·동까지만 적어도 됩니다"></label>
-    <label>원하는 내용<textarea name="msg" placeholder="예: 부엌과 욕실 리모델링, 12월 입주 예정"></textarea></label>
-    <label class="agree"><input type="checkbox" required> 상담을 위한 개인정보 수집에 동의합니다</label>
+  <!-- 접수 방식: FormSubmit (formsubmit.co). 받는 메일 = artico_studio@naver.com
+       처음 1번 신청이 들어오면 그 메일로 "Activate" 확인 메일이 옵니다. 그 버튼을 한 번 눌러야 이후 신청이 메일로 들어옵니다. -->
+  <form id="f" novalidate>
+    <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+    <div class="row2"><label>이름<input name="이름" required autocomplete="name"></label><label>연락처<input name="연락처" type="tel" required autocomplete="tel" placeholder="010-0000-0000"></label></div>
+    <div class="row2"><label>공간 종류<select name="공간"><option>아파트</option><option>주택</option><option>오피스텔</option><option>상업 공간</option><option>기타</option></select></label><label>평수<input name="평수" inputmode="numeric" placeholder="예: 32"></label></div>
+    <label>현장 주소<input name="주소" placeholder="시·구·동까지만 적어도 됩니다"></label>
+    <label>원하는 내용<textarea name="내용" placeholder="예: 부엌과 욕실 리모델링, 12월 입주 예정"></textarea></label>
+    <label class="agree"><input type="checkbox" name="동의" value="예" required> 상담을 위한 개인정보 수집에 동의합니다</label>
     <button class="btn p" type="submit">상담 신청하기</button>
-    <p class="note">지금은 신청 내용이 메일 앱으로 열립니다. (초안)</p>
+    <p class="note" id="msg" role="status" aria-live="polite">버튼을 누르면 바로 접수됩니다. 급하시면 1566-5904로 전화 주세요.</p>
   </form>
 </div></section>
 </main>
 
 <footer><div class="in">
   <a class="logo" href="#top"><b>HOME</b>FURNISHING</a>
-  <div>주식회사 홈퍼니싱 · 아르띠꼬 스튜디오 | 대표 최윤수 | 사업자등록번호 000-00-00000</div>
-  <div>본사 경기도 구리시 동구릉로 129번길 2-1 · 전시장 서울특별시 중랑구 상봉로 131 듀오트리스 2F · T 1566-5904 · F 031-513-9561</div>
+  <!-- 출처: 구글 드라이브 '홈페이지 초안' md 파일에 정리. 두 사업자 번호를 섞지 마세요. -->
+  <div class="biz">
+    <div><b>주식회사 홈퍼니싱</b> (법인)<br>각자대표 최윤수, 신혜현<br>사업자등록번호 449-81-01936<br>경기도 구리시 동구릉로129번길 2-1, 1층 1호(인창동)<br>전화 031-513-9560 · 팩스 031-513-9561</div>
+    <div><b>아르띠꼬 스튜디오</b> (개인)<br>대표 신혜현 · 공동사업자 최윤수<br>사업자등록번호 132-28-10060<br>경기도 구리시 동구릉로129번길 2-1, 옥탑(인창동)</div>
+    <div><b>전시장</b><br>서울특별시 중랑구 상봉로 131 듀오트리스 2F<br>대표번호 <a href="tel:15665904">1566-5904</a><br>이메일 <a href="mailto:artico_studio@naver.com">artico_studio@naver.com</a></div>
+  </div>
   <div class="ch"><a href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener">블로그</a><a href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener">인스타그램</a><a href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew" target="_blank" rel="noopener">유튜브</a><a href="https://blog.naver.com/soo17115" target="_blank" rel="noopener">한샘 대리점</a></div>
   <div>© 2026 Home Furnishing. All rights reserved.</div>
 </div></footer>
 
 <script>
-document.getElementById('f').addEventListener('submit',function(e){
-  e.preventDefault();var d=new FormData(this);
-  var body=['이름: '+d.get('name'),'연락처: '+d.get('phone'),'공간: '+d.get('type')+' / '+(d.get('size')||'-')+'평','주소: '+(d.get('addr')||'-'),'','내용:',d.get('msg')||'-'].join('\n');
-  location.href='mailto:artico_studio@naver.com?subject='+encodeURIComponent('[홈페이지 상담] '+d.get('name'))+'&body='+encodeURIComponent(body);
+var f=document.getElementById('f'),msg=document.getElementById('msg'),btn=f.querySelector('button');
+f.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!f.checkValidity()){msg.textContent='이름, 연락처, 개인정보 동의를 확인해 주세요.';f.reportValidity();return}
+  var d=new FormData(f);d.append('_subject','[홈페이지 상담] '+d.get('이름'));d.append('_template','table');
+  btn.disabled=true;btn.textContent='보내는 중…';
+  fetch('https://formsubmit.co/ajax/artico_studio@naver.com',{method:'POST',headers:{'Accept':'application/json'},body:d})
+    .then(function(r){return r.json()}).then(function(j){
+      if(j.success!=='true'&&j.success!==true)throw 0;
+      f.reset();msg.textContent='접수되었습니다. 영업일 기준 하루 안에 연락드릴게요.';btn.textContent='접수 완료';
+    }).catch(function(){
+      msg.innerHTML='전송에 실패했어요. <a href="tel:15665904">1566-5904</a>로 전화 주시거나 잠시 후 다시 시도해 주세요.';
+      btn.disabled=false;btn.textContent='상담 신청하기';
+    });
 });
 </script>
 </body></html>
