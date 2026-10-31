@@ -7,7 +7,8 @@
 ### 저장 위치
 - 옵시디언 보관함 = 구글 드라이브 `Obsidian Vault` (폴더 ID `14YwEBg_f7MZms3vG4gl_kc15v6Le_6up`)
 - 홍보마케팅 노트: `Obsidian Vault/홍보마케팅` (폴더 ID `1K6n4NqLvhdFkS_aZUpcFeNFn3voUVblk`)
-  - 같은 이름 폴더가 하나 더 있음 (ID `172irLs93_o941zmXyaRsTVMWXtI92TrI`, 10/24 초기 자료). 합치는 안은 대표 승인 대기. **삭제는 직접 하지 않는다.**
+  - 하위 폴더: `영상`, `블로그 초안`, `기초 전략 (2026-10-24)`, `_보관 (중복)` 등. 중복 파일은 지우지 말고 `_보관 (중복)`으로 옮긴다.
+  - 옛 홍보마케팅 폴더(ID `172irLs93_o941zmXyaRsTVMWXtI92TrI`)는 2026-10-31에 합쳐서 비어 있음. 새 파일을 넣지 않는다. **삭제는 대표가 직접 한다. Claude는 파일·폴더를 지우지 않는다.**
 - 오늘 대화 기록: `Obsidian Vault/daily note` (폴더 ID `1fCUHXT81_lCRjTA9ATFEt7Rle1zHnzrn`)에 `_조각 YYYY-MM-DD HHMM 제목.md`로 새 파일. daily note 본문은 덮어쓰지 않는다.
 
 ### 진행기록 업데이트
