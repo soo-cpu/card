@@ -1,0 +1,67 @@
+# 25.03.26 지명원 양식에 맞춘 신규 페이지 생성 (960 x 540 pt, 원본 측정값 기준)
+import os, html, sys
+M = os.path.dirname(os.path.abspath(__file__))
+e = html.escape
+
+CSS = r'''
+@page{size:960pt 540pt;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg{width:960pt;height:540pt;position:relative;overflow:hidden;page-break-after:always;background:#fff}
+.pg:last-child{page-break-after:auto}
+.bg{position:absolute;inset:0;background:center/cover no-repeat}
+.panel{position:absolute;left:0;top:0;bottom:0;width:295.5pt;background:rgba(48,48,50,.64)}
+.tab{position:absolute;right:0;top:0;width:217.5pt;height:52.5pt;background:#C55A11;color:#fff}
+.tab .k{position:absolute;left:14.2pt;top:7.6pt;font-size:10.4pt;line-height:14.4pt;font-weight:500;letter-spacing:-.1pt}
+.tab .bar{position:absolute;left:97pt;top:13pt;width:.9pt;height:27pt;background:#fff}
+.tab .n{position:absolute;left:127.5pt;top:15.2pt;font-size:12.2pt;font-weight:400;white-space:nowrap}
+.f{position:absolute;color:#fff;white-space:nowrap}
+.lb{left:16.5pt;font-size:8.6pt;font-weight:400;letter-spacing:.1pt}
+.v{left:92.6pt;font-size:8.7pt;font-weight:400;line-height:14.4pt;color:#e9e9e9}
+.v.big{font-size:11.6pt;font-weight:500;color:#fff}
+.v.b{font-weight:500;color:#fff}
+.sum{left:92.6pt;width:196pt;white-space:normal;font-size:8.3pt;line-height:13.4pt;color:#dcdcdc}
+.cp{position:absolute;left:401.4pt;top:521.6pt;font-size:7.2pt;color:#fff;letter-spacing:-.05pt}
+.cp.dk{color:#7f7f7f}
+.no{position:absolute;right:14pt;top:522.4pt;font-size:8.2pt;color:#fff}
+.no.dk{color:#7f7f7f}
+.row{position:absolute;inset:0;display:flex;gap:2.25pt;background:#fff}
+.row div{flex:1;background:center/cover no-repeat}
+'''
+
+SITES = [
+ dict(key='lotte', sec='res', short='구리 롯데캐슬', project='구리역 롯데캐슬 시그니처', client='개인 고객',
+      loc='경기도 구리시', d1='구리역 롯데캐슬 시그니처 아파트 37평',
+      work=['현관 타일, 슬라이딩 중문, 주방 홈바,', '엔지니어드스톤, 서재 유리 파티션, 히든 도어,', '붙박이장, 필름, 간접조명, 실링팬'],
+      summary='신축 아파트 마감 위에 TV벽 매립과 커튼박스 간접조명, 히든 도어를 더해 군더더기 없는 집으로 다듬었습니다.',
+      term='2026. 04', hero='lc1', photos=['lc2', 'lc3', 'lc4']),
+]
+SEC = {'res': ('Residential', 'Space', '주거'), 'gov': ('Government', 'Office', '관공서')}
+
+def title_page(s, no):
+    a, b, c = SEC[s['sec']]
+    work = ''.join(f'<div class="f v" style="top:{258.6 + i * 14.4}pt">{e(w)}</div>' for i, w in enumerate(s['work']))
+    sum_top = 258.6 + len(s['work']) * 14.4 + 14
+    return f'''<section class="pg"><div class="bg" style="background-image:url(img/{s['hero']}.jpg)"></div><div class="panel"></div>
+<div class="tab"><div class="k">{a}<br>{b} {c}</div><div class="bar"></div><div class="n" style="font-size:{12.2 if len(s['short'])<=7 else 10.6}pt">{e(s['short'])}</div></div>
+<div class="f lb" style="top:84pt">. Project</div><div class="f v big" style="top:79.5pt">{e(s['project'])}</div>
+<div class="f lb" style="top:192pt">. Client</div><div class="f v" style="top:190.5pt">{e(s['client'])}</div>
+<div class="f lb" style="top:210pt">. Location</div><div class="f v" style="top:209.4pt">{e(s['loc'])}</div>
+<div class="f lb" style="top:228pt">. Details</div><div class="f v b" style="top:228.2pt">{e(s['d1'])}</div>
+{work}<div class="f sum" style="top:{sum_top}pt">{e(s['summary'])}</div>
+<div class="f lb" style="top:390pt">. Term of Work</div><div class="f v" style="top:388.4pt">{e(s['term'])}</div>
+<div class="cp">Ⓒ HOME FURNISHING CO. all rights reserved</div><div class="no">{no}</div></section>'''
+
+def photo_page(s, no):
+    cells = ''.join(f'<div style="background-image:url(img/{p}.jpg)"></div>' for p in s['photos'])
+    return f'''<section class="pg"><div class="row">{cells}</div><div class="cp">Ⓒ HOME FURNISHING CO. all rights reserved</div><div class="no">{no}</div></section>'''
+
+def build(sites, nos, out):
+    pages = []
+    for s, (n1, n2) in zip(sites, nos):
+        pages.append(title_page(s, n1)); pages.append(photo_page(s, n2))
+    open(os.path.join(M, out), 'w', encoding='utf-8').write(
+        f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><link rel="stylesheet" href="sans.css"><style>{CSS}</style></head><body>{"".join(pages)}</body></html>')
+
+if __name__ == '__main__':
+    build(SITES, [('104-1', '104-2')], 'sample.html')
