@@ -1,0 +1,236 @@
+<!doctype html>
+<!-- 간편 견적 승인 화면 v1 · 2026-11-03 · 직원용 (대표 · 영업실장 · 디자인실장) -->
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>견적 승인 · 아르띠꼬</title>
+<meta name="theme-color" content="#f5f0e8">
+<link rel="icon" type="image/png" sizes="32x32" href="../site/images/favicon-32.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--bg:#f5f0e8;--paper:#fbf8f3;--ink:#2a2420;--sub:#8c7f72;--line:#e3dace;--pt:#9a7b56;--soft:#efe6d8;--warn:#9b4a2f;--ok:#4f6b3a;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--soft:#2c261f;--warn:#e0937a;--ok:#a8c48f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--soft:#2c261f;--warn:#e0937a;--ok:#a8c48f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;padding:0 16px 60px}
+[hidden]{display:none!important}
+.wrap{max-width:860px;margin:0 auto;display:grid;gap:14px}
+header{padding:24px 0 4px}
+header .b{font-size:12px;letter-spacing:.2em;color:var(--pt);text-transform:uppercase}
+h1{font-size:22px;margin:4px 0 0;font-weight:600}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:12px;min-width:0}
+.card h2{margin:0;font-size:16px}
+.hint{margin:0;color:var(--sub);font-size:13px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+.field label{font-size:12.5px;color:var(--sub)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%;min-width:0}
+textarea{min-height:64px;resize:vertical}
+button{font:inherit;color:var(--ink);cursor:pointer}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:11px 16px;font-weight:600}
+.btn:disabled{opacity:.5}
+.ghost{background:none;border:1px solid var(--line);border-radius:10px;padding:9px 14px}
+.err{color:var(--warn);font-size:13px;margin:0;min-height:1.2em}
+.ok{color:var(--ok)}
+.who{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:13px;color:var(--sub)}
+.cust{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:14px}
+.cust dt{color:var(--sub)}
+.cust dd{margin:0}
+.tblwrap{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12px;color:var(--sub);font-weight:500}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td input{padding:5px 6px;text-align:right;font-variant-numeric:tabular-nums}
+td.q input{width:64px}td.p input{width:110px}
+tr.cat td{background:var(--soft);font-weight:600;font-size:13px}
+tr.sep td{color:var(--sub)}
+.x{border:0;background:none;color:var(--sub);font-size:18px;line-height:1;padding:2px 6px}
+.sum{display:grid;gap:6px;max-width:380px;margin-left:auto;width:100%}
+.sum div{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+.sum .g{font-size:18px;font-weight:700;border-top:2px solid var(--ink);padding-top:8px}
+.add{display:grid;grid-template-columns:1fr auto;gap:8px}
+.out{display:grid;gap:10px}
+.out textarea{min-height:130px;font-size:13px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{color:inherit;text-decoration:none}
+.badge{display:inline-block;background:var(--soft);color:var(--pt);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
+</style></head><body>
+<div class="wrap">
+<header><div class="b">ártico studio · staff</div><h1>간편 견적 승인</h1></header>
+
+<section class="card" id="loginCard">
+  <h2>담당자 확인</h2>
+  <p class="hint">승인 권한이 있는 사람만 단가를 열 수 있어요. 비밀번호는 이 화면에만 쓰이고 어디에도 저장되지 않아요.</p>
+  <div class="row">
+    <div class="field"><label for="who">담당자</label><select id="who"></select></div>
+    <div class="field"><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+  </div>
+  <button class="btn" id="loginBtn">열기</button>
+  <p class="err" id="loginErr" aria-live="polite"></p>
+</section>
+
+<section class="card" id="reqCard" hidden>
+  <div class="who"><span id="whoLabel"></span><button class="ghost" id="logout" type="button">잠그기</button></div>
+  <h2>접수 불러오기</h2>
+  <p class="hint">메일의 「승인 화면」 링크를 누르면 자동으로 들어와요. 카톡·문자로 받은 경우 내용 전체를 붙여 넣으세요.</p>
+  <textarea id="reqIn" placeholder="승인 화면 링크 또는 고객이 보낸 내용 전체"></textarea>
+  <button class="ghost" id="loadBtn" type="button">불러오기</button>
+  <p class="err" id="reqErr"></p>
+</section>
+
+<section class="card" id="custCard" hidden>
+  <h2>고객 정보 <span class="badge" id="noBadge"></span></h2>
+  <dl class="cust" id="custInfo"></dl>
+</section>
+
+<section class="card" id="lineCard" hidden>
+  <h2>공정별 내역 <span class="hint" id="verLabel" style="font-weight:400"></span></h2>
+  <p class="hint">수량·단가를 고치면 바로 다시 계산돼요. 회색 줄(샷시·에어컨)은 고객 화면에서 '별도'로 보인 항목이라 실측 후 금액을 넣으세요.</p>
+  <div class="tblwrap"><table><thead><tr><th>항목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th></th></tr></thead><tbody id="lines"></tbody></table></div>
+  <div class="add"><select id="addSel"></select><button class="ghost" id="addBtn" type="button">항목 추가</button></div>
+  <div class="row">
+    <div class="field"><label for="disc">할인 (원)</label><input id="disc" type="number" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="hiPct">안내 범위 위쪽 (%)</label><input id="hiPct" type="number" inputmode="numeric" value="0" min="0" max="30"></div>
+  </div>
+  <div class="sum" id="sum"></div>
+</section>
+
+<section class="card" id="docCard" hidden>
+  <h2>견적서 정보</h2>
+  <div class="row">
+    <div class="field"><label for="site">현장명</label><input id="site"></div>
+    <div class="field"><label for="start">착공</label><input id="start" placeholder="협의"></div>
+    <div class="field"><label for="moveIn">입주</label><input id="moveIn" placeholder="협의"></div>
+  </div>
+  <div class="field"><label for="planImg">평면도 이미지 주소 (선택 · 견적서에 표시)</label><input id="planImg" placeholder="https://..."></div>
+  <div class="field"><label for="concept">디자인 제안 (선택)</label><textarea id="concept" placeholder="고객에게 보여줄 한두 줄"></textarea></div>
+  <div class="field"><label for="request">고객 요청 사항</label><textarea id="request"></textarea></div>
+  <div class="field"><label for="pay">지급 조건 (단계명 비율, 쉼표로)</label><input id="pay" value="계약금 10, 착수금 40, 중도금 40, 잔금 10"></div>
+  <div class="row">
+    <div class="field"><label for="pin">견적서 잠금 번호 (고객 휴대폰 뒤 4자리)</label><input id="pin" inputmode="numeric" maxlength="4"></div>
+  </div>
+  <button class="btn" id="approveBtn" type="button">승인하고 견적서 링크 만들기</button>
+  <p class="err" id="approveErr"></p>
+  <div class="out" id="out" hidden>
+    <p class="ok" id="okMsg" style="margin:0"></p>
+    <div class="field"><label for="smsText">고객에게 보낼 문자</label><textarea id="smsText" readonly></textarea></div>
+    <div class="links"><button class="btn" id="copySms" type="button">문자 내용 복사</button><a class="ghost" id="smsLink" href="#">문자 앱으로 보내기</a><a class="ghost" id="viewLink" href="#" target="_blank" rel="noopener">견적서 미리 보기</a></div>
+    <div class="field"><label for="logText">승인 기록 (고객관리 시트·일지에 붙여 넣기)</label><textarea id="logText" readonly style="min-height:90px"></textarea></div>
+  </div>
+</section>
+</div>
+
+<script src="choices.js"></script>
+<script src="prices.enc.js"></script>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var P=null,ITEM={},ME=null,REQ=null,LINES=[];
+// 공정 이름 (항목 코드 앞부분 기준)
+var CAT=[["design","디자인 설계"],["adm","가설·보양"],["dm","철거"],["ba","욕실"],["pl","설비·방수"],["wn","창호"],["dr","도어·중문"],["wd","목공"],["el","전기·조명"],["tl","타일"],["pt","도장"],["fm","필름"],["fl","바닥"],["wp","도배"],["fn","가구"],["hv","냉난방"],["et","기타·마감"]];
+function catOf(k){var p=k.split("_")[0];for(var i=0;i<CAT.length;i++)if(CAT[i][0]===p)return CAT[i][1];return "기타·마감"}
+function won(n){return Math.round(n).toLocaleString("ko-KR")+"원"}
+function unb64(s){var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+var enc=new TextEncoder(),dec=new TextDecoder();
+
+EST_PRICES.users.forEach(function(u){var o=document.createElement("option");o.value=u.id;o.textContent=u.name+" "+u.title;$("who").appendChild(o)});
+
+async function unlock(uid,pw){var u=EST_PRICES.users.filter(function(x){return x.id===uid})[0];
+  var base=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);
+  var kek=await crypto.subtle.deriveKey({name:"PBKDF2",salt:unb64(u.salt),iterations:EST_PRICES.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  var raw=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(u.iv)},kek,unb64(u.w));
+  var key=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+  var data=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(EST_PRICES.iv)},key,unb64(EST_PRICES.ct));
+  return {user:u,data:JSON.parse(dec.decode(data))}}
+
+$("loginBtn").addEventListener("click",login);$("pw").addEventListener("keydown",function(e){if(e.key==="Enter")login()});
+async function login(){$("loginErr").textContent="확인 중…";$("loginBtn").disabled=true;
+  try{var r=await unlock($("who").value,$("pw").value);ME=r.user;P=r.data;ITEM={};P.items.forEach(function(i){ITEM[i.k]=i});
+    $("pw").value="";$("loginCard").hidden=true;$("reqCard").hidden=false;$("whoLabel").textContent=ME.name+" "+ME.title+" · 단가표 "+P.ver;
+    fillAdd();var h=location.hash;if(/[#&]r=/.test(h)){$("reqIn").value=location.href;load()}}
+  catch(e){$("loginErr").textContent="비밀번호가 맞지 않습니다."}
+  $("loginBtn").disabled=false}
+$("logout").addEventListener("click",function(){location.reload()});
+
+function fillAdd(){var s=$("addSel");s.innerHTML="";var by={};P.items.forEach(function(i){(by[i.space]=by[i.space]||[]).push(i)});
+  Object.keys(by).forEach(function(sp){var g=document.createElement("optgroup");g.label=sp;by[sp].forEach(function(i){var o=document.createElement("option");o.value=i.k;o.textContent=i.name+" ("+i.unit+")";g.appendChild(o)});s.appendChild(g)})}
+
+$("loadBtn").addEventListener("click",load);
+function load(){$("reqErr").textContent="";
+  try{var t=$("reqIn").value;var m=/r=([A-Za-z0-9_-]+)/.exec(t);REQ=EST.decodeReq(m?m[1]:t)}catch(e){$("reqErr").textContent="접수 내용을 읽을 수 없어요. 링크가 잘리지 않았는지 확인해 주세요.";return}
+  var st={py:REQ.py,bath:REQ.bath,live:REQ.live,scope:REQ.scope,sel:REQ.sel||{}};
+  LINES=[];EST.bundles(st).forEach(function(b){b.items.forEach(function(it){var k=it[0],i=ITEM[k];if(!i)return;
+    var q=EST.qty(it[1],st);var ex=LINES.filter(function(l){return l.k===k})[0];
+    if(ex&&!b.sep){ex.q=Math.max(ex.q,q);return}
+    LINES.push({k:k,name:i.name,unit:i.unit,q:q,p:i.price,sep:!!b.sep})})});
+  showCust();draw();
+  $("site").value=(REQ.ad||"")+(REQ.ad?" ":"")+(REQ.scope==="full"?"전체 리모델링":"부분 공사");$("start").value=REQ.wh||"";$("request").value=REQ.memo||"";
+  $("planImg").value=REQ.home&&REQ.home.img||"";
+  $("pin").value=(REQ.ph||"").replace(/\D/g,"").slice(-4);
+  ["custCard","lineCard","docCard"].forEach(function(id){$(id).hidden=false});$("out").hidden=true;
+  $("custCard").scrollIntoView({behavior:"smooth"})}
+
+function showCust(){$("noBadge").textContent=REQ.no||"";var dl=$("custInfo");dl.innerHTML="";
+  var pick=EST.GROUPS.filter(function(g){return REQ.sel&&REQ.sel[g.id]&&REQ.sel[g.id]!=="keep"}).map(function(g){var o=g.opts.filter(function(x){return x.id===REQ.sel[g.id]})[0];return g.name+": "+(o?o.name:"?")}).join(" / ");
+  [["이름",REQ.nm],["연락처",REQ.ph],["주소",REQ.ad],["찾은 집",REQ.home?REQ.home.apt+(REQ.home.type?" "+REQ.home.type:"")+(REQ.home.area?" ("+REQ.home.area+")":""):"(고르지 않음)"],["평면도",REQ.home&&REQ.home.img?REQ.home.img:"없음 → 네이버 부동산 등에서 찾아 아래 평면도 칸에 넣기"],["희망 시기",REQ.wh],["예산",REQ.bg],["집",REQ.type+" "+REQ.py+"평 · 욕실 "+REQ.bath+"개 · "+(REQ.live?"거주 중":"비어 있음")],["공사",REQ.scope==="full"?"전체 리모델링":"부분 공사"],["고른 내용",pick],["고객이 본 범위",REQ.lo?Math.round(REQ.lo/1e4).toLocaleString()+"만 ~ "+Math.round(REQ.hi/1e4).toLocaleString()+"만원":"-"],["하고 싶은 말",REQ.memo],["신청 시각",REQ.at?new Date(REQ.at).toLocaleString("ko-KR"):""]]
+  .forEach(function(kv){var dt=document.createElement("dt");dt.textContent=kv[0];var dd=document.createElement("dd");dd.textContent=kv[1]||"-";dl.append(dt,dd)});
+  if(REQ.ver&&REQ.ver!==P.ver){var dt=document.createElement("dt");dt.textContent="주의";var dd=document.createElement("dd");dd.className="err";dd.textContent="고객은 이전 단가표("+REQ.ver+")로 범위를 봤어요.";dl.append(dt,dd)}}
+
+function draw(){var tb=$("lines");tb.innerHTML="";var groups={};
+  LINES.forEach(function(l,ix){l.ix=ix;var c=l.sep?"별도 (실측 후)":catOf(l.k);(groups[c]=groups[c]||[]).push(l)});
+  var order=CAT.map(function(c){return c[1]}).concat(["별도 (실측 후)"]);
+  order.forEach(function(c){var ls=groups[c];if(!ls)return;var sub=ls.reduce(function(a,l){return a+l.q*l.p},0);
+    var tr=document.createElement("tr");tr.className="cat";tr.innerHTML="<td colspan=3></td><td class=num></td><td></td>";tr.children[0].textContent=c;tr.children[1].textContent=won(sub);tb.appendChild(tr);
+    ls.forEach(function(l){var r=document.createElement("tr");if(l.sep)r.className="sep";
+      r.innerHTML="<td></td><td class='num q'><input type=number step=any></td><td class='num p'><input type=number step=1000></td><td class=num></td><td><button class=x type=button aria-label=빼기>×</button></td>";
+      r.children[0].textContent=l.name+" ("+l.unit+")";var qi=r.querySelector(".q input"),pi=r.querySelector(".p input");qi.value=l.q;pi.value=l.p;r.children[3].textContent=won(l.q*l.p);
+      qi.addEventListener("change",function(){l.q=Number(qi.value)||0;draw()});pi.addEventListener("change",function(){l.p=Number(pi.value)||0;draw()});
+      r.querySelector(".x").addEventListener("click",function(){LINES.splice(l.ix,1);draw()});tb.appendChild(r)})});
+  sums()}
+
+function totals(){var sub=LINES.reduce(function(a,l){return a+l.q*l.p},0);var disc=Number($("disc").value)||0;var tot=sub-disc;var pct=Math.max(0,Math.min(30,Number($("hiPct").value)||0));
+  return {sub:sub,disc:disc,tot:tot,hi:pct?Math.ceil(tot*(1+pct/100)/1e5)*1e5:0}}
+function sums(){var t=totals();var s=$("sum");s.innerHTML="";
+  [["공사 합계",won(t.sub)],t.disc?["할인","-"+won(t.disc)]:null,["견적 금액 (부가세 포함)",won(t.tot),"g"],t.hi?["안내 범위",Math.round(t.tot/1e4).toLocaleString()+"만 ~ "+Math.round(t.hi/1e4).toLocaleString()+"만원"]:null]
+  .forEach(function(r){if(!r)return;var d=document.createElement("div");if(r[2])d.className=r[2];var a=document.createElement("span");a.textContent=r[0];var b=document.createElement("strong");b.textContent=r[1];d.append(a,b);s.appendChild(d)})}
+$("disc").addEventListener("input",sums);$("hiPct").addEventListener("input",sums);
+$("addBtn").addEventListener("click",function(){var i=ITEM[$("addSel").value];if(!i)return;var q=i.qty==="py"?REQ.py:i.qty==="bath"?REQ.bath:Number(i.qty)||1;LINES.push({k:i.k,name:i.name,unit:i.unit,q:q,p:i.price,sep:false});draw()});
+
+/* ---- 견적서 링크 만들기: quote/ 페이지와 같은 방식 (압축 → AES-GCM(코드+잠금번호) → base64url) ---- */
+function b64u(buf){var s="",b=new Uint8Array(buf);for(var i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+async function pipe(bytes,stream){var r=new Blob([bytes]).stream().pipeThrough(stream);return new Uint8Array(await new Response(r).arrayBuffer())}
+async function keyOf(code,pin){var base=await crypto.subtle.importKey("raw",enc.encode(code+":"+(pin||"")),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:enc.encode("artico-q-"+code),iterations:120000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function seal(obj,code,pin){var raw=enc.encode(JSON.stringify(obj)),z=0;
+  if(typeof CompressionStream!=="undefined"){raw=await pipe(raw,new CompressionStream("deflate-raw"));z=1}
+  var iv=crypto.getRandomValues(new Uint8Array(12));var ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},await keyOf(code,pin),raw));
+  var out=new Uint8Array(13+ct.length);out[0]=z;out.set(iv,1);out.set(ct,13);return b64u(out)}
+function newCode(n){var A="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";var r=crypto.getRandomValues(new Uint8Array(n||10));return Array.from(r,function(x){return A[x%A.length]}).join("")}
+
+$("approveBtn").addEventListener("click",async function(){var err=$("approveErr");err.textContent="";
+  var pin=$("pin").value.replace(/\D/g,"");if(pin.length!==4){err.textContent="잠금 번호 4자리를 넣어 주세요 (고객 휴대폰 뒤 4자리).";return}
+  var sepLeft=LINES.filter(function(l){return l.sep});
+  var t=totals();if(t.tot<=0){err.textContent="금액이 0원이에요.";return}
+  var today=new Date(),date=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+  var cats=[],by={};LINES.forEach(function(l){var c=l.sep?(l.k.indexOf("hv_")===0||l.k==="wd_aircon"?"냉난방":"창호"):catOf(l.k);if(!by[c]){by[c]={n:c,amt:0,items:[]};cats.push(by[c])}by[c].amt+=l.q*l.p;if(by[c].items.indexOf(l.name)<0)by[c].items.push(l.name)});
+  var order=CAT.map(function(c){return c[1]});cats.sort(function(a,b){return order.indexOf(a.n)-order.indexOf(b.n)});
+  var pay=$("pay").value.split(",").map(function(s){var m=/^\s*(.+?)\s+(\d+(?:\.\d+)?)\s*%?\s*$/.exec(s);return m?[m[1]+" ("+m[2]+"%)",Math.round(t.tot*Number(m[2])/100)]:null}).filter(Boolean);
+  var staff=ME.name+" "+(ME.title==="대표"?"대표":"실장");
+  var data={cust:REQ.nm,site:$("site").value.trim(),type:REQ.type,area:REQ.py,baths:REQ.bath,start:$("start").value.trim(),moveIn:$("moveIn").value.trim(),date:date,staff:staff,
+    total:t.tot,hi:t.hi||undefined,disc:t.disc||undefined,cats:cats,pay:pay,concept:$("concept").value.trim()||undefined,plan:$("planImg").value.trim()?{img:$("planImg").value.trim(),title:REQ.home?(REQ.home.apt+" "+(REQ.home.type||"")).trim():""}:undefined,request:$("request").value.trim()||undefined,
+    mark:"승인 "+ME.name+" "+ME.title+" · "+date+" · 접수 "+(REQ.no||"-")};
+  $("approveBtn").disabled=true;$("approveBtn").textContent="만드는 중…";
+  try{var code=newCode(10);var d=await seal(data,code,pin);
+    var url=new URL("../quote/",location.href).href+"#c="+code+"&d="+d+"&p=1";
+    var sms="안녕하세요 "+REQ.nm+" 고객님, 아르띠꼬 스튜디오 "+staff+"입니다.\n요청하신 "+REQ.py+"평 "+(REQ.scope==="full"?"전체 리모델링":"부분 공사")+" 상세 견적서 보내드립니다.\n휴대폰 번호 뒤 4자리를 넣으면 열려요.\n"+url+"\n\n실측 후 자재·설계가 확정되면 금액이 달라질 수 있어요. 궁금한 점은 편하게 연락 주세요. 1566-5904";
+    $("smsText").value=sms;$("viewLink").href=url;$("smsLink").href="sms:"+(REQ.ph||"").replace(/[^\d]/g,"")+"?body="+encodeURIComponent(sms);
+    $("logText").value=[date,REQ.no||"-",REQ.nm,REQ.ph,REQ.py+"평",REQ.scope==="full"?"전체":"부분",won(t.tot)+(t.hi?" ~ "+won(t.hi):""),"승인 "+ME.name+" "+ME.title,"단가표 "+P.ver].join("\t");
+    $("okMsg").textContent="승인 완료 · "+won(t.tot)+(sepLeft.length?" (별도 항목 포함)":"")+" · 링크 길이 "+url.length+"자";$("out").hidden=false;$("out").scrollIntoView({behavior:"smooth",block:"center"})}
+  catch(e){err.textContent="링크를 만들지 못했어요. 크롬·사파리 최신 버전에서 다시 해 주세요."}
+  $("approveBtn").disabled=false;$("approveBtn").textContent="승인하고 견적서 링크 만들기"});
+$("copySms").addEventListener("click",function(){var t=$("smsText");t.select();(navigator.clipboard?navigator.clipboard.writeText(t.value):Promise.reject()).then(function(){$("copySms").textContent="복사됐어요"}).catch(function(){document.execCommand("copy");$("copySms").textContent="복사됐어요"})});
+})();
+</script>
+</body></html>
