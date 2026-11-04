@@ -125,7 +125,7 @@ def main():
     names = [b["name"] for b in banks if b["d"] == last_bank_d]
 
     wb = openpyxl.load_workbook(xlsx, data_only=True, read_only=True)
-    rep = {"file": os.path.basename(xlsx), "today": today, "added": [], "same": [], "diff": [], "skip": []}
+    rep = {"file": os.path.basename(xlsx), "today": today, "added": [], "same": [], "diff": [], "skip": []}  # added[].to = 새로 넣을 곳 (인트라넷 / 자금 관리)
     new_h, new_d, new_i, new_b = [], [], [], []
     for sn in wb.sheetnames:
         m = re.match(r"\s*(\d{1,2})\s*\.", sn)
@@ -138,24 +138,33 @@ def main():
         if close is None or inn is None or out is None:
             rep["skip"].append({"d": d, "sheet": sn, "why": "잔액·입금계·지출계 칸이 비어 있음"})
             continue
-        if d in H:
+        in_h, in_d = d in H, d in D
+        if in_h:
             h = H[d]
             if [h[1], h[2], h[3]] == [inn, out, close]:
                 rep["same"].append(d)
             else:
                 rep["diff"].append({"d": d, "sheet": sn, "intranet": h[1:4], "original": [inn, out, close]})
+        if in_d:
+            x = D[d]
+            if [x.get("in"), x.get("out"), x.get("close")] != [inn, out, close]:
+                rep["diff"].append({"d": d, "sheet": sn, "dashboard": [x.get("in"), x.get("out"), x.get("close")], "original": [inn, out, close]})
+        if in_h and in_d:
             continue
         ok = (op or 0) + inn - out == close
         si = sum(x[3] or 0 for x in its if x[0] == "입금")
         so = sum(x[3] or 0 for x in its if x[0] == "지출")
         bank_ok = len(bals) == len(names) and sum(bals) == close
-        new_h.append([d, inn, out, close])
-        new_d.append({"d": d, "open": op, "in": inn, "out": out, "close": close, "ok": ok, "sheet": sn})
-        for k, (t, desc, who, amt, note) in enumerate(its, 1):
-            new_i.append({"id": "%s-%03d" % (d, k), "d": d, "t": t, "desc": desc, "who": who, "amt": amt, "note": note})
-        if len(bals) == len(names):
-            new_b += [{"d": d, "name": nm, "bal": b} for nm, b in zip(names, bals)]
-        rep["added"].append({"d": d, "sheet": sn, "in": inn, "out": out, "close": close, "lines": len(its),
+        if not in_h:
+            new_h.append([d, inn, out, close])
+        if not in_d:
+            new_d.append({"d": d, "open": op, "in": inn, "out": out, "close": close, "ok": ok, "sheet": sn})
+            for k, (t, desc, who, amt, note) in enumerate(its, 1):
+                new_i.append({"id": "%s-%03d" % (d, k), "d": d, "t": t, "desc": desc, "who": who, "amt": amt, "note": note})
+            if len(bals) == len(names):
+                new_b += [{"d": d, "name": nm, "bal": b} for nm, b in zip(names, bals)]
+        rep["added"].append({"d": d, "sheet": sn, "to": ([] if in_h else ["인트라넷"]) + ([] if in_d else ["자금 관리"]),
+                             "in": inn, "out": out, "close": close, "lines": len(its),
                              "open_in_out_close_ok": ok, "lines_sum_ok": si == inn and so == out, "banks_ok": bank_ok})
 
     # 날짜 순서 유지 (월이 바뀌어도 맨 뒤가 가장 최신)
