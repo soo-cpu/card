@@ -31,6 +31,21 @@ body{font-family:'Noto Sans KR',sans-serif;-webkit-print-color-adjust:exact;prin
 '''
 
 SITES = [
+ dict(key='welfare', sec='gov', short='종합사회복지관', project='구리시 종합사회복지관 경로식당 조성공사', client='구리시청',
+      loc='경기도 구리시 (구리시 종합사회복지관)', d1='종합사회복지관 경로식당',
+      work=['전면 철거, 경량 벽체, 천장 · 조명,', '바닥, 유리 칸막이, 주방 설비'],
+      summary='노후한 경로식당을 골조 상태까지 철거한 뒤, 밝고 넓은 식당 공간으로 새로 조성했습니다.',
+      term='2025. 06 ~ 2025. 07', hero='wf13', photos=['wf1', 'wf2', 'wf12']),
+ dict(key='parking', sec='gov', short='제2공영주차장', project='구리전통시장 제2공영주차장 BF 본인증 보수 및 인테리어공사', client='구리시상권활성화재단',
+      loc='경기도 구리시 (구리전통시장 제2공영주차장)', d1='제2공영주차장 1층 BF 인증 구역',
+      work=['장애인 화장실, 점자블록, 출입문,', '다목적실 · 탈의실, 설비 · 방수'],
+      summary='BF(장애물 없는 생활환경) 본인증 기준에 맞춰 화장실과 동선을 보수하고 내부를 새로 꾸몄습니다.',
+      term='2025. 09 ~ 2025. 10', hero='pk3', photos=['pk1', 'pk2', 'pk4']),
+ dict(key='weeclass', sec='gov', short='한국삼육중학교', project='한국삼육중학교 위클래스 상담실 환경개선공사', client='한국삼육중학교',
+      loc='경기도 구리시 아차산로 487번길 70', d1='위클래스 상담실',
+      work=['목공, 도어, 바닥, 전기 · 조명,', '제작가구(안내데스크 · 수납), 도장'],
+      summary='학생이 편하게 머물 수 있도록 따뜻한 우드 톤과 개방형 상담 공간으로 구성했습니다.',
+      term='2026. 01 ~ 2026. 02', hero='wc1', photos=['wc2', 'wc3', 'wc4']),
  dict(key='icheon', sec='gov', short='이천 도자비엔날레', project='2026 경기도자비엔날레 국제공모전 전시공간 환경개선공사', client='한국도자재단',
       loc='경기도 이천시', d1='경기도자비엔날레 국제공모전 전시공간',
       work=['철거, 전시 가벽 · 곡면 벽체, 원형 구조물,', '전시대 · 제작 가구, 금속, 목공, 도장,', '전기 · 조명, 커튼'],
@@ -62,16 +77,23 @@ SITES = [
       summary='신축 아파트 마감 위에 TV벽 매립과 커튼박스 간접조명, 히든 도어를 더해 군더더기 없는 집으로 다듬었습니다.',
       term='2026. 04', hero='lc1', photos=['lc2', 'lc3', 'lc4']),
 ]
-PERF = [('2025', 3, [('25년 09월', '구리 인창동 동양아파트 인테리어 공사'), ('25년 11월', '신내 데시앙포레 아파트 인테리어 공사'), ('25년 11월', '고덕 배재현대아파트 인테리어 공사')]),
-        ('2026', 1, [('26년 04월', '구리역 롯데캐슬 시그니처 아파트 인테리어 공사'), ('26년 06월', '2026 경기도자비엔날레 국제공모전 전시공간 환경개선공사'), ('26년 08월', '2026 경기도자비엔날레 소장품전 전시연출 공사')])]
-SEC = {'res': ('Residential', 'Space', '주거'), 'gov': ('Government', 'Office', '관공서')}
+PERF = [('2025', 3, [('25년 01월', '서울 삼육고등학교 본관동 및 고3동 내부 도장공사'), ('25년 02월', '서울 삼육고등학교 청운2관 리모델링 공사'), ('25년 02월', '한국 삼육중학교 본관동 계단 러버타일 교체공사'),
+        ('25년 05월', '분당 운중동 산운마을 8단지 아파트 인테리어 공사'), ('25년 05월', '왕십리 삼성쉐르빌 아파트 인테리어 공사'), ('25년 06월', '구리시 종합사회복지관 경로식당 조성공사'),
+        ('25년 08월', '구리농수산물시장 공중화장실 수선공사'), ('25년 09월', '구리 인창동 동양아파트 인테리어 공사'), ('25년 10월', '구리전통시장 제2공영주차장 BF 본인증 보수 및 인테리어공사'),
+        ('25년 10월', '연남동 블루스타 여행사 사무실 인테리어 공사'), ('25년 11월', '구리 갈매동 D1블럭 경로당 기계설비 및 물품 납품'), ('25년 11월', '신내 데시앙포레 아파트 인테리어 공사'),
+        ('25년 11월', '고덕 배재현대아파트 인테리어 공사')]),
+        ('2026', 1, [('26년 02월', '한국 삼육중학교 위클래스 상담실 환경개선공사'), ('26년 03월', '구리시 장애인 주거 편의시설 개선공사 (3개소)'), ('26년 03월', '구리 갈매동 경로당 BF 인증 보완공사'),
+        ('26년 04월', '이석영뉴미디어도서관 시설개선(리모델링) 공사'), ('26년 04월', '구리역 롯데캐슬 시그니처 아파트 인테리어 공사'), ('26년 06월', '2026 경기도자비엔날레 국제공모전 전시공간 환경개선공사'),
+        ('26년 06월', '남양주 진접 신안인스빌 아파트 인테리어 공사'), ('26년 07월', '의정부 제이몰 스크린 골프장 인테리어 공사'), ('26년 08월', '2026 경기도자비엔날레 소장품전 전시연출 공사'),
+        ('26년 08월', '구리 인창 현대홈타운 아파트 인테리어 공사')])]
+SEC = {'res': ('Residential', 'Space', '주거'), 'gov': ('Government', 'Office', '관공서'), 'com': ('Commercial', 'Space', '상업공간')}
 
 def title_page(s, no):
     a, b, c = SEC[s['sec']]
     work = ''.join(f'<div class="f v" style="top:{258.6 + i * 14.4}pt">{e(w)}</div>' for i, w in enumerate(s['work']))
     sum_top = 258.6 + len(s['work']) * 14.4 + 14
     return f'''<section class="pg"><div class="bg" style="background-image:url(img/{s['hero']}.jpg)"></div><div class="panel"></div>
-<div class="tab"><div class="k">{a}<br>{b} {c}</div><div class="bar" style="left:{97 if s['sec']=='res' else 103}pt"></div><div class="n" style="left:{127.5 if s['sec']=='res' else 119.5}pt;font-size:{12.2 if len(s['short'])<=7 else 10.4}pt">{e(s['short'])}</div></div>
+<div class="tab"><div class="k">{a}<br>{b} {c}</div><div class="bar" style="left:{ {'res':97,'gov':103,'com':99}[s['sec']] }pt"></div><div class="n" style="left:{ {'res':127.5,'gov':119.5,'com':121.9}[s['sec']] }pt;font-size:{12.2 if len(s['short'])<=7 else 10.4}pt">{e(s['short'])}</div></div>
 <div class="f lb" style="top:84pt">. Project</div><div class="f v big" style="top:79.5pt">{e(s['project'])}</div>
 <div class="f lb" style="top:192pt">. Client</div><div class="f v" style="top:190.5pt">{e(s['client'])}</div>
 <div class="f lb" style="top:210pt">. Location</div><div class="f v" style="top:209.4pt">{e(s['loc'])}</div>
