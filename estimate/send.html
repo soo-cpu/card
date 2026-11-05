@@ -39,6 +39,10 @@ button.sub{font:inherit;font-weight:700;border:1px solid var(--line);border-radi
 
   <section class="card" aria-label="받는 사람">
     <label for="nm">고객 이름 <small>(문구 첫 줄에 들어가요, 비워도 돼요)</small><input id="nm" autocomplete="off" placeholder="예: 김민지"></label>
+    <label for="who">보내는 담당자 <small>(그 사람 명함이 문자에 같이 가요. 고객이 명함에서 '연락처 저장'을 누르면 바로 저장돼요)</small>
+      <select id="who" style="font:inherit;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--panel);color:var(--ink)">
+        <option value="soo">최윤수 대표</option><option value="jung">정진혁 실장</option><option value="lee">이봄이 실장</option><option value="">명함 안 넣기</option>
+      </select></label>
     <label for="ph">고객 휴대폰 번호<input id="ph" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></label>
     <p class="msg" id="phMsg" aria-live="polite"></p>
   </section>
@@ -69,13 +73,17 @@ button.sub{font:inherit;font-weight:700;border:1px solid var(--line);border-radi
 <script>
 const $=id=>document.getElementById(id);
 const DEFAULT_LINK="https://soo-cpu.github.io/card/estimate/";
-function template(name,link){return `안녕하세요${name?" "+name+" 고객님":""}, 아르띠꼬 스튜디오(주식회사 홈퍼니싱)입니다.
+const CARDS={soo:["최윤수 대표","https://soo-cpu.github.io/card/soo/"],jung:["정진혁 실장","https://soo-cpu.github.io/card/jung/"],lee:["이봄이 실장","https://soo-cpu.github.io/card/lee/"]};
+function template(name,link){const c=CARDS[$("who").value];return `안녕하세요${name?" "+name+" 고객님":""}, 아르띠꼬 스튜디오(주식회사 홈퍼니싱)입니다.
 문의 주신 공사비를 먼저 확인하실 수 있게 간편 견적 링크를 보내드려요.
 
 ${link}
 
 평형과 공사 범위를 누르면 예상 금액이 바로 나와요.
-궁금한 점은 1566-5904로 연락 주세요.`}
+궁금한 점은 1566-5904로 연락 주세요.${c?`
+
+담당 ${c[0]} 명함 (연락처 저장)
+${c[1]}`:""}`}
 let edited=false;
 $("link").value=DEFAULT_LINK;
 function fill(){if(!edited)$("body").value=template($("nm").value.trim(),$("link").value.trim());update()}
@@ -87,7 +95,7 @@ function update(){const d=digits(),ok=valid(d);
   $("phMsg").className="msg "+(d.length<10?"":ok?"ok":"bad");
   const s=$("send");s.setAttribute("aria-disabled",String(!ok));
   s.href=ok?"sms:"+d+"?&body="+encodeURIComponent($("body").value):"#"}
-$("nm").addEventListener("input",fill);$("link").addEventListener("input",fill);
+$("nm").addEventListener("input",fill);$("who").addEventListener("change",()=>{edited=false;fill()});$("link").addEventListener("input",fill);
 $("ph").addEventListener("input",update);$("ph").addEventListener("blur",()=>{const d=digits();if(valid(d))$("ph").value=fmt(d)});
 $("body").addEventListener("input",()=>{edited=true;update()});
 fill();
