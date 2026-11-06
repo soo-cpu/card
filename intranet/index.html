@@ -217,7 +217,7 @@ tbody tr.rw-bad td{background:var(--bad-bg)!important;color:var(--bad)}
 tbody tr.rw-warn td{background:var(--warn-bg)!important}
 .fbbtn{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:25;border:0;border-radius:999px;background:var(--yellow);color:#111;font-weight:700;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;font-size:14px}
 body.consulting .fbbtn{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
-body.cs-cust .fbbtn{display:none}
+body.cs-cust .fbbtn{display:none}@media print{#askFab,#askVeil{display:none!important}}
 @media print{.fbbtn{display:none}}
 .flow{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px;background:var(--panel)}
 .flowbar{display:flex;gap:4px;list-style:none;margin:0 0 10px;padding:0;overflow-x:auto}
@@ -252,7 +252,7 @@ body.cs-cust .fbbtn{display:none}
 <script>
 (function(){
 // ===== 회사 기준 (고객관리 툴 v3.2 · 아르띠꼬 상담견적 v.15 · 공유드라이브 「0. 홈퍼니싱」 서식) =====
-const APP_VER="v0.84 (대표 ‘금액 변동 확인’ 탭: 고정 지출 결재를 지난달·3개월 평균과 비교, 확인해야 승인 · 결재 화면에 지난달 대비 한 줄 · 결재 차례·최종 승인·반려 인트라넷 알림 · 대표 차례 4시간 넘으면 빨간 불 위로 · 인사 기록 급여 칸 아래 연차 발생/사용/잔여 · 대표만 보는 한 줄 메모) · v0.83 (모든 결재 문서 종이 미리 보기: A4 한 장 · 결재란 기안/검토/결재/최종결재 · 출력·PDF 저장 · 휴가신청서·지출결의서·여비교통비·접대비·기안품의서는 서식 폴더 한글 양식 모양) · v0.82 (삭제는 대표만 · 직원은 삭제 요청(사유 → 빨간 불 → 직접 삭제·24시간 허용·거절) · 목록 체크칸 전체 선택·선택 삭제 · 휴지통 비어 보이던 문제 고침·여러 건 되살리기·전자결재는 영구 보관 · 프로젝트·고객 휴지통 → 캘린더 일정 [삭제됨]) · v0.81 (결재 라인 고정: 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 · 반려되면 기안자가 고쳐 다시 올림 · 대기 중 서류 새 라인으로) · v0.80 (전자결재·내 인사 정보에 '휴가 신청' 바로 버튼) · v0.79 (2026 연차 원본 반영·승인 연차 자동 차감 · 대표 삭제는 모든 메뉴에서 휴지통(30일 되살리기·기록) · 업체 서류·캘린더·캐시플로우 줄도 휴지통) · v0.78 (프로젝트 창 위 원가 관리 큰 버튼 · 견적 '프로젝트로 등록' · 캐시플로우 줄마다 구분·금액·거래처·내용·잔액 · 견적서 종류(주거 아니면 주거용 칸 빠짐) · 업체 서류(통장사본·사업자등록증·업체 견적서) · 빨간 불 단가 입력 창) · v0.77 (교문초 프로젝트 묶음 · 견적·현장에서 프로젝트로 만들기/연결 · 원가 관리(견적·실행·사후) 이름·견적 원가 탭 · 관공서 원가 · 검색칸 한글 조합 입력 · 프로젝트 번호 겹침 막기) · v0.76 (대표 확인 빨간 불: 자금 경고·결재 대기·미연락 문의·대표 결정·직원 삭제 · 저장 기록과 저장 버전을 한 곳으로 · 단가 미정 목록 · 공사진행비 5% 칸 준비) · v0.75 (차장 이름 표기 채진아로 통일 · 대표 확인 2026-11-06) · v0.74 (연차: 직원별 발생·사용·잔여 + 서류 연차 칸 · 승인 연차 → 공용 캘린더 자동 등록·취소 시 삭제 · 기안품의서 종이 양식 출력) · v0.73 (견적 저장할 때마다 v1·v2·v3 번호 버전 보관 · 프로젝트별 버전 목록에서 열기·다시 작성 · 직원 버전도 대표 화면에 · 연결 끊겼던 임시 저장본 자동 다시 올리기 · 편집 탭에도 이어서 하기 안내 · 저장 직후 새 차수가 빈 화면으로 열리던 틈 막음) · v0.72 (브라우저 확인 창 14곳 → 인트라넷 확인 창 · 견적 저장 기록: 덮어쓰기 전 자동 백업·이전 내용 열기·새 차수로 되살리기 · 창 닫기·새로고침 직전 즉시 임시 저장 · 차수 번호가 겹치지 않게) · v0.71 (저장 완료·실패 크게 표시 · 견적 작성 자동 임시 저장, 기기 상관없이 이어서 하기 · 일반 저장에도 첫 견적 항목 같이 저장) · v0.70 (견적 화면 스크롤 유지·공종 바로가기 고정 · 단계 바 눌러 아무 단계로 · 견적 차수 목록·발송됨 · 고객에게 보내기: PDF·보기 링크) · v0.69 (이전 단계로 고침 · 확인 창이 막혀 취소되던 곳 10곳 → 인트라넷 확인 창 · 현장·견적·고객 관리 검색에 프로젝트 연결) · v0.68 (인사정보 월별 급여 표: 급여대장 2020-05~2026-10) · v0.67 (견적 작성 = 상담견적 v.15 방식: 왼쪽 상담 항목 → 오른쪽 가견적 · 단가 = 단가표 2026-11-04 v0 · 견적 단계에서 v.15 화면 바로) · v0.66 (이전 단계로 · 견적 단계에서 견적서 바로 열기 · 상세 견적 첫 화면 · 프로젝트 삭제 시 견적·현장 같이 휴지통 · 직원 삭제 알림 · 캘린더 수정은 본인+최윤수) · v0.65 (간편견적 접수 → 프로젝트 자동 · 새 문의 알림 · 단계 '신규 문의' · 유입 '간편견적') · v0.64 (캘린더 떠 있는 작은 창: 오른쪽 아래 버튼 · 오늘·이번 주 · 휴대폰은 아래에서 올라옴) · v0.63 (공정표 → 공용 캘린더 자동 · 현장별 색 · 휴가 기간 표시) · v0.62 (보완 8건: 캐시플로우 엑셀 과거분·입출금 보기·결재→사후 원가·견적서 엑셀 읽기·세부 단가표·공급가 표시·엑셀 첨부) · v0.61 (본사 결재 한 장·캐시플로우 불러오기·승인 후 지출 기록 · 엑셀 18시 자동 반영) · v0.60 (공용 캘린더·매일 백업·작성 중 자동 임시 저장) · v0.59 (프로젝트: 업무 절차 24단계 체크·시간순 기록·고객명만으로 생성) · v0.58 (프로젝트↔현장 폴더 링크·주소·담당·일정 공유) · v0.57 (기안품의서 여러 줄·합계 자동·원가 줄 단위) · v0.56 (왼쪽 메뉴에 휴지통) · v0.55 (기안품의 지급 방법 자동이체 · 요청함 상태 추가) · v0.54 (휴지통: 고객·프로젝트·견적·현장 삭제 → 보관, 복구·완전삭제 관리자만)", APP_DATE="2026-11-06";
+const APP_VER="v0.87 (서식 자료실 개편: 맨 위 검색칸 · 분류 카드(건수) 누르면 그 자리에서 펼침 · 파일 누르면 바로 미리 보기 · ☆ 자주 쓰는 자료 맨 위 고정) · v0.86 (모든 화면 왼쪽 아래 물어보기·마이크: 크롬 음성 인식 → AI 답 → 소리로 읽기(끄기 가능) · 사용법·접속 문제만 답, 권한·데이터·돈은 대표에게 전달 · 한 사람 하루 20번 · 못 답한 질문은 기록 → 예약 작업이 답) · v0.85 (같은 고객·같은 주소 새 프로젝트 경고·기존 바로가기 · 고객·프로젝트·견적 목록 정렬(최신순↔오래된순·이름순·평형순) · 준공일 지나면 사후 관리 자동·고객 4단계·1개월/1년 점검 알림 · 사후 관리 화면 A/S 바로 접수 · 고쳐주세요 화면 캡처 첨부·Ctrl+V) · v0.84 (대표 ‘금액 변동 확인’ 탭: 고정 지출 결재를 지난달·3개월 평균과 비교, 확인해야 승인 · 결재 화면에 지난달 대비 한 줄 · 결재 차례·최종 승인·반려 인트라넷 알림 · 대표 차례 4시간 넘으면 빨간 불 위로 · 인사 기록 급여 칸 아래 연차 발생/사용/잔여 · 대표만 보는 한 줄 메모) · v0.83 (모든 결재 문서 종이 미리 보기: A4 한 장 · 결재란 기안/검토/결재/최종결재 · 출력·PDF 저장 · 휴가신청서·지출결의서·여비교통비·접대비·기안품의서는 서식 폴더 한글 양식 모양) · v0.82 (삭제는 대표만 · 직원은 삭제 요청(사유 → 빨간 불 → 직접 삭제·24시간 허용·거절) · 목록 체크칸 전체 선택·선택 삭제 · 휴지통 비어 보이던 문제 고침·여러 건 되살리기·전자결재는 영구 보관 · 프로젝트·고객 휴지통 → 캘린더 일정 [삭제됨]) · v0.81 (결재 라인 고정: 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 · 반려되면 기안자가 고쳐 다시 올림 · 대기 중 서류 새 라인으로) · v0.80 (전자결재·내 인사 정보에 '휴가 신청' 바로 버튼) · v0.79 (2026 연차 원본 반영·승인 연차 자동 차감 · 대표 삭제는 모든 메뉴에서 휴지통(30일 되살리기·기록) · 업체 서류·캘린더·캐시플로우 줄도 휴지통) · v0.78 (프로젝트 창 위 원가 관리 큰 버튼 · 견적 '프로젝트로 등록' · 캐시플로우 줄마다 구분·금액·거래처·내용·잔액 · 견적서 종류(주거 아니면 주거용 칸 빠짐) · 업체 서류(통장사본·사업자등록증·업체 견적서) · 빨간 불 단가 입력 창) · v0.77 (교문초 프로젝트 묶음 · 견적·현장에서 프로젝트로 만들기/연결 · 원가 관리(견적·실행·사후) 이름·견적 원가 탭 · 관공서 원가 · 검색칸 한글 조합 입력 · 프로젝트 번호 겹침 막기) · v0.76 (대표 확인 빨간 불: 자금 경고·결재 대기·미연락 문의·대표 결정·직원 삭제 · 저장 기록과 저장 버전을 한 곳으로 · 단가 미정 목록 · 공사진행비 5% 칸 준비) · v0.75 (차장 이름 표기 채진아로 통일 · 대표 확인 2026-11-06) · v0.74 (연차: 직원별 발생·사용·잔여 + 서류 연차 칸 · 승인 연차 → 공용 캘린더 자동 등록·취소 시 삭제 · 기안품의서 종이 양식 출력) · v0.73 (견적 저장할 때마다 v1·v2·v3 번호 버전 보관 · 프로젝트별 버전 목록에서 열기·다시 작성 · 직원 버전도 대표 화면에 · 연결 끊겼던 임시 저장본 자동 다시 올리기 · 편집 탭에도 이어서 하기 안내 · 저장 직후 새 차수가 빈 화면으로 열리던 틈 막음) · v0.72 (브라우저 확인 창 14곳 → 인트라넷 확인 창 · 견적 저장 기록: 덮어쓰기 전 자동 백업·이전 내용 열기·새 차수로 되살리기 · 창 닫기·새로고침 직전 즉시 임시 저장 · 차수 번호가 겹치지 않게) · v0.71 (저장 완료·실패 크게 표시 · 견적 작성 자동 임시 저장, 기기 상관없이 이어서 하기 · 일반 저장에도 첫 견적 항목 같이 저장) · v0.70 (견적 화면 스크롤 유지·공종 바로가기 고정 · 단계 바 눌러 아무 단계로 · 견적 차수 목록·발송됨 · 고객에게 보내기: PDF·보기 링크) · v0.69 (이전 단계로 고침 · 확인 창이 막혀 취소되던 곳 10곳 → 인트라넷 확인 창 · 현장·견적·고객 관리 검색에 프로젝트 연결) · v0.68 (인사정보 월별 급여 표: 급여대장 2020-05~2026-10) · v0.67 (견적 작성 = 상담견적 v.15 방식: 왼쪽 상담 항목 → 오른쪽 가견적 · 단가 = 단가표 2026-11-04 v0 · 견적 단계에서 v.15 화면 바로) · v0.66 (이전 단계로 · 견적 단계에서 견적서 바로 열기 · 상세 견적 첫 화면 · 프로젝트 삭제 시 견적·현장 같이 휴지통 · 직원 삭제 알림 · 캘린더 수정은 본인+최윤수) · v0.65 (간편견적 접수 → 프로젝트 자동 · 새 문의 알림 · 단계 '신규 문의' · 유입 '간편견적') · v0.64 (캘린더 떠 있는 작은 창: 오른쪽 아래 버튼 · 오늘·이번 주 · 휴대폰은 아래에서 올라옴) · v0.63 (공정표 → 공용 캘린더 자동 · 현장별 색 · 휴가 기간 표시) · v0.62 (보완 8건: 캐시플로우 엑셀 과거분·입출금 보기·결재→사후 원가·견적서 엑셀 읽기·세부 단가표·공급가 표시·엑셀 첨부) · v0.61 (본사 결재 한 장·캐시플로우 불러오기·승인 후 지출 기록 · 엑셀 18시 자동 반영) · v0.60 (공용 캘린더·매일 백업·작성 중 자동 임시 저장) · v0.59 (프로젝트: 업무 절차 24단계 체크·시간순 기록·고객명만으로 생성) · v0.58 (프로젝트↔현장 폴더 링크·주소·담당·일정 공유) · v0.57 (기안품의서 여러 줄·합계 자동·원가 줄 단위) · v0.56 (왼쪽 메뉴에 휴지통) · v0.55 (기안품의 지급 방법 자동이체 · 요청함 상태 추가) · v0.54 (휴지통: 고객·프로젝트·견적·현장 삭제 → 보관, 복구·완전삭제 관리자만)", APP_DATE="2026-11-06";
 const STAFF_DEF=["최윤수","신혜현","최남수","유효성","정진혁","채진아","이봄이"];
 const TOOL_QUOTE="https://claude.ai/artifact/UyzLeeqmFdTq54YL7Rko84";
 const TOOL_CRM="https://claude.ai/artifact/BVQPYfkDfTpDcPPUsu6e2x";
@@ -379,7 +379,7 @@ const MOD={
 };
 MOD.feedback={grp:"회사",nav:"개선 요청함",title:"개선 요청함",sub:"직원이 화면 오른쪽 아래 「불편해요 / 고쳐주세요」로 남긴 요청 · 대표가 보고 클로드에게 고치라고 시켜요",add:"요청 남기기",
  status:"status",statuses:FB_STATUS,
- fields:[["kind","종류","sel",FB_KINDS],["body","내용 (한두 줄이면 돼요)","area",null,1],["where","어느 화면에서 (자동)","ro",null,1],["pno","프로젝트 번호 (자동, 없으면 비워 둬요)","text"],["status","상태 (대표가 바꿔요)","sel",FB_STATUS],["reply","대표 답변","text",null,1],["files","첨부 (사진·PDF·엑셀 · ‘이런 형식으로 고쳐 주세요’ 예시)","files",null,1]],
+ fields:[["kind","종류","sel",FB_KINDS],["body","내용 (한두 줄이면 돼요)","area",null,1],["where","어느 화면에서 (자동)","ro",null,1],["pno","프로젝트 번호 (자동, 없으면 비워 둬요)","text"],["status","상태 (대표가 바꿔요)","sel",FB_STATUS],["reply","대표 답변","text",null,1],["__cap","","fbcap",null,1],["files","화면 캡처·사진 첨부 (여러 장 · 캡처 후 Ctrl+V로 붙여 넣기도 돼요 · PDF·엑셀도)","files",null,1]],
  cols:[["kind","종류"],["body","내용"],["where","화면"],["pno","프로젝트"],["createdBy","요청한 사람","person"],["createdAt","날짜","date"],["status","상태","status"]]};
 // 인사기록카드 (대표·편집자만 읽고 씀). 주민번호·계좌번호는 넣지 않음
 const HR_FIELDS=[["phone","전화번호","text"],["email","이메일","text"],["birth","생년월일","date"],["rrn","주민등록번호","text"],["addr","주소","text",null,1],["kind","입사 구분","sel",["신입","경력"]],["edu","입사 시 최종학력","text"],["emergency","비상연락","text"],
@@ -1132,6 +1132,13 @@ function listenAcct(){if(!db||!me.id)return;const ids=me.admin?[...new Set(S.sta
   ids.forEach(u=>{if(acctSubs[u])return;acctSubs[u]=1;try{db.collection("acct/"+u+"/days").onSnapshot(s=>{ACCT[u]=s.docs.map(x=>Object.assign({id:x.id,uid:u},x.data()));render()},()=>{})}catch(e){}})}
 let db=null,assets=null,user=null,me={id:null,name:"",isOwner:false,admin:false},mode="local";
 const names={};let filter={},query="";
+const SORTABLE=["customers","projects","quotes"];let SORTK={};try{SORTK=JSON.parse(localStorage.getItem("hf_sort")||"{}")||{}}catch(e){SORTK={}}
+const regAt=r=>String(r.createdAt||r.inq||r.d||r.updatedAt||"");
+function sortRows(k,rows){const m=SORTK[k]||"new",nm=r=>String(k==="projects"?(r.custName||r.title||""):(r.name||"")),py=r=>num(r.py)||(k==="projects"?num((S.customers.find(c=>c.code&&c.code===r.custCode)||{}).py):0);
+  const L=rows.slice();if(m==="new")L.sort((a,b)=>regAt(b).localeCompare(regAt(a)));else if(m==="old")L.sort((a,b)=>regAt(a).localeCompare(regAt(b)));else if(m==="name")L.sort((a,b)=>nm(a).localeCompare(nm(b),"ko"));else if(m==="py")L.sort((a,b)=>py(b)-py(a));return L}
+function sortBtns(k){const m=SORTK[k]||"new";return `<span class="chips" role="group" aria-label="정렬"><button type="button" class="chip" data-sortk="${k}" data-sortv="${m==="new"?"old":"new"}" aria-pressed="${m==="new"||m==="old"}" title="누를 때마다 바뀜 (등록일 기준)">${m==="old"?"오래된순":"최신순"}</button><button type="button" class="chip" data-sortk="${k}" data-sortv="name" aria-pressed="${m==="name"}">이름순</button><button type="button" class="chip" data-sortk="${k}" data-sortv="py" aria-pressed="${m==="py"}">평형순</button></span> `}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-sortk]");if(!t)return;e.preventDefault();const k=t.dataset.sortk;let v=t.dataset.sortv;if((v==="name"||v==="py")&&SORTK[k]===v)v="new";SORTK[k]=v;try{localStorage.setItem("hf_sort",JSON.stringify(SORTK))}catch(er){}render()});
+
 const LKEY="hf-intranet-v1";
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -2007,6 +2014,55 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   if(t.dataset.rpsave){redPriceSave([t.dataset.rpsave]);return}
   if(t.dataset.rpsaveall){redPriceSave([...document.querySelectorAll("[data-rpk]")].filter(i=>num(i.value)>0).map(i=>i.dataset.rpk))}});
 // 삭제 요청: 직원 → mine/<직원>/delreq, 대표 화면이 읽어 빨간 불 · 결정은 대표만
+// ===== 19. 물어보기 + 음성 도우미 (사용량은 묻는 사람 본인 Claude 계정 · 하루 20번) =====
+const ASK_MAX=20;let askOpen=false,askBusy=false,askN=0,askHist=[],askTts=(()=>{try{return localStorage.getItem("hf_tts")!=="off"}catch(e){return true}})(),askRec=null;
+const ASK_TIPS=["로그인: claude.ai 구글 계정으로 인트라넷 링크를 열어요. 회사 계정 우선, 개인 지메일은 인사 관리에 연결된 경우만.","'연습 모드' 띠가 보이면: 공용 저장소에 연결되지 않은 상태예요. claude.ai에 로그인한 채로 대표가 보낸 인트라넷 링크(claude.ai/artifact/…)로 다시 열어요. 드라이브에 보관된 html 파일이나 다른 앱 미리 보기로 열면 연습 모드가 돼요. 공유 권한이 '뷰어'면 저장이 안 되니 대표에게 '편집자' 초대를 요청해요.","저장이 안 될 때: 화면 위 저장 결과 띠를 보고, 인터넷이 끊겼으면 다시 연결되면 자동으로 올라가요(견적 임시 저장).","전자결재: 결재 올리기 → 서류 종류 고르기 → 저장. 결재 라인은 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 순서로 자동. 반려되면 고쳐 저장하면 다시 올라가요. '종이 미리 보기'로 A4 출력·PDF.","휴가 신청: 전자결재 또는 내 인사 정보의 '휴가 신청 (연차·반차)' 버튼. 연차는 7일 전까지.","삭제: 직원은 지울 수 없고 상세 창 아래 '삭제 요청'에 사유를 적으면 대표가 정해요.","불편한 점은 오른쪽 아래 '불편해요 / 고쳐주세요'에 화면 캡처와 함께 남겨요.","프로젝트: 고객 1명 = 프로젝트 카드 1개, 상담 → 디자인 → 견적 → 계약 → 시공 → 정산·사후관리.","목록 위 '최신순/오래된순·이름순·평형순' 버튼으로 정렬해요."];
+function askManual(){return Object.keys(MOD).filter(k=>canNav?canNav(k):true).map(k=>"- "+MOD[k].nav+": "+(MOD[k].sub||"")).join("\n")}
+const canNav=null;
+function askScreen(){const r=route(),b=[...document.querySelectorAll(".banner")].map(x=>x.innerText.trim()).filter(Boolean).join(" / ");return "지금 화면: "+(MOD[r]?MOD[r].nav:r)+(sheet?" > "+(MOD[sheet.col]?MOD[sheet.col].nav:sheet.col)+" 상세 창":"")+" · 저장 상태: "+(mode==="shared"?"공용 저장소 연결됨":"연습 모드(이 브라우저에만 저장)")+(b?" · 화면 안내: "+b.slice(0,300):"")+" · 앱 "+APP_VER.slice(0,6)}
+async function askCount(add){const T=todayStr();if(!db||!me.id||mode!=="shared"){let o={};try{o=JSON.parse(localStorage.getItem("hf_askn")||"{}")}catch(e){}if(o.d!==T)o={d:T,n:0};if(add){o.n++;try{localStorage.setItem("hf_askn",JSON.stringify(o))}catch(e){}}return o.n}
+  const ref=db.collection("acct/"+me.id+"/ask").doc(T);let n=0;try{const g=await ref.get();n=g&&g.exists?num((g.data()||{}).n):0}catch(e){}if(add){n++;try{await ref.set({n,at:nowISO(),name:myName()})}catch(e){}}return n}
+function askDraw(){let v=document.getElementById("askVeil");if(!askOpen){if(v)v.remove();return}if(!v){v=document.createElement("div");v.id="askVeil";v.setAttribute("role","dialog");v.setAttribute("aria-label","물어보기");v.style.cssText="position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:31;width:min(420px,calc(100vw - 28px));max-height:70vh;display:flex;flex-direction:column;background:var(--panel);color:var(--ink);border:2px solid var(--deep);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)";document.body.appendChild(v)}
+  const left=Math.max(0,ASK_MAX-askN);
+  v.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)"><b>물어보기 <small class="muted">오늘 남은 질문 ${left}/${ASK_MAX}</small></b><span style="display:flex;gap:6px"><button type="button" class="btn sm" data-asktts="1" aria-pressed="${askTts}">${askTts?"소리 켬":"소리 끔"}</button><button type="button" class="btn sm" data-askclose="1">닫기</button></span></div>
+  <div id="askLog" style="overflow:auto;padding:10px 12px;display:grid;gap:8px;flex:1">${askHist.length?askHist.map(x=>`<div style="justify-self:${x.me?"end":"start"};max-width:92%;background:${x.me?"var(--tint)":"var(--soft)"};border-radius:10px;padding:7px 10px;white-space:pre-wrap">${esc(x.t)}${x.boss?'<br><span class="pill warn">대표에게 전달했어요</span>':""}</div>`).join(""):'<p class="hint" style="margin:0">인트라넷 사용법, 저장·연습 모드 같은 접속 문제를 물어보세요. 마이크를 누르고 말해도 돼요. 권한·데이터 변경·돈 관련은 대표에게 전달해요.</p>'}</div>
+  <div style="display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)"><button type="button" class="btn sm" data-askmic="1" aria-label="말로 묻기" title="말로 묻기 (크롬)">${askRec?"듣는 중… (누르면 멈춤)":"마이크"}</button><input id="askIn" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg)" placeholder="${left?"예: 연습 모드라고 떠요":"오늘 질문을 다 쓰셨어요"}" ${left?"":"disabled"}><button type="button" class="btn sm pri" data-asksend="1" ${left&&!askBusy?"":"disabled"}>${askBusy?"답 쓰는 중":"묻기"}</button></div>`;
+  const lg=document.getElementById("askLog");if(lg)lg.scrollTop=lg.scrollHeight}
+function askSay(t){if(!askTts||!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).slice(0,600));u.lang="ko-KR";u.rate=1.05;speechSynthesis.speak(u)}catch(e){}}
+async function askSend(q){q=String(q||"").trim();if(!q||askBusy)return;askN=await askCount(false);if(askN>=ASK_MAX){askHist.push({t:"오늘 질문을 다 쓰셨어요. 내일 다시 물어봐 주세요 (남은 횟수 0)"});askDraw();return}
+  if(!sampleCap){askHist.push({me:1,t:q},{t:"이 화면에서는 AI 답을 쓸 수 없어요 (claude.ai 인트라넷 링크로 열어야 해요). 질문은 기록해 두고 하루 3번 확인해서 답을 달아 드릴게요.",boss:0});await askLog(q,"",false,false);askDraw();return}
+  askBusy=true;askHist.push({me:1,t:q});askDraw();
+  const sys=`너는 주식회사 홈퍼니싱 사내 인트라넷 도우미야. 쉬운 한국어로 3~5문장, 휴대폰에서 읽기 쉽게 답해.
+답하는 범위: 인트라넷 사용법, 화면·버튼 위치, 에러·연습 모드·저장 안 됨 같은 접속 문제.
+답하지 않는 범위: 권한 바꾸기, 데이터 지우기·고치기 부탁, 급여·금액·돈 관련 질문, 회사 내부 결정. 이런 건 답하지 말고 toBoss=true.
+모르면 지어내지 말고 ok=false.
+반드시 JSON 한 줄만: {"answer":"답","ok":true|false,"toBoss":true|false}
+[사용 설명]
+${ASK_TIPS.join("\n")}
+[메뉴]
+${askManual()}
+[${askScreen()}]
+[묻는 사람] ${myName()} (${me.admin?"대표":"직원"})`;
+  let o=null;try{const r=await sampleCap([{role:"user",content:sys+"\n\n질문: "+q}],{modelTier:"quick",cache:false});const m=String(r.text||"").match(/\{[\s\S]*\}/);o=m?JSON.parse(m[0]):{answer:String(r.text||""),ok:true,toBoss:false}}
+  catch(e){askBusy=false;if(e&&e.code==="not_granted"){askHist.push({t:"AI 사용을 허락하지 않아서 답을 못 했어요. 질문은 기록해 두고 하루 3번 확인해서 답을 달아 드릴게요."});await askLog(q,"",false,false);askDraw();return}askHist.push({t:e&&e.code==="rate_limited"?"질문이 많아 잠시 쉬어요. 1분 뒤 다시 물어봐 주세요.":"답을 받지 못했어요. 질문은 기록해 두고 나중에 답을 달아 드릴게요."});await askLog(q,"",false,false);askDraw();return}
+  askN=await askCount(true);askBusy=false;const toBoss=!!o.toBoss,ok=!!o.ok&&!toBoss;const ans=toBoss?"이 질문은 권한·데이터·돈과 관련돼 대표에게 전달했어요. 답이 오면 여기서 볼 수 있어요.":String(o.answer||"").slice(0,1200)+(ok?"":"\n(확실하지 않아 기록해 두고 하루 3번 확인해서 답을 달아 드릴게요)");
+  askHist.push({t:ans,boss:toBoss});askSay(ans);await askLog(q,ok?String(o.answer||""):"",ok,toBoss);askDraw()}
+async function askLater(){if(!db||!me.id||mode!=="shared")return;const L=(await once("acct/"+me.id+"/askq")).filter(r=>r.answeredAt&&!r.seenAt);for(const r of L){askHist.push({me:1,t:r.q},{t:"(나중에 단 답) "+(r.a||"")});const o=Object.assign({},r);delete o.id;o.seenAt=nowISO();try{await db.collection("acct/"+me.id+"/askq").doc(r.id).set(o)}catch(e){}}}
+async function askLog(q,a,ok,toBoss){const row={q:String(q).slice(0,500),a:String(a||"").slice(0,1500),ok,toBoss,status:ok?"답함":toBoss?"대표 전달":"대기",at:nowISO(),name:myName(),by:me.id||"",screen:askScreen().slice(0,400)};
+  if(db&&me.id&&mode==="shared"){try{await db.collection("acct/"+me.id+"/askq").doc(newId("q")).set(row)}catch(e){}}}
+function askMic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast("이 브라우저는 음성 인식이 안 돼요 · 크롬에서 열어 주세요");return}if(askRec){try{askRec.stop()}catch(e){}askRec=null;askDraw();return}
+  const r=new SR();r.lang="ko-KR";r.interimResults=true;r.maxAlternatives=1;let fin="";r.onresult=e=>{let t="";for(const x of e.results)t+=x[0].transcript;fin=t;const i=document.getElementById("askIn");if(i)i.value=t};r.onerror=e=>{askRec=null;askDraw();toast(e.error==="not-allowed"?"마이크 사용을 허락해 주세요":"잘 못 들었어요 · 다시 눌러 주세요")};r.onend=()=>{askRec=null;askDraw();if(fin.trim())askSend(fin)};askRec=r;try{r.start()}catch(e){askRec=null}askDraw()}
+function askFab(){if(document.getElementById("askFab"))return;const b=document.createElement("button");b.id="askFab";b.type="button";b.className="fbbtn";b.style.cssText="right:auto;left:max(14px,env(safe-area-inset-left,0px));background:var(--deep);color:#fff";b.textContent="물어보기 · 마이크";document.body.appendChild(b)}
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("#askFab,[data-askclose],[data-asksend],[data-askmic],[data-asktts]");if(!t)return;e.preventDefault();
+  if(t.id==="askFab"){askOpen=!askOpen;if(askOpen){askN=await askCount(false);askLater().then(()=>{if(askOpen)askDraw()}).catch(()=>{})}askDraw();if(askOpen)setTimeout(()=>{const i=document.getElementById("askIn");if(i)i.focus()},50);return}
+  if(t.dataset.askclose){askOpen=false;try{speechSynthesis.cancel()}catch(er){}askDraw();return}
+  if(t.dataset.asktts){askTts=!askTts;try{localStorage.setItem("hf_tts",askTts?"on":"off")}catch(er){}if(!askTts)try{speechSynthesis.cancel()}catch(er){}askDraw();return}
+  if(t.dataset.askmic){askMic();return}
+  if(t.dataset.asksend){const i=document.getElementById("askIn");askSend(i&&i.value)}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.id==="askIn"&&!e.isComposing){e.preventDefault();askSend(e.target.value)}});
+// 대표 화면: 직원 질문 중 '대표 전달'·'대기'를 빨간 불에
+let ASKQ={},askqSubs={};
+function askqOwner(){if(!me.admin||!db||mode!=="shared")return;(S.staff||[]).filter(x=>x.uid&&x.state!=="퇴사").forEach(st=>{if(askqSubs[st.uid])return;askqSubs[st.uid]=1;try{db.collection("acct/"+st.uid+"/askq").onSnapshot(s=>{ASKQ[st.uid]=s.docs.map(d=>Object.assign({},d.data(),{did:d.id,uid:st.uid}));try{redDraw()}catch(e){}},()=>{})}catch(e){}})}
 let MYDR=[],drMineOn=false,DRALL={},drSubs={};
 const drKey=(col,id)=>String(col).replace(/\//g,"~")+"__"+id;
 function drMine(){if(drMineOn||!db||me.admin||mode!=="shared"||!me.id)return;drMineOn=true;try{db.collection("mine/"+me.id+"/delreq").onSnapshot(s=>{const prev=Object.fromEntries(MYDR.map(r=>[r.did,r.status]));MYDR=s.docs.map(d=>Object.assign({},d.data(),{did:d.id}));MYDR.forEach(r=>{if(prev[r.did]&&prev[r.did]!==r.status&&["허용","거절","삭제함"].includes(r.status))toast("삭제 요청 ‘"+(r.title||"")+"’: "+(r.status==="허용"?"대표가 24시간 허용했어요":r.status==="거절"?"대표가 거절했어요":"대표가 지웠어요"))});if(sheet)try{const b=document.getElementById("drBox");if(b)b.outerHTML=delReqBtn(sheet.col,sheet.id)}catch(e){}},()=>{drMineOn=false})}catch(e){drMineOn=false}}
@@ -2034,7 +2090,7 @@ async function drDecide(uid,did,how){const r=(DRALL[uid]||[]).find(x=>x.did===di
   if(how==="no"){o.status="거절";o.noAt=nowISO()}
   await db.collection("mine/"+uid+"/delreq").doc(did).set(o);logAct("delreq","삭제 요청 "+(how==="go"?"직접 삭제":how==="ok"?"24시간 허용":"거절"),(r.byName||"")+" · "+(r.title||""));toast(how==="go"?"휴지통으로 옮겼어요":how==="ok"?"24시간 허용했어요":"거절했어요");try{redDraw()}catch(e){}render()}
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-drgo],[data-drok],[data-drno]");if(!t||!me.admin)return;e.preventDefault();e.stopPropagation();const [uid,did]=(t.dataset.drgo||t.dataset.drok||t.dataset.drno).split("|");drDecide(uid,did,t.dataset.drgo?"go":t.dataset.drok?"ok":"no")});
-function redInit(){try{drOwner()}catch(e){}if(redOn||!me.admin||!db||mode!=="shared")return;redOn=true;try{db.collection("acct/_red/a").onSnapshot(s=>{REDACK={};s.docs.forEach(x=>REDACK[x.id]=x.data());redDraw()},()=>{})}catch(e){redOn=false}}
+function redInit(){try{drOwner()}catch(e){}try{askqOwner()}catch(e){}if(redOn||!me.admin||!db||mode!=="shared")return;redOn=true;try{db.collection("acct/_red/a").onSnapshot(s=>{REDACK={};s.docs.forEach(x=>REDACK[x.id]=x.data());redDraw()},()=>{})}catch(e){redOn=false}}
 function redCfg(){try{return cfg("quoteopt")||{}}catch(e){return {}}}
 function redItems(){if(!me.admin)return [];const L=[],T=todayStr(),ack=k=>!!REDACK[k];
   // 1. 자금 경고
@@ -2050,6 +2106,7 @@ function redItems(){if(!me.admin)return [];const L=[],T=todayStr(),ack=k=>!!REDA
   RED_DEC.forEach(([k,t,sub,go])=>{if(ack(k))return;if(k==="dec-price"&&!nP)return;L.push({k,kind:"대표 결정",title:t+(k==="dec-price"?" ("+nP+"개)":""),sub,at:"2026-11-06",go:go==="quotes"?"#quotes":go==="staff"?"#staff":go==="forms"?"#forms":"",price:go==="price",ind5:go==="ind5"})});
   // 4-1. 직원 삭제 요청 (대표 결정 전까지 계속)
   Object.values(DRALL).flat().filter(r=>r.status==="대기").forEach(r=>L.push({k:"",top:0,kind:"삭제 요청",title:(r.byName||"직원")+" · "+(r.what||"")+" ‘"+(r.title||"")+"’ 삭제 요청",sub:"사유: "+(r.reason||""),at:r.at,dr:r.uid+"|"+r.did}));
+  Object.values(ASKQ).flat().filter(r=>r.status==="대표 전달").forEach(r=>L.push({k:"askq:"+r.uid+":"+r.did,kind:"직원 질문",title:(r.name||"직원")+": "+String(r.q||"").slice(0,80),sub:"물어보기에서 대표에게 전달됨 · "+String(r.screen||"").slice(0,60),at:r.at}));
   // 5. 직원이 지운 것 (기존 휴지통 빨간 숫자도 그대로)
   try{delList().forEach(n=>L.push({k:"del:"+n.id,kind:"직원 삭제",title:(n.name||"직원")+" 님이 "+(n.what||"")+" 지움 · "+(n.title||""),sub:"되살리기는 ‘직원이 지운 것’ 창에서",at:n.at,del:1}))}catch(e){}
   return L.sort((a,b)=>(b.top||0)-(a.top||0))}
@@ -2374,6 +2431,11 @@ function bumpVer(key){try{localStorage.setItem(key,String(nextVer(key)+1))}catch
 function exportAll(){const data={app:APP_VER,at:nowISO(),acct:ACCT};Object.keys(S).forEach(k=>{if(k!=="activity")data[k]=S[k]});const name="홈퍼니싱 인트라넷 백업 "+todayStr()+" v"+nextVer("hf-bk-ver")+".json";download(name,JSON.stringify(data)).then(ok=>{if(!ok)return;bumpVer("hf-bk-ver");toast("백업 파일을 받았어요 · 인사·급여 정보가 들어 있으니 대표만 보관하세요")})}
 // 개선 요청
 let fbx=null;
+document.addEventListener("paste",e=>{if(!sheet||sheet.col!=="feedback")return;if(e.target&&e.target.closest&&e.target.closest("#filePaste"))return;const fs=[...((e.clipboardData||{}).items||[])].filter(x=>x.kind==="file").map(x=>x.getAsFile()).filter(Boolean);if(!fs.length)return;e.preventDefault();uploadFiles(fs.map((f,i)=>new File([f],"화면 캡처 "+todayStr()+"-"+(i+1)+"."+((f.type||"image/png").split("/")[1]||"png"),{type:f.type||"image/png"})))});
+async function fbCapture(){if(!sheet||sheet.col!=="feedback")return;const lay=document.getElementById("layer");if(lay)lay.style.visibility="hidden";toast("화면 찍는 중…");
+  try{if(!window.html2canvas)await loadJs("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");const c=await window.html2canvas(document.body,{scale:1,backgroundColor:null,windowWidth:document.documentElement.clientWidth,height:window.innerHeight,y:window.scrollY});if(lay)lay.style.visibility="";
+    const b=await new Promise(r=>c.toBlob(r,"image/png"));if(b)await uploadFiles([new File([b],"화면 캡처 "+todayStr()+" "+String(Date.now()).slice(-4)+".png",{type:"image/png"})])}catch(er){if(lay)lay.style.visibility="";toast("화면을 찍지 못했어요 · 캡처한 사진을 붙여 넣어 주세요 (Ctrl+V)")}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-fbcap]");if(!t)return;e.preventDefault();fbCapture()});
 function openFeedback(){
   const r=route();const scr=r==="consult"?"상담 진행":r==="home"?"홈":r==="forms"?"서식 자료실":(MOD[r]?MOD[r].nav:r);
   const sc=sheet?{col:sheet.col,no:sheet.data.no||sheet.data.pno||""}:null;
@@ -2744,13 +2806,35 @@ function finCards(){if(!me.admin||mode!=="shared")return "";const L=fcList();con
   if(R.length)h+=`<section class="card"><h2 style="color:#C00000">미수금 날짜 지남 ${R.length}건</h2><div class="list">${R.slice(0,8).map(r=>`<a class="item" href="#recv"><span class="pill bad">${r.late}일</span><div class="t"><b>${esc(r.p.no)} ${esc(r.p.title||"")}</b><small>남은 금액 ${won(r.left)}${r.state?" · "+esc(r.state):""}</small></div><span></span></a>`).join("")}</div></section>`;
   if(new Date().getDay()===1&&L.length)h+=`<section class="card"><h2>이번 주 현장 원가</h2><div class="list">${L.filter(r=>["계약","시공"].includes(r.p.stage)).map(r=>`<a class="item" href="#fcost"><span class="pill ${fcLvl(r)||"info"}">${r.rate===null?"—":r.rate+"%"}</span><div class="t"><b>${esc(r.p.no)} ${esc(r.p.title||"")}</b><small>진행률 ${r.prog||0}% · 원가 사용률 ${r.use===null?"—":r.use+"%"}</small></div><span></span></a>`).join("")}</div></section>`;
   return h}
+let FMQ="",FMOPEN="",FMPIN=(()=>{try{return JSON.parse(localStorage.getItem("hf_fmpin")||"[]")}catch(e){return []}})(),FMCNT=(()=>{try{return JSON.parse(localStorage.getItem("hf_fmcnt")||"{}")}catch(e){return {}}})();
+// 드라이브 파일 미리 보기 (보기만 · 수정·삭제 없음)
+function drvPreview(id,name,mime){const old=document.getElementById("dpVeil");if(old)old.remove();const v=document.createElement("div");v.className="veil";v.id="dpVeil";v.style.zIndex=36;
+  v.innerHTML=`<div class="sheet" role="dialog" aria-label="미리 보기" style="width:min(1000px,100%)"><h3><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name||"미리 보기")}</span><span style="display:flex;gap:6px"><a class="btn sm" href="${DRIVE(id)}" target="_blank" rel="noopener">새 창</a><button class="btn sm" type="button" data-dpclose="1">닫기</button></span></h3><p class="hint" style="margin:0">보기만 돼요 (인트라넷에서 고치거나 지울 수 없어요). 안 보이면 ‘새 창’을 누르세요 — 드라이브 권한이 있는 사람만 열려요.</p><iframe title="${esc(name||"")}" src="https://drive.google.com/file/d/${encodeURIComponent(id)}/preview" style="width:100%;height:75vh;border:1px solid var(--line);border-radius:8px;background:#fff" allow="autoplay"></iframe></div>`;document.body.appendChild(v)}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-dpclose],[data-dpv]");if(!t)return;e.preventDefault();if(t.dataset.dpclose){const v=document.getElementById("dpVeil");if(v)v.remove();return}
+  const id=t.dataset.dpv;FMCNT[id]=(FMCNT[id]||0)+1;try{localStorage.setItem("hf_fmcnt",JSON.stringify(FMCNT))}catch(er){}drvPreview(id,t.dataset.dpn||t.textContent.trim())});
+function fmItems(){return FORM_LIB.flatMap(([g,list])=>list.filter(([n])=>canSeeName(n)).map(([n,id,kind])=>({g,n,id,kind})))}
+function fmRow(x){const pin=FMPIN.includes(x.id);return `<li style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:4px 0;border-top:1px dashed var(--line)"><button type="button" class="btn sm" data-fmpin="${esc(x.id)}" aria-pressed="${pin}" title="${pin?"고정 풀기":"맨 위 고정"}" aria-label="${pin?"고정 풀기":"맨 위 고정"}">${pin?"★":"☆"}</button><a href="${DRIVE(x.id)}" data-dpv="${esc(x.id)}" data-dpn="${esc(x.n)}" style="flex:1;min-width:0">${esc(x.n)}</a><small class="muted">${esc(x.g)}</small>${x.kind?`<button class="use" data-newkind="${esc(x.kind)}">결재로</button>`:""}</li>`}
+function fmBodyHTML(){const A=fmItems(),q=FMQ.trim().toLowerCase();
+  if(q){const L=A.filter(x=>(x.n+" "+x.g).toLowerCase().includes(q));return `<section class="card"><h2>‘${esc(FMQ)}’ 찾은 자료 ${L.length}건</h2>${L.length?`<ul style="list-style:none;margin:0;padding:0">${L.map(fmRow).join("")}</ul>`:'<div class="empty">맞는 자료가 없어요</div>'}</section>`}
+  const pins=A.filter(x=>FMPIN.includes(x.id)),freq=A.filter(x=>!FMPIN.includes(x.id)&&FMCNT[x.id]).sort((a,b)=>FMCNT[b.id]-FMCNT[a.id]).slice(0,5);
+  const groups=FORM_LIB.map(([g])=>[g,A.filter(x=>x.g===g)]).filter(([g,L])=>L.length);
+  return `${pins.length||freq.length?`<section class="card"><h2>자주 쓰는 자료 <small class="muted">☆를 누르면 맨 위에 고정돼요</small></h2><ul style="list-style:none;margin:0;padding:0">${pins.concat(freq).map(fmRow).join("")}</ul></section>`:""}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:12px">${groups.map(([g,L])=>`<button type="button" class="tile${FMOPEN===g?" alert":""}" data-fmopen="${esc(g)}" aria-expanded="${FMOPEN===g}" style="text-align:left;cursor:pointer"><span>${esc(g)}</span><strong>${L.length}</strong><small>${FMOPEN===g?"접기":"누르면 목록이 펼쳐져요"}</small></button>`).join("")}</div>
+  ${FMOPEN?`<section class="card"><h2>${esc(FMOPEN)} <button type="button" class="btn sm" data-fmopen="${esc(FMOPEN)}">접기</button></h2><ul style="list-style:none;margin:0;padding:0">${A.filter(x=>x.g===FMOPEN).map(fmRow).join("")}</ul></section>`:""}`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-fmopen],[data-fmpin]");if(!t)return;e.preventDefault();
+  if(t.dataset.fmopen!==undefined){FMOPEN=FMOPEN===t.dataset.fmopen?"":t.dataset.fmopen}
+  if(t.dataset.fmpin){const id=t.dataset.fmpin;FMPIN=FMPIN.includes(id)?FMPIN.filter(x=>x!==id):[id].concat(FMPIN);try{localStorage.setItem("hf_fmpin",JSON.stringify(FMPIN))}catch(er){}}
+  const b=document.getElementById("fmBody");if(b)b.innerHTML=fmBodyHTML();else render()});
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="fmQ"){if(e.isComposing)return;FMQ=e.target.value;const b=document.getElementById("fmBody");if(b)b.innerHTML=fmBodyHTML()}});
+document.addEventListener("compositionend",e=>{if(e.target&&e.target.id==="fmQ"){FMQ=e.target.value;const b=document.getElementById("fmBody");if(b)b.innerHTML=fmBodyHTML()}});
 function renderForms(){
-  return `<div class="head"><div><h1>서식 자료실</h1><p>공유드라이브 「0. 홈퍼니싱」의 본사 서식 원본 링크 · 원본은 고치지 말고 ‘사본 만들기’ 또는 다운로드해서 쓰세요</p></div></div>
+  return `<div class="head"><div><h1>서식 자료실</h1><p>공유드라이브 「0. 홈퍼니싱」의 본사 서식 원본 · 누르면 바로 미리 보기 · 원본은 고치지 말고 ‘사본 만들기’ 또는 다운로드해서 쓰세요</p></div></div>
+  <input id="fmQ" class="search" type="search" placeholder="자료 검색 (예: 휴가, 계약서, 지출)" value="${esc(FMQ)}" autocomplete="off" style="font-size:16px;padding:10px 14px;border:2px solid var(--accent)">
   <div class="secnote">원본 파일은 수정하지 않습니다. 결재가 필요한 서식은 ‘결재로’ 버튼으로 전자결재를 바로 올릴 수 있어요. 링크는 공유드라이브 권한이 있는 사람만 열립니다.</div>
   ${coCardHTML()}
   <section class="card"><h2>인트라넷에서 바로 만드는 서식 <small class="muted">회사 기본 정보가 자동으로 들어가요</small></h2><div class="chips"><a class="btn sm" href="#quotes">견적서 PDF · 견적 관리 › 견적 열기 › 견적서 출력</a><button class="btn sm" data-newkind="증명서 발급 신청 (재직·경력)">재직·경력증명서 (결재 후 직인)</button>${mode==="shared"&&!me.admin?'<a class="btn sm" href="#myhr">내 급여명세서 PDF</a>':""}</div></section>
   <div class="secnote" style="border-color:#C55A11">본사 원본 서식(아래 링크)에는 <b>예전 회사 정보</b>가 남아 있을 수 있어요. 원본은 고치지 않으니, 사본에 위 ‘회사 기본 정보’로 바꿔 적어 쓰세요.</div>
-  <div class="forms">${FORM_LIB.map(([g,list])=>[g,list.filter(([n])=>canSeeName(n))]).filter(([g,list])=>list.length).map(([g,list])=>`<section><h3>${esc(g)}</h3><ul>${list.map(([n,id,kind])=>`<li><a href="${DRIVE(id)}" target="_blank" rel="noopener">${esc(n)}</a>${kind?`<button class="use" data-newkind="${esc(kind)}">결재로</button>`:""}</li>`).join("")}</ul></section>`).join("")}</div>
+  <div id="fmBody" style="display:grid;gap:12px">${fmBodyHTML()}</div>
   <div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`;
 }
 
@@ -2794,7 +2878,7 @@ function xlinkHTML(k){if(!query||!["sites","quotes","customers"].includes(k))ret
     ${P.map(p=>`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed var(--line)"><span style="flex:1 1 240px">${nm(p)} <span class="pill">${esc(flowOf(p.stage))}</span></span>${act(p)}<button type="button" class="btn sm" data-xopen="projects" data-id="${esc(p.id)}">프로젝트</button></div>`).join("")}</div>`}
 document.addEventListener("click",e=>{const t=e.target&&e.target.closest&&e.target.closest("[data-xopen],[data-xnew]");if(!t)return;if(t.dataset.xopen){sheet=null;openSheet(t.dataset.xopen,t.dataset.id);return}if(t.dataset.xnew){sheet=null;openSheet(t.dataset.xnew,null,t.dataset.no)}});
 function renderModule(k){  const m=MOD[k];let rows=sorted(k).filter(r=>canSeeRow(k,r));const flag=["projects","quotes","approvals"].includes(k)?new Map(checks().filter(c=>c.col===k).map(c=>[c.id,c.lvl])):null;
-  const f=filter[k]||"";
+  const f=filter[k]||"";if(SORTABLE.includes(k))rows=sortRows(k,rows);
   const stat=v=>k==="customers"?stageOf(v).stage[0]:k==="manuals"?(v.task||v.cat):k==="projects"?flowOf(v.stage):v[m.status];
   if(k==="manuals")rows=rows.slice().sort((a,b)=>{const ia=MAN_TASKS_REF.indexOf(a.task),ib=MAN_TASKS_REF.indexOf(b.task);return (ia<0?99:ia)-(ib<0?99:ib)||String(a.cat||"").localeCompare(String(b.cat||""))});
   let pre=[];
@@ -2819,6 +2903,7 @@ function renderModule(k){  const m=MOD[k];let rows=sorted(k).filter(r=>canSeeRow
   if(k==="customers"){const ar={};S.customers.forEach(c=>{const a=String(c.area||"").trim();if(!a)return;const p=a.split(" ");ar[p[0]]=(ar[p[0]]||0)+1;if(p[1])ar[p[0]+" "+p[1]]=(ar[p[0]+" "+p[1]]||0)+1});extra+=`<select id="rgF" class="btn" aria-label="지역으로 보기"><option value="">지역 전체</option>${Object.entries(ar).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`<option value="${esc(a)}" ${a===rgFilter?"selected":""}>${esc(a)} (${n})</option>`).join("")}</select>`}
   if(k==="feedback"&&me.admin)extra=`<button class="btn" data-fbx="1">클로드에게 보낼 정리</button>`;
   if(k==="projects"){const hsP=S.projects.filter(isHs);extra+=`<span class="pill">한샘 있는 프로젝트 ${hsP.length} · 계약 ${won(hsP.reduce((a,p)=>a+num(p.contractAmt),0))}</span>`}
+  if(SORTABLE.includes(k))extra=sortBtns(k)+extra;
   const addBtn=(k==="staff"&&!me.admin&&mode==="shared")?"":`${selOn(k)?`<button class="btn bad" data-selrm="${k}">선택 삭제</button> `:""}${me.admin&&db&&TRASH_COLS.includes(k)?`<button class="btn" data-trash="${k}">휴지통</button> `:""}${k==="approvals"?`<button class="btn" data-newkind="휴가신청서">휴가 신청 (연차·반차)</button> `:""}<button class="btn pri" data-new="${k}">${esc(m.add)}</button>`;
   return `
   <div class="head"><div><h1>${esc(m.title)}</h1><p>${esc(m.sub)}</p></div><div class="tools">${extra}${addBtn}</div></div>
@@ -2826,7 +2911,7 @@ function renderModule(k){  const m=MOD[k];let rows=sorted(k).filter(r=>canSeeRow
   ${k==="quotes"?`<div class="flow">${Q_STATUS.map(s=>`<span class="${f===s?"on":""}">${esc(s)}</span>`).join("<span style='background:none'>→</span>")}</div>`:""}
   ${k==="staff"&&me.admin?`<div class="secnote"><b>계정 연결 방법</b> (${S.staff.filter(s=>s.state!=="퇴사"&&!s.uid).length?`<span style="color:#C00000">미연결 ${S.staff.filter(s=>s.state!=="퇴사"&&!s.uid).length}명</span>`:"모두 연결됨"})<br>① 직원이 대표가 보낸 인트라넷 링크를 열고 회사 구글 계정으로 로그인해요<br>② 대표가 여기서 그 직원을 열고 ‘계정 연결’에 이름을 쳐요<br>③ 나온 이름을 누르고 저장하면 끝 (그전에 쓴 업무 보고도 그 직원 기록으로 옮겨져요)</div>`:""}
   ${k==="staff"&&mode==="shared"?`<div class="tools"><button class="btn pri" data-newkind="증명서 발급 신청 (재직·경력)">재직·경력증명서 발급 신청</button><span class="hint">결재가 최종 승인되면 직인이 찍힌 PDF를 받을 수 있어요</span></div>`:""}
-  ${k==="staff"?sealCard():""}
+  ${k==="staff"?sealCard():""}${k==="as"?acListHTML():""}
   ${k==="staff"&&me.admin&&mode==="shared"?`<details class="card"><summary style="cursor:pointer;font-weight:700">접속 기록 (최근 ${Math.min(KNOCK.length,80)}건 · 대표만)</summary><div class="tablebox"><table><thead><tr><th>시간</th><th>계정</th><th>기기</th><th>결과</th></tr></thead><tbody>${KNOCK.slice(0,80).map(x=>`<tr${["미연결 계정","새 기기 승인 대기","거절된 기기","로그인 안 됨"].includes(x.result)?' style="color:#C00000;font-weight:700"':""}><td>${esc(String(x.at||"").slice(5,16).replace("T"," "))}</td><td>${esc(x.name||"")}</td><td>${esc(x.devName||"")}</td><td>${esc(x.result||"")}${x.what?" · "+esc(x.what)+" "+esc(x.target||""):""}</td></tr>`).join("")||'<tr><td colspan="4" class="muted">아직 기록이 없어요</td></tr>'}</tbody></table></div></details>`:""}
   ${k==="customers"&&me.admin&&mode==="shared"&&GRANTS.some(g=>!g.revoked&&(!g.until||g.until>=todayStr()))?`<div class="secnote"><b>고객 열람 허락 중</b><br>${GRANTS.filter(g=>!g.revoked&&(!g.until||g.until>=todayStr())).map(g=>`${esc(g.name||"")} → ${esc(g.label||g.code)} (${g.until?esc(g.until)+"까지":"계속"}) <button class="btn sm" data-crrev="${esc(g.id)}">회수</button>`).join("<br>")}</div>`:""}
   ${k==="reports"&&me.admin?`<div class="tools" style="margin:6px 0"><label class="pill">보고 마감 <input type="time" id="rpDl" value="${esc(cfg("report").deadline||"18:30")}" style="border:0;background:transparent;font:inherit"></label><label class="pill">추가 휴일 <input id="rpHol" value="${esc(cfg("report").holidays||"")}" placeholder="예: 2026-12-31, 2027-01-02" style="border:0;background:transparent;font:inherit;width:220px"></label><span class="hint">주말·공휴일·승인된 연차인 직원은 빼고 계산해요</span></div>${weekHTML(false)}`:""}
@@ -2845,7 +2930,7 @@ function render(){
   renderNav();
   {const nv=document.getElementById("nav");if(nv&&!nv.querySelector('a[href="#calendar"]')){const a=document.createElement("a");a.href="#calendar";if(location.hash==="#calendar")a.setAttribute("aria-current","page");a.innerHTML="<span>공용 캘린더</span>";const hm=nv.querySelector('a[href="#home"]');if(hm)hm.after(a);else nv.prepend(a)}}
   try{calInit()}catch(e){}try{notiInit()}catch(e){}try{calMiniDraw()}catch(e){}try{redDraw()}catch(e){}setTimeout(()=>{try{gjScan()}catch(e){}},3000);
-  if(mode==="shared"&&me.admin)setTimeout(()=>{try{backupDaily()}catch(e){}try{amtInit()}catch(e){}try{apMigrate()}catch(e){}try{apCfSync()}catch(e){}try{lvCalSync()}catch(e){}try{apPcSync()}catch(e){}try{calMiniDraw()}catch(e){}try{gjScan()}catch(e){}},5000);
+  if(mode==="shared"&&me.admin)setTimeout(()=>{try{backupDaily()}catch(e){}try{amtInit()}catch(e){}try{acSync()}catch(e){}try{apMigrate()}catch(e){}try{apCfSync()}catch(e){}try{lvCalSync()}catch(e){}try{apPcSync()}catch(e){}try{calMiniDraw()}catch(e){}try{gjScan()}catch(e){}},5000);
   if(me.admin&&db){const nv=document.getElementById("nav");if(nv&&!nv.querySelector("[data-trash]")){const a=document.createElement("a");a.href="#trash";a.dataset.trash="";a.innerHTML="<span>휴지통 (관리자)</span>";const pj=nv.querySelector('a[href="#projects"]');if(pj)pj.after(a);else nv.appendChild(a)}}
   const r=route();
   const banner=pvBar()+(mode==="local"?`<div class="banner">연습 모드 · 지금은 이 브라우저에만 저장돼요. 직원과 공유하려면 claude.ai 인트라넷 링크로 열어 주세요.</div>`:"");
@@ -2875,6 +2960,7 @@ function fieldHTML(f,d,pref){
   if(type==="wnote")return `<div class="f${w}"><label for="${id}">${label}</label><input id="${id}" ${ds} value="${esc(v)}" placeholder="계약서 없음 (기본 12개월)">${v?"":`<span class="pill warn" style="justify-self:start">계약서 없음</span>`}</div>`;
   if(type==="region"){const p=String(v||"").trim().split(/\s+/),a=REGIONS[p[0]]?p[0]:"",b=a?(p.slice(1).join(" ")):"",known=a&&REGIONS[a].includes(b);const own=!!v&&!known&&!(a&&!b);
     return `<div class="f${w}"><label>${label} <span class="hint">시·도 → 시·군·구</span></label><div style="display:flex;gap:6px"><select data-rg1 aria-label="시·도">${opt(Object.keys(REGIONS),a)}</select><select data-rg2 aria-label="시·군·구">${a?opt(REGIONS[a].concat(["직접 입력"]),known?b:(own?"직접 입력":"")):`<option value=""></option><option>직접 입력</option>`}</select></div><input ${ds} data-rgv value="${esc(v)}" placeholder="직접 입력 (예: 경기 구리 인창동)" style="margin-top:6px;${own?"":"display:none"}"></div>`}
+  if(type==="fbcap")return `<div class="f wide"><div class="tools"><button type="button" class="btn sm pri" data-fbcap="1">지금 보던 화면 찍어서 첨부</button><span class="hint">또는 캡처(윈도우 Win+Shift+S)한 뒤 이 창에서 Ctrl+V</span></div></div>`;
   if(type==="apline"){const dn=sheet&&sheet.id?staffNameOfUid(d.createdBy):((myStaff()||{}).name||me.staffName||"");const L=hasAline(d)||!sheet||!sheet.id?(hasAline(d)?d.aline:apMakeLine(dn)):null;
     return `<div class="f wide"><label>${label}</label>${L?`<div class="flow"><span class="done">${esc(dn||"기안자")} (기안)</span>${L.map(x=>`<span>${esc(x.name)} (${esc(x.role)})</span>`).join("")}</div><span class="hint">앞 사람이 승인해야 다음으로 넘어가요 · 반려되면 기안자에게 돌아가요 · 신혜현 대표이사 칸은 최윤수 대표 계정이 눌러요</span>`:`${lineHTML(d)}<span class="hint">예전 결재 라인으로 끝난 서류예요 (그대로 보관)</span>`}</div>`}
   if(type==="ro")return `<div class="f${w}"><label>${label}</label><input value="${esc(v)||"자동"}" readonly tabindex="-1" style="background:var(--soft)"></div>`;
@@ -3031,6 +3117,19 @@ function renderAmtchk(){if(!me.admin)return `<div class="empty">대표만 볼 �
   ${R.length?`<div class="tablebox"><table><thead><tr><th>항목</th><th class="num">이번 금액</th><th class="num">지난달</th><th class="num">3개월 평균</th><th class="num">차이</th><th>올린 사람</th><th>상태</th><th></th></tr></thead><tbody>${R.map(({a,f})=>`<tr${f.red?' class="rw-bad"':""}><td><b>${esc(f.cat)}</b>${f.vendor?" · "+esc(f.vendor):""}<br><small class="muted">${esc(f.ym)} · ${esc(a.kind||"")} · ${esc(a.title||"")}</small></td><td class="num">${won(f.amt)}</td><td class="num">${f.last!==null?won(f.last):"—"}</td><td class="num">${f.avg!==null?won(f.avg):"—"}</td><td class="num">${f.isNew?'<span class="pill warn">새 항목</span>':(f.diff>0?"+":"")+won(f.diff)+(f.pct!==null?"<br><small>"+(f.pct>0?"+":"")+f.pct.toFixed(1)+"%</small>":"")}</td><td>${esc(who(a.createdBy))}</td><td>${pill(a.status||"결재 대기")}</td><td style="white-space:nowrap"><button class="btn sm" type="button" data-open="approvals" data-id="${esc(a.id)}">결재 보기</button> ${AMTACK[a.id]?`<span class="pill ok">확인함</span>`:`<button class="btn sm pri" type="button" data-amtack="${esc(a.id)}">확인함</button>`}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">지금 금액이 바뀐 고정 지출 결재가 없어요</div>'}`}
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-amtack]");if(!t||!me.admin||!db)return;e.preventDefault();e.stopPropagation();const id=t.dataset.amtack,a=(S.approvals||[]).find(x=>x.id===id);
   try{await db.collection("acct/_amtack/a").doc(id).set({at:nowISO(),by:me.id,title:a?String((a.kind||"")+" · "+(a.title||"")).slice(0,100):"",lines:a?fixCmp(a).filter(f=>f.flag).map(f=>({cat:f.cat,vendor:f.vendor,amt:f.amt,last:f.last,diff:f.diff})):[]});AMTACK[id]={at:nowISO()};logAct("approvals","금액 변동 확인함",a?a.title:id);toast("확인했어요 · 이제 승인할 수 있어요");if(sheet&&sheet.id===id)drawSheet();else render()}catch(er){toast("저장하지 못했어요")}});
+const addMon=(d,m)=>{const [y,mo,da]=String(d).slice(0,10).split("-").map(Number);const x=new Date(Date.UTC(y,mo-1+m,da));return x.toISOString().slice(0,10)};
+let acBusy=false;const ACDONE=new Set();
+async function acSync(){if(!me.admin||!db||mode!=="shared"||acBusy)return;acBusy=true;let n=0;try{const T=todayStr(),back=addMon(T,-1);
+  for(const p of (S.projects||[]).filter(p=>p.end&&p.end<=T&&["준공","사후관리"].includes(p.stage))){if(n>20)break;
+    const c=p.custCode&&(S.customers||[]).find(x=>x.code===p.custCode);
+    if(c&&p.end>="2026-01-01"&&stageOf(c).stage[0]!=="4-완료사후"&&!c.acMoved){c.acMoved=nowISO();const o=Object.assign({},c,{steps:[...new Set((c.steps||[]).concat(Array.from({length:20},(x,i)=>i+1)))].sort((a,b)=>a-b),acMoved:nowISO(),acFrom:p.no});delete o.id;o.stage=stageOf(o).stage[0];await put("customers",c.id,o);n++}
+    for(const [k,mo,lb] of [["m1",1,"준공 1개월"],["y1",12,"준공 1년"]]){const due=addMon(p.end,mo),ak=(p.no||p.id)+":"+k;if(T<due||due<back||(p.acNoti||{})[k]||ACDONE.has(ak))continue;ACDONE.add(ak);p.acNoti=Object.assign({},p.acNoti||{},{[k]:nowISO()});
+      const to=[...new Set([p.mgr||"","최윤수"].filter(Boolean))];await db.collection("notify").doc(newId("acn")).set({to,kind:"사후 점검 연락",name:(p.no||"")+" "+(p.title||p.custName||""),work:lb+" 점검 연락할 때예요 ("+due+")",pno:p.no||"",at:nowISO(),readBy:{}});
+      const o=Object.assign({},p,{acNoti:Object.assign({},p.acNoti||{},{[k]:nowISO()})});delete o.id;await put("projects",p.id,o);n++}}
+  }catch(e){}acBusy=false}
+function acListHTML(){const L=(S.projects||[]).filter(p=>["준공","사후관리"].includes(p.stage)).sort((a,b)=>String(b.end||"").localeCompare(String(a.end||""))).slice(0,30);if(!L.length)return "";
+  return `<details class="card" open><summary style="cursor:pointer;font-weight:700">사후 관리 중인 프로젝트 ${L.length}건 · 바로 A/S 접수</summary><div class="list">${L.map(p=>{const m1=addMon(p.end,1),y1=addMon(p.end,12);return `<div class="item" style="cursor:default"><span class="pill ${p.warrantyEnd&&p.warrantyEnd<todayStr()?"":"ok"}">${p.warrantyEnd&&p.warrantyEnd<todayStr()?"하자기간 끝":"하자기간 중"}</span><div class="t"><b>${esc(p.no||"")} · ${esc(p.title||p.custName||"")}</b><small>준공 ${esc(p.end||"")} · 1개월 점검 ${esc(m1)} · 1년 점검 ${esc(y1)}${p.mgr?" · 담당 "+esc(p.mgr):""}</small></div><button type="button" class="btn sm pri" data-newas="${esc(p.no||"")}">A/S 접수</button></div>`}).join("")}</div></details>`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-newas]");if(!t)return;e.preventDefault();const no=t.dataset.newas,p=pjOf(no)||{};sheet=null;openSheet("as");Object.assign(sheet.data,{pno:no,site:p.title||"",code:p.custCode||"",mgr:p.mgr||sheet.data.mgr||""});try{sheet.data.warr=warrOf(no,todayStr())}catch(er){}drawSheet()});
 let apMigBusy=false;
 async function apMigrate(){if(!me.isOwner||!db||mode!=="shared"||apMigBusy)return;
   const L=(S.approvals||[]).filter(a=>["결재 대기","결재 진행"].includes(a.status||"결재 대기")&&!hasAline(a));if(!L.length)return;apMigBusy=true;let n=0;
@@ -3179,6 +3278,10 @@ function collect(){
   return {out,hr};
 }
 const REQUIRED={reports:["d"],projects:["custName"],approvals:["title"],manuals:["title"],notices:["title"],customers:["name"],quotes:[],sites:["name"],as:["content"],staff:["name"],feedback:["body"]};
+function dupWarn(ex,row){const old=document.getElementById("dupVeil");if(old)old.remove();const v=document.createElement("div");v.className="veil";v.id="dupVeil";v.style.zIndex=40;
+  v.innerHTML=`<div class="sheet" role="dialog" aria-label="이미 있는 프로젝트" style="max-width:520px"><h3>이미 있는 프로젝트예요</h3><p class="hint" style="margin:0">같은 고객·같은 주소(${esc(row.addr||"")})로 이미 등록된 프로젝트가 있어요. 새로 만들지 말고 기존 카드에 이어서 써 주세요.</p><div class="list">${ex.slice(0,5).map(p=>`<div class="item" style="cursor:default"><span class="pill info">${esc(flowOf(p.stage))}</span><div class="t"><b>${esc(p.no||"")} · ${esc(p.title||"")}</b><small>${esc(p.custName||"")} · ${esc(p.addr||"")}</small></div><button type="button" class="btn sm pri" data-dupopen="${esc(p.id)}">기존 프로젝트 열기</button></div>`).join("")}</div><div class="actions"><button type="button" class="btn sm" data-dupclose="1">닫기</button><button type="button" class="btn sm bad" data-dupforce="1">그래도 새로 만들기</button></div></div>`;document.body.appendChild(v)}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-dupopen],[data-dupclose],[data-dupforce]");if(!t)return;e.preventDefault();const v=document.getElementById("dupVeil");if(v)v.remove();
+  if(t.dataset.dupopen){sheet=null;openSheet("projects",t.dataset.dupopen);return}if(t.dataset.dupforce&&sheet){sheet.dupOk=true;saveSheet()}});
 async function saveSheet(){
   if(sheet.busy)return;
   const {col,id}=sheet;const {out:d,hr}=collect();
@@ -3215,8 +3318,12 @@ async function saveSheet(){
   if(!id){row.createdAt=row.updatedAt;row.createdBy=me.id;if(col==="approvals"){row.status="결재 대기";row.step=0;row.history=[];row.aline=apMakeLine((myStaff()||{}).name||me.staffName||"");row.approver="신혜현";row.reviewer=""}}
   // 반려된 서류를 기안자가 고쳐 저장하면 처음(검토)부터 다시
   if(col==="approvals"&&id&&base.status==="반려"&&base.createdBy===me.id){const dn=staffNameOfUid(base.createdBy)||(myStaff()||{}).name||"";row.aline=apMakeLine(dn);row.approver="신혜현";row.step=0;row.status="결재 대기";row.history=(base.history||[]).concat([{at:nowISO(),by:me.id,name:dn,result:"다시 올림",note:""}])}
+  if(col==="projects"&&!id&&!sheet.dupOk){const nn=v=>String(v||"").replace(/[\s()·\-,.]/g,"").toLowerCase();const cn=nn(row.custName),ad=nn(row.addr);
+    const ex=(S.projects||[]).filter(p=>(ad&&ad.length>=6&&nn(p.addr)===ad)||(cn&&nn(p.custName)===cn&&ad&&nn(p.addr)===ad));
+    if(ex.length){dupWarn(ex,row);return}}
   if(col==="projects"){
     if(!id){const d0=String(row.inq||todayStr());const ym=d0.slice(2,4)+d0.slice(5,7);const n=pnoUsed().filter(x=>x.startsWith("P-"+ym+"-")).reduce((m,x)=>Math.max(m,parseInt(x.slice(7),10)||0),0)+1;row.no="P-"+ym+"-"+String(n).padStart(3,"0")}
+    if(row.end&&row.end<=todayStr()&&["계약","시공","준공"].includes(row.stage))row.stage="준공";
     if(row.end&&["준공","사후관리","종료"].includes(row.stage)){const m=num(row.warrantyMonths)||WARRANTY_DEFAULT;const e=new Date(row.end+"T00:00:00");e.setMonth(e.getMonth()+m);e.setDate(e.getDate()-1);row.warrantyEnd=e.toISOString().slice(0,10)}
     if(row.stage==="준공"&&row.warrantyEnd&&row.warrantyEnd>=todayStr())row.stage="사후관리";
     if(row.stage!=="미계약 종료")row.lost=row.lost||"";
@@ -3703,7 +3810,7 @@ window.addEventListener("hashchange",()=>{if(CS)CS.ct=false;query="";render();wi
 ["wheel","touchmove"].forEach(ev=>window.addEventListener(ev,e=>{if(CS&&CS.ct&&!(e.target.closest&&e.target.closest(".ct-panel"))){CS.ct=false;render()}},{passive:true}));
 
 // ===== 시작 =====
-loadLocal();me.admin=true;me.isOwner=true;render();
+loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
 (async()=>{
   if(!window.claude||!window.claude.use)return;
   try{user=await window.claude.use("user")}catch(e){user=null}
