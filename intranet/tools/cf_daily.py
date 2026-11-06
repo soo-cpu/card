@@ -12,7 +12,9 @@ cash flow(YYYY)M월.xlsx 의 날짜 시트(예: '11.04일')를 읽어서
 사용:
   python3 -I cf_daily.py 원본.xlsx 작업폴더 [오늘날짜 YYYY-MM-DD]
 작업폴더에 있어야 하는 것: cfhist.json (fin/cfhist 문서), cf_days.json, cf_items.json, cf_banks.json
-만드는 것: 같은 폴더에 new_cfhist.json, new_cf_days.json, new_cf_items.json, new_cf_banks.json, report.json
+(있으면) fincf.json — 인트라넷 fincf 줄 목록 [{id,d,io,amt,xl,plan}...]
+만드는 것: 같은 폴더에 new_cfhist.json, new_cf_days.json, new_cf_items.json, new_cf_banks.json, report.json,
+          new_fincf.json (새로 넣을 입출금 줄), fincf_xl_marks.json (직원이 넣은 같은 줄에 '엑셀 확인'만 표시)
 """
 import datetime, json, os, re, sys
 
@@ -92,12 +94,17 @@ def read_sheet(ws):
         if isinstance(r[10], str) and "지출계" in r[10].replace(" ", ""):
             out = ival(r[11])
         if 7 <= i <= 25:
+            tot = lambda v: isinstance(v, str) and any(k in v.replace(" ", "") for k in ("입금계", "지출계", "합계", "소계"))
+            if tot(r[2]):
+                r = r[:2] + [None] * 5 + r[7:]
+            if tot(r[10]):
+                r = r[:10] + [None, None] + r[12:]
             if r[2] and n(r[6]) is not None:
                 d, w = mask("입금", clean(r[2]), clean(r[7]))
-                its.append(("입금", d, w, ival(r[6]), clean(r[8]) if w else ""))
+                its.append(("입금", d, w, ival(r[6]), clean(r[8]) if w else "", i + 1))
             if r[10] and n(r[11]) is not None:
                 d, w = mask("지출", clean(r[10]), clean(r[12]))
-                its.append(("지출", d, w, ival(r[11]), ""))
+                its.append(("지출", d, w, ival(r[11]), "", i + 1))
     bals = []
     for r in rows[29:37]:
         lab = r[5].strip() if isinstance(r[5], str) else ""
@@ -127,6 +134,7 @@ def main():
     wb = openpyxl.load_workbook(xlsx, data_only=True, read_only=True)
     rep = {"file": os.path.basename(xlsx), "today": today, "added": [], "same": [], "diff": [], "skip": []}  # added[].to = 새로 넣을 곳 (인트라넷 / 자금 관리)
     new_h, new_d, new_i, new_b = [], [], [], []
+    cand_lines = []
     for sn in wb.sheetnames:
         m = re.match(r"\s*(\d{1,2})\s*\.", sn)
         if not m or int(m.group(1)) not in (mon, pmon):
@@ -138,6 +146,7 @@ def main():
         if close is None or inn is None or out is None:
             rep["skip"].append({"d": d, "sheet": sn, "why": "잔액·입금계·지출계 칸이 비어 있음"})
             continue
+        cand_lines.append((d, sn, its))
         in_h, in_d = d in H, d in D
         if in_h:
             h = H[d]
@@ -159,7 +168,7 @@ def main():
             new_h.append([d, inn, out, close])
         if not in_d:
             new_d.append({"d": d, "open": op, "in": inn, "out": out, "close": close, "ok": ok, "sheet": sn})
-            for k, (t, desc, who, amt, note) in enumerate(its, 1):
+            for k, (t, desc, who, amt, note, _row) in enumerate(its, 1):
                 new_i.append({"id": "%s-%03d" % (d, k), "d": d, "t": t, "desc": desc, "who": who, "amt": amt, "note": note})
             if len(bals) == len(names):
                 new_b += [{"d": d, "name": nm, "bal": b} for nm, b in zip(names, bals)]
@@ -177,8 +186,35 @@ def main():
     W("new_cf_items.json", srt(items + new_i, lambda r: r["id"]))
     W("new_cf_banks.json", srt(banks + new_b, lambda r: r["d"]))
     rep["latest"] = hist2["days"][-1] if hist2["days"] else None
+    # 인트라넷 캐시플로우 입출금 줄 (fincf): 직원이 직접 넣은 줄과 같으면 새로 만들지 않고 '엑셀 확인'만 표시
+    fpath = os.path.join(wd, "fincf.json")
+    have = json.load(open(fpath, encoding="utf8")) if os.path.exists(fpath) else []
+    ids = {x.get("id") for x in have}
+    used = set()
+    new_f, marks = [], []
+    stamp = "엑셀 확인 " + today
+    for d, sn, its in cand_lines:
+        for (t, desc, who, amt, note, row) in its:
+            io = "입금" if t == "입금" else "출금"
+            fid = "xl-%s-%s%d" % (d.replace("-", ""), "i" if io == "입금" else "o", row)
+            if fid in ids:
+                continue
+            where = "%s (%s 시트 %d행)" % (stamp, os.path.basename(xlsx) + " " + sn, row)
+            hit = next((x for x in have if x.get("id") not in used and x.get("d") == d and x.get("io") == io
+                        and n(x.get("amt")) == n(amt) and not x.get("plan")), None)
+            if hit:
+                used.add(hit.get("id"))
+                if not hit.get("xl"):
+                    marks.append({"id": hit.get("id"), "xl": where, "xlWhat": desc})
+                continue
+            new_f.append({"id": fid, "d": d, "io": io, "amt": amt, "who": who, "memo": desc + (" · " + note if note else ""),
+                          "cat": "", "pno": "", "plan": False, "src": "엑셀", "by": "excel", "at": today + "T10:05:00.000Z", "xl": where})
+    W("new_fincf.json", new_f)
+    W("fincf_xl_marks.json", marks)
+    rep["fincf_new"] = len(new_f)
+    rep["fincf_marks"] = len(marks)
     W("report.json", rep)
-    print(json.dumps({k: rep[k] for k in ("added", "diff", "skip", "latest")}, ensure_ascii=False))
+    print(json.dumps({k: rep[k] for k in ("added", "diff", "skip", "latest", "fincf_new", "fincf_marks")}, ensure_ascii=False))
 
 
 if __name__ == "__main__":
