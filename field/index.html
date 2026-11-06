@@ -1,0 +1,662 @@
+<!doctype html>
+<!-- 현장소통 2026-11-06 v0 · 고객 현장 소통 페이지 (시험판) -->
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f5f0e8">
+<title>현장 소통 · 홈퍼니싱</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../site/images/favicon-32.png">
+<link rel="apple-touch-icon" href="../site/images/apple-touch-icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --bg:#f5f0e8;--paper:#fffdf9;--ink:#2a2420;--sub:#7d7064;--line:#e3dace;--pt:#9a7b56;--pt2:#7c6141;--soft:#efe7da;
+  --cust:#eef3f7;--custline:#cfdbe6;--custink:#2f4f6a;--imp:#b5472f;--impbg:#fbefe9;--ok:#4f7a5a;--new:#d9822b;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+body{word-break:keep-all;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--pt2)}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+.preview{background:#fff4d6;color:#6b5414;font-size:13px;text-align:center;padding:7px 12px;border-bottom:1px solid #f0dfa8}
+.brandbar{display:flex;justify-content:space-between;align-items:center;padding:16px 0 12px;font-size:12px;color:var(--sub);letter-spacing:.06em}
+.brandbar b{font-weight:600;color:var(--ink);letter-spacing:.12em}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 16px;margin-top:12px}
+h1{font-size:23px;line-height:1.35;margin:4px 0 6px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:16px;margin:0 0 10px;font-weight:700}
+.kicker{font-size:12px;color:var(--pt);letter-spacing:.14em;font-weight:600}
+.meta{font-size:13px;color:var(--sub)}
+.mgr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.mgr .who{flex:1;min-width:140px}
+.mgr .who small{display:block;font-size:12px;color:var(--sub)}
+.mgr .who strong{font-size:15px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);min-height:40px}
+.btn.pri{background:var(--pt2);border-color:var(--pt2);color:#fff}
+.btn.big{width:100%;padding:13px;font-size:16px;min-height:50px}
+.btn.sm{padding:5px 10px;font-size:13px;min-height:32px;border-radius:8px}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.55;cursor:default}
+.prog{margin-top:14px}
+.prog .top{display:flex;justify-content:space-between;align-items:baseline}
+.prog .pct{font-size:26px;font-weight:700;color:var(--pt2);font-variant-numeric:tabular-nums}
+.prog .lbl{font-size:13px;color:var(--sub)}
+.bar{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pt),var(--pt2));border-radius:99px;transition:width .4s}
+.stages{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0;list-style:none}
+.stg{font-size:13px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--sub);display:inline-flex;align-items:center;gap:5px}
+.stg::before{content:"";width:8px;height:8px;border-radius:50%;border:1.5px solid currentColor;flex:none}
+.stg.s1{color:var(--pt2);border-color:var(--pt);background:#fbf4ea;font-weight:600}
+.stg.s1::before{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.stg.s2{color:var(--ok);border-color:#b9cfbe;background:#f1f6f2}
+.stg.s2::before{background:currentColor}
+button.stg{cursor:pointer;min-height:34px}
+.legend{font-size:12px;color:var(--sub);margin-top:8px}
+.imp{border-color:#efcdbf;background:var(--impbg)}
+.imp h2{color:var(--imp)}
+.imp ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.imp li{background:#fff;border:1px solid #f1d8cd;border-radius:10px;padding:10px 12px;cursor:pointer}
+.imp li small{display:block;font-size:12px;color:var(--sub)}
+.imp li span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;font-size:14px;cursor:pointer;min-height:36px}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+textarea,input[type=text],input[type=tel],input[type=date],input[type=password],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:16px}
+textarea{min-height:96px;resize:vertical}
+label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin:10px 0;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--imp)}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.thumbs div{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--soft)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs button{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:1;cursor:pointer}
+.status{font-size:13px;color:var(--sub);min-height:1.3em;margin-top:6px}
+.status.err{color:var(--imp)}
+.day{margin-top:26px}
+.dayh{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:var(--pt2);margin-bottom:8px}
+.dayh::after{content:"";flex:1;height:1px;background:var(--line)}
+.post{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:10px;scroll-margin-top:70px}
+.post.c{background:var(--cust);border-color:var(--custline)}
+.post.isimp{border-color:#e4b4a2;box-shadow:inset 3px 0 0 var(--imp)}
+.post.hid{opacity:.5}
+.ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}
+.ph .nm{font-weight:700}
+.post.c .ph .nm{color:var(--custink)}
+.tag{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--soft);color:var(--pt2);font-weight:600}
+.post.c .tag{background:#dde8f1;color:var(--custink)}
+.tag.i{background:var(--imp);color:#fff}
+.tag.n{background:var(--new);color:#fff}
+.tag.h{background:#888;color:#fff}
+.ph time{margin-left:auto;color:var(--sub);font-size:12px}
+.txt{margin-top:8px;white-space:pre-line}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.pics.one{grid-template-columns:1fr}
+.pics button{padding:0;border:0;background:var(--soft);border-radius:10px;overflow:hidden;aspect-ratio:4/3;cursor:zoom-in;position:relative}
+.pics.one button{aspect-ratio:auto;min-height:160px}
+.pics img{width:100%;height:100%;object-fit:cover;display:block}
+.pics.one img{height:auto}
+.pics button.ld::after{content:"사진 불러오는 중";position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--sub)}
+.cmts{margin-top:10px;border-top:1px dashed var(--line);padding-top:6px}
+.cmt{font-size:14px;padding:6px 0;display:flex;gap:8px;align-items:flex-start}
+.cmt .b{flex:1;min-width:0}
+.cmt .b b{font-size:13px;margin-right:6px}
+.cmt.a .b b{color:var(--pt2)}
+.cmt.c .b b{color:var(--custink)}
+.cmt small{color:var(--sub);font-size:11px;margin-left:4px}
+.cmt.hid{opacity:.45}
+.cform{display:flex;gap:6px;margin-top:8px}
+.cform input{flex:1;padding:8px 10px;font-size:15px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.empty{text-align:center;color:var(--sub);padding:30px 10px;font-size:14px}
+footer{margin-top:40px;text-align:center;font-size:12px;color:var(--sub);line-height:1.8}
+footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
+.adminbar{position:sticky;top:0;z-index:20;background:rgba(42,36,32,.96);color:#fff;padding:8px 12px;display:flex;gap:6px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.adminbar .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:none}
+.adminbar .btn.pri{background:#fff;color:var(--ink)}
+.adminbar span{font-size:12px;opacity:.7;white-space:nowrap;margin-right:auto;padding-right:6px}
+.slist{display:grid;gap:10px;margin-top:12px}
+.sc{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+.sc .t{display:flex;align-items:center;gap:8px}
+.sc .t strong{font-size:16px;flex:1}
+.sc .bar{height:7px}
+.sc .acts{display:flex;gap:6px;margin-top:10px}
+.sc .acts .btn{flex:1}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(20,16,12,.55);display:flex;align-items:flex-end;justify-content:center}
+.modal .box{background:var(--paper);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+@media(min-width:600px){.modal{align-items:center}.modal .box{border-radius:18px}}
+.urlbox{background:#fff;border:1px dashed var(--pt);border-radius:10px;padding:10px;font-size:13px;word-break:break-all;margin:10px 0;user-select:all}
+.lb{position:fixed;inset:0;z-index:60;background:#000;display:flex;align-items:center;justify-content:center}
+.lb img{max-width:100%;max-height:100%;object-fit:contain}
+.lb .x,.lb .p,.lb .n{position:absolute;border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer}
+.lb .x{top:calc(12px + env(safe-area-inset-top));right:12px}
+.lb .p{left:10px;top:50%}.lb .n{right:10px;top:50%}
+.lb .cnt{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#ddd;font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;z-index:70;max-width:90vw;text-align:center}
+.gate{min-height:70vh;display:grid;place-items:center;text-align:center;color:var(--sub);font-size:14px}
+.loading{padding:60px 0;text-align:center;color:var(--sub)}
+/* PDF 만들기용 (화면 밖) */
+#pdfroot{position:fixed;left:-12000px;top:0;width:718px;background:#fff}
+.pd{width:718px;color:#2a2420;font-family:var(--sans);font-size:12.5px;line-height:1.6;background:#fff}
+.pd .cover{height:1000px;display:flex;flex-direction:column;justify-content:center;padding:0 40px;border:1px solid #e3dace}
+.pd .cover .k{font-size:12px;letter-spacing:.3em;color:#9a7b56}
+.pd .cover h1{font-size:34px;margin:16px 0 8px}
+.pd .cover .sub{font-size:16px;color:#7d7064}
+.pd .cover dl{display:grid;grid-template-columns:90px 1fr;gap:8px 0;margin-top:40px;font-size:14px}
+.pd .cover dt{color:#7d7064}.pd .cover dd{margin:0}
+.pd .cover .ft{margin-top:auto;padding-bottom:36px;font-size:11px;color:#7d7064}
+.pd .cover .top{padding-top:36px;margin-bottom:auto;font-size:12px;letter-spacing:.14em;font-weight:600}
+.pd h2{font-size:17px;border-bottom:2px solid #2a2420;padding-bottom:6px;margin:0 0 12px}
+.pd .sec{padding-top:6px}
+.pd table{width:100%;border-collapse:collapse;font-size:12.5px}
+.pd th,.pd td{border:1px solid #e3dace;padding:6px 8px;text-align:left}
+.pd th{background:#f5f0e8;font-weight:600}
+.pd .impi{border-left:3px solid #b5472f;background:#fbefe9;padding:8px 10px;margin-bottom:8px;white-space:pre-line}
+.pd .impi small{display:block;color:#7d7064}
+.pd .dh{font-size:15px;font-weight:700;color:#7c6141;margin:18px 0 6px;border-bottom:1px solid #e3dace;padding-bottom:4px}
+.pd .pp{margin:6px 0 10px}
+.pd .pp .hd{font-size:12px;color:#7d7064}
+.pd .pp .hd b{color:#2a2420}
+.pd .pp .tx{white-space:pre-line;margin-top:2px}
+.pd .pg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.pd .pg img{width:100%;height:250px;object-fit:cover;display:block;border-radius:4px}
+.pd .cm{font-size:11.5px;color:#4a4038;padding-left:10px;border-left:2px solid #e3dace;margin-top:4px}
+.pd .brk{page-break-before:always}
+</style>
+<script src="config.js"></script>
+</head><body>
+<div id="pv" class="preview" hidden>미리보기 모드 — 서버 연결 전이라 글·사진이 이 기기에만 저장돼요. (관리 화면 미리보기 비밀번호 0000)</div>
+<div id="bar"></div>
+<main class="wrap" id="app"><div class="loading">불러오는 중…</div></main>
+<div id="pdfroot" aria-hidden="true"></div>
+<script>
+"use strict";
+/* ============ 기본 ============ */
+const Q = new URLSearchParams(location.search);
+const CODE = (Q.get("s") || "").trim();
+const ADMIN = Q.has("admin");
+const API = (window.FIELD_API || "").trim();
+const BASE = location.origin + location.pathname;
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DEF_STAGES = ["철거","설비","전기","목공","타일","도장","마감"];
+const WD = "일월화수목금토";
+let PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {}
+let NAME = ""; try { NAME = localStorage.getItem("field_name") || ""; } catch (e) {}
+let D = null; // {site, posts, comments}
+const PHOTO = {}; // id -> dataURL
+if (!API) $("#pv").hidden = false;
+
+function today() { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 10); }
+function nowStr() { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 19).replace("T", " "); }
+function fmtDay(s) { const d = new Date(s + "T00:00:00"); if (isNaN(d)) return s; return (d.getMonth() + 1) + "월 " + d.getDate() + "일 (" + WD[d.getDay()] + ")"; }
+function fmtDate(s) { return s ? s.replace(/-/g, ".") : ""; }
+function toast(m, ms) { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms || 2200); }
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast("복사했어요. 카톡에 붙여 넣으세요"); return; } catch (e) {}
+  const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); toast("복사했어요. 카톡에 붙여 넣으세요"); } catch (e) { prompt("아래 내용을 길게 눌러 복사하세요", text); }
+  ta.remove();
+}
+function pct(stages) {
+  if (!stages || !stages.length) return 0;
+  const v = stages.reduce((a, s) => a + (s.s === 2 ? 1 : s.s === 1 ? .5 : 0), 0);
+  return Math.round(v / stages.length * 100);
+}
+const ST_TXT = ["대기", "진행 중", "완료"];
+function custUrl(code) { return BASE + "?s=" + code; }
+function kakaoText(site) {
+  return "[홈퍼니싱] " + site.name + " 현장 소통 페이지입니다.\n공사 진행 사진과 내용을 이곳에서 날마다 확인하실 수 있고, 궁금한 점이나 요청은 댓글로 남겨 주시면 담당자가 답변드립니다.\n" + custUrl(site.code);
+}
+
+/* ============ 서버 연결 ============ */
+async function call(a, data) {
+  data = Object.assign({ a }, data || {});
+  if (!API) return Local.call(a, data);
+  let r;
+  for (let i = 0; i < 2; i++) {
+    try {
+      const res = await fetch(API, { method: "POST", body: JSON.stringify(data), headers: { "Content-Type": "text/plain;charset=utf-8" } });
+      r = await res.json(); break;
+    } catch (e) { if (i) throw new Error("연결이 늦어요. 잠시 뒤 다시 해 주세요"); await new Promise(f => setTimeout(f, 1200)); }
+  }
+  if (!r.ok) throw new Error(r.error || "오류");
+  return r;
+}
+
+/* ============ 미리보기(서버 연결 전) — 이 기기에만 저장 ============ */
+const Local = (() => {
+  const KEY = "field_preview_v1", PKEY = "field_preview_ph_";
+  const TEST_CODE = "WI7ijOiMEPHIOf4vjkqEPmG2", PWD = "0000";
+  let db = null;
+  function load() {
+    if (db) return db;
+    try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!db) { db = seed(); save(); }
+    return db;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { throw new Error("이 기기 저장 공간이 꽉 찼어요"); } }
+  function putPhoto(id, url) { try { localStorage.setItem(PKEY + id, url); } catch (e) { throw new Error("이 기기 저장 공간이 꽉 찼어요 (미리보기는 사진 20장 정도까지)"); } }
+  function uid(p) { return p + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+  function code24() { const a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", u = new Uint8Array(24); crypto.getRandomValues(u); return Array.from(u, b => a[b % 62]).join(""); }
+  function site(code) { const s = load().sites.find(x => x.code === code && !x.hidden); if (!s) throw new Error("주소를 확인해 주세요"); return s; }
+  function pub(s) { const { code, name, manager, phone, address, start, end, stages, status } = s; return { code, name, manager, phone, address, start, end, stages, status }; }
+  function admin(d) { if (d.pw !== PWD) throw new Error("비밀번호가 맞지 않아요"); }
+  function bundle(code, isAdmin, seen) {
+    const b = load();
+    return {
+      posts: b.posts.filter(p => p.code === code && (isAdmin || !p.hidden)).map(p => Object.assign({}, p, { isNew: !!(isAdmin && p.by === "c" && p.createdAt > (seen || "")) })),
+      comments: b.comments.filter(c => c.code === code && (isAdmin || !c.hidden)).map(c => Object.assign({}, c, { isNew: !!(isAdmin && c.by === "c" && c.createdAt > (seen || "")) }))
+    };
+  }
+  const A = {
+    site: d => { const s = site(d.s); return Object.assign({ site: pub(s) }, bundle(s.code, false)); },
+    photo: d => { const r = {}; (d.ids || []).forEach(id => { const u = localStorage.getItem(PKEY + id); if (u) r[id] = u; }); return { photos: r }; },
+    upload: d => { site(d.s); const id = uid("F"); putPhoto(id, d.data); return { fileId: id }; },
+    post: d => { const s = site(d.s); const t = nowStr(); load().posts.push({ id: uid("P"), code: s.code, date: today(), by: "c", author: d.author || "고객", stage: "", kind: d.kind || "의견", text: d.text || "", important: false, photos: d.photos || [], createdAt: t }); s.lastCustomerAt = t; save(); return {}; },
+    comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
+    login: d => { admin(d); return {}; },
+    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
+    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: pub(s) }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
+    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr() }); save(); return { code }; },
+    updateSite: d => { admin(d); const s = site(d.s); Object.assign(s, d.fields || {}); save(); return {}; },
+    adminPost: d => { admin(d); const s = site(d.s); load().posts.push({ id: uid("P"), code: s.code, date: d.date || today(), by: "a", author: d.author || "홈퍼니싱", stage: d.stage || "", kind: "공정", text: d.text || "", important: !!d.important, photos: d.photos || [], createdAt: nowStr() }); save(); return {}; },
+    editPost: d => { admin(d); const p = load().posts.find(x => x.id === d.id); if (!p) throw new Error("글을 찾을 수 없어요"); ["important", "hidden", "text"].forEach(k => { if (d[k] != null) p[k] = d[k]; }); save(); return {}; },
+    editComment: d => { admin(d); const c = load().comments.find(x => x.id === d.id); if (c && d.hidden != null) c.hidden = d.hidden; save(); return {}; },
+    savePdf: d => { admin(d); const s = site(d.s); s.pdfN = (s.pdfN == null ? -1 : s.pdfN) + 1; save(); return { name: "현장기록 " + s.name + " " + today() + " v" + s.pdfN + ".pdf", local: true }; },
+    folder: d => ({ url: "" })
+  };
+  /* 예시 사진: 공정별로 다른 색의 그림 (진짜 현장 사진 아님) */
+  function sample(label, wall, floor, n) {
+    const c = document.createElement("canvas"); c.width = 1200; c.height = 900; const g = c.getContext("2d");
+    g.fillStyle = wall; g.fillRect(0, 0, 1200, 900);
+    g.fillStyle = floor; g.beginPath(); g.moveTo(0, 900); g.lineTo(260, 560); g.lineTo(940, 560); g.lineTo(1200, 900); g.fill();
+    g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(380 + n * 30, 170, 300, 240);
+    g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = 6; g.strokeRect(380 + n * 30, 170, 300, 240);
+    g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(90, 260, 130, 300);
+    for (let i = 0; i < 5; i++) { g.fillStyle = "rgba(0,0,0," + (.05 + i * .02) + ")"; g.fillRect(300 + i * 110 + n * 12, 600 + (i % 2) * 40, 90, 50); }
+    g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 800, 1200, 100);
+    g.fillStyle = "#fff"; g.font = "bold 44px sans-serif"; g.fillText("예시 사진 · " + label, 40, 866);
+    return c.toDataURL("image/jpeg", .7);
+  }
+  function seed() {
+    const P = [], ph = (lab, w, f, n) => { const id = "F_seed_" + P.length; putPhoto(id, sample(lab, w, f, n)); P.push(id); return id; };
+    const code = TEST_CODE;
+    const db = { sites: [{ code, name: "시험 현장(대표 확인용)", manager: "정진혁 실장", phone: "1566-5904", address: "서울 (예시 주소)", start: "2026-11-03", end: "2026-11-20",
+      stages: [{ n: "철거", s: 2 }, { n: "설비", s: 2 }, { n: "전기", s: 1 }, { n: "목공", s: 1 }, { n: "타일", s: 0 }, { n: "도장", s: 0 }, { n: "마감", s: 0 }],
+      status: "진행", createdAt: "2026-11-03 08:00:00", adminSeenAt: "2026-11-05 18:00:00" }], posts: [], comments: [] };
+    db.posts.push({ id: "P_s1", code, date: "2026-11-03", by: "a", author: "정진혁 실장", stage: "철거", kind: "공정", important: false, createdAt: "2026-11-03 17:40:00",
+      text: "오늘 철거 작업을 마쳤습니다.\n· 거실·주방 기존 마루, 걸레받이 철거\n· 욕실 2곳 타일·도기 철거\n· 폐기물 1톤 반출, 엘리베이터 보양 완료\n내일은 설비(배관) 작업이 들어갑니다.",
+      photos: [ph("철거 · 거실", "#cfc6b8", "#9b8f80", 0), ph("철거 · 욕실", "#bfb8ae", "#8d847a", 3), ph("철거 · 주방", "#d4ccc0", "#a39886", 6)] });
+    db.posts.push({ id: "P_s2", code, date: "2026-11-04", by: "a", author: "정진혁 실장", stage: "설비", kind: "공정", important: false, createdAt: "2026-11-04 17:20:00",
+      text: "욕실·주방 배관 교체와 수압 시험을 마쳤습니다. 누수 없음 확인했습니다.\n전기 배선은 오후부터 시작했습니다.",
+      photos: [ph("설비 · 배관", "#c9d2d6", "#8e9aa0", 1), ph("전기 · 배선", "#d8d2c4", "#a99f8c", 4)] });
+    db.posts.push({ id: "P_s3", code, date: "2026-11-04", by: "a", author: "정진혁 실장", stage: "타일", kind: "공지", important: true, createdAt: "2026-11-04 18:05:00",
+      text: "욕실 타일 색상을 11월 8일(토)까지 정해 주세요.\n샘플 두 가지(밝은 그레이 / 웜 베이지)를 현장에 두었습니다. 정해 주시면 바로 발주합니다.", photos: [] });
+    db.posts.push({ id: "P_s4", code, date: "2026-11-05", by: "a", author: "정진혁 실장", stage: "목공", kind: "공정", important: false, createdAt: "2026-11-05 17:30:00",
+      text: "거실 천장 몰딩 자리와 안방 붙박이장 벽체 목공을 시작했습니다. 전기 콘센트 위치도 함께 표시해 두었습니다.",
+      photos: [ph("목공 · 천장", "#e0d6c6", "#b09c80", 2), ph("목공 · 벽체", "#ddd3c2", "#a8957a", 5)] });
+    db.posts.push({ id: "P_s5", code, date: "2026-11-05", by: "c", author: "고객", stage: "", kind: "요청", important: false, createdAt: "2026-11-05 20:12:00",
+      text: "안방 콘센트를 침대 양쪽에 하나씩 더 넣을 수 있을까요? 참고 사진 올려요.", photos: [ph("고객 참고 사진", "#e9e2d6", "#c2b6a2", 7)] });
+    db.comments.push({ id: "C_s1", code, postId: "P_s1", by: "c", author: "고객", text: "빠르게 진행해 주셔서 감사합니다!", createdAt: "2026-11-03 19:02:00" });
+    db.comments.push({ id: "C_s2", code, postId: "P_s1", by: "a", author: "정진혁 실장", text: "감사합니다. 매일 저녁 진행 사진 올려 드리겠습니다.", createdAt: "2026-11-03 19:30:00" });
+    db.comments.push({ id: "C_s3", code, postId: "P_s3", by: "c", author: "고객", text: "토요일 오전에 현장 들러서 보고 정할게요.", createdAt: "2026-11-04 21:10:00" });
+    return db;
+  }
+  return { call: async (a, d) => { if (!A[a]) throw new Error("알 수 없는 요청"); await new Promise(f => setTimeout(f, 120)); return JSON.parse(JSON.stringify(A[a](d))); } };
+})();
+
+/* ============ 사진: 압축 · 불러오기 ============ */
+function compress(file) {
+  return new Promise((ok, no) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", .8));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); no(new Error("사진을 읽지 못했어요 (" + file.name + ")")); };
+    im.src = url;
+  });
+}
+let photoQ = [], photoT = null, photoBusy = false;
+const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); want(e.target.dataset.pid); } }), { rootMargin: "400px" }) : null;
+function want(id) { if (!id || PHOTO[id] || photoQ.includes(id)) return; photoQ.push(id); clearTimeout(photoT); photoT = setTimeout(pump, 60); }
+async function pump() {
+  if (photoBusy || !photoQ.length) return; photoBusy = true;
+  const ids = photoQ.splice(0, 6);
+  try { const r = await call("photo", { s: CODE, ids }); Object.assign(PHOTO, r.photos || {}); } catch (e) {}
+  ids.forEach(id => document.querySelectorAll('[data-pid="' + id + '"]').forEach(paintPhoto));
+  photoBusy = false; if (photoQ.length) pump();
+}
+function paintPhoto(b) { const u = PHOTO[b.dataset.pid]; if (!u) return; b.classList.remove("ld"); if (!b.firstChild) { const im = new Image(); im.alt = "현장 사진"; im.src = u; b.appendChild(im); } }
+function watchPhotos(root) { root.querySelectorAll("[data-pid]").forEach(b => { if (PHOTO[b.dataset.pid]) paintPhoto(b); else if (io) io.observe(b); else want(b.dataset.pid); }); }
+async function loadAllPhotos(ids) {
+  const need = ids.filter(id => !PHOTO[id]);
+  for (let i = 0; i < need.length; i += 6) { const r = await call("photo", { s: CODE, ids: need.slice(i, i + 6) }); Object.assign(PHOTO, r.photos || {}); }
+}
+
+/* 사진 크게 보기 */
+function lightbox(ids, i) {
+  const el = document.createElement("div"); el.className = "lb";
+  el.innerHTML = '<img alt="현장 사진"><button class="x" aria-label="닫기">×</button><button class="p" aria-label="이전">‹</button><button class="n" aria-label="다음">›</button><div class="cnt"></div>';
+  const show = () => { $("img", el).src = PHOTO[ids[i]] || ""; $(".cnt", el).textContent = (i + 1) + " / " + ids.length; $(".p", el).hidden = $(".n", el).hidden = ids.length < 2; };
+  el.addEventListener("click", e => {
+    if (e.target.classList.contains("p")) { i = (i - 1 + ids.length) % ids.length; show(); }
+    else if (e.target.classList.contains("n")) { i = (i + 1) % ids.length; show(); }
+    else el.remove();
+  });
+  let sx = null; el.addEventListener("touchstart", e => sx = e.touches[0].clientX, { passive: true });
+  el.addEventListener("touchend", e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50 && ids.length > 1) { e.preventDefault(); i = (i + (dx < 0 ? 1 : -1) + ids.length) % ids.length; show(); } sx = null; });
+  document.body.appendChild(el); show();
+}
+
+/* ============ 사진 고르기 칸 (글쓰기용) ============ */
+function picker(box) {
+  const files = [];
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true;
+  const th = document.createElement("div"); th.className = "thumbs"; th.hidden = true;
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn"; btn.textContent = "사진 추가";
+  btn.onclick = () => inp.click();
+  inp.onchange = async () => {
+    for (const f of inp.files) { try { files.push(await compress(f)); } catch (e) { toast(e.message); } }
+    inp.value = ""; draw();
+  };
+  function draw() {
+    th.hidden = !files.length; btn.textContent = files.length ? "사진 추가 (" + files.length + "장)" : "사진 추가";
+    th.innerHTML = files.map((u, i) => '<div><img src="' + u + '" alt=""><button type="button" data-i="' + i + '" aria-label="빼기">×</button></div>').join("");
+  }
+  th.onclick = e => { const i = e.target.dataset.i; if (i != null) { files.splice(+i, 1); draw(); } };
+  box.append(btn, inp, th);
+  return { files, clear() { files.length = 0; draw(); } };
+}
+async function uploadAll(list, st, admin) {
+  const ids = [];
+  for (let i = 0; i < list.length; i++) {
+    st.textContent = "사진 올리는 중 " + (i + 1) + " / " + list.length;
+    const r = await call("upload", Object.assign({ s: CODE, data: list[i] }, admin ? { pw: PW } : {}));
+    ids.push(r.fileId); PHOTO[r.fileId] = list[i];
+  }
+  return ids;
+}
+
+/* ============ 화면: 현장 (고객 · 관리 공통) ============ */
+async function openSite() {
+  const app = $("#app");
+  try { D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE }); }
+  catch (e) {
+    if (ADMIN && /비밀번호|잠겼/.test(e.message)) { logout(); return; }
+    app.innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
+  }
+  renderSite();
+}
+function renderSite() {
+  const s = D.site, app = $("#app"), p = pct(s.stages);
+  document.title = s.name + " · 현장 소통";
+  const posts = D.posts.slice();
+  const imp = posts.filter(x => x.important && !x.hidden).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const byDay = {};
+  posts.forEach(x => (byDay[x.date] = byDay[x.date] || []).push(x));
+  const days = Object.keys(byDay).sort().reverse();
+  const tel = (s.phone || "").replace(/[^0-9+]/g, "");
+  let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>ártico studio · 현장 소통</span></div>';
+  h += '<section class="card"><div class="kicker">현장 소통</div><h1>' + esc(s.name) + '</h1>';
+  h += '<div class="meta">' + [s.address && esc(s.address), (s.start || s.end) && ("공사 기간 " + fmtDate(s.start) + " ~ " + fmtDate(s.end))].filter(Boolean).join(" · ") + '</div>';
+  h += '<div class="prog"><div class="top"><span class="lbl">공정 진행률</span><span class="pct">' + p + '%</span></div><div class="bar"><i style="width:' + p + '%"></i></div>';
+  h += '<ul class="stages" id="stg">' + s.stages.map((x, i) => ADMIN
+    ? '<li><button type="button" class="stg s' + x.s + '" data-i="' + i + '">' + esc(x.n) + ' · ' + ST_TXT[x.s] + '</button></li>'
+    : '<li class="stg s' + x.s + '">' + esc(x.n) + '</li>').join("") + '</ul>';
+  h += ADMIN ? '<div class="legend">단계를 누르면 대기 → 진행 중 → 완료로 바뀌어요.</div><button class="btn pri sm" id="stgSave" hidden style="margin-top:8px">진행률 저장</button>'
+             : '<div class="legend">● 완료 &nbsp; ◐ 진행 중 &nbsp; ○ 대기</div>';
+  h += '</div>';
+  if (s.manager || s.phone) {
+    h += '<div class="mgr"><div class="who"><small>현장 담당</small><strong>' + esc(s.manager) + '</strong>' + (s.phone ? ' <span class="meta">' + esc(s.phone) + '</span>' : '') + '</div>';
+    if (tel) h += '<a class="btn" href="tel:' + tel + '">전화</a><a class="btn" href="sms:' + tel + '">문자</a>';
+    h += '</div>';
+  }
+  h += '</section>';
+  if (imp.length) {
+    h += '<section class="card imp"><h2>중요 사항 ' + imp.length + '건</h2><ul>' + imp.map(x => '<li data-go="' + x.id + '"><small>' + fmtDay(x.date) + (x.stage ? " · " + esc(x.stage) : "") + '</small><span>' + esc(x.text) + '</span></li>').join("") + '</ul></section>';
+  }
+  h += '<section class="card" id="write"></section>';
+  if (!days.length) h += '<div class="empty">아직 올라온 기록이 없어요.</div>';
+  days.forEach(d => {
+    h += '<div class="day"><div class="dayh">' + fmtDay(d) + '</div>';
+    byDay[d].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).forEach(x => h += postHtml(x));
+    h += '</div>';
+  });
+  h += '<div style="margin-top:28px"><button class="btn big" id="pdfBtn">전체 기록 PDF' + (ADMIN ? " 만들기 (드라이브 저장)" : "로 받기") + '</button><div class="status" id="pdfSt"></div></div>';
+  h += footerHtml();
+  app.innerHTML = h;
+  writeBox($("#write"));
+  bindSite();
+  watchPhotos(app);
+  if (ADMIN) adminBar();
+}
+function postHtml(x) {
+  const cs = D.comments.filter(c => c.postId === x.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const who = x.by === "c" ? (x.author || "고객") : (x.author || "홈퍼니싱");
+  let h = '<article class="post ' + x.by + (x.important ? " isimp" : "") + (x.hidden ? " hid" : "") + '" id="p-' + x.id + '">';
+  h += '<div class="ph"><span class="nm">' + esc(who) + '</span>';
+  if (x.by === "a" && x.stage) h += '<span class="tag">' + esc(x.stage) + '</span>';
+  if (x.by === "c") h += '<span class="tag">고객 ' + esc(x.kind || "의견") + '</span>';
+  if (x.important) h += '<span class="tag i">중요</span>';
+  if (x.isNew) h += '<span class="tag n">새 글</span>';
+  if (x.hidden) h += '<span class="tag h">숨김</span>';
+  h += '<time>' + esc((x.createdAt || "").slice(11, 16)) + '</time></div>';
+  if (x.text) h += '<div class="txt">' + esc(x.text) + '</div>';
+  if (x.photos && x.photos.length) h += '<div class="pics' + (x.photos.length === 1 ? " one" : "") + '">' + x.photos.map((id, i) => '<button type="button" class="ld" data-pid="' + esc(id) + '" data-post="' + x.id + '" data-i="' + i + '" aria-label="사진 크게 보기"></button>').join("") + '</div>';
+  if (cs.length) h += '<div class="cmts">' + cs.map(c => '<div class="cmt ' + c.by + (c.hidden ? " hid" : "") + '"><div class="b"><b>' + esc(c.author || (c.by === "a" ? "홈퍼니싱" : "고객")) + '</b>' + esc(c.text) + '<small>' + esc(fmtDate((c.createdAt || "").slice(5, 16))) + '</small>' + (c.isNew ? ' <span class="tag n">새 글</span>' : '') + '</div>' + (ADMIN ? '<button class="btn sm ghost" data-hc="' + c.id + '" data-v="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? "보이기" : "숨기기") + '</button>' : '') + '</div>').join("") + '</div>';
+  h += '<form class="cform" data-post="' + x.id + '"><input type="text" placeholder="' + (ADMIN ? "답글 달기" : "댓글 달기") + '" maxlength="1000" aria-label="댓글"><button class="btn sm pri">등록</button></form>';
+  if (ADMIN) h += '<div class="tools"><button class="btn sm" data-imp="' + x.id + '" data-v="' + (x.important ? 0 : 1) + '">' + (x.important ? "중요 해제" : "중요 표시") + '</button><button class="btn sm" data-edit="' + x.id + '">내용 고치기</button><button class="btn sm" data-hide="' + x.id + '" data-v="' + (x.hidden ? 0 : 1) + '">' + (x.hidden ? "다시 보이기" : "숨기기") + '</button></div>';
+  return h + '</article>';
+}
+function footerHtml() {
+  return '<footer><b>HOME FURNISHING · ártico studio</b><br>공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬<br>상담 1566-5904<br>ⓒ HOME FURNISHING CO. all rights reserved.</footer>';
+}
+function writeBox(box) {
+  const s = D.site;
+  if (ADMIN) {
+    box.innerHTML = '<h2>오늘 공정 올리기</h2><div class="row"><div><label class="f">날짜</label><input type="date" id="wDate" value="' + today() + '"></div><div><label class="f">공정</label><select id="wStage">' + s.stages.map(x => '<option>' + esc(x.n) + '</option>').join("") + '<option value="">기타·공지</option></select></div></div>'
+      + '<label class="f">작성자</label><input type="text" id="wAuthor" value="' + esc(s.manager || "홈퍼니싱") + '"><label class="f">내용</label><textarea id="wText" placeholder="오늘 한 일, 내일 할 일, 고객이 알아야 할 점"></textarea><label class="check"><input type="checkbox" id="wImp"> 중요 사항으로 표시 (맨 위 \'중요 사항\'에 모여요)</label><div id="wPick"></div><button class="btn pri big" id="wGo">올리기</button><div class="status" id="wSt"></div>';
+  } else {
+    box.innerHTML = '<h2>현장에 글 남기기</h2><div class="chips" id="wKind"><button type="button" class="chip on">질문</button><button type="button" class="chip">요청</button><button type="button" class="chip">의견</button></div>'
+      + '<textarea id="wText" placeholder="궁금한 점이나 요청 사항을 남겨 주세요. 담당자가 확인하고 답변드려요."></textarea><div id="wPick" style="margin-top:8px"></div><label class="f">이름 (선택)</label><input type="text" id="wAuthor" maxlength="20" placeholder="예: 김OO 고객" value="' + esc(NAME) + '"><button class="btn pri big" id="wGo" style="margin-top:12px">올리기</button><div class="status" id="wSt"></div>';
+    $("#wKind").onclick = e => { if (e.target.classList.contains("chip")) { box.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c === e.target)); } };
+  }
+  const pk = picker($("#wPick"));
+  $("#wGo").onclick = async () => {
+    const st = $("#wSt"), btn = $("#wGo"), text = $("#wText").value.trim();
+    if (!text && !pk.files.length) { st.className = "status err"; st.textContent = "내용을 적거나 사진을 골라 주세요"; return; }
+    btn.disabled = true; st.className = "status";
+    try {
+      const author = $("#wAuthor").value.trim();
+      if (!ADMIN) { NAME = author; try { localStorage.setItem("field_name", author); } catch (e) {} }
+      const photos = await uploadAll(pk.files, st, ADMIN);
+      st.textContent = "저장 중…";
+      if (ADMIN) await call("adminPost", { s: CODE, pw: PW, date: $("#wDate").value, stage: $("#wStage").value, author, text, important: $("#wImp").checked, photos });
+      else await call("post", { s: CODE, text, photos, author, kind: ($(".chip.on", box) || {}).textContent });
+      pk.clear(); toast("올렸어요"); await refresh();
+    } catch (e) { st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
+  };
+}
+async function refresh() { const y = scrollY; await openSite(); scrollTo(0, y); }
+function bindSite() {
+  const app = $("#app");
+  app.onclick = async e => {
+    const t = e.target.closest("button,li[data-go]"); if (!t) return;
+    if (t.dataset.go) { const el = $("#p-" + t.dataset.go); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    if (t.dataset.pid) { const post = D.posts.find(p => p.id === t.dataset.post); if (post && PHOTO[t.dataset.pid]) lightbox(post.photos.filter(id => PHOTO[id]), Math.max(0, post.photos.filter(id => PHOTO[id]).indexOf(t.dataset.pid))); return; }
+    if (t.id === "pdfBtn") return makePdf();
+    if (!ADMIN) return;
+    try {
+      if (t.dataset.i != null && t.classList.contains("stg")) { const x = D.site.stages[+t.dataset.i]; x.s = (x.s + 1) % 3; t.className = "stg s" + x.s; t.textContent = x.n + " · " + ST_TXT[x.s]; $("#stgSave").hidden = false; const p = pct(D.site.stages); $(".pct").textContent = p + "%"; $(".prog .bar i").style.width = p + "%"; return; }
+      if (t.id === "stgSave") { t.disabled = true; await call("updateSite", { s: CODE, pw: PW, fields: { stages: D.site.stages } }); toast("진행률을 저장했어요"); t.hidden = true; t.disabled = false; return; }
+      if (t.dataset.imp) { await call("editPost", { s: CODE, pw: PW, id: t.dataset.imp, important: t.dataset.v === "1" }); return refresh(); }
+      if (t.dataset.hide) { if (t.dataset.v === "1" && !confirm("이 글을 고객 화면에서 숨길까요? (지워지지 않고 관리 화면에는 남아요)")) return; await call("editPost", { s: CODE, pw: PW, id: t.dataset.hide, hidden: t.dataset.v === "1" }); return refresh(); }
+      if (t.dataset.hc) { await call("editComment", { s: CODE, pw: PW, id: t.dataset.hc, hidden: t.dataset.v === "1" }); return refresh(); }
+      if (t.dataset.edit) { const p = D.posts.find(x => x.id === t.dataset.edit); editText(p); return; }
+    } catch (err) { toast(err.message); }
+  };
+  app.onsubmit = async e => {
+    const f = e.target.closest(".cform"); if (!f) return; e.preventDefault();
+    const inp = $("input", f), text = inp.value.trim(); if (!text) return;
+    const b = $("button", f); b.disabled = true;
+    try {
+      await call("comment", Object.assign({ s: CODE, postId: f.dataset.post, text }, ADMIN ? { pw: PW, author: D.site.manager || "홈퍼니싱" } : { author: NAME || "고객" }));
+      await refresh();
+    } catch (err) { toast(err.message); b.disabled = false; }
+  };
+}
+function editText(p) {
+  const m = modal('<h2>내용 고치기</h2><textarea id="eT" style="min-height:160px">' + esc(p.text) + '</textarea><div class="meta" style="margin:6px 0 12px">고치기 전 내용은 기록에 남아요.</div><div class="row"><button class="btn" data-close>취소</button><button class="btn pri" id="eGo">저장</button></div>');
+  $("#eGo", m).onclick = async () => { try { await call("editPost", { s: CODE, pw: PW, id: p.id, text: $("#eT", m).value }); m.remove(); refresh(); } catch (e) { toast(e.message); } };
+}
+function modal(html) {
+  const m = document.createElement("div"); m.className = "modal"; m.innerHTML = '<div class="box">' + html + '</div>';
+  m.addEventListener("click", e => { if (e.target === m || e.target.hasAttribute("data-close")) m.remove(); });
+  document.body.appendChild(m); return m;
+}
+
+/* ============ 관리 화면 ============ */
+function logout() { PW = ""; try { localStorage.removeItem("field_pw"); } catch (e) {} $("#bar").innerHTML = ""; loginView(); }
+function loginView(msg) {
+  $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:380px;margin:40px auto 0"><h2>관리 화면</h2><div class="meta">회사 직원만 들어갈 수 있어요.</div><form id="lf"><label class="f">관리 비밀번호</label><input type="password" id="lp" autocomplete="current-password"><button class="btn pri big" style="margin-top:12px">들어가기</button><div class="status err" id="ls">' + esc(msg || "") + '</div></form></section>';
+  $("#lf").onsubmit = async e => {
+    e.preventDefault(); const pw = $("#lp").value.trim(); if (!pw) return;
+    try { await call("login", { pw }); PW = pw; try { localStorage.setItem("field_pw", pw); } catch (x) {} route(); } catch (x) { $("#ls").textContent = x.message; }
+  };
+}
+function adminBar() {
+  const s = D.site;
+  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><a class="btn sm" href="?admin">← 현장 목록</a><button class="btn sm pri" id="abCopy">고객 주소 복사</button><button class="btn sm" id="abView">고객 화면 보기</button><button class="btn sm" id="abEdit">현장 정보</button>' + (API ? '<button class="btn sm" id="abFolder">사진 폴더</button>' : '') + '</div>';
+  $("#abCopy").onclick = () => shareModal(s);
+  $("#abView").onclick = () => window.open(custUrl(s.code), "_blank");
+  $("#abEdit").onclick = () => siteForm(s);
+  if (API) $("#abFolder").onclick = async () => { try { const r = await call("folder", { s: CODE, pw: PW }); window.open(r.url, "_blank"); } catch (e) { toast(e.message); } };
+}
+function shareModal(s, fresh) {
+  const m = modal('<h2>' + (fresh ? "현장을 만들었어요" : "고객 주소") + '</h2><div class="meta">' + esc(s.name) + ' — 이 주소를 카톡으로 한 번 보내면 고객이 가입 없이 들어와요.</div><div class="urlbox">' + esc(custUrl(s.code)) + '</div><button class="btn pri big" id="shK">카톡용 안내문 복사</button><div class="row" style="margin-top:8px"><button class="btn" id="shU">주소만 복사</button><a class="btn" href="?admin&s=' + esc(s.code) + '">현장 열기</a></div><div class="meta" style="margin-top:10px">주소를 아는 사람은 누구나 볼 수 있어요. 고객에게만 보내 주세요.</div><button class="btn ghost big" data-close style="margin-top:6px">닫기</button>');
+  $("#shK", m).onclick = () => copy(kakaoText(s));
+  $("#shU", m).onclick = () => copy(custUrl(s.code));
+}
+function siteForm(s) {
+  const isNew = !s; s = s || { name: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })) };
+  let stages = s.stages.map(x => Object.assign({}, x));
+  const m = modal('<h2>' + (isNew ? "현장 추가" : "현장 정보") + '</h2>'
+    + '<label class="f">현장 이름 (고객 화면 맨 위)</label><input type="text" id="fN" value="' + esc(s.name) + '" placeholder="예: 반포 OO아파트 34평">'
+    + '<div class="row"><div><label class="f">담당자</label><input type="text" id="fM" value="' + esc(s.manager) + '" placeholder="정진혁 실장"></div><div><label class="f">연락처</label><input type="tel" id="fP" value="' + esc(s.phone) + '" placeholder="010-0000-0000"></div></div>'
+    + '<label class="f">주소 (고객 화면에 보임 — 동·호수는 빼는 걸 권해요)</label><input type="text" id="fA" value="' + esc(s.address) + '">'
+    + '<div class="row"><div><label class="f">착공일</label><input type="date" id="fS" value="' + esc(s.start) + '"></div><div><label class="f">준공 예정일</label><input type="date" id="fE" value="' + esc(s.end) + '"></div></div>'
+    + '<label class="f">공정 단계 (누르면 빼기)</label><div class="chips" id="fSt"></div><div class="row"><input type="text" id="fAdd" placeholder="단계 추가 (예: 샷시)"><button class="btn" id="fAddB" style="flex:none">추가</button></div>'
+    + '<div class="status err" id="fErr"></div><div class="row" style="margin-top:10px"><button class="btn" data-close>취소</button><button class="btn pri" id="fGo">' + (isNew ? "만들기" : "저장") + '</button></div>');
+  const draw = () => $("#fSt", m).innerHTML = stages.map((x, i) => '<button type="button" class="chip on" data-i="' + i + '">' + esc(x.n) + ' ×</button>').join("") || '<span class="meta">단계를 추가해 주세요</span>';
+  draw();
+  $("#fSt", m).onclick = e => { const i = e.target.dataset.i; if (i != null) { stages.splice(+i, 1); draw(); } };
+  $("#fAddB", m).onclick = () => { const v = $("#fAdd", m).value.trim(); if (v) { stages.push({ n: v, s: 0 }); $("#fAdd", m).value = ""; draw(); } };
+  $("#fGo", m).onclick = async () => {
+    const f = { name: $("#fN", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages };
+    if (!f.name) { $("#fErr", m).textContent = "현장 이름을 적어 주세요"; return; }
+    $("#fGo", m).disabled = true;
+    try {
+      if (isNew) { const r = await call("addSite", Object.assign({ pw: PW }, f)); m.remove(); shareModal(Object.assign({ code: r.code }, f), true); listView(); }
+      else { await call("updateSite", { s: CODE, pw: PW, fields: f }); m.remove(); toast("저장했어요"); refresh(); }
+    } catch (e) { $("#fErr", m).textContent = e.message; $("#fGo", m).disabled = false; }
+  };
+}
+async function listView() {
+  const app = $("#app");
+  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><button class="btn sm" id="abOut">나가기</button></div>';
+  $("#abOut").onclick = logout;
+  let r;
+  try { r = await call("sites", { pw: PW }); } catch (e) { if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
+  const list = r.sites.sort((a, b) => (b.newCount - a.newCount) || (b.createdAt || "").localeCompare(a.createdAt || ""));
+  let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><h1>현장 목록</h1><div class="meta">고객이 글·사진을 올리면 \'새 글\'이 붙어요.</div>';
+  h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="slist">';
+  if (!list.length) h += '<div class="empty">아직 현장이 없어요.</div>';
+  list.forEach(s => {
+    const p = pct(s.stages);
+    h += '<div class="sc"><div class="t"><strong>' + esc(s.name) + '</strong>' + (s.newCount ? '<span class="tag n">새 글 ' + s.newCount + '</span>' : '') + '</div>'
+      + '<div class="meta">' + esc(s.manager || "") + (s.start ? " · " + fmtDate(s.start) + " ~ " + fmtDate(s.end) : "") + ' · 기록 ' + (s.postCount || 0) + '건</div>'
+      + '<div class="bar"><i style="width:' + p + '%"></i></div><div class="meta">진행률 ' + p + '%</div>'
+      + '<div class="acts"><a class="btn pri" href="?admin&s=' + esc(s.code) + '">열기</a><button class="btn" data-share="' + esc(s.code) + '">고객 주소 복사</button></div></div>';
+  });
+  app.innerHTML = h + '</div>' + footerHtml();
+  $("#addS").onclick = () => siteForm(null);
+  app.onclick = e => { const c = e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
+}
+
+/* ============ PDF ============ */
+async function makePdf() {
+  const st = $("#pdfSt"), btn = $("#pdfBtn"); btn.disabled = true; st.className = "status";
+  try {
+    st.textContent = "PDF 준비 중… (사진 불러오는 중)";
+    await loadLib();
+    const s = D.site, posts = D.posts.filter(p => !p.hidden), cms = D.comments.filter(c => !c.hidden);
+    await loadAllPhotos(posts.flatMap(p => p.photos || []));
+    const days = [...new Set(posts.map(p => p.date))].sort();
+    const imp = posts.filter(p => p.important);
+    const nPh = posts.reduce((a, p) => a + (p.photos || []).length, 0);
+    const p = pct(s.stages);
+    let h = '<div class="pd"><div class="cover"><div class="top">HOME FURNISHING · ártico studio</div><div class="k">CONSTRUCTION RECORD</div><h1>' + esc(s.name) + '</h1><div class="sub">현장 기록</div>'
+      + '<dl><dt>공사 기간</dt><dd>' + fmtDate(s.start) + ' ~ ' + fmtDate(s.end) + '</dd><dt>현장 담당</dt><dd>' + esc(s.manager) + (s.phone ? ' (' + esc(s.phone) + ')' : '') + '</dd>' + (s.address ? '<dt>주소</dt><dd>' + esc(s.address) + '</dd>' : '') + '<dt>기록</dt><dd>' + days.length + '일 · 글 ' + posts.length + '건 · 사진 ' + nPh + '장</dd><dt>작성일</dt><dd>' + fmtDate(today()) + '</dd></dl>'
+      + '<div class="ft">공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬 · 상담 1566-5904<br>ⓒ HOME FURNISHING CO. all rights reserved.</div></div>';
+    h += '<div class="sec brk"><h2>공정 요약</h2><table><tr><th style="width:40%">단계</th><th>상태</th><th>기록된 날</th></tr>' + s.stages.map(x => {
+      const ds = [...new Set(posts.filter(q => q.stage === x.n).map(q => q.date))].sort();
+      return '<tr><td>' + esc(x.n) + '</td><td>' + ST_TXT[x.s] + '</td><td>' + (ds.length ? fmtDate(ds[0]).slice(5) + (ds.length > 1 ? " ~ " + fmtDate(ds[ds.length - 1]).slice(5) : "") : "-") + '</td></tr>';
+    }).join("") + '</table><p>공정 진행률 <b>' + p + '%</b> (완료 1, 진행 중 0.5로 계산)</p>';
+    h += '<h2 style="margin-top:22px">중요 사항</h2>' + (imp.length ? imp.map(x => '<div class="impi"><small>' + fmtDay(x.date) + (x.stage ? " · " + esc(x.stage) : "") + '</small>' + esc(x.text) + '</div>').join("") : '<p>없음</p>') + '</div>';
+    h += '<div class="sec brk"><h2>날짜별 기록</h2>';
+    days.forEach(d => {
+      h += '<div class="dh">' + fmtDay(d) + ' · ' + d.slice(0, 4) + '</div>';
+      posts.filter(x => x.date === d).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).forEach(x => {
+        const who = x.by === "c" ? (x.author || "고객") + " (고객 " + (x.kind || "의견") + ")" : (x.author || "홈퍼니싱") + (x.stage ? " · " + x.stage : "");
+        h += '<div class="pp"><div class="hd pdf-avoid"><b>' + esc(who) + '</b> ' + esc((x.createdAt || "").slice(11, 16)) + (x.important ? ' · <b style="color:#b5472f">중요</b>' : '') + '</div>';
+        if (x.text) h += '<div class="tx pdf-avoid">' + esc(x.text) + '</div>';
+        const ph = (x.photos || []).filter(id => PHOTO[id]);
+        for (let i = 0; i < ph.length; i += 2) h += '<div class="pg pdf-avoid">' + ph.slice(i, i + 2).map(id => '<img src="' + PHOTO[id] + '">').join("") + '</div>';
+        cms.filter(c => c.postId === x.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).forEach(c => h += '<div class="cm pdf-avoid"><b>' + esc(c.author || (c.by === "a" ? "홈퍼니싱" : "고객")) + '</b> ' + esc(c.text) + ' <span style="color:#7d7064">' + esc((c.createdAt || "").slice(5, 16)) + '</span></div>');
+        h += '</div>';
+      });
+    });
+    h += '</div></div>';
+    const root = $("#pdfroot"); root.innerHTML = h;
+    await Promise.all([...root.querySelectorAll("img")].map(im => im.complete ? 0 : new Promise(f => { im.onload = im.onerror = f; })));
+    st.textContent = "PDF 만드는 중… (사진이 많으면 30초쯤 걸려요)";
+    const fileBase = "현장기록 " + s.name + " " + today();
+    const y0 = scrollY; scrollTo(0, 0);
+    const worker = html2pdf().set({ margin: [12, 12, 14, 12], image: { type: "jpeg", quality: .85 }, html2canvas: { scale: 1.6, backgroundColor: "#fff", scrollX: 0, scrollY: 0, windowWidth: 760 }, jsPDF: { unit: "mm", format: "a4" }, pagebreak: { mode: ["css", "legacy"], avoid: ".pdf-avoid" } }).from(root.firstChild).toPdf();
+    const pdf = await worker.get("pdf"); scrollTo(0, y0);
+    const n = pdf.internal.getNumberOfPages();
+    for (let i = 2; i <= n; i++) { pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(140); pdf.text((i - 1) + " / " + (n - 1), 105, 290, { align: "center" }); }
+    let name = fileBase + ".pdf", saved = "";
+    if (ADMIN) {
+      st.textContent = "드라이브에 저장 중…";
+      const r = await call("savePdf", { s: CODE, pw: PW, data: pdf.output("datauristring") });
+      name = r.name; saved = r.local ? "미리보기라 드라이브 저장은 서버 연결 후에 돼요" : "드라이브 현장 폴더에 저장했어요";
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(pdf.output("blob")); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 60000);
+    root.innerHTML = "";
+    st.textContent = name + (saved ? " — " + saved : " 받기 완료") + " (" + (n) + "장)";
+  } catch (e) { st.className = "status err"; st.textContent = "PDF를 만들지 못했어요: " + e.message; }
+  btn.disabled = false;
+}
+function loadLib() {
+  if (window.html2pdf) return Promise.resolve();
+  return new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"; sc.onload = ok; sc.onerror = () => no(new Error("PDF 도구를 불러오지 못했어요")); document.head.appendChild(sc); });
+}
+
+/* ============ 시작 ============ */
+function route() {
+  if (ADMIN) { if (!PW) return loginView(); return CODE ? openSite() : listView(); }
+  if (!CODE) { $("#app").innerHTML = '<div class="gate"><div><div class="kicker">HOME FURNISHING</div><p>받으신 주소로 들어와 주세요.</p></div></div>'; return; }
+  openSite();
+}
+route();
+</script>
+</body></html>
