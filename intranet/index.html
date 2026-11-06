@@ -252,7 +252,7 @@ body.cs-cust .fbbtn{display:none}@media print{#askFab,#askVeil{display:none!impo
 <script>
 (function(){
 // ===== 회사 기준 (고객관리 툴 v3.2 · 아르띠꼬 상담견적 v.15 · 공유드라이브 「0. 홈퍼니싱」 서식) =====
-const APP_VER="v0.89 (결재란 기안/검토/결재/최종결재 · 결재란은 칸 이름으로만 표시(누른 계정은 내부 기록만) · 대표가 검토 칸 넣기(채진아로 찍힘)/건너뛰기(빈칸) · 옛 승인 서류도 표시만 바로잡음 · 기안품의서 원본 xls 배치(문서번호 26-11-01 형식·결재란 날짜 줄) · 결재 화면 안에 회사 양식 그대로 보기) · v0.88 (경리·인사 자료함 맨 위 공유 드라이브 「경영 회계 재무」 연결: 검색·분류 7개 카드(건수)·최근 10개·미리 보기만 · 새 메뉴 현장 자료(드라이브): 프로젝트별 묶음·미리 보기만) · v0.87 (서식 자료실 개편: 맨 위 검색칸 · 분류 카드(건수) 누르면 그 자리에서 펼침 · 파일 누르면 바로 미리 보기 · ☆ 자주 쓰는 자료 맨 위 고정) · v0.86 (모든 화면 왼쪽 아래 물어보기·마이크: 크롬 음성 인식 → AI 답 → 소리로 읽기(끄기 가능) · 사용법·접속 문제만 답, 권한·데이터·돈은 대표에게 전달 · 한 사람 하루 20번 · 못 답한 질문은 기록 → 예약 작업이 답) · v0.85 (같은 고객·같은 주소 새 프로젝트 경고·기존 바로가기 · 고객·프로젝트·견적 목록 정렬(최신순↔오래된순·이름순·평형순) · 준공일 지나면 사후 관리 자동·고객 4단계·1개월/1년 점검 알림 · 사후 관리 화면 A/S 바로 접수 · 고쳐주세요 화면 캡처 첨부·Ctrl+V) · v0.84 (대표 ‘금액 변동 확인’ 탭: 고정 지출 결재를 지난달·3개월 평균과 비교, 확인해야 승인 · 결재 화면에 지난달 대비 한 줄 · 결재 차례·최종 승인·반려 인트라넷 알림 · 대표 차례 4시간 넘으면 빨간 불 위로 · 인사 기록 급여 칸 아래 연차 발생/사용/잔여 · 대표만 보는 한 줄 메모) · v0.83 (모든 결재 문서 종이 미리 보기: A4 한 장 · 결재란 기안/검토/결재/최종결재 · 출력·PDF 저장 · 휴가신청서·지출결의서·여비교통비·접대비·기안품의서는 서식 폴더 한글 양식 모양) · v0.82 (삭제는 대표만 · 직원은 삭제 요청(사유 → 빨간 불 → 직접 삭제·24시간 허용·거절) · 목록 체크칸 전체 선택·선택 삭제 · 휴지통 비어 보이던 문제 고침·여러 건 되살리기·전자결재는 영구 보관 · 프로젝트·고객 휴지통 → 캘린더 일정 [삭제됨]) · v0.81 (결재 라인 고정: 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 · 반려되면 기안자가 고쳐 다시 올림 · 대기 중 서류 새 라인으로) · v0.80 (전자결재·내 인사 정보에 '휴가 신청' 바로 버튼) · v0.79 (2026 연차 원본 반영·승인 연차 자동 차감 · 대표 삭제는 모든 메뉴에서 휴지통(30일 되살리기·기록) · 업체 서류·캘린더·캐시플로우 줄도 휴지통) · v0.78 (프로젝트 창 위 원가 관리 큰 버튼 · 견적 '프로젝트로 등록' · 캐시플로우 줄마다 구분·금액·거래처·내용·잔액 · 견적서 종류(주거 아니면 주거용 칸 빠짐) · 업체 서류(통장사본·사업자등록증·업체 견적서) · 빨간 불 단가 입력 창) · v0.77 (교문초 프로젝트 묶음 · 견적·현장에서 프로젝트로 만들기/연결 · 원가 관리(견적·실행·사후) 이름·견적 원가 탭 · 관공서 원가 · 검색칸 한글 조합 입력 · 프로젝트 번호 겹침 막기) · v0.76 (대표 확인 빨간 불: 자금 경고·결재 대기·미연락 문의·대표 결정·직원 삭제 · 저장 기록과 저장 버전을 한 곳으로 · 단가 미정 목록 · 공사진행비 5% 칸 준비) · v0.75 (차장 이름 표기 채진아로 통일 · 대표 확인 2026-11-06) · v0.74 (연차: 직원별 발생·사용·잔여 + 서류 연차 칸 · 승인 연차 → 공용 캘린더 자동 등록·취소 시 삭제 · 기안품의서 종이 양식 출력) · v0.73 (견적 저장할 때마다 v1·v2·v3 번호 버전 보관 · 프로젝트별 버전 목록에서 열기·다시 작성 · 직원 버전도 대표 화면에 · 연결 끊겼던 임시 저장본 자동 다시 올리기 · 편집 탭에도 이어서 하기 안내 · 저장 직후 새 차수가 빈 화면으로 열리던 틈 막음) · v0.72 (브라우저 확인 창 14곳 → 인트라넷 확인 창 · 견적 저장 기록: 덮어쓰기 전 자동 백업·이전 내용 열기·새 차수로 되살리기 · 창 닫기·새로고침 직전 즉시 임시 저장 · 차수 번호가 겹치지 않게) · v0.71 (저장 완료·실패 크게 표시 · 견적 작성 자동 임시 저장, 기기 상관없이 이어서 하기 · 일반 저장에도 첫 견적 항목 같이 저장) · v0.70 (견적 화면 스크롤 유지·공종 바로가기 고정 · 단계 바 눌러 아무 단계로 · 견적 차수 목록·발송됨 · 고객에게 보내기: PDF·보기 링크) · v0.69 (이전 단계로 고침 · 확인 창이 막혀 취소되던 곳 10곳 → 인트라넷 확인 창 · 현장·견적·고객 관리 검색에 프로젝트 연결) · v0.68 (인사정보 월별 급여 표: 급여대장 2020-05~2026-10) · v0.67 (견적 작성 = 상담견적 v.15 방식: 왼쪽 상담 항목 → 오른쪽 가견적 · 단가 = 단가표 2026-11-04 v0 · 견적 단계에서 v.15 화면 바로) · v0.66 (이전 단계로 · 견적 단계에서 견적서 바로 열기 · 상세 견적 첫 화면 · 프로젝트 삭제 시 견적·현장 같이 휴지통 · 직원 삭제 알림 · 캘린더 수정은 본인+최윤수) · v0.65 (간편견적 접수 → 프로젝트 자동 · 새 문의 알림 · 단계 '신규 문의' · 유입 '간편견적') · v0.64 (캘린더 떠 있는 작은 창: 오른쪽 아래 버튼 · 오늘·이번 주 · 휴대폰은 아래에서 올라옴) · v0.63 (공정표 → 공용 캘린더 자동 · 현장별 색 · 휴가 기간 표시) · v0.62 (보완 8건: 캐시플로우 엑셀 과거분·입출금 보기·결재→사후 원가·견적서 엑셀 읽기·세부 단가표·공급가 표시·엑셀 첨부) · v0.61 (본사 결재 한 장·캐시플로우 불러오기·승인 후 지출 기록 · 엑셀 18시 자동 반영) · v0.60 (공용 캘린더·매일 백업·작성 중 자동 임시 저장) · v0.59 (프로젝트: 업무 절차 24단계 체크·시간순 기록·고객명만으로 생성) · v0.58 (프로젝트↔현장 폴더 링크·주소·담당·일정 공유) · v0.57 (기안품의서 여러 줄·합계 자동·원가 줄 단위) · v0.56 (왼쪽 메뉴에 휴지통) · v0.55 (기안품의 지급 방법 자동이체 · 요청함 상태 추가) · v0.54 (휴지통: 고객·프로젝트·견적·현장 삭제 → 보관, 복구·완전삭제 관리자만)", APP_DATE="2026-11-06";
+const APP_VER="v0.90 (연습 모드 원인 표시·연결 늦으면 다시 시도 · 직원 화면 사본 바로잡기(지운 것·합친 것 반영, 직원이 만든 줄 원본에 올림) · 기기 승인: 같은 종류 기기 승인 유지·대표 홈 맨 위 승인 버튼·승인되면 자동으로 열림 · 직원 PDF 첨부 막힘 → 원본 그대로 저장 · 연습 모드 입력 목록) · v0.89 (결재란 기안/검토/결재/최종결재 · 결재란은 칸 이름으로만 표시(누른 계정은 내부 기록만) · 대표가 검토 칸 넣기(채진아로 찍힘)/건너뛰기(빈칸) · 옛 승인 서류도 표시만 바로잡음 · 기안품의서 원본 xls 배치(문서번호 26-11-01 형식·결재란 날짜 줄) · 결재 화면 안에 회사 양식 그대로 보기) · v0.88 (경리·인사 자료함 맨 위 공유 드라이브 「경영 회계 재무」 연결: 검색·분류 7개 카드(건수)·최근 10개·미리 보기만 · 새 메뉴 현장 자료(드라이브): 프로젝트별 묶음·미리 보기만) · v0.87 (서식 자료실 개편: 맨 위 검색칸 · 분류 카드(건수) 누르면 그 자리에서 펼침 · 파일 누르면 바로 미리 보기 · ☆ 자주 쓰는 자료 맨 위 고정) · v0.86 (모든 화면 왼쪽 아래 물어보기·마이크: 크롬 음성 인식 → AI 답 → 소리로 읽기(끄기 가능) · 사용법·접속 문제만 답, 권한·데이터·돈은 대표에게 전달 · 한 사람 하루 20번 · 못 답한 질문은 기록 → 예약 작업이 답) · v0.85 (같은 고객·같은 주소 새 프로젝트 경고·기존 바로가기 · 고객·프로젝트·견적 목록 정렬(최신순↔오래된순·이름순·평형순) · 준공일 지나면 사후 관리 자동·고객 4단계·1개월/1년 점검 알림 · 사후 관리 화면 A/S 바로 접수 · 고쳐주세요 화면 캡처 첨부·Ctrl+V) · v0.84 (대표 ‘금액 변동 확인’ 탭: 고정 지출 결재를 지난달·3개월 평균과 비교, 확인해야 승인 · 결재 화면에 지난달 대비 한 줄 · 결재 차례·최종 승인·반려 인트라넷 알림 · 대표 차례 4시간 넘으면 빨간 불 위로 · 인사 기록 급여 칸 아래 연차 발생/사용/잔여 · 대표만 보는 한 줄 메모) · v0.83 (모든 결재 문서 종이 미리 보기: A4 한 장 · 결재란 기안/검토/결재/최종결재 · 출력·PDF 저장 · 휴가신청서·지출결의서·여비교통비·접대비·기안품의서는 서식 폴더 한글 양식 모양) · v0.82 (삭제는 대표만 · 직원은 삭제 요청(사유 → 빨간 불 → 직접 삭제·24시간 허용·거절) · 목록 체크칸 전체 선택·선택 삭제 · 휴지통 비어 보이던 문제 고침·여러 건 되살리기·전자결재는 영구 보관 · 프로젝트·고객 휴지통 → 캘린더 일정 [삭제됨]) · v0.81 (결재 라인 고정: 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 · 반려되면 기안자가 고쳐 다시 올림 · 대기 중 서류 새 라인으로) · v0.80 (전자결재·내 인사 정보에 '휴가 신청' 바로 버튼) · v0.79 (2026 연차 원본 반영·승인 연차 자동 차감 · 대표 삭제는 모든 메뉴에서 휴지통(30일 되살리기·기록) · 업체 서류·캘린더·캐시플로우 줄도 휴지통) · v0.78 (프로젝트 창 위 원가 관리 큰 버튼 · 견적 '프로젝트로 등록' · 캐시플로우 줄마다 구분·금액·거래처·내용·잔액 · 견적서 종류(주거 아니면 주거용 칸 빠짐) · 업체 서류(통장사본·사업자등록증·업체 견적서) · 빨간 불 단가 입력 창) · v0.77 (교문초 프로젝트 묶음 · 견적·현장에서 프로젝트로 만들기/연결 · 원가 관리(견적·실행·사후) 이름·견적 원가 탭 · 관공서 원가 · 검색칸 한글 조합 입력 · 프로젝트 번호 겹침 막기) · v0.76 (대표 확인 빨간 불: 자금 경고·결재 대기·미연락 문의·대표 결정·직원 삭제 · 저장 기록과 저장 버전을 한 곳으로 · 단가 미정 목록 · 공사진행비 5% 칸 준비) · v0.75 (차장 이름 표기 채진아로 통일 · 대표 확인 2026-11-06) · v0.74 (연차: 직원별 발생·사용·잔여 + 서류 연차 칸 · 승인 연차 → 공용 캘린더 자동 등록·취소 시 삭제 · 기안품의서 종이 양식 출력) · v0.73 (견적 저장할 때마다 v1·v2·v3 번호 버전 보관 · 프로젝트별 버전 목록에서 열기·다시 작성 · 직원 버전도 대표 화면에 · 연결 끊겼던 임시 저장본 자동 다시 올리기 · 편집 탭에도 이어서 하기 안내 · 저장 직후 새 차수가 빈 화면으로 열리던 틈 막음) · v0.72 (브라우저 확인 창 14곳 → 인트라넷 확인 창 · 견적 저장 기록: 덮어쓰기 전 자동 백업·이전 내용 열기·새 차수로 되살리기 · 창 닫기·새로고침 직전 즉시 임시 저장 · 차수 번호가 겹치지 않게) · v0.71 (저장 완료·실패 크게 표시 · 견적 작성 자동 임시 저장, 기기 상관없이 이어서 하기 · 일반 저장에도 첫 견적 항목 같이 저장) · v0.70 (견적 화면 스크롤 유지·공종 바로가기 고정 · 단계 바 눌러 아무 단계로 · 견적 차수 목록·발송됨 · 고객에게 보내기: PDF·보기 링크) · v0.69 (이전 단계로 고침 · 확인 창이 막혀 취소되던 곳 10곳 → 인트라넷 확인 창 · 현장·견적·고객 관리 검색에 프로젝트 연결) · v0.68 (인사정보 월별 급여 표: 급여대장 2020-05~2026-10) · v0.67 (견적 작성 = 상담견적 v.15 방식: 왼쪽 상담 항목 → 오른쪽 가견적 · 단가 = 단가표 2026-11-04 v0 · 견적 단계에서 v.15 화면 바로) · v0.66 (이전 단계로 · 견적 단계에서 견적서 바로 열기 · 상세 견적 첫 화면 · 프로젝트 삭제 시 견적·현장 같이 휴지통 · 직원 삭제 알림 · 캘린더 수정은 본인+최윤수) · v0.65 (간편견적 접수 → 프로젝트 자동 · 새 문의 알림 · 단계 '신규 문의' · 유입 '간편견적') · v0.64 (캘린더 떠 있는 작은 창: 오른쪽 아래 버튼 · 오늘·이번 주 · 휴대폰은 아래에서 올라옴) · v0.63 (공정표 → 공용 캘린더 자동 · 현장별 색 · 휴가 기간 표시) · v0.62 (보완 8건: 캐시플로우 엑셀 과거분·입출금 보기·결재→사후 원가·견적서 엑셀 읽기·세부 단가표·공급가 표시·엑셀 첨부) · v0.61 (본사 결재 한 장·캐시플로우 불러오기·승인 후 지출 기록 · 엑셀 18시 자동 반영) · v0.60 (공용 캘린더·매일 백업·작성 중 자동 임시 저장) · v0.59 (프로젝트: 업무 절차 24단계 체크·시간순 기록·고객명만으로 생성) · v0.58 (프로젝트↔현장 폴더 링크·주소·담당·일정 공유) · v0.57 (기안품의서 여러 줄·합계 자동·원가 줄 단위) · v0.56 (왼쪽 메뉴에 휴지통) · v0.55 (기안품의 지급 방법 자동이체 · 요청함 상태 추가) · v0.54 (휴지통: 고객·프로젝트·견적·현장 삭제 → 보관, 복구·완전삭제 관리자만)", APP_DATE="2026-11-06";
 const STAFF_DEF=["최윤수","신혜현","최남수","유효성","정진혁","채진아","이봄이"];
 const TOOL_QUOTE="https://claude.ai/artifact/UyzLeeqmFdTq54YL7Rko84";
 const TOOL_CRM="https://claude.ai/artifact/BVQPYfkDfTpDcPPUsu6e2x";
@@ -460,9 +460,12 @@ async function gateCheck(){
   let ok=null;try{const g=await db.doc("devok/"+me.id+"__"+d).get();ok=g&&g.exists?g.data():null}catch(e){}
   if(!mine){const first=!devs.length;mine={dev:d,devName:devName(),first,at:nowISO()};try{await db.collection("access/"+me.id+"/devs").doc(d).set(mine)}catch(e){}}
   if(ok&&ok.ok===false){await knock("거절된 기기");lockScreen("이 기기는 쓸 수 없어요","대표가 이 기기를 허락하지 않았어요. 등록된 휴대폰·PC로 열어 주세요.");return false}
-  if(!mine.first&&!(ok&&ok.ok)){await knock("새 기기 승인 대기");lockScreen("새 기기 · 대표 승인 대기","처음 쓰는 기기예요. 대표가 승인하면 열려요. 잠시 뒤 다시 열어 주세요.");return false}
+  const nmKey=me.id+"__nm_"+hashStr(devName());let nm=null;try{const g=await db.doc("devok/"+nmKey).get();nm=g&&g.exists?g.data():null}catch(e){}
+  if(!mine.first&&!(ok&&ok.ok)&&!(nm&&nm.ok)){await knock("새 기기 승인 대기");lockScreen("새 기기 · 대표 승인 대기","처음 쓰는 기기("+devName()+")예요. 대표 화면 홈 맨 위에 ‘새 기기 승인 요청’과 승인 버튼이 떠요. 대표가 승인하면 이 화면이 저절로 열려요 (새로고침 안 해도 돼요).");devWait(me.id+"__"+d,nmKey);return false}
   me.staffName=mem.name||"";await knock("접속");gatePassed=true;return true;
 }
+// 승인 대기 화면: 15초마다 승인 여부 확인 → 승인되면 바로 다시 열기
+function devWait(k1,k2){let n=0;const iv=setInterval(async()=>{if(++n>240){clearInterval(iv);return}try{for(const k of [k1,k2]){const g=await db.doc("devok/"+k).get();if(g&&g.exists&&g.data().ok){clearInterval(iv);location.reload();return}}}catch(e){}},15000)}
 function watermark(){const t=((me.staffName||me.name||"")+" · "+todayStr()).replace(/[<&>"']/g,"");const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='280' height='170'><text x='16' y='96' transform='rotate(-24 140 85)' font-size='15' fill='rgba(31,78,121,0.10)' font-family='sans-serif'>${t}</text></svg>`;const w=document.createElement("div");w.id="wm";w.setAttribute("aria-hidden","true");w.style.cssText="position:fixed;inset:0;pointer-events:none;z-index:9999;background-image:url(\"data:image/svg+xml;utf8,"+encodeURIComponent(svg)+"\")";document.body.appendChild(w)}
 function listenAdminSec(){if(!db||!me.admin)return;
   db.collection("knock").onSnapshot(s=>{autoLink(s.docs.map(x=>Object.assign({id:x.id},x.data())));KNOCK=s.docs.flatMap(x=>{const d=x.data();return (d.log||[]).map(l=>Object.assign({uid:x.id,name:d.name||""},l))}).sort((a,b)=>String(b.at).localeCompare(String(a.at)));render()},()=>{});
@@ -485,7 +488,7 @@ async function autoLink(docs){if(!me.admin||linkBusy||!S.staff.length)return;lin
   const o=Object.assign({},st);delete o.id;o.uid=k.id;o.linkedAt=nowISO();o.linkedBy="이메일 자동";o.updatedAt=nowISO();o.updatedBy=me.id;await put("staff",st.id,o);
   await db.collection("members").doc(k.id).set({name:st.name,staffId:st.id,active:true,at:nowISO(),by:me.id,why:"이메일 자동 연결 "+em});toast(st.name+" 계정을 이메일로 연결했어요")}}catch(e){}linkBusy=false}
 async function syncMembers(){if(!me.admin||memBusy||!S.staff.length)return;memBusy=true;try{for(const s of S.staff){if(s.uid&&s.state!=="퇴사"&&!MEMBERS.some(m=>m.id===s.uid))await db.collection("members").doc(s.uid).set({name:s.name,staffId:s.id,active:true,at:nowISO(),by:me.id})}}catch(e){}memBusy=false}
-const devState=(u,dv)=>{const o=DEVOK.find(x=>x.id===u+"__"+dv.id);return o?(o.ok?"허락":"거절"):(dv.first?"처음 기기":"승인 대기")};
+const devState=(u,dv)=>{const o=DEVOK.find(x=>x.id===u+"__"+dv.id);if(o)return o.ok?"허락":"거절";if(dv.first)return "처음 기기";const n=DEVOK.find(x=>x.id===u+"__nm_"+hashStr(dv.devName||""));return n&&n.ok?"허락 (같은 종류 기기)":"승인 대기"};
 // 고객 담당 (v16-3): 내가 담당한 고객만, 나머지는 가림 + 열람 요청
 const grantOk=code=>!!code&&GRANTS.some(g=>g.uid===me.id&&g.code===code&&!g.revoked&&(!g.until||g.until>=todayStr()));
 function custMine(code){if(me.admin||mode!=="shared")return true;if(!code)return false;const n=(myStaff()||{}).name;if(grantOk(code))return true;
@@ -708,7 +711,12 @@ function custMineFor(s,c){if(isCoBoss(s)||isCo2(s)||isTeam(s))return true;const 
   if((n&&c.mgr===n)||c.createdBy===u)return true;if(!code)return false;
   return S.projects.some(p=>p.custCode===code&&((n&&p.mgr===n)||p.createdBy===u))||S.quotes.some(q=>q.code===code&&((n&&q.staff===n)||q.createdBy===u))||siteMgrOf(n,code)}
 const MU={},muSubs={},isoSent={};
-function listenMineOf(u){if(!db||!me.admin||muSubs[u])return;muSubs[u]=1;MU[u]={};ISO.forEach(col=>{db.collection("mine/"+u+"/"+col).onSnapshot(x=>{MU[u][col]=x.docs.map(d=>Object.assign({id:d.id},d.data()));queueSync()},()=>{})})}
+const muReady={},isoPrev={};let SYNC_AT="";
+function listenMineOf(u){if(!db||!me.admin||muSubs[u])return;muSubs[u]=1;MU[u]={};muReady[u]={};ISO.forEach(col=>{db.collection("mine/"+u+"/"+col).onSnapshot(x=>{MU[u][col]=x.docs.map(d=>Object.assign({id:d.id},d.data()));muReady[u][col]=true;queueSync()},()=>{})})}
+// 대표 화면에서 지운 것(휴지통)·합친 것(acct/_gone/g) 목록
+// 이미 합쳐진 번호 (대표 정리 2026-11-06: 김정래 P-2610-003 → P-2611-004, 그 번호로 자동 생긴 중복 현장) · 백업: 드라이브 「직원 사본 백업 2026-11-06 v0.json」
+const GONE_SEED=["projects__P-2610-003","sites__simw4cdcrwqnym"];
+async function goneSet(){const G=new Set(GONE_SEED);try{(await once("acct/_trash/t")).forEach(x=>G.add(x.col+"__"+x.id))}catch(e){}try{(await once("acct/_gone/g")).forEach(x=>G.add(x.col+"__"+x.rid))}catch(e){}return G}
 function ownedFor(s,col,r){const n=s.name,u=s.uid;if(!r)return false;if(isCoBoss(s)||isCo2(s))return true;if(isTeam(s)&&col!=="reports")return true;
   if(col==="reports")return r.createdBy===u||(n&&r.who===n)||s.role==="최종 결재";
   if(col==="customers")return custMineFor(s,r);
@@ -721,20 +729,28 @@ function ownedFor(s,col,r){const n=s.name,u=s.uid;if(!r)return false;if(isCoBoss
 const IDXF={customers:["code","area","status","stage","steps","mgr","inq","createdBy","route"],projects:["no","cat","stage","mgr","custCode","inq","start","end","endPlan","ptype","route","createdBy","hsCode","perf"],quotes:["qno","pno","code","status","staff","d","ver","preset","hs","createdBy"],sites:["pno","code","type","mgr","status","start","end","proc","progress","createdBy"]};
 function idxRow(col,r){const o={id:r.id};IDXF[col].forEach(k=>{if(r[k]!==undefined)o[k]=r[k]});if(col==="customers")o.name=maskName(r.name);if(col==="projects"){o.title=maskPlace(r.title);o.custName=r.custName?maskName(r.custName):""}if(col==="quotes"){o.name=maskName(r.name);o.site=maskPlace(r.site)}if(col==="sites"){o.name=maskPlace(r.name);o.customer=maskName(r.customer)}o.__masked=1;return o}
 const clean=r=>{const o=Object.assign({},r);["id","__leak","__leakCost","__masked","__rawTel"].forEach(k=>delete o[k]);if(o.tel!==undefined)o.tel="";if(o.addr!==undefined&&(o.code!==undefined&&o.name!==undefined&&o.steps!==undefined))o.addr="";if(o.estCost!==undefined)o.estCost="";return o};
-async function isoSync(){if(!S.staff.length)return;const T=r=>String(r.__at||r.updatedAt||"");
-  for(const s of S.staff.filter(x=>x.uid&&x.state!=="퇴사")){const u=s.uid,mu=MU[u]||{};
-    for(const col of ISO){const mine=mu[col]||[];
-      // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만)
-      for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(c&&T(c)>=T(x))continue;
+async function isoSync(){if(!S.staff.length)return;const T=r=>String(r.__at||r.updatedAt||"");const G=await goneSet();const stf=S.staff.filter(x=>x.uid&&x.state!=="퇴사");
+  // 0) 지운 것·합친 것 먼저 (다음 지시 2026-11-06 v4): 원본에 없는 사본은 정리. 직원이 만든 줄은 지우지 않고 '__gone'(숨김·내용 보관)
+  for(const s of stf){const u=s.uid,mu=MU[u]||{},rd=muReady[u]||{};
+    for(const col of ISO){if(!rd[col]||!S[col].length)continue;const ids=new Set(S[col].map(r=>r.id)),prev=isoPrev[col]||new Set();
+      for(const h of (mu[col]||[])){if(ids.has(h.id)||h.__gone||h.__deleted)continue;
+        if(h.__by!==u){await db.collection("mine/"+u+"/"+col).doc(h.id).delete();continue}
+        if(G.has(col+"__"+h.id)||prev.has(h.id)){const o=Object.assign({},h);delete o.id;o.__gone=true;o.__goneAt=nowISO();o.__goneWhy="대표 화면에서 지움·합침 (내용은 보관)";await db.collection("mine/"+u+"/"+col).doc(h.id).set(o)}}}}
+  ISO.forEach(col=>{if(S[col].length)isoPrev[col]=new Set(S[col].map(r=>r.id))});
+  for(const s of stf){const u=s.uid,mu=MU[u]||{},rd=muReady[u]||{};
+    for(const col of ISO){if(!rd[col]||!S[col].length)continue;const mine=(mu[col]||[]).filter(r=>!r.__gone);
+      // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만 · 지운 것·합친 것은 다시 올리지 않음)
+      for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(c&&T(c)>=T(x))continue;if(!c&&G.has(col+"__"+x.id))continue;
         if(x.__deleted){await db.collection("mine/"+u+"/"+col).doc(x.id).delete();continue}
         if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;o.__at=x.__at;if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
         if(col==="customers"){const p=PRIVC[x.id]||{};if((x.tel||x.addr)&&String(x.__at)>String(p.updatedAt||""))await db.collection("cpriv").doc(x.id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
         await db.collection(col).doc(x.id).set(o)}
       // 원본 → 직원: 담당분은 전체, 나머지는 가린 목록 1개
       const own=S[col].filter(r=>ownedFor(s,col,r)),ownIds=new Set(own.map(r=>r.id));
-      for(const r of own){const h=mine.find(x=>x.id===r.id);if(h&&T(h)>=T(r))continue;const o=clean(r);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
+      for(const r of own){const h=(mu[col]||[]).find(x=>x.id===r.id);if(h&&!h.__gone&&T(h)>=T(r))continue;const o=clean(r);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
       for(const h of mine.filter(x=>!ownIds.has(x.id)&&x.__by!==u))await db.collection("mine/"+u+"/"+col).doc(h.id).delete();
-      if(col!=="reports"){const rows=s.scope==="담당 건만"?[]:S[col].filter(r=>!ownIds.has(r.id)).map(r=>idxRow(col,r));const js=JSON.stringify(rows),key=u+"/"+col;if(isoSent[key]!==js){await db.collection("mine/"+u+"/idx").doc(col).set({rows,at:nowISO()});isoSent[key]=js}}}}}
+      if(col!=="reports"){const rows=s.scope==="담당 건만"?[]:S[col].filter(r=>!ownIds.has(r.id)).map(r=>idxRow(col,r));const js=JSON.stringify(rows),key=u+"/"+col;if(isoSent[key]!==js){await db.collection("mine/"+u+"/idx").doc(col).set({rows,at:nowISO()});isoSent[key]=js}}}
+    if(ISO.every(c=>rd[c]))try{await db.collection("mine/"+u+"/idx").doc("sync").set({at:nowISO()})}catch(e){}}}
 // ===== 재무·경영 (다음 지시 v27): 경영 대시보드 · 재무제표 · 캐시플로우 — 대표 + '허락' 직원(신혜현·채진아)만 =====
 // 대표: fin/fs · fin/cfset · fin/cfhist(자금 관리 자금일보 사본+매일 잔액) · fincf(매일 입력) / 허락 직원: acct/{계정}/fin/all 사본 읽기, 입력은 acct/{계정}/finin → 대표 화면이 열릴 때 합침
 const isHrMgr=s=>!!s&&(s.level==="재무·인사 담당"||s.level==="전체 담당")&&s.state!=="퇴사";
@@ -1101,7 +1117,7 @@ async function pdfToJpeg(f){try{const L=await getPdfLib();const doc=await L.getD
 // 엑셀 원본 그대로 보관 (2026-11-05 지시 2·5): 파일 저장소가 엑셀을 받지 않아 DB(xfile)에 조각으로 저장 · 링크 /_blob/xf_… 를 누르면 원본 엑셀로 내려받기
 const XF_CH=500000;
 const b64of=buf=>{const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
-async function xfSave(f){if(!db){const e=new Error("db");e.friendly="저장소 연결이 없어 엑셀을 올릴 수 없어요";throw e}if(f.size>15*1024*1024){const e=new Error("big");e.code="too_large";throw e}
+async function xfSave(f){if(!db){const e=new Error("db");e.friendly="저장소 연결이 없어 파일을 올릴 수 없어요 (연습 모드)";throw e}if(f.size>15*1024*1024){const e=new Error("big");e.code="too_large";throw e}
   const b=b64of(await f.arrayBuffer()),id=newId("xf"),n=Math.max(1,Math.ceil(b.length/XF_CH));
   for(let i=0;i<n;i++)await db.collection("xfile").doc(id+"_"+i).set({data:b.slice(i*XF_CH,(i+1)*XF_CH),i,of:id});
   const type=f.type||"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -1109,14 +1125,14 @@ async function xfSave(f){if(!db){const e=new Error("db");e.friendly="저장소 �
   return {id:"xf_"+id,url:"/_blob/xf_"+id,name:f.name,sizeBytes:f.size,contentType:type,type}}
 async function xfBlob(xid){const id=String(xid).replace(/^xf_/,"");const g=await db.doc("xfile/"+id).get();if(!g||!g.exists)throw new Error("파일 없음");const m=g.data();let b="";for(let i=0;i<m.n;i++){const c=await db.doc("xfile/"+id+"_"+i).get();b+=(c&&c.exists?c.data().data:"")}
   const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return {blob:new Blob([u],{type:m.type}),name:m.name,buf:u.buffer}}
-document.addEventListener("click",async e=>{const a=e.target.closest&&e.target.closest('a[href^="/_blob/xf_"]');if(!a)return;e.preventDefault();e.stopPropagation();try{toast("엑셀 내려받는 중…");const x=await xfBlob(a.getAttribute("href").slice(7));await pdfSave(x.blob,x.name)}catch(er){toast("엑셀 파일을 열지 못했어요")}},true);
-async function upAsset(f){const name=f&&f.name||"파일";if(!assets){const e=new Error("no assets");e.code="not_granted";throw e}
+document.addEventListener("click",async e=>{const a=e.target.closest&&e.target.closest('a[href^="/_blob/xf_"]');if(!a)return;e.preventDefault();e.stopPropagation();try{toast("파일 내려받는 중…");const x=await xfBlob(a.getAttribute("href").slice(7));await pdfSave(x.blob,x.name)}catch(er){toast("파일을 열지 못했어요")}},true);
+async function upAsset(f){const name=f&&f.name||"파일";if(!assets){if(db){try{knock("열람",{what:"첨부 원본 저장(DB)",target:name+" · 파일 저장소 없음"})}catch(er){}return xfSave(f)}const e=new Error("no assets");e.code="not_granted";throw e}
   const ext=String(name).split(".").pop().toLowerCase();let type=UP_OK.includes(f.type)?f.type:(UP_EXT[ext]||"");let blob=f;if(/^(xlsx|xlsm|xls)$/.test(ext))return xfSave(f);
   if(!type&&(/^image\//.test(f.type)||/^(heic|heif|bmp|tif|tiff|avif)$/.test(ext))){try{blob=await toJpeg(f);type="image/jpeg"}catch(er){const e=new Error("heic");e.friendly=name+" : 이 사진 형식(HEIC 등)을 바꿀 수 없어요. 카메라 설정을 ‘호환성 우선(JPG)’으로 하거나 사진을 캡처해서 올려 주세요";throw e}}
   if(!type){const e=new Error("type");e.friendly=name+" : 이 파일 형식은 못 올려요. 엑셀·한글·워드는 PDF로 저장해서 올려 주세요";throw e}
   if(type==="image/jpeg"||type==="image/png"||type==="image/webp"){try{blob=await shrinkImg(blob)}catch(er){}if(blob.type)type=blob.type}
   if(blob.size>20*1024*1024){const e=new Error("big");e.code="too_large";throw e}
-  let r;try{r=await assets.upload(blob,{type})}catch(e){if(e&&e.code==="store_unavailable"){await new Promise(x=>setTimeout(x,1200));r=await assets.upload(blob,{type})}else if(e&&e.code==="unsupported_type"&&type==="application/pdf"){toast("PDF를 사진으로 바꿔서 올리는 중… "+name);blob=await pdfToJpeg(f);type="image/jpeg";try{knock("열람",{what:"PDF 사진 변환",target:blob.name+" "+Math.round(blob.size/1024)+"KB"})}catch(er){}r=await assets.upload(blob,{type})}else throw e}
+  let r;try{r=await assets.upload(blob,{type})}catch(e){if(e&&e.code==="store_unavailable"){await new Promise(x=>setTimeout(x,1200));r=await assets.upload(blob,{type})}else if(e&&e.code==="unsupported_type"){toast("이 계정은 이 형식을 바로 못 올려서 원본 그대로 저장하는 중… "+name);try{knock("열람",{what:"첨부 원본 저장(DB)",target:name+" · "+type})}catch(er){}return xfSave(f)}else throw e}
   return Object.assign({},r,{name:blob.name||name,type:r.contentType||type})}
 document.addEventListener("paste",e=>{const t=e.target&&e.target.closest&&e.target.closest("#filePaste");if(!t)return;e.preventDefault();const fs=[...((e.clipboardData||{}).items||[])].filter(x=>x.kind==="file").map(x=>x.getAsFile()).filter(Boolean);t.innerHTML="파일 고르기가 안 되면: 사진을 <b>복사</b>한 뒤 여기를 <b>길게 눌러 붙여넣기</b>";if(!fs.length){toast("붙여 넣은 게 사진이 아니에요");return}try{knock("열람",{what:"첨부 붙여넣기",target:fs.map(f=>(f.name||"사진")+" "+f.type).join(", ")})}catch(er){}uploadFiles(fs.map((f,i)=>f.name&&f.name!=="image.png"?f:new File([f],"사진 "+todayStr()+"-"+(i+1)+"."+((f.type||"image/png").split("/")[1]||"png"),{type:f.type||"image/png"})))});
 function upFail(e,name){const m=upMsg(e,name);toast(m);try{knock("열람",{what:"첨부 실패",target:(name||"")+" · "+((e&&e.code)||(e&&e.message)||"")})}catch(er){}}
@@ -1130,7 +1146,7 @@ async function shrinkImg(f){
 const ACCT={},acctSubs={}; // 경리 결제·입금 (acct/{계정}/days/{보고 id}) · 대표·본인만 읽음
 function listenAcct(){if(!db||!me.id)return;const ids=me.admin?[...new Set(S.staff.map(s=>s.uid).filter(Boolean).concat([me.id]))]:[me.id];
   ids.forEach(u=>{if(acctSubs[u])return;acctSubs[u]=1;try{db.collection("acct/"+u+"/days").onSnapshot(s=>{ACCT[u]=s.docs.map(x=>Object.assign({id:x.id,uid:u},x.data()));render()},()=>{})}catch(e){}})}
-let db=null,assets=null,user=null,me={id:null,name:"",isOwner:false,admin:false},mode="local";
+let db=null,assets=null,user=null,me={id:null,name:"",isOwner:false,admin:false},mode="local";let CONN="wait",PRAC_WHY="";
 const names={};let filter={},query="";
 const SORTABLE=["customers","projects","quotes"];let SORTK={};try{SORTK=JSON.parse(localStorage.getItem("hf_sort")||"{}")||{}}catch(e){SORTK={}}
 const regAt=r=>String(r.createdAt||r.inq||r.d||r.updatedAt||"");
@@ -2607,7 +2623,7 @@ function secCards(){if(!me.admin||mode!=="shared")return "";
   const pend=[];S.staff.filter(s=>s.uid&&s.state!=="퇴사").forEach(s=>(DEVS[s.uid]||[]).forEach(x=>{if(devState(s.uid,x)==="승인 대기")pend.push([s,x])}));
   const reqs=CREQ.filter(r=>(r.status||"대기")==="대기");
   const un=KNOCK.filter(x=>x.result==="미연결 계정"&&Date.now()-Date.parse(x.at||0)<7*864e5);
-  return (pend.length?`<section class="card"><h2 style="color:#C00000">확인 필요 · 새 기기 승인 ${pend.length}건</h2><div class="list">${pend.map(([s,x])=>`<div class="item" style="cursor:default"><span class="pill bad">새 기기</span><div class="t"><b>${esc(s.name)} · ${esc(x.devName||"기기")}</b><small>${esc(String(x.at||"").slice(0,16).replace("T"," "))}</small></div><span><button class="btn ok sm" data-dev="${esc(s.uid+"__"+x.id)}" data-v="1">승인</button> <button class="btn bad sm" data-dev="${esc(s.uid+"__"+x.id)}" data-v="0">거절</button></span></div>`).join("")}</div></section>`:"")
+  return (pend.length?`<section class="card"><h2 style="color:#C00000">새 기기 승인 요청 ${pend.length}건 <small class="muted">승인하면 같은 종류 기기(예: 맥 · 크롬)는 버전이 바뀌어도 계속 열려요</small></h2><div class="list">${pend.map(([s,x])=>`<div class="item" style="cursor:default"><span class="pill bad">새 기기</span><div class="t"><b>${esc(s.name)} · ${esc(x.devName||"기기")}</b><small>${esc(String(x.at||"").slice(0,16).replace("T"," "))}</small></div><span><button class="btn ok sm" data-dev="${esc(s.uid+"__"+x.id)}" data-v="1">승인</button> <button class="btn bad sm" data-dev="${esc(s.uid+"__"+x.id)}" data-v="0">거절</button></span></div>`).join("")}</div></section>`:"")
    +(reqs.length?`<section class="card"><h2 style="color:#C00000">확인 필요 · 고객 열람 요청 ${reqs.length}건</h2><div class="list">${reqs.map(r=>`<div class="item" style="cursor:default"><span class="pill bad">요청</span><div class="t"><b>${esc(r.name||"")} → ${esc(r.label||r.code)}</b><small>사유: ${esc(r.reason||"—")} · 기간 ${r.days==0?"오늘만":r.days==-1?"계속":"7일"}</small></div><span><button class="btn ok sm" data-crok="${esc(r.id)}" data-v="1">승인</button> <button class="btn bad sm" data-crok="${esc(r.id)}" data-v="0">거절</button></span></div>`).join("")}</div></section>`:"")
    +(un.length?(()=>{const seen={},U=un.filter(x=>!seen[x.uid]&&(seen[x.uid]=1)&&!S.staff.some(s=>s.uid===x.uid)),free=S.staff.filter(s=>!s.uid&&s.state!=="퇴사"&&s.intra!=="사용 안 함");return U.length?`<section class="card"><h2 style="color:#C00000">연결 안 된 계정 접속 ${U.length}개 (7일)</h2><div class="list">${U.slice(0,8).map(x=>`<div class="item" style="cursor:default"><span class="pill bad">미연결</span><div class="t"><b>${esc(x.name||"이름 없음")}</b><small>${esc((x.devName||"")+" · "+String(x.at||"").slice(5,16).replace("T"," "))}</small></div><span>${free.length?`<select data-linksel="${esc(x.uid)}" aria-label="연결할 직원">${free.map(s=>`<option value="${esc(s.id)}" ${String(s.name).startsWith(String(x.name||"").slice(0,3))?"selected":""}>${esc(s.name)}${s.email?" · "+esc(s.email):""}</option>`).join("")}</select> <button class="btn ok sm" data-linkgo="${esc(x.uid)}">연결</button>`:'<span class="hint">연결할 빈 직원 카드가 없어요</span>'}</span></div>`).join("")}</div><p class="hint">직원이면 이름을 골라 ‘연결’을 누르세요. 모르는 사람이면 인트라넷 공유 목록에서 빼 주세요.</p></section>`:""})():"")}
 // ===== 자료 채우기 (인트라넷 직원 활용·자료 채우기 2026-11-04): 빈칸 목록 · 메뉴별 채움률 · 주간 진행 =====
@@ -2691,7 +2707,7 @@ function renderHome(){
   const myFb=S.feedback.filter(x=>me.id&&x.createdBy===me.id&&x.status==="완료"&&String(x.doneAt||"")>new Date(Date.now()-14*864e5).toISOString());
   const fbCard=myFb.length?`<section class="card"><h2>내 개선 요청이 처리됐어요 ${myFb.length}건</h2><div class="list">${myFb.map(x=>`<div class="item" data-open="feedback" data-id="${esc(x.id)}"><span class="pill ok">완료</span><div class="t"><b>${esc(x.body)}</b><small>${esc(x.reply||"")}</small></div><span></span></div>`).join("")}</div></section>`:"";
   const acts=S.activity.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,12);
-  return `${band}${leadNoteHTML()}${noticeTopHTML()}${proxyCardHTML()}
+  return `${secCards()}${pracCard()}${band}${leadNoteHTML()}${noticeTopHTML()}${proxyCardHTML()}
   <div class="head"><div><h1>${esc(me.name?me.name+"님, 안녕하세요":"홈퍼니싱 인트라넷")}</h1><p>${new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})} · 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</p></div>
   <div class="tools"><button class="btn pri" data-new="reports">오늘 업무 보고</button><button class="btn pri" data-new="approvals">결재 올리기</button>${canNotice()?'<button class="btn" data-new="notices">공지 쓰기</button>':""}${me.admin?`${pvPicker()}<button class="btn" data-exportself="1">이 버전 드라이브에 보관</button><button class="btn" data-backup="1">백업 파일 받기</button>`:""}</div></div>
   ${holdCard()}<div class="tiles">
@@ -2701,7 +2717,7 @@ function renderHome(){
     <a class="tile" href="#sites"><span>공사 중 현장</span><strong>${live.length}</strong><small>전체 현장 ${S.sites.length}곳</small></a>
     <a class="tile" href="#customers"><span>진행 중 고객</span><strong>${cust.length}</strong><small>${canMoney()?"미수금 "+won(unpaid):"전체 고객 "+S.customers.length+"명"}</small></a>
     <a class="tile" href="#as"><span>A/S 처리 전</span><strong>${asOpen.length}</strong><small>접수·처리 중</small></a>
-  </div>${fillCard()}${finCards()}${ctPendCard()}${ctLogCard()}${secCards()}${replyCard}${missCard}${chkCard}${weekCard}${fbCard}<div style="display:none">
+  </div>${fillCard()}${finCards()}${ctPendCard()}${ctLogCard()}${replyCard}${missCard}${chkCard}${weekCard}${fbCard}<div style="display:none">
   </div>
   <div class="grid2">
     <section class="card"><h2>공지사항</h2>
@@ -2963,7 +2979,7 @@ function render(){
   if(mode==="shared"&&me.admin)setTimeout(()=>{try{backupDaily()}catch(e){}try{amtInit()}catch(e){}try{acSync()}catch(e){}try{apMigrate()}catch(e){}try{apCfSync()}catch(e){}try{lvCalSync()}catch(e){}try{apPcSync()}catch(e){}try{calMiniDraw()}catch(e){}try{gjScan()}catch(e){}},5000);
   if(me.admin&&db){const nv=document.getElementById("nav");if(nv&&!nv.querySelector("[data-trash]")){const a=document.createElement("a");a.href="#trash";a.dataset.trash="";a.innerHTML="<span>휴지통 (관리자)</span>";const pj=nv.querySelector('a[href="#projects"]');if(pj)pj.after(a);else nv.appendChild(a)}}
   const r=route();
-  const banner=pvBar()+(mode==="local"?`<div class="banner">연습 모드 · 지금은 이 브라우저에만 저장돼요. 직원과 공유하려면 claude.ai 인트라넷 링크로 열어 주세요.</div>`:"");
+  const banner=pvBar()+pracBanner()+(mode==="shared"&&!me.admin&&["projects","customers","quotes","sites"].includes(r)?`<p class="hint" style="margin:0">대표 화면 기준 최신 사본 ${SYNC_AT?esc(new Date(Date.parse(SYNC_AT)+9*36e5).toISOString().slice(5,16).replace("T"," ")):"(아직 없음 · 대표 화면이 열리면 만들어져요)"} · 대표가 지우거나 합친 것은 대표 화면이 열려 있으면 1분 안에 반영돼요</p>`:"");
   const focusQ=document.activeElement&&document.activeElement.id==="q",focusG=document.activeElement&&document.activeElement.id==="gs";
   document.body.classList.toggle("consulting",r==="consult"&&!!CS);document.body.classList.toggle("cs-cust",r==="consult"&&!!CS&&CS.cust);
   $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="calendar"?renderCal():renderModule(r));
@@ -3423,7 +3439,7 @@ async function decide(result){
   catch(e){sheet.busy=false;toast("결재를 저장하지 못했어요")}
 }
 async function uploadFiles(list){
-  if(!assets){toast("이 계정은 파일을 올릴 수 없어요 (공유 권한 확인)");try{knock("열람",{what:"첨부 실패",target:"assets 없음"})}catch(e){}return}
+  if(!assets&&!db){toast("연습 모드라 파일을 올릴 수 없어요 · claude.ai 인트라넷 링크로 열어 주세요");return}
   for(const f of list){
     if(f.size>20*1024*1024){toast(f.name+" : 20MB가 넘어 올릴 수 없어요");continue}
     try{toast("올리는 중… "+f.name);const r=await upAsset(f);sheet.files.push({id:r.id,name:r.name,type:r.type,size:r.sizeBytes||f.size});drawFiles();toast("첨부했어요: "+r.name+" · 저장을 눌러야 보고에 남아요")}
@@ -3781,7 +3797,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.bsim){bonusSim=t.dataset.bsim;render();return}
   if(t.dataset.bconf&&me.admin){finPut("alloc",{status:t.dataset.bconf,confirmedAt:t.dataset.bconf==="확정"?nowISO():""});return}
   if(t.dataset.reveal&&sheet){const c=collect();Object.assign(sheet.data,c.out);Object.assign(sheet.hr,c.hr);reveal[t.dataset.reveal]=true;logView(t.dataset.reveal.replace("hr_",""),sheet.data.name||sheet.data.code||"");drawSheet();return}
-  if(t.dataset.dev&&me.admin){const [u,dv]=t.dataset.dev.split("__");const ok=t.dataset.v==="1";const x=(DEVS[u]||[]).find(y=>y.id===dv)||{};db.collection("devok").doc(u+"__"+dv).set({uid:u,dev:dv,devName:x.devName||"",ok,at:nowISO(),by:me.id}).then(()=>{knock(ok?"기기 허락":"기기 해제",{target:u});toast(ok?"허락했어요":"이 기기를 막았어요")}).catch(()=>toast("저장하지 못했어요"));return}
+  if(t.dataset.dev&&me.admin){const [u,dv]=t.dataset.dev.split("__");const ok=t.dataset.v==="1";const x=(DEVS[u]||[]).find(y=>y.id===dv)||{};db.collection("devok").doc(u+"__"+dv).set({uid:u,dev:dv,devName:x.devName||"",ok,at:nowISO(),by:me.id}).then(()=>ok&&x.devName?db.collection("devok").doc(u+"__nm_"+hashStr(x.devName)).set({uid:u,kind:"같은 종류 기기",devName:x.devName,ok:true,at:nowISO(),by:me.id}):null).then(()=>{knock(ok?"기기 허락":"기기 해제",{target:u});toast(ok?"허락했어요":"이 기기를 막았어요")}).catch(()=>toast("저장하지 못했어요"));return}
   if(t.dataset.retire&&me.admin){retire(t.dataset.retire);return}
   if(t.dataset.creq){const reason=(($("#crReason")||{}).value||"").trim();if(!reason){toast("사유를 한 줄 적어 주세요");return}const days=+(($("#crDays")||{}).value||7);(async()=>{try{let prev=[];try{const g=await db.doc("creq/"+me.id).get();prev=(g&&g.exists&&g.data().reqs)||[]}catch(e){}
     await db.collection("creq").doc(me.id).set({name:(myStaff()||{}).name||me.name||"",reqs:prev.concat([{id:newId("cr"),code:t.dataset.creq,label:t.dataset.label||"",reason,days,status:"대기",at:nowISO()}]).slice(-40)});
@@ -3849,17 +3865,45 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheet){sheet=null;d
 window.addEventListener("hashchange",()=>{if(CS)CS.ct=false;query="";render();window.scrollTo(0,0)});
 ["wheel","touchmove"].forEach(ev=>window.addEventListener(ev,e=>{if(CS&&CS.ct&&!(e.target.closest&&e.target.closest(".ct-panel"))){CS.ct=false;render()}},{passive:true}));
 
+// ===== 연결 상태 · 연습 모드 원인 (다음 지시 2026-11-06 v4) =====
+const PRAC_TXT={link:["링크 아님","claude.ai 인트라넷 링크가 아닌 곳(드라이브에 보관된 html 파일·다른 앱 미리 보기)에서 열렸어요. 대표가 보낸 claude.ai/artifact/… 링크로 다시 여세요."],login:["로그인 안 됨","claude.ai에 로그인되어 있지 않아요. 크롬에서 claude.ai에 회사 계정으로 로그인한 뒤 인트라넷 링크를 다시 여세요."],slow:["연결 늦음","공용 저장소가 제때 답하지 않았어요(세 번 다시 시도함). 아래 ‘다시 연결’을 누르세요. 계속되면 인터넷을 바꿔 보거나 대표에게 알려 주세요."],perm:["저장소 연결 거절","로그인은 됐지만 이 계정이 공용 저장소를 쓸 수 없어요. 공유가 ‘뷰어’로 돼 있거나 다른 계정일 수 있어요. 대표에게 ‘편집자’ 초대를 요청하세요."]};
+function hashStr(t){t=String(t||"");let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)}
+function connVeil(on,msg){let v=document.getElementById("connVeil");if(!on){if(v)v.remove();return}if(!v){v=document.createElement("div");v.id="connVeil";v.setAttribute("role","status");v.style.cssText="position:fixed;inset:0;z-index:9000;background:rgba(242,242,242,.97);display:flex;align-items:center;justify-content:center;padding:16px";document.body.appendChild(v)}v.innerHTML='<div style="max-width:380px;background:#fff;border-radius:14px;padding:24px 20px;text-align:center;border-top:6px solid #1F4E79"><h2 style="color:#203864;margin:0 0 8px;font-size:19px">공용 저장소에 연결 중…</h2><p style="color:#444;margin:0">'+esc(msg||"")+'</p></div>'}
+function practice(why){CONN="local";PRAC_WHY=why;connVeil(false);
+  if(why==="slow"){let n=0;try{n=+sessionStorage.getItem("hf-retry")||0}catch(e){}if(n<2){try{sessionStorage.setItem("hf-retry",String(n+1))}catch(e){}connVeil(true,"연결이 늦어 화면을 다시 불러와요… ("+(n+1)+"/2)");setTimeout(()=>{try{location.reload()}catch(e){}},1500);return}}
+  render()}
+function pracBanner(){if(mode!=="local"||CONN==="wait")return "";const t=PRAC_TXT[PRAC_WHY]||["연결 안 됨","공용 저장소에 연결되지 않았어요."];
+  return `<div class="banner" role="alert" style="background:#fde8e8;color:#8a1c1c;border:2px solid #c62828;font-size:15px;padding:14px 16px"><b style="font-size:20px;display:block;margin-bottom:4px">연습 모드 · 원인: ${esc(t[0])}</b>${esc(t[1])}<br><small>여기서 입력한 내용은 이 브라우저에만 남아요. 지우지 않고 보관했다가, 정상 연결되면 목록으로 대표에게 전달돼요.</small><div style="margin-top:8px"><button type="button" class="btn pri" data-reconn="1">다시 연결</button></div></div>`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-reconn]");if(!t)return;try{sessionStorage.removeItem("hf-retry")}catch(er){}location.reload()});
+// 연습 모드에서 입력한 내용 → 지우지 않고 목록으로 (mine/{계정}/practice)
+async function pracUpload(){if(!db||!me.id)return;let raw=null;try{raw=JSON.parse(localStorage.getItem(LKEY)||"null")}catch(e){}if(!raw||typeof raw!=="object")return;let sent={};try{sent=JSON.parse(localStorage.getItem("hf-prac-sent")||"{}")}catch(e){}
+  let n=0;for(const col of Object.keys(raw)){if(!Array.isArray(raw[col])||["activity","config"].includes(col))continue;
+    for(const r of raw[col]){if(!r||!r.id)continue;const js=JSON.stringify(r),sig=js.length+":"+hashStr(js),key=(col+"__"+String(r.id)).replace(/[^A-Za-z0-9_\-.~:@+]/g,"_").slice(0,180);if(sent[key]===sig)continue;
+      try{await db.collection("mine/"+me.id+"/practice").doc(key).set({col,rid:String(r.id),row:js.slice(0,800000),title:String(r.title||r.name||r.custName||r.site||r.no||r.qno||r.body||"").slice(0,80),dev:devName(),at:nowISO(),who:me.staffName||me.name||""});sent[key]=sig;n++}catch(e){}}}
+  try{localStorage.setItem("hf-prac-sent",JSON.stringify(sent))}catch(e){}if(n){toast("연습 모드에서 입력한 "+n+"건을 대표에게 목록으로 보냈어요 (지우지 않음)");try{knock("열람",{what:"연습 모드 입력 전달",target:n+"건"})}catch(e){}}}
+const PRAC={},pracSubs={};
+function listenPrac(){if(!db||!me.admin)return;[...new Set(S.staff.map(s=>s.uid).filter(Boolean).concat([me.id]))].forEach(u=>{if(pracSubs[u])return;pracSubs[u]=1;try{db.collection("mine/"+u+"/practice").onSnapshot(x=>{PRAC[u]=x.docs.map(d=>Object.assign({id:d.id,uid:u},d.data()));render()},()=>{})}catch(e){}})}
+function pracCard(){if(!me.admin||mode!=="shared")return "";const L=Object.values(PRAC).flat().filter(x=>!x.seen).sort((a,b)=>String(b.at).localeCompare(String(a.at)));if(!L.length)return "";
+  const nm=u=>{const s=S.staff.find(x=>x.uid===u);return s?s.name:(u===me.id?"대표":"직원")};
+  return `<section class="card" style="border:2px solid #FFC000"><h2>연습 모드에서 입력한 내용 ${L.length}건 <small class="muted">공용 저장소에는 없어요 · 지우지 않고 보관</small></h2><div class="list">${L.slice(0,30).map(x=>`<div class="item" style="cursor:default"><span class="pill warn">${esc(MOD[x.col]?MOD[x.col].nav:x.col)}</span><div class="t"><b>${esc(nm(x.uid))} · ${esc(x.title||x.rid||"")}</b><small>${esc(String(x.at||"").slice(0,16).replace("T"," "))} · ${esc(x.dev||"")}</small><details><summary class="muted" style="cursor:pointer">내용 보기</summary><pre style="white-space:pre-wrap;font-size:12px;max-height:200px;overflow:auto">${esc(String(x.row||"").slice(0,3000))}</pre></details></div><span><button class="btn sm" data-pracseen="${esc(x.uid+"|"+x.id)}">확인함</button></span></div>`).join("")}</div><p class="hint">공용 저장소에 옮길 것은 직원에게 다시 입력하게 하거나 Claude에게 ‘연습 입력 옮겨줘’라고 요청하세요.</p></section>`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-pracseen]");if(!t||!me.admin||!db)return;const [u,id]=t.dataset.pracseen.split("|");const x=(PRAC[u]||[]).find(r=>r.id===id);if(!x)return;const o=Object.assign({},x);delete o.id;delete o.uid;o.seen=nowISO();db.collection("mine/"+u+"/practice").doc(id).set(o).then(()=>toast("확인함으로 표시했어요 (내용은 그대로 보관)")).catch(()=>toast("저장하지 못했어요"))});
 // ===== 시작 =====
 loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
 (async()=>{
-  if(!window.claude||!window.claude.use)return;
+  connVeil(true,"잠시만 기다려 주세요");const t0=Date.now();
+  for(let i=0;i<25&&!(window.claude&&window.claude.use);i++)await new Promise(r=>setTimeout(r,200));
+  if(!window.claude||!window.claude.use){practice("link");return}
   try{user=await window.claude.use("user")}catch(e){user=null}
-  try{db=await window.claude.use("db")}catch(e){db=null}
-  if(!db){render();return}
+  // 연결이 늦으면 바로 연습 모드로 넘기지 않고 다시 시도 (다음 지시 2026-11-06 v4)
+  for(let a=0;a<3&&!db;a++){if(a){connVeil(true,"연결이 늦어 다시 시도하는 중… ("+(a+1)+"/3)");await new Promise(r=>setTimeout(r,1500))}try{db=await window.claude.use("db")}catch(e){db=null}}
+  if(!db){let uid=null;try{if(user){const v=await user.me();uid=v&&v.id}}catch(e){}practice(!user||!uid?"login":(Date.now()-t0>9000?"slow":"perm"));return}
+  CONN="ok";connVeil(false);try{sessionStorage.removeItem("hf-retry")}catch(e){}
   mode="shared";me.admin=false;me.isOwner=false;
   if(user){try{const v=await user.me();me={id:v.id,name:v.name,email:normEmail(v.email),isOwner:v.isOwner,admin:!!v.isOwner,canEdit:!!v.canEdit,avatar:v.avatarUrl};if(v.id&&v.name)names[v.id]=v.name}catch(e){}
     const w=$("#who");if(w&&me.id){w.innerHTML="";const img=document.createElement("img");img.src=me.avatar;img.alt="";const s=document.createElement("span");s.textContent=(me.name||"나")+(me.isOwner?" · 대표":"");w.append(img,s)}}
   if(!me.admin){if(!(await gateCheck()))return;watermark()}else knock("대표 접속");
+  try{pracUpload()}catch(e){}
+  if(!me.admin&&me.id)try{db.doc("mine/"+me.id+"/idx/sync").onSnapshot(x=>{SYNC_AT=(x&&x.exists&&x.data().at)||"";render()},()=>{})}catch(e){}
   if(!lsGet(LOCK_KEY))lsSet(LOCK_KEY,String(Date.now()));lockCheck();
   try{assets=await window.claude.use("assets")}catch(e){assets=null}
   window.__assetsState=assets?"있음":"없음";
@@ -3873,7 +3917,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   cols.filter(col=>!(mode==="shared"&&!me.admin&&(ISO.includes(col)||col==="activity"))).forEach(col=>{db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(col==="customers"){S.customers.forEach(r=>{if((r.tel||r.addr)&&me.admin)r.__leak={tel:r.tel||"",addr:r.addr||""}});overlayRows("customers");queueSync()}
     if(col==="projects"){S.projects.forEach(r=>{if(r.estCost!==undefined&&r.estCost!==""&&me.admin)r.__leakCost=r.estCost});overlayRows("projects");queueSync()}
-    if(col==="hr"||col==="quotes"||col==="staff"||col==="approvals")queueSync();if(col==="staff"){listenCsh();if(!me.admin)listenPriv()}if(col==="staff"){listenAcct();listenDevs();syncMembers()}if(col==="config")cfgLoaded=true;render();resolveNames()},()=>{})});
+    if(col==="hr"||col==="quotes"||col==="staff"||col==="approvals")queueSync();if(col==="staff"){listenCsh();if(!me.admin)listenPriv()}if(col==="staff"){listenAcct();listenDevs();syncMembers();try{listenPrac()}catch(e){}}if(col==="config")cfgLoaded=true;render();resolveNames()},()=>{})});
   listenAcct();listenAdminSec();listenPriv();listenFin();finListen();listenSeal();
   db.collection("cgrant").onSnapshot(s=>{GRANTS=s.docs.map(x=>Object.assign({id:x.id},x.data()));render();queueSync()},()=>{});
   if(me.admin)db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
