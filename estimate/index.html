@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#203864">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
-<!-- 간편견적 고객화면 v13 (공개 사이트판) · 2026-11-06 · 도배 시공 수량 = 전용㎡÷15(엑셀 방식) · 전기 공정 34평 공급가 약 400만 기준 평당 비례(배선 시공비·전기 자재비 두 줄로 나눔) · 이하 v12: 전기 공정 보강(배선 교체·분전반·콘센트·조명 설치·감지기)·문턱/현관 철거·도배 퍼티·타일 부자재 추가 · 샷시 포함/제외 선택(기본 포함) · 이하 v11: 버튼·평형 입력 고침, 워터마크 도면 2장 뺌, 접수 주소 연결 · 이하 v9: 배포용: 아파트 찾기 칸 뺌, 도면 직접 올리기 · 접수 안 될 때 신청 내용 복사 · 위치 "경기도 구리시"·결제 20/35/35/10·마루 시공 포함 표시 · 공용 단가표(견적 단가표 2026-11-04 v0) 기준 계산 · 회사 소개/견적/만료 화면 · 3일 고객 링크 · 원가·마진·하한가 없음 -->
+<!-- 간편견적 고객화면 v14 (공개 사이트판) · 2026-11-07 · 알림 메일 본문 새로 정리(항목별 칸·금액마다 VAT 기준·샷시 포함 여부·첨부 없음 표시)·글자를 \u 형태로 보내 깨짐 방지 · 단지·동 필수(안 쓰면 신청 버튼 꺼짐) · 이하 v13: 도배 시공 수량 = 전용㎡÷15(엑셀 방식) · 전기 공정 34평 공급가 약 400만 기준 평당 비례(배선 시공비·전기 자재비 두 줄로 나눔) · 이하 v12: 전기 공정 보강(배선 교체·분전반·콘센트·조명 설치·감지기)·문턱/현관 철거·도배 퍼티·타일 부자재 추가 · 샷시 포함/제외 선택(기본 포함) · 이하 v11: 버튼·평형 입력 고침, 워터마크 도면 2장 뺌, 접수 주소 연결 · 이하 v9: 배포용: 아파트 찾기 칸 뺌, 도면 직접 올리기 · 접수 안 될 때 신청 내용 복사 · 위치 "경기도 구리시"·결제 20/35/35/10·마루 시공 포함 표시 · 공용 단가표(견적 단가표 2026-11-04 v0) 기준 계산 · 회사 소개/견적/만료 화면 · 3일 고객 링크 · 원가·마진·하한가 없음 -->
 <style>
 :root{--navy:#1F4E79;--deep:#203864;--gold:#FFC000;--gray:#F2F2F2;--blue:#D1E3F3;
   --bg:#F2F2F2;--panel:#FFFFFF;--ink:#17202B;--sub:#5D6B7A;--line:#DCE3EC;--tint:#D1E3F3;--accent:#1F4E79;--head:#203864;
@@ -115,6 +115,8 @@ details.more[open]>summary::after{content:"－"}
 .field{display:grid;gap:5px}
 .field label{font-size:12.5px;color:var(--sub)}
 .cta{background:var(--deep);color:#fff;border:0;border-radius:12px;padding:14px;font-weight:700;width:100%}
+.cta:disabled{opacity:.45;cursor:not-allowed}
+.req{color:#C0392B;font-weight:700}
 :root[data-theme="dark"] .cta{background:var(--accent);color:#0F1621}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cta{background:var(--accent);color:#0F1621}}
 .tel{display:block;text-align:center;border:1px solid var(--line);border-radius:12px;padding:12px;color:inherit;text-decoration:none;font-weight:700}
@@ -356,11 +358,12 @@ input[type="checkbox"]{width:20px;height:20px;padding:0;flex:none;margin:2px 0 0
   <h2 id="ha">상담 신청</h2>
   <p class="hint">아래에 적고 <b>상담 신청 보내기</b>를 누르면 아르띠꼬 상담 접수함으로 바로 들어가요. 담당 실장이 하루 안에 연락드려요.</p>
   <div class="row"><div class="field"><label for="nm">이름</label><input id="nm" autocomplete="name" placeholder="홍길동"></div><div class="field"><label for="ph">연락처</label><input id="ph" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000"></div></div>
-  <div class="row"><div class="field"><label for="ad">단지명 · 동</label><input id="ad" placeholder="예: 구리 ○○아파트 101동"></div><div class="field"><label for="wh">희망 공사 시기</label><input id="wh" placeholder="예: 12월 중순"></div></div>
+  <div class="row"><div class="field"><label for="ad">단지명 · 동 <span class="req">(필수)</span></label><input id="ad" required aria-required="true" placeholder="예: 구리 ○○아파트 101동"></div><div class="field"><label for="wh">희망 공사 시기</label><input id="wh" placeholder="예: 12월 중순"></div></div>
   <div class="field"><label for="memo">하고 싶은 말</label><input id="memo" placeholder="예: 주방은 아일랜드 식탁을 넣고 싶어요"></div>
   <input class="hp" id="hpf" tabindex="-1" autocomplete="off" aria-hidden="true">
   <label class="hint" style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="agree" style="margin-top:3px"> 상담을 위해 이름·연락처를 받는 데 동의해요. (상담 외에는 쓰지 않아요)</label>
-  <button class="cta" id="sendBtn" type="button">상담 신청 보내기</button>
+  <button class="cta" id="sendBtn" type="button" disabled>상담 신청 보내기</button>
+  <p class="hint" id="needAd" style="margin:-4px 0 0;text-align:center">단지명 · 동을 적어야 신청 버튼이 눌려요.</p>
   <button class="tel" id="shareBtn" type="button" style="width:100%;background:none;font-weight:600">카톡으로 보내기 (평면도 사진 포함)</button>
   <button class="tel" id="copyBtn" type="button" style="width:100%;background:none;font-weight:600">상담 내용만 복사하기</button>
   <p class="msg" id="msg" aria-live="polite"></p>
@@ -492,7 +495,7 @@ function render(keepOpen){
   $("sashChips").hidden=!full0;$("sashChips").querySelectorAll("[data-sash]").forEach(x=>x.setAttribute("aria-pressed",String((x.dataset.sash==="1")===st.sash)));
   $("incl").innerHTML=`<b>포함</b> 철거·설비·전기(배선 시공·전기 자재·분전반·콘센트·조명 설치)·목공·타일·도배·바닥(마루 시공 포함)·욕실·주방·입주청소·시공 관리비${sashOn()?"·<b style=\"color:var(--accent)\">샷시 교체</b>":""}`;
   $("excl").innerHTML=`<b>별도</b> ${sashOn()?"":"샷시 교체 · "}발코니 확장 · 시스템에어컨 · 승강기 사용료(관리사무소 실비)`;
-  $("perpy").innerHTML=net&&st.py?`<div class="sumrows"><div><span>공급가 합계</span><b>약 ${man10(net*0.9)} ~ ${man10(net*1.1)} 원</b></div><div><span>부가세 10%</span><b>약 ${man10((tot-net)*0.9)} ~ ${man10((tot-net)*1.1)} 원</b></div>${sashOn()?`<div><span>샷시 교체 (부가세 포함)</span><b>약 ${man10(vat(sashLo()))} ~ ${man10(vat(sashHi()))} 원</b></div>`:""}<div class="t"><span>부가세 포함 총액</span><b>약 ${man10(rangeLo())} ~ ${man10(rangeHi())} 원</b></div></div><div class="vatline">평당 공급가 약 ${man(net/st.py)} 원 (인테리어${sashOn()?", 샷시 별도 계산":""}) · 가운데 값 기준 공급가 약 ${man(net)} + 부가세 약 ${man(tot-net)} = 약 ${man(tot)}</div>`:"";
+  $("perpy").innerHTML=net&&st.py?`<div class="sumrows"><div><span>공급가 합계</span><b>약 ${man10(net*0.9)} ~ ${man10(net*1.1)} 원</b></div><div><span>부가세 10%</span><b>약 ${man10((tot-net)*0.9)} ~ ${man10((tot-net)*1.1)} 원</b></div>${sashOn()?`<div><span>샷시 교체 (부가세 포함)</span><b>약 ${man10(vat(sashLo()))} ~ ${man10(vat(sashHi()))} 원</b></div>`:""}<div class="t"><span>부가세 포함 총액</span><b>약 ${man10(rangeLo())} ~ ${man10(rangeHi())} 원</b></div></div><div class="vatline">평당 공급가 약 ${man(net/st.py)} 원 (인테리어만, VAT 별도, 샷시 제외) · 가운데 값 기준 공급가 약 ${man(net)} + 부가세 약 ${man(tot-net)} = 약 ${man(tot)}</div>`:"";
   const full=st.preset==="전체 리모델링";
   if(full)$("rlabel").textContent=`${st.py}평 · 욕실 ${st.bath}개 · 전체 리모델링 · ${(DATA.styles.find(x=>x.id===st.style)||{}).name}`;
   $("styleChips").hidden=!full;$("styleChips").innerHTML=full?'<span class="hint" style="align-self:center">스타일</span>'+DATA.styles.map(sd=>`<button type="button" class="chip" data-style="${sd.id}" aria-pressed="${sd.id===st.style}">${sd.name}</button>`).join(""):"";
@@ -697,8 +700,35 @@ guard.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},{passive:fal
 
 function message(){const g=id=>$(id).value.trim();const net=totalNet(),tot=vat(net);
   const extra=DATA.options.filter(k=>st.sel.has(k)).map(k=>byK[k].name);
-  return `[아르띠꼬 간편 견적 · 상담 신청]\n이름: ${g("nm")}\n연락처: ${g("ph")}\n단지·동: ${g("ad")||"-"}${home.apt&&home.apt.addr?"\n주소: "+home.apt.addr:""}${home.type?"\n평형 타입: "+home.type.name:""}${home.planFrom==="request"?"\n평면도: 요청 ("+PLAN_MANAGER+" 확인)":home.files.length?"\n평면도: "+home.files.length+"장 "+(home.planFrom==="auto"?"(도면 모음에서 불러옴)":"첨부 (사진 같이 보냄)"):""}${(home.files.length||home.pdfs.length||home.refs.length||home.pickedConcept)?"\n원하는 스타일: "+CONCEPTS[home.concept].name:""}${home.pdfs.length?"\n도면 PDF: "+home.pdfs.map(p=>p.name).join(", "):""}${home.refs.length?"\n스타일 참고사진: "+home.refs.length+"장":""}\n희망 시기: ${g("wh")||"-"}\n집: ${st.py}평 · 욕실 ${st.bath}개\n공사: ${st.preset}${st.preset==="전체 리모델링"?" · "+(DATA.styles.find(x=>x.id===st.style)||{}).name:""}${extra.length?"\n추가: "+extra.join(", "):""}\n예상 범위: ${net?man10(rangeLo())+" ~ "+man10(rangeHi())+"원 (VAT 포함, "+sashTxt()+") · 인테리어 공급가 "+man10(net*0.9)+" ~ "+man10(net*1.1)+"원"+(sashOn()?" · 샷시 공급가 "+man10(sashLo())+" ~ "+man10(sashHi())+"원":"")+" · 평당 공급가 약 "+man(net/st.py):"-"}\n하고 싶은 말: ${g("memo")||"-"}`}
-["nm","ph","ad","wh","memo"].forEach(id=>$(id).addEventListener("input",()=>{$("copyText").value=message()}));
+  const sd=(DATA.styles.find(x=>x.id===st.style)||{}).name||"";const full=st.preset==="전체 리모델링";
+  const sash=!full?"해당 없음 (부분 공사)":sashOn()?"포함":"제외";
+  const L=["[아르띠꼬 간편 견적 · 상담 신청]","","■ 고객","이름: "+(g("nm")||"-"),"연락처: "+(g("ph")||"-"),"단지·동: "+(g("ad")||"-")];
+  if(home.apt&&home.apt.addr)L.push("주소: "+home.apt.addr);
+  L.push("희망 시기: "+(g("wh")||"-"),"하고 싶은 말: "+(g("memo")||"-"),"","■ 집 · 공사");
+  L.push("집: "+(st.py?st.py+"평":"-")+" · 욕실 "+st.bath+"개"+(home.type?" · 평형 타입 "+home.type.name:""));
+  L.push("공사 범위: "+(st.preset||"-")+(full&&sd?" · "+sd+" 스타일":""));
+  L.push("샷시 교체: "+sash);
+  L.push("추가 옵션: "+(extra.length?extra.join(", "):"없음"));
+  L.push("","■ 예상 금액");
+  if(net&&st.py){
+    L.push("예상 범위: 약 "+man10(rangeLo())+" ~ "+man10(rangeHi())+"원 (VAT 포함, "+(sashOn()?"샷시 포함":"샷시 제외")+")");
+    L.push("인테리어 공급가: 약 "+man10(net*0.9)+" ~ "+man10(net*1.1)+"원 (VAT 별도, 샷시 제외)");
+    L.push("샷시 공급가: "+(sashOn()?"약 "+man10(sashLo())+" ~ "+man10(sashHi())+"원 (VAT 별도)":"없음 ("+(full?"샷시 제외 선택":"부분 공사")+")"));
+    L.push("평당 공급가: 약 "+man(net/st.py)+" (인테리어만, VAT 별도, 샷시 제외)");
+  }else L.push("예상 범위: -");
+  L.push("","■ 첨부");
+  const nf=home.files.length,np=home.pdfs.length,nr=home.refs.length;
+  if(home.planFrom==="request")L.push("평면도: 요청 ("+PLAN_MANAGER+" 확인)");
+  if(nf)L.push("평면도 사진: "+nf+"장"+(home.planFrom==="auto"?" (도면 모음에서 불러옴)":""));
+  if(np)L.push("도면 PDF: "+np+"개 ("+home.pdfs.map(p=>p.name).join(", ")+")");
+  if(nr)L.push("스타일 참고사진: "+nr+"장");
+  if(!nf&&!np&&!nr&&home.planFrom!=="request")L.push("첨부 없음");
+  if(nf||np||nr||home.pickedConcept)L.push("원하는 스타일: "+CONCEPTS[home.concept].name);
+  return L.join("\n")}
+let sentOk=false;
+function gate(){const has=!!$("ad").value.trim();if(!sentOk)$("sendBtn").disabled=!has;$("needAd").hidden=has||sentOk}
+["nm","ph","ad","wh","memo"].forEach(id=>$(id).addEventListener("input",()=>{$("copyText").value=message();gate()}));
+setTimeout(gate,0);
 $("barBtn").addEventListener("click",()=>goTo("askCard"));
 $("copyBtn").addEventListener("click",async()=>{const m=$("msg"),t=$("copyText");
   if(!$("nm").value.trim()||$("ph").value.replace(/\D/g,"").length<9){m.textContent="이름과 연락처를 적어 주세요.";return}
@@ -754,7 +784,7 @@ let lastErr="";
 function b64(blob){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(String(fr.result).split(",")[1]||"");fr.onerror=()=>r("");fr.readAsDataURL(blob)})}
 function record(){const g=id=>$(id).value.trim();const net=totalNet(),tot=vat(net);const sd=(DATA.styles.find(x=>x.id===st.style)||{}).name||"";
   return {at:new Date().toISOString(),name:g("nm"),phone:g("ph"),apt:g("ad"),addr:(home.apt&&home.apt.addr)||"",type:(home.type&&home.type.name)||"",py:st.py,bath:st.bath,
-    work:st.preset+(st.preset==="전체 리모델링"?" · "+sd:""),range:net?man10(rangeLo())+" ~ "+man10(rangeHi())+"원 ("+sashTxt()+")":"",when:g("wh"),memo:g("memo"),
+    work:st.preset+(st.preset==="전체 리모델링"?" · "+sd+" · 샷시 "+(sashOn()?"포함":"제외"):""),range:net?man10(rangeLo())+" ~ "+man10(rangeHi())+"원 (VAT 포함, "+sashTxt()+")":"",sash:st.preset==="전체 리모델링"?(sashOn()?"포함":"제외"):"해당 없음",when:g("wh"),memo:g("memo"),
     link:LINK&&LINK.t||"",plan:home.planFrom==="request"?"요청":(home.files.length+home.pdfs.length)?(home.files.length+home.pdfs.length)+"개":"",concept:(home.files.length||home.pdfs.length||home.refs.length||home.pickedConcept)?CONCEPTS[home.concept].name:"",refs:home.refs.length,pdfs:home.pdfs.map(p=>p.name).join(", "),text:message(),status:"신규"}}
 function small(c){const k=Math.min(1,900/Math.max(c.width,c.height)),v=document.createElement("canvas");v.width=Math.round(c.width*k);v.height=Math.round(c.height*k);
   const x=v.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,v.width,v.height);x.drawImage(c,0,0,v.width,v.height);return v.toDataURL("image/jpeg",.62)}
@@ -766,7 +796,7 @@ async function saveRequest(){const rec=record();let ok=false;
     const refs=[];for(const [i,f] of home.refs.slice(0,5).entries())refs.push({name:`참고사진_${i+1}.jpg`,mime:"image/jpeg",b64:await b64(f.blob)});
     const body=Object.assign({},rec,{files,refs,t:LINK&&LINK.t||""});
     if(gas)await new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej).submit(body));
-    else await fetch(SHEET_API,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+    else await fetch(SHEET_API,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body).replace(/[\u007f-\uffff]/g,c=>"\\u"+("000"+c.charCodeAt(0).toString(16)).slice(-4))});
     ok=true}catch(e){lastErr=(e&&e.message)||"시트 저장 실패"}}
   const [db,user]=(ok&&!window.claude)?[null,null]:await caps();
   if(db&&user){try{const id=await user.id();
@@ -781,10 +811,11 @@ async function saveRequest(){const rec=record();let ok=false;
 $("sendBtn").addEventListener("click",async()=>{const m=$("msg"),b=$("sendBtn");
   if($("hpf").value)return;
   if(!$("nm").value.trim()||$("ph").value.replace(/\D/g,"").length<9){m.textContent="이름과 연락처를 적어 주세요.";return}
+  if(!$("ad").value.trim()){m.textContent="단지명 · 동을 적어 주세요.";$("ad").focus();gate();return}
   if(!$("agree").checked){m.textContent="개인정보 수집에 동의해 주세요.";return}
   b.disabled=true;b.textContent="보내는 중이에요…";
   const ok=await saveRequest();b.disabled=false;
-  if(ok){b.disabled=true;b.textContent="상담 신청 완료 ✓";m.textContent="접수됐어요. 담당 실장이 하루 안에 연락드릴게요."+""}
+  if(ok){sentOk=true;b.disabled=true;b.textContent="상담 신청 완료 ✓";m.textContent="접수됐어요. 담당 실장이 하루 안에 연락드릴게요."+""}
   else{b.textContent="상담 신청 보내기";const t=message();$("copyText").value=t;
     try{await navigator.clipboard.writeText(t);m.textContent="신청 내용을 복사했어요. 1566-5904로 문자를 보내시거나 전화 주세요."+(home.files.length?" 도면 사진은 아래 '카톡으로 보내기'로 함께 보내 주세요.":"")}
     catch(e){const c=$("copyText");c.hidden=false;c.select();m.textContent="아래 신청 내용을 길게 눌러 복사해서 1566-5904로 문자 보내 주세요. 전화 주셔도 돼요."}}});
