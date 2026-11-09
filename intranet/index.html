@@ -253,7 +253,7 @@ body.cs-cust .fbbtn{display:none}@media print{#askFab,#askVeil{display:none!impo
 <script>
 (function(){
 // ===== 회사 기준 (고객관리 툴 v3.2 · 아르띠꼬 상담견적 v.15 · 공유드라이브 「0. 홈퍼니싱」 서식) =====
-const APP_VER="v0.94 (캐시플로우: 맨 위 핵심 요약 카드(현재 잔액·이번 주/이번 달 입금·출금 예정·미수금·연체 빨간색·예상 월말 잔액·잔액 부족 예상일·최근 자료) · 캐시플로우 자료 목록(인트라넷 업로드 + 드라이브 「경영 회계 재무」 자금·미수·정산 파일) · 누르면 화면 안에서 바로 보기(PDF·엑셀 표·드라이브 미리 보기) · 새 창·내려받기·엑셀 PDF로 저장 · 자료 올리기·미수금 엑셀 기준 직접 입력) · v0.93 (첨부: 프로젝트 번호가 있는 첨부는 현장 공유드라이브 › 인트라넷 첨부 › 프로젝트 폴더에 자동 복사(폴더 없으면 첫 첨부 때 자동 생성) · 첨부 옆 ‘드라이브’ 링크 · 저장소에도 그대로 있어 미리 보기는 지금처럼) · v0.92 (원가 관리: 계약 전에도 실행·사후 원가 칸 · 계약 견적 없으면 최근 견적 금액 자동 · 탭마다 계약 견적·실행·사후 원가와 마진 금액·비율 · 프로젝트 번호 없는 지급 결재도 현장명이 맞으면 사후 원가로 · 단가표에 없는 상담 항목 단가 정하기: 단가 허락 직원(정진혁 실장 등) 홈 카드·입력 → 대표 화면이 견적 단가에 반영 · 대표 홈 첨부 저장소 사용량·드라이브로 복사(백업)) · v0.91 (개선 요청: 원본 휴가내역에 이미 있는 연차는 두 번 빼지 않음 · 기안품의서 증빙 여부 칸 · 결재 완료 서류 출력 (PDF) 버튼) · v0.90 (연습 모드 원인 표시·연결 늦으면 다시 시도 · 직원 화면 사본 바로잡기(지운 것·합친 것 반영, 직원이 만든 줄 원본에 올림) · 기기 승인: 같은 종류 기기 승인 유지·대표 홈 맨 위 승인 버튼·승인되면 자동으로 열림 · 직원 PDF 첨부 막힘 → 원본 그대로 저장 · 연습 모드 입력 목록) · v0.89 (결재란 기안/검토/결재/최종결재 · 결재란은 칸 이름으로만 표시(누른 계정은 내부 기록만) · 대표가 검토 칸 넣기(채진아로 찍힘)/건너뛰기(빈칸) · 옛 승인 서류도 표시만 바로잡음 · 기안품의서 원본 xls 배치(문서번호 26-11-01 형식·결재란 날짜 줄) · 결재 화면 안에 회사 양식 그대로 보기) · v0.88 (경리·인사 자료함 맨 위 공유 드라이브 「경영 회계 재무」 연결: 검색·분류 7개 카드(건수)·최근 10개·미리 보기만 · 새 메뉴 현장 자료(드라이브): 프로젝트별 묶음·미리 보기만) · v0.87 (서식 자료실 개편: 맨 위 검색칸 · 분류 카드(건수) 누르면 그 자리에서 펼침 · 파일 누르면 바로 미리 보기 · ☆ 자주 쓰는 자료 맨 위 고정) · v0.86 (모든 화면 왼쪽 아래 물어보기·마이크: 크롬 음성 인식 → AI 답 → 소리로 읽기(끄기 가능) · 사용법·접속 문제만 답, 권한·데이터·돈은 대표에게 전달 · 한 사람 하루 20번 · 못 답한 질문은 기록 → 예약 작업이 답) · v0.85 (같은 고객·같은 주소 새 프로젝트 경고·기존 바로가기 · 고객·프로젝트·견적 목록 정렬(최신순↔오래된순·이름순·평형순) · 준공일 지나면 사후 관리 자동·고객 4단계·1개월/1년 점검 알림 · 사후 관리 화면 A/S 바로 접수 · 고쳐주세요 화면 캡처 첨부·Ctrl+V) · v0.84 (대표 ‘금액 변동 확인’ 탭: 고정 지출 결재를 지난달·3개월 평균과 비교, 확인해야 승인 · 결재 화면에 지난달 대비 한 줄 · 결재 차례·최종 승인·반려 인트라넷 알림 · 대표 차례 4시간 넘으면 빨간 불 위로 · 인사 기록 급여 칸 아래 연차 발생/사용/잔여 · 대표만 보는 한 줄 메모) · v0.83 (모든 결재 문서 종이 미리 보기: A4 한 장 · 결재란 기안/검토/결재/최종결재 · 출력·PDF 저장 · 휴가신청서·지출결의서·여비교통비·접대비·기안품의서는 서식 폴더 한글 양식 모양) · v0.82 (삭제는 대표만 · 직원은 삭제 요청(사유 → 빨간 불 → 직접 삭제·24시간 허용·거절) · 목록 체크칸 전체 선택·선택 삭제 · 휴지통 비어 보이던 문제 고침·여러 건 되살리기·전자결재는 영구 보관 · 프로젝트·고객 휴지통 → 캘린더 일정 [삭제됨]) · v0.81 (결재 라인 고정: 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 · 반려되면 기안자가 고쳐 다시 올림 · 대기 중 서류 새 라인으로) · v0.80 (전자결재·내 인사 정보에 '휴가 신청' 바로 버튼) · v0.79 (2026 연차 원본 반영·승인 연차 자동 차감 · 대표 삭제는 모든 메뉴에서 휴지통(30일 되살리기·기록) · 업체 서류·캘린더·캐시플로우 줄도 휴지통) · v0.78 (프로젝트 창 위 원가 관리 큰 버튼 · 견적 '프로젝트로 등록' · 캐시플로우 줄마다 구분·금액·거래처·내용·잔액 · 견적서 종류(주거 아니면 주거용 칸 빠짐) · 업체 서류(통장사본·사업자등록증·업체 견적서) · 빨간 불 단가 입력 창) · v0.77 (교문초 프로젝트 묶음 · 견적·현장에서 프로젝트로 만들기/연결 · 원가 관리(견적·실행·사후) 이름·견적 원가 탭 · 관공서 원가 · 검색칸 한글 조합 입력 · 프로젝트 번호 겹침 막기) · v0.76 (대표 확인 빨간 불: 자금 경고·결재 대기·미연락 문의·대표 결정·직원 삭제 · 저장 기록과 저장 버전을 한 곳으로 · 단가 미정 목록 · 공사진행비 5% 칸 준비) · v0.75 (차장 이름 표기 채진아로 통일 · 대표 확인 2026-11-06) · v0.74 (연차: 직원별 발생·사용·잔여 + 서류 연차 칸 · 승인 연차 → 공용 캘린더 자동 등록·취소 시 삭제 · 기안품의서 종이 양식 출력) · v0.73 (견적 저장할 때마다 v1·v2·v3 번호 버전 보관 · 프로젝트별 버전 목록에서 열기·다시 작성 · 직원 버전도 대표 화면에 · 연결 끊겼던 임시 저장본 자동 다시 올리기 · 편집 탭에도 이어서 하기 안내 · 저장 직후 새 차수가 빈 화면으로 열리던 틈 막음) · v0.72 (브라우저 확인 창 14곳 → 인트라넷 확인 창 · 견적 저장 기록: 덮어쓰기 전 자동 백업·이전 내용 열기·새 차수로 되살리기 · 창 닫기·새로고침 직전 즉시 임시 저장 · 차수 번호가 겹치지 않게) · v0.71 (저장 완료·실패 크게 표시 · 견적 작성 자동 임시 저장, 기기 상관없이 이어서 하기 · 일반 저장에도 첫 견적 항목 같이 저장) · v0.70 (견적 화면 스크롤 유지·공종 바로가기 고정 · 단계 바 눌러 아무 단계로 · 견적 차수 목록·발송됨 · 고객에게 보내기: PDF·보기 링크) · v0.69 (이전 단계로 고침 · 확인 창이 막혀 취소되던 곳 10곳 → 인트라넷 확인 창 · 현장·견적·고객 관리 검색에 프로젝트 연결) · v0.68 (인사정보 월별 급여 표: 급여대장 2020-05~2026-10) · v0.67 (견적 작성 = 상담견적 v.15 방식: 왼쪽 상담 항목 → 오른쪽 가견적 · 단가 = 단가표 2026-11-04 v0 · 견적 단계에서 v.15 화면 바로) · v0.66 (이전 단계로 · 견적 단계에서 견적서 바로 열기 · 상세 견적 첫 화면 · 프로젝트 삭제 시 견적·현장 같이 휴지통 · 직원 삭제 알림 · 캘린더 수정은 본인+최윤수) · v0.65 (간편견적 접수 → 프로젝트 자동 · 새 문의 알림 · 단계 '신규 문의' · 유입 '간편견적') · v0.64 (캘린더 떠 있는 작은 창: 오른쪽 아래 버튼 · 오늘·이번 주 · 휴대폰은 아래에서 올라옴) · v0.63 (공정표 → 공용 캘린더 자동 · 현장별 색 · 휴가 기간 표시) · v0.62 (보완 8건: 캐시플로우 엑셀 과거분·입출금 보기·결재→사후 원가·견적서 엑셀 읽기·세부 단가표·공급가 표시·엑셀 첨부) · v0.61 (본사 결재 한 장·캐시플로우 불러오기·승인 후 지출 기록 · 엑셀 18시 자동 반영) · v0.60 (공용 캘린더·매일 백업·작성 중 자동 임시 저장) · v0.59 (프로젝트: 업무 절차 24단계 체크·시간순 기록·고객명만으로 생성) · v0.58 (프로젝트↔현장 폴더 링크·주소·담당·일정 공유) · v0.57 (기안품의서 여러 줄·합계 자동·원가 줄 단위) · v0.56 (왼쪽 메뉴에 휴지통) · v0.55 (기안품의 지급 방법 자동이체 · 요청함 상태 추가) · v0.54 (휴지통: 고객·프로젝트·견적·현장 삭제 → 보관, 복구·완전삭제 관리자만)", APP_DATE="2026-11-09";
+const APP_VER="v0.95 (대표 전용 자료 변경 소식: 드라이브에서 바뀐 파일만(새 파일·수정·이름 변경·이동·삭제) 날짜별 카드·확인함·새 변경 N건·사람별·폴더별 필터·미리 보기 · 평일 8시·18시 자동 + 지금 새로고침 · 전자결재 바로 출력(인쇄 창, 종이 양식 A4) · 종이 미리 보기 출력 버튼 고침 · 결재란 사인(최윤수·신혜현 내 사인 등록, 승인 때 사인 보관) · 결재 첨부 미리 보기 탭(PDF·사진·엑셀 표·드라이브)) · v0.94 (캐시플로우: 맨 위 핵심 요약 카드(현재 잔액·이번 주/이번 달 입금·출금 예정·미수금·연체 빨간색·예상 월말 잔액·잔액 부족 예상일·최근 자료) · 캐시플로우 자료 목록(인트라넷 업로드 + 드라이브 「경영 회계 재무」 자금·미수·정산 파일) · 누르면 화면 안에서 바로 보기(PDF·엑셀 표·드라이브 미리 보기) · 새 창·내려받기·엑셀 PDF로 저장 · 자료 올리기·미수금 엑셀 기준 직접 입력) · v0.93 (첨부: 프로젝트 번호가 있는 첨부는 현장 공유드라이브 › 인트라넷 첨부 › 프로젝트 폴더에 자동 복사(폴더 없으면 첫 첨부 때 자동 생성) · 첨부 옆 ‘드라이브’ 링크 · 저장소에도 그대로 있어 미리 보기는 지금처럼) · v0.92 (원가 관리: 계약 전에도 실행·사후 원가 칸 · 계약 견적 없으면 최근 견적 금액 자동 · 탭마다 계약 견적·실행·사후 원가와 마진 금액·비율 · 프로젝트 번호 없는 지급 결재도 현장명이 맞으면 사후 원가로 · 단가표에 없는 상담 항목 단가 정하기: 단가 허락 직원(정진혁 실장 등) 홈 카드·입력 → 대표 화면이 견적 단가에 반영 · 대표 홈 첨부 저장소 사용량·드라이브로 복사(백업)) · v0.91 (개선 요청: 원본 휴가내역에 이미 있는 연차는 두 번 빼지 않음 · 기안품의서 증빙 여부 칸 · 결재 완료 서류 출력 (PDF) 버튼) · v0.90 (연습 모드 원인 표시·연결 늦으면 다시 시도 · 직원 화면 사본 바로잡기(지운 것·합친 것 반영, 직원이 만든 줄 원본에 올림) · 기기 승인: 같은 종류 기기 승인 유지·대표 홈 맨 위 승인 버튼·승인되면 자동으로 열림 · 직원 PDF 첨부 막힘 → 원본 그대로 저장 · 연습 모드 입력 목록) · v0.89 (결재란 기안/검토/결재/최종결재 · 결재란은 칸 이름으로만 표시(누른 계정은 내부 기록만) · 대표가 검토 칸 넣기(채진아로 찍힘)/건너뛰기(빈칸) · 옛 승인 서류도 표시만 바로잡음 · 기안품의서 원본 xls 배치(문서번호 26-11-01 형식·결재란 날짜 줄) · 결재 화면 안에 회사 양식 그대로 보기) · v0.88 (경리·인사 자료함 맨 위 공유 드라이브 「경영 회계 재무」 연결: 검색·분류 7개 카드(건수)·최근 10개·미리 보기만 · 새 메뉴 현장 자료(드라이브): 프로젝트별 묶음·미리 보기만) · v0.87 (서식 자료실 개편: 맨 위 검색칸 · 분류 카드(건수) 누르면 그 자리에서 펼침 · 파일 누르면 바로 미리 보기 · ☆ 자주 쓰는 자료 맨 위 고정) · v0.86 (모든 화면 왼쪽 아래 물어보기·마이크: 크롬 음성 인식 → AI 답 → 소리로 읽기(끄기 가능) · 사용법·접속 문제만 답, 권한·데이터·돈은 대표에게 전달 · 한 사람 하루 20번 · 못 답한 질문은 기록 → 예약 작업이 답) · v0.85 (같은 고객·같은 주소 새 프로젝트 경고·기존 바로가기 · 고객·프로젝트·견적 목록 정렬(최신순↔오래된순·이름순·평형순) · 준공일 지나면 사후 관리 자동·고객 4단계·1개월/1년 점검 알림 · 사후 관리 화면 A/S 바로 접수 · 고쳐주세요 화면 캡처 첨부·Ctrl+V) · v0.84 (대표 ‘금액 변동 확인’ 탭: 고정 지출 결재를 지난달·3개월 평균과 비교, 확인해야 승인 · 결재 화면에 지난달 대비 한 줄 · 결재 차례·최종 승인·반려 인트라넷 알림 · 대표 차례 4시간 넘으면 빨간 불 위로 · 인사 기록 급여 칸 아래 연차 발생/사용/잔여 · 대표만 보는 한 줄 메모) · v0.83 (모든 결재 문서 종이 미리 보기: A4 한 장 · 결재란 기안/검토/결재/최종결재 · 출력·PDF 저장 · 휴가신청서·지출결의서·여비교통비·접대비·기안품의서는 서식 폴더 한글 양식 모양) · v0.82 (삭제는 대표만 · 직원은 삭제 요청(사유 → 빨간 불 → 직접 삭제·24시간 허용·거절) · 목록 체크칸 전체 선택·선택 삭제 · 휴지통 비어 보이던 문제 고침·여러 건 되살리기·전자결재는 영구 보관 · 프로젝트·고객 휴지통 → 캘린더 일정 [삭제됨]) · v0.81 (결재 라인 고정: 기안 → 채진아 검토 → 최윤수 결재 → 신혜현 최종결재 · 반려되면 기안자가 고쳐 다시 올림 · 대기 중 서류 새 라인으로) · v0.80 (전자결재·내 인사 정보에 '휴가 신청' 바로 버튼) · v0.79 (2026 연차 원본 반영·승인 연차 자동 차감 · 대표 삭제는 모든 메뉴에서 휴지통(30일 되살리기·기록) · 업체 서류·캘린더·캐시플로우 줄도 휴지통) · v0.78 (프로젝트 창 위 원가 관리 큰 버튼 · 견적 '프로젝트로 등록' · 캐시플로우 줄마다 구분·금액·거래처·내용·잔액 · 견적서 종류(주거 아니면 주거용 칸 빠짐) · 업체 서류(통장사본·사업자등록증·업체 견적서) · 빨간 불 단가 입력 창) · v0.77 (교문초 프로젝트 묶음 · 견적·현장에서 프로젝트로 만들기/연결 · 원가 관리(견적·실행·사후) 이름·견적 원가 탭 · 관공서 원가 · 검색칸 한글 조합 입력 · 프로젝트 번호 겹침 막기) · v0.76 (대표 확인 빨간 불: 자금 경고·결재 대기·미연락 문의·대표 결정·직원 삭제 · 저장 기록과 저장 버전을 한 곳으로 · 단가 미정 목록 · 공사진행비 5% 칸 준비) · v0.75 (차장 이름 표기 채진아로 통일 · 대표 확인 2026-11-06) · v0.74 (연차: 직원별 발생·사용·잔여 + 서류 연차 칸 · 승인 연차 → 공용 캘린더 자동 등록·취소 시 삭제 · 기안품의서 종이 양식 출력) · v0.73 (견적 저장할 때마다 v1·v2·v3 번호 버전 보관 · 프로젝트별 버전 목록에서 열기·다시 작성 · 직원 버전도 대표 화면에 · 연결 끊겼던 임시 저장본 자동 다시 올리기 · 편집 탭에도 이어서 하기 안내 · 저장 직후 새 차수가 빈 화면으로 열리던 틈 막음) · v0.72 (브라우저 확인 창 14곳 → 인트라넷 확인 창 · 견적 저장 기록: 덮어쓰기 전 자동 백업·이전 내용 열기·새 차수로 되살리기 · 창 닫기·새로고침 직전 즉시 임시 저장 · 차수 번호가 겹치지 않게) · v0.71 (저장 완료·실패 크게 표시 · 견적 작성 자동 임시 저장, 기기 상관없이 이어서 하기 · 일반 저장에도 첫 견적 항목 같이 저장) · v0.70 (견적 화면 스크롤 유지·공종 바로가기 고정 · 단계 바 눌러 아무 단계로 · 견적 차수 목록·발송됨 · 고객에게 보내기: PDF·보기 링크) · v0.69 (이전 단계로 고침 · 확인 창이 막혀 취소되던 곳 10곳 → 인트라넷 확인 창 · 현장·견적·고객 관리 검색에 프로젝트 연결) · v0.68 (인사정보 월별 급여 표: 급여대장 2020-05~2026-10) · v0.67 (견적 작성 = 상담견적 v.15 방식: 왼쪽 상담 항목 → 오른쪽 가견적 · 단가 = 단가표 2026-11-04 v0 · 견적 단계에서 v.15 화면 바로) · v0.66 (이전 단계로 · 견적 단계에서 견적서 바로 열기 · 상세 견적 첫 화면 · 프로젝트 삭제 시 견적·현장 같이 휴지통 · 직원 삭제 알림 · 캘린더 수정은 본인+최윤수) · v0.65 (간편견적 접수 → 프로젝트 자동 · 새 문의 알림 · 단계 '신규 문의' · 유입 '간편견적') · v0.64 (캘린더 떠 있는 작은 창: 오른쪽 아래 버튼 · 오늘·이번 주 · 휴대폰은 아래에서 올라옴) · v0.63 (공정표 → 공용 캘린더 자동 · 현장별 색 · 휴가 기간 표시) · v0.62 (보완 8건: 캐시플로우 엑셀 과거분·입출금 보기·결재→사후 원가·견적서 엑셀 읽기·세부 단가표·공급가 표시·엑셀 첨부) · v0.61 (본사 결재 한 장·캐시플로우 불러오기·승인 후 지출 기록 · 엑셀 18시 자동 반영) · v0.60 (공용 캘린더·매일 백업·작성 중 자동 임시 저장) · v0.59 (프로젝트: 업무 절차 24단계 체크·시간순 기록·고객명만으로 생성) · v0.58 (프로젝트↔현장 폴더 링크·주소·담당·일정 공유) · v0.57 (기안품의서 여러 줄·합계 자동·원가 줄 단위) · v0.56 (왼쪽 메뉴에 휴지통) · v0.55 (기안품의 지급 방법 자동이체 · 요청함 상태 추가) · v0.54 (휴지통: 고객·프로젝트·견적·현장 삭제 → 보관, 복구·완전삭제 관리자만)", APP_DATE="2026-11-09";
 const STAFF_DEF=["최윤수","신혜현","최남수","유효성","정진혁","채진아","이봄이"];
 const TOOL_QUOTE="https://claude.ai/artifact/UyzLeeqmFdTq54YL7Rko84";
 const TOOL_CRM="https://claude.ai/artifact/BVQPYfkDfTpDcPPUsu6e2x";
@@ -2482,7 +2482,7 @@ async function resolveNames(){
 
 // ===== 화면 =====
 const onlyMine=()=>mode==="shared"&&!me.admin&&((myStaff()||{}).scope==="담당 건만"||isTeam(myStaff()));
-function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if((h==="bonus"||h==="fcost")&&(me.admin||isCoBoss(myStaff())))return h;if(h==="recv"&&canMoney())return h;if(["fdash","fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
+function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if((h==="bonus"||h==="fcost")&&(me.admin||isCoBoss(myStaff())))return h;if(h==="recv"&&canMoney())return h;if(["fdash","fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
 function renderNav(){
   const r=route();
   const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||S.approvals.filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
@@ -2496,10 +2496,11 @@ function renderNav(){
   if(mode==="shared")h+=`<a href="#sitedocs" ${r==="sitedocs"?'aria-current="page"':""}><span>현장 자료 (드라이브)</span></a>`;
   if(canFbox()){h+=`<div class="grp">경리·인사</div><a href="#fbox" ${r==="fbox"?'aria-current="page"':""}><span>경리·인사 자료함</span></a>`}
   if(canFin()){h+=`<div class="grp">재무·경영</div><a href="#fdash" ${r==="fdash"?'aria-current="page"':""}><span>경영 대시보드</span></a><a href="#fstate" ${r==="fstate"?'aria-current="page"':""}><span>홈퍼니싱 재무제표</span></a><a href="#cflow" ${r==="cflow"?'aria-current="page"':""}><span>캐시플로우</span></a>${me.admin?`<a href="#amtchk" ${r==="amtchk"?'aria-current="page"':""}><span>금액 변동 확인</span>${(()=>{try{const n=(S.approvals||[]).filter(a=>["결재 대기","결재 진행"].includes(a.status||"결재 대기")&&amtNeed(a)).length;return n?`<span class="cnt">${n}</span>`:""}catch(e){return ""}})()}</a>`:""}`}
-  if(me.admin||canMoney()){h+=`<div class="grp">${me.admin?"대표 전용":"돈 관리"}</div>`;
+  if(me.admin||canMoney()){h+=`<div class="grp">${me.admin?"대표 전용":"돈 관리"}</div>`;if(me.admin){const dn=dcUnseen();h+=`<a href="#drvchg" ${r==="drvchg"?'aria-current="page"':""}><span>자료 변경 소식</span>${dn?`<span class="cnt" style="background:#FFC000;color:#203864">${dn}</span>`:""}</a><a href="#mysign" ${r==="mysign"?'aria-current="page"':""}><span>내 사인 등록</span></a>`}
     if(me.admin||isCoBoss(myStaff()))h+=`<a href="#fcost" ${r==="fcost"?'aria-current="page"':""}><span>현장 원가 (주간)</span></a>`;
     h+=`<a href="#recv" ${r==="recv"?'aria-current="page"':""}><span>미수금</span></a>`;
     if(me.admin||isCoBoss(myStaff()))h+=`<a href="#bonus" ${r==="bonus"?'aria-current="page"':""}><span>성과급</span></a>`}
+  if(!me.admin&&canSignPage())h+=`<a href="#mysign" ${r==="mysign"?'aria-current="page"':""}><span>내 사인 등록</span></a>`;
   const nv=$("#nav");if(nv)nv.innerHTML=h;
 }
 const pjOf=no=>no?S.projects.find(p=>p.no===no):null;
@@ -3073,17 +3074,184 @@ function render(){
   if(PV)pvApply();
   renderNav();
   {const nv=document.getElementById("nav");if(nv&&!nv.querySelector('a[href="#calendar"]')){const a=document.createElement("a");a.href="#calendar";if(location.hash==="#calendar")a.setAttribute("aria-current","page");a.innerHTML="<span>공용 캘린더</span>";const hm=nv.querySelector('a[href="#home"]');if(hm)hm.after(a);else nv.prepend(a)}}
-  try{calInit()}catch(e){}try{notiInit()}catch(e){}try{calMiniDraw()}catch(e){}try{redDraw()}catch(e){}setTimeout(()=>{try{gjScan()}catch(e){}},3000);
+  try{calInit()}catch(e){}try{signInit()}catch(e){}try{dcInit()}catch(e){}try{notiInit()}catch(e){}try{calMiniDraw()}catch(e){}try{redDraw()}catch(e){}setTimeout(()=>{try{gjScan()}catch(e){}},3000);
   if(mode==="shared"&&me.admin)setTimeout(()=>{try{backupDaily()}catch(e){}try{amtInit()}catch(e){}try{acSync()}catch(e){}try{apMigrate()}catch(e){}try{apCfSync()}catch(e){}try{lvCalSync()}catch(e){}try{apPcSync()}catch(e){}try{calMiniDraw()}catch(e){}try{gjScan()}catch(e){}},5000);
   if(me.admin&&db){const nv=document.getElementById("nav");if(nv&&!nv.querySelector("[data-trash]")){const a=document.createElement("a");a.href="#trash";a.dataset.trash="";a.innerHTML="<span>휴지통 (관리자)</span>";const pj=nv.querySelector('a[href="#projects"]');if(pj)pj.after(a);else nv.appendChild(a)}}
   const r=route();
   const banner=pvBar()+pracBanner()+(mode==="shared"&&!me.admin&&["projects","customers","quotes","sites"].includes(r)?`<p class="hint" style="margin:0">대표 화면 기준 최신 사본 ${SYNC_AT?esc(new Date(Date.parse(SYNC_AT)+9*36e5).toISOString().slice(5,16).replace("T"," ")):"(아직 없음 · 대표 화면이 열리면 만들어져요)"} · 대표가 지우거나 합친 것은 대표 화면이 열려 있으면 1분 안에 반영돼요</p>`:"");
   const focusQ=document.activeElement&&document.activeElement.id==="q",focusG=document.activeElement&&document.activeElement.id==="gs";
   document.body.classList.toggle("consulting",r==="consult"&&!!CS);document.body.classList.toggle("cs-cust",r==="consult"&&!!CS&&CS.cust);
-  $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="calendar"?renderCal():renderModule(r));
+  $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="drvchg"?renderDrvchg():r==="mysign"?renderMysign():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="calendar"?renderCal():renderModule(r));
   if(focusG){const g=$("#gs");if(g){g.focus();g.setSelectionRange(g.value.length,g.value.length)}}
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
 }
+
+// ===== v0.95 (다음 지시 2026-11-09 v1) =====
+// 1) 바로 출력: 화면 안 인쇄(window.print + 인쇄용 CSS). claude.ai 화면이 인쇄를 막으면 새 창 인쇄 → 그래도 막히면 PDF
+// 작은 창(iframe) 안 인쇄는 claude.ai가 조용히 막아서 '출력' 버튼이 눌러도 아무 일이 없었음 → 인쇄할 내용을 본 화면에 붙여 인쇄
+function printHTML(body,css,title,onFail){
+  let host=document.getElementById("printRoot");if(host)host.remove();
+  host=document.createElement("div");host.id="printRoot";document.body.appendChild(host);
+  const sh=host.attachShadow({mode:"open"});sh.innerHTML=`<style>${String(css||"").replace(/\bbody\b/g,":host")}</style>`+body;
+  let pg=document.getElementById("printPage");if(!pg){pg=document.createElement("style");pg.id="printPage";document.head.appendChild(pg)}
+  pg.textContent="@page{size:A4;margin:12mm}@media screen{#printRoot{display:none!important}}@media print{body::before{display:none!important}body>*:not(#printRoot){display:none!important}#printRoot{display:block!important}html,body{background:#fff!important;height:auto!important;min-height:0!important}}";
+  const oldT=document.title;if(title)document.title=title;
+  let fired=false;const on=()=>{fired=true};window.addEventListener("beforeprint",on);
+  try{window.print()}catch(e){}
+  window.removeEventListener("beforeprint",on);
+  let cleaned=false;const done=()=>{if(cleaned)return;cleaned=true;document.title=oldT;const h=document.getElementById("printRoot");if(h)h.remove()};
+  if(fired){window.addEventListener("afterprint",()=>setTimeout(done,300),{once:true});setTimeout(done,180000);return true}
+  done();
+  let w=null;try{w=window.open("","_blank")}catch(e){w=null}
+  if(w){try{w.document.open();w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title||"출력")}</title><style>@page{size:A4;margin:12mm}${String(css||"")}</style></head><body>${body}<script>setTimeout(function(){try{window.focus();window.print()}catch(e){}},400)<\/script></body></html>`);w.document.close();toast("새 창에서 인쇄 창을 띄웠어요 · 안 뜨면 그 창에서 Ctrl+P (휴대폰은 공유 › 인쇄)");return true}catch(e){}}
+  if(onFail)onFail();return false}
+function apPrintNow(a){if(!a)return;const html=apPaperDoc(a);const css=(html.match(/<style>([\s\S]*?)<\/style>/)||[])[1]||"";const body=(html.match(/<body>([\s\S]*)<\/body>/)||[])[1]||"";
+  const title=(a.kind||"결재").replace(/\s*\(.*\)$/,"")+" "+(a.title||"").slice(0,30);
+  try{knock("열람",{what:"결재 서류 출력",target:title})}catch(e){}
+  printHTML(body,css,title,()=>{toast("이 화면에서는 인쇄 창이 막혀 있어요 · PDF로 열어 드릴게요 (PDF 화면의 인쇄 버튼)");apPreview(a);const f=document.getElementById("ppFrame");let ok=0;const go=()=>{if(ok)return;ok=1;apPdf(a)};if(f)f.addEventListener("load",()=>setTimeout(go,300),{once:true});setTimeout(go,2500)})}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-apprint]");if(!t)return;e.preventDefault();const a=(S.approvals||[]).find(x=>x.id===t.dataset.apprint);apPrintNow(a)});
+
+// 2) 결재란 사인 (최윤수·신혜현): 본인과 관리자만 등록·변경 · 다른 직원은 못 봄(대표 전용 저장소 seal, 본인 칸 acct/본인)
+// 승인할 때 그때 사인을 결재 기록(history.sig)에 같이 저장 → 나중에 사인을 바꿔도 끝난 결재는 그대로
+const SIGNERS=[["최윤수","cys"],["신혜현","shh"]];const SIGN={};let signOn=false;
+const sigKey=n=>(SIGNERS.find(x=>x[0]===n)||[])[1]||"";
+const sigOk=d=>typeof d==="string"&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(d)&&d.length<200000;
+function canSignPage(){return mode==="shared"&&!!db&&(me.admin||((myStaff()||{}).name==="신혜현"))}
+function signInit(){if(signOn||!db||mode!=="shared"||!me.id||PV)return;signOn=true;const rr=()=>{if(route()==="mysign")render()};
+  if(me.admin){SIGNERS.forEach(([n,k])=>{try{db.doc("seal/sign_"+k).onSnapshot(x=>{SIGN["o_"+k]=x&&x.exists?x.data():null;rr()},()=>{})}catch(e){}});
+    let tries=0;const w=()=>{const s=staffByName("신혜현");if(s&&s.uid&&s.uid!==me.id){try{db.doc("acct/"+s.uid+"/sign/current").onSnapshot(x=>{SIGN.self_shh=x&&x.exists?x.data():null;rr()},()=>{})}catch(e){}}else if(tries++<20)setTimeout(w,5000)};w()}
+  else{try{db.doc("acct/"+me.id+"/sign/current").onSnapshot(x=>{SIGN.mine=x&&x.exists?x.data():null;rr()},()=>{})}catch(e){}}}
+function signOf(name){const k=sigKey(name);if(!k)return null;let c=[];if(me.admin){c=[SIGN["o_"+k],k==="shh"?SIGN.self_shh:null]}else if((myStaff()||{}).name===name)c=[SIGN.mine];
+  c=c.filter(x=>x&&sigOk(x.data));if(!c.length)return null;return c.sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")))[0]}
+async function signSave(name,data,how){if(!sigOk(data)){toast("사인 이미지가 너무 크거나 형식이 맞지 않아요");return}const k=sigKey(name);if(!k)return;
+  const doc={data,how,name,at:nowISO(),by:me.id};
+  try{if(me.admin)await db.collection("seal").doc("sign_"+k).set(doc);else if((myStaff()||{}).name===name)await db.collection("acct/"+me.id+"/sign").doc("current").set(doc);else{toast("본인 사인만 등록할 수 있어요");return}
+    try{knock("열람",{what:"사인 등록",target:name+" ("+how+")"})}catch(e){}toast(name+" 사인을 등록했어요 · 앞으로 승인하는 결재부터 찍혀요");render()}catch(e){toast("사인을 저장하지 못했어요")}}
+// 그린 사인/올린 PNG → 여백 자르고 가로 최대 360px, 투명 배경 PNG
+function sigCrop(src,whiteToClear){const w=src.width,h=src.height,x=src.getContext("2d");const im=x.getImageData(0,0,w,h),p=im.data;let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++)for(let i=0;i<w;i++){const o=(y*w+i)*4;if(whiteToClear&&p[o]>225&&p[o+1]>225&&p[o+2]>225)p[o+3]=0;if(p[o+3]>20){if(i<x0)x0=i;if(i>x1)x1=i;if(y<y0)y0=y;if(y>y1)y1=y}}
+  if(x1<0)return "";if(whiteToClear)x.putImageData(im,0,0);const pad=6;x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(w-1,x1+pad);y1=Math.min(h-1,y1+pad);
+  const cw=x1-x0+1,ch=y1-y0+1,sc=Math.min(1,360/cw,150/ch),c=document.createElement("canvas");c.width=Math.max(1,Math.round(cw*sc));c.height=Math.max(1,Math.round(ch*sc));c.getContext("2d").drawImage(src,x0,y0,cw,ch,0,0,c.width,c.height);return c.toDataURL("image/png")}
+function renderMysign(){if(!canSignPage())return `<div class="empty">사인 등록은 최윤수 대표·신혜현 대표이사만 쓸 수 있어요</div>`;signInit();
+  const list=me.admin?SIGNERS.map(x=>x[0]):["신혜현"];
+  return `<div class="head"><div><h1>내 사인 등록</h1><p>결재란에 날짜·이름 대신 찍힐 사인이에요 · 손가락·마우스로 그리거나 사인 PNG를 올려요 · 본인${me.admin?"과 관리자(최윤수)":""}만 보고 바꿀 수 있어요</p></div></div>
+  <p class="hint" style="margin:0">이미 승인한 결재의 사인은 그때 사인 그대로 남아요 (나중에 바꿔도 안 바뀜). 신혜현 최종결재 칸은 대표 계정이 눌러도 신혜현 사인이 찍혀요.</p>
+  ${list.map(n=>{const cur=signOf(n);return `<section class="card" data-sgbox="${esc(n)}"><h2>${esc(n)} 사인 <small class="muted">${cur?"등록됨 · "+esc(kst(cur.at)):"아직 없음 (지금은 이름으로 찍혀요)"}</small></h2>
+    ${cur?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="muted">지금 사인</span><img src="${esc(cur.data)}" alt="${esc(n)} 사인" style="max-height:70px;max-width:240px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px"></div>`:""}
+    <canvas data-sgpad="${esc(n)}" width="720" height="260" style="width:100%;max-width:520px;aspect-ratio:720/260;background:#fff;border:2px dashed var(--line);border-radius:10px;touch-action:none;display:block;cursor:crosshair"></canvas>
+    <div class="tools" style="margin-top:8px"><button type="button" class="btn sm" data-sgclear="${esc(n)}">지우기</button><button type="button" class="btn sm pri" data-sgsave="${esc(n)}">그린 사인 저장</button><label class="btn sm" style="cursor:pointer">사인 PNG 올리기<input type="file" accept="image/png" data-sgfile="${esc(n)}" hidden></label></div></section>`}).join("")}
+  <div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`}
+let sgDraw=null;
+document.addEventListener("pointerdown",e=>{const c=e.target.closest&&e.target.closest("canvas[data-sgpad]");if(!c)return;e.preventDefault();const r=c.getBoundingClientRect(),x=c.getContext("2d");x.lineWidth=5;x.lineCap="round";x.lineJoin="round";x.strokeStyle="#111";
+  const pt=ev=>[(ev.clientX-r.left)*c.width/r.width,(ev.clientY-r.top)*c.height/r.height];const [a,b]=pt(e);x.beginPath();x.moveTo(a,b);x.lineTo(a+.1,b+.1);x.stroke();sgDraw={c,x,pt};c.dataset.drawn="1";try{c.setPointerCapture(e.pointerId)}catch(er){}});
+document.addEventListener("pointermove",e=>{if(!sgDraw)return;e.preventDefault();const [a,b]=sgDraw.pt(e);sgDraw.x.lineTo(a,b);sgDraw.x.stroke()});
+["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{sgDraw=null}));
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-sgclear],[data-sgsave]");if(!t)return;const n=t.dataset.sgclear||t.dataset.sgsave;const c=[...document.querySelectorAll("canvas[data-sgpad]")].find(x=>x.dataset.sgpad===n);if(!c)return;
+  if(t.dataset.sgclear){c.getContext("2d").clearRect(0,0,c.width,c.height);c.dataset.drawn="";return}
+  if(!c.dataset.drawn){toast("먼저 사인을 그려 주세요");return}const d=sigCrop(c,false);if(!d){toast("먼저 사인을 그려 주세요");return}
+  if(signOf(n)&&!await okAsk(n+" 사인을 새 사인으로 바꿀까요? (이미 끝난 결재의 사인은 그대로예요)"))return;signSave(n,d,"그림")});
+document.addEventListener("change",async e=>{const el=e.target;if(!el||!el.dataset||!el.dataset.sgfile)return;const f=el.files&&el.files[0];el.value="";if(!f)return;const n=el.dataset.sgfile;
+  if(!/png$/i.test(f.name||"")){toast("PNG 파일만 올릴 수 있어요");return}const u=URL.createObjectURL(f),img=new Image();img.src=u;try{await img.decode()}catch(er){toast("이미지를 읽지 못했어요");return}
+  const sc=Math.min(1,1200/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);
+  const d=sigCrop(c,true);if(!d){toast("사인이 보이지 않아요 · 흰 바탕에 진한 사인 이미지를 올려 주세요");return}
+  if(signOf(n)&&!await okAsk(n+" 사인을 이 이미지로 바꿀까요? (이미 끝난 결재의 사인은 그대로예요)"))return;signSave(n,d,"PNG")});
+
+// 3) 결재 첨부 미리 보기 탭: 내려받지 않고 화면 안에서 · PDF·사진 바로, 엑셀은 표, 드라이브 파일은 미리 보기 · 보기 전용
+const apAttCache={};let apAttCur=null;
+const apAttKind=f=>{const n=String(f.name||"").toLowerCase(),t=String(f.type||"");if(/pdf/.test(t)||/\.pdf$/.test(n))return "pdf";if(/^image\//.test(t)||/\.(png|jpe?g|gif|webp|bmp)$/.test(n))return "img";if(/sheet|excel/.test(t)||/\.(xlsx|xlsm|xls|csv)$/.test(n))return "xls";return "etc"};
+const apAttDrv=f=>{if(f.drive&&f.drive.id)return f.drive.id;const m=String(f.url||f.link||"").match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]{10,})/);return m?m[1]:""};
+function apTabsWrap(d,inner){const F=(d.files||[]).filter(f=>f&&(f.id||apAttDrv(f)));
+  const tab=(k,l,on)=>`<button type="button" class="chip" role="tab" aria-selected="${on}" aria-pressed="${on}" data-aptab="${k}">${l}</button>`;
+  return `<div class="chips" role="tablist" style="margin-bottom:6px">${tab("doc","결재 서류",true)}${tab("att","첨부 미리 보기 ("+F.length+")",false)}</div><div data-aptabp="doc">${inner}</div>
+  <div data-aptabp="att" hidden>${F.length?`<div style="display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:10px" class="apatt">
+   <div class="list" style="align-content:start">${F.map((f,i)=>`<button type="button" class="item" data-apatt="${i}" style="all:unset;cursor:pointer;display:grid;gap:2px;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;overflow-wrap:anywhere"><span class="pill">${({pdf:"PDF",img:"사진",xls:"엑셀",etc:apAttDrv(f)?"드라이브":"파일"})[apAttKind(f)]}</span><b style="font-size:13px">${esc(f.name||"첨부 "+(i+1))}</b></button>`).join("")}</div>
+   <div><div class="tools" id="apAttBar" style="margin-bottom:6px"></div><div id="apAttView" class="card" style="padding:8px;min-height:240px"><p class="muted">왼쪽 목록에서 볼 파일을 골라 주세요</p></div></div></div>
+   <style>@media(max-width:640px){.apatt{grid-template-columns:1fr!important}}.apattmode #sheetForm{display:none}#apAttView .ax table{border-collapse:collapse;font-size:12px}#apAttView .ax td{border:1px solid var(--line);padding:2px 6px;white-space:nowrap}</style>
+   <p class="hint">보기 전용이에요 (고치거나 지울 수 없어요) · 필요할 때만 ‘내려받기’·‘출력’</p>`:`<div class="empty">이 결재에는 첨부 파일이 없어요</div>`}</div>`}
+async function apAttShow(i){const d=sheet&&sheet.data;if(!d)return;const F=(d.files||[]).filter(f=>f&&(f.id||apAttDrv(f)));const f=F[i];if(!f)return;apAttCur={f,key:sheet.id+"#"+i};
+  document.querySelectorAll("[data-apatt]").forEach(b=>b.style.borderColor=+b.dataset.apatt===i?"var(--accent)":"var(--line)");
+  const box=document.getElementById("apAttView"),bar=document.getElementById("apAttBar");if(!box)return;const k=apAttKind(f),did=apAttDrv(f),key=apAttCur.key;
+  bar.innerHTML=`${f.id?`<a class="btn sm" href="/_blob/${esc(f.id)}" download="${esc(f.name||"첨부")}">내려받기</a>`:""}${did?`<a class="btn sm" href="${DRIVE(did)}" target="_blank" rel="noopener">드라이브에서 열기</a>`:""}${k!=="etc"&&f.id?`<button type="button" class="btn sm" data-apattprint="1">출력</button>`:""}`;
+  try{knock("열람",{what:"결재 첨부 미리 보기",target:(d.title||"")+" · "+(f.name||"")})}catch(e){}
+  if(apAttCache[key]){box.innerHTML=apAttCache[key];return}box.innerHTML=`<p class="muted">불러오는 중…</p>`;
+  const put=h=>{apAttCache[key]=h;if(apAttCur&&apAttCur.key===key){const b=document.getElementById("apAttView");if(b)b.innerHTML=h}};
+  try{if(!f.id||(k==="etc"&&did)){put(`<iframe title="${esc(f.name||"")}" src="https://drive.google.com/file/d/${encodeURIComponent(did)}/preview" style="width:100%;height:72vh;border:0;border-radius:8px;background:#fff" allow="autoplay"></iframe>`);return}
+    if(k==="img"){put(`<img src="/_blob/${esc(f.id)}" alt="${esc(f.name||"")}" style="max-width:100%;display:block;margin:auto">`);return}
+    if(k==="pdf"){const buf=await fileBuf(f.id),P=await cfPdfJs(),doc=await P.getDocument({data:new Uint8Array(buf)}).promise,W=Math.min(1400,Math.max(600,(box.clientWidth||700)*2)),imgs=[];
+      for(let n=1;n<=Math.min(doc.numPages,30);n++){const pg=await doc.getPage(n),v0=pg.getViewport({scale:1}),v=pg.getViewport({scale:W/v0.width}),c=document.createElement("canvas");c.width=v.width;c.height=v.height;await pg.render({canvasContext:c.getContext("2d"),viewport:v}).promise;imgs.push(`<img class="pp" src="${c.toDataURL("image/jpeg",.85)}" alt="${n}쪽" style="width:100%;display:block;border:1px solid var(--line);border-radius:6px;margin:0 0 10px;background:#fff">`)}
+      put(`<p class="hint" style="margin:0 0 6px">${doc.numPages}쪽${doc.numPages>30?" (앞 30쪽만 · 나머지는 ‘내려받기’)":""}</p>`+imgs.join(""));return}
+    if(k==="xls"){const buf=await fileBuf(f.id),XL=await getXLSX(),wb=XL.read(new Uint8Array(buf),{type:"array"});
+      put(`<p class="hint" style="margin:0 0 6px">엑셀을 표로 보여 줘요 (시트 ${wb.SheetNames.length}개 · 원본은 그대로)</p>`+wb.SheetNames.slice(0,20).map((n,j)=>`<details ${j===0?"open":""} style="margin-bottom:8px"><summary><b>${esc(n)}</b></summary><div class="ax" style="overflow:auto;max-height:70vh">${XL.utils.sheet_to_html(wb.Sheets[n],{header:"",footer:""})}</div></details>`).join(""));return}
+    put(did?`<iframe title="${esc(f.name||"")}" src="https://drive.google.com/file/d/${encodeURIComponent(did)}/preview" style="width:100%;height:72vh;border:0;border-radius:8px;background:#fff"></iframe>`:`<p class="muted">이 형식(${esc(String(f.name||"").split(".").pop())})은 화면에서 바로 볼 수 없어요 — ‘내려받기’를 눌러 주세요</p>`)}
+  catch(er){delete apAttCache[key];if(apAttCur&&apAttCur.key===key){const b=document.getElementById("apAttView");if(b)b.innerHTML=`<p class="muted">미리 보기를 못 했어요 — ‘내려받기’를 눌러 주세요</p>`}}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-aptab],[data-apatt],[data-apattprint]");if(!t)return;e.preventDefault();
+  if(t.dataset.aptab){const k=t.dataset.aptab;document.querySelectorAll("[data-aptab]").forEach(b=>{const on=b.dataset.aptab===k;b.setAttribute("aria-pressed",on);b.setAttribute("aria-selected",on)});document.querySelectorAll("[data-aptabp]").forEach(p=>p.hidden=p.dataset.aptabp!==k);{const sh=t.closest(".sheet");if(sh)sh.classList.toggle("apattmode",k==="att")}if(k==="att"&&!apAttCur)apAttShow(0);return}
+  if(t.dataset.apatt){apAttShow(+t.dataset.apatt);return}
+  if(t.dataset.apattprint&&apAttCur){const h=apAttCache[apAttCur.key];if(!h){toast("다 불러온 뒤 눌러 주세요");return}const f=apAttCur.f;
+    const body=apAttKind(f)==="xls"?h.replace(/<details[^>]*>/g,"<details open>"):h.replace(/<p class="hint"[^>]*>[\s\S]*?<\/p>/,"");
+    printHTML(body,"body{font-family:'Malgun Gothic',sans-serif;margin:0;color:#111}img{max-width:100%}img.pp{page-break-after:always;border:0!important;margin:0!important}table{border-collapse:collapse;font-size:10px}td{border:1px solid #999;padding:2px 4px}summary{font-weight:700;margin:6px 0}",f.name||"첨부",()=>{toast("인쇄 창이 막혀 있어요 · ‘내려받기’로 받아 인쇄해 주세요")})}});
+
+// 4) 대표 전용 '자료 변경 소식': 드라이브에서 지난 수집 뒤 바뀐 파일만 (이름·폴더·수정자·시간 같은 정보만, 본문은 안 읽음)
+// 자동 수집은 예약 작업(평일 08·18시, 주말·공휴일 쉼)이 같은 저장소 acct/_drv/chg 에 씀 · '지금 새로고침'은 대표 화면에서 바로
+const DC_KIND={new:["새 파일","ok"],mod:["수정","info"],ren:["이름 변경","warn"],mov:["이동","warn"],del:["삭제","bad"]};
+let DC={days:[],st:null,seen:{},on:false,busy:false,who:"",fold:"",unseenOnly:false};
+function dcInit(){if(DC.on||!db||!me.admin||mode!=="shared"||PV)return;DC.on=true;const rr=()=>{if(route()==="drvchg")render();else{try{renderNav()}catch(e){}}};
+  try{db.collection("acct/_drv/chg").onSnapshot(s=>{DC.days=s.docs.map(d=>Object.assign({_id:d.id},d.data()));rr()},()=>{})}catch(e){}
+  try{db.doc("acct/_drv/chgst/s").onSnapshot(x=>{DC.st=x&&x.exists?x.data():null;rr()},()=>{})}catch(e){}
+  try{db.doc("acct/_drv/chgseen/m").onSnapshot(x=>{DC.seen=(x&&x.exists&&x.data().seen)||{};rr()},()=>{})}catch(e){}}
+function dcItems(){const A=[];DC.days.forEach(d=>(d.items||[]).forEach(i=>A.push(i)));const m={};A.forEach(i=>{if(i&&i.k)m[i.k]=i});return Object.values(m).sort((a,b)=>String(b.ts||"").localeCompare(String(a.ts||"")))}
+const dcUnseen=()=>{try{return dcItems().filter(i=>!DC.seen[i.k]).length}catch(e){return 0}};
+const kday=ts=>{const t=new Date(ts);return isNaN(t)?String(ts||"").slice(0,10):new Date(t.getTime()+9*36e5).toISOString().slice(0,10)};
+function dcDesc(i){const w=i.who||"누군가",K={new:"새로 올렸어요",mod:"내용을 고쳤어요",ren:"이름을 바꿨어요"+(i.old?" (전: "+i.old+")":""),mov:"다른 폴더로 옮겼어요"+(i.oldPath?" (전: "+i.oldPath+")":""),del:"휴지통으로 보냈어요"};return w+" 님이 "+(K[i.kind]||"바꿨어요")}
+function renderDrvchg(){if(!me.admin)return `<div class="empty">대표 전용 메뉴예요</div>`;dcInit();
+  const all=dcItems().filter(i=>kday(i.ts)>=new Date(Date.now()-45*864e5).toISOString().slice(0,10));const N=all.filter(i=>!DC.seen[i.k]).length;
+  const people=[...new Set(all.map(i=>i.who||"알 수 없음"))].sort(),folders=[...new Set(all.map(i=>i.path||"알 수 없음"))].sort();
+  const L=all.filter(i=>(!DC.who||(i.who||"알 수 없음")===DC.who)&&(!DC.fold||(i.path||"알 수 없음")===DC.fold)&&(!DC.unseenOnly||!DC.seen[i.k]));
+  const G={};L.forEach(i=>{(G[kday(i.ts)]=G[kday(i.ts)]||[]).push(i)});const st=DC.st||{};
+  const wd=d=>"일월화수목금토"[new Date(d+"T00:00:00").getDay()];
+  return `<div class="head"><div><h1>자료 변경 소식</h1><p>구글 드라이브에서 바뀐 파일만 모아 보여 줘요 · 평일 오전 8시·오후 6시 자동 (주말·공휴일 쉼) · 파일 이름·위치·수정자·시간만 (내용은 안 읽어요)</p></div>
+   <div class="tools"><button type="button" class="btn pri" data-dcref="1" ${DC.busy?"disabled":""}>${DC.busy?"새로고침 중…":"지금 새로고침"}</button></div></div>
+  <section class="card" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;${N?"border-color:var(--yellow);box-shadow:inset 4px 0 0 var(--yellow)":""}"><div><b style="font-size:20px">새 변경 ${N}건</b><div class="muted">마지막 수집 ${st.at?esc(kst(st.at))+(st.by?" · "+esc(st.by):""):"아직 없음"}${st.n!=null?" · 그때 "+st.n+"건":""}</div></div>${N?`<button type="button" class="btn sm" data-dcall="1">보이는 것 모두 확인함</button>`:""}</section>
+  <div class="tools"><label class="muted">사람 <select id="dcWho" class="search" style="flex:0 1 auto"><option value="">전체</option>${people.map(p=>`<option ${DC.who===p?"selected":""}>${esc(p)}</option>`).join("")}</select></label>
+   <label class="muted">폴더 <select id="dcFold" class="search" style="flex:0 1 auto;max-width:260px"><option value="">전체</option>${folders.map(p=>`<option ${DC.fold===p?"selected":""}>${esc(p)}</option>`).join("")}</select></label>
+   <button type="button" class="chip" aria-pressed="${DC.unseenOnly}" data-dcunseen="1">확인 안 한 것만</button></div>
+  ${L.length?Object.keys(G).sort().reverse().map(d=>`<section class="card"><h2>${esc(d)} (${wd(d)}) <small class="muted">${G[d].length}건</small></h2><div class="list">${G[d].map(i=>{const s=!!DC.seen[i.k],K=DC_KIND[i.kind]||["변경",""];return `<div class="item" style="grid-template-columns:auto 1fr auto;${s?"opacity:.45":""}"><span class="pill ${K[1]}">${K[0]}</span>
+     <button type="button" data-dcopen="${esc(i.k)}" style="all:unset;cursor:pointer;min-width:0;display:block" class="t"><b>${esc(i.t||"(이름 없음)")}</b><small>${esc(i.path||"알 수 없는 폴더")} · ${esc(i.who||"알 수 없음")} · ${esc(kst(i.ts))}</small><small style="display:block;color:var(--ink)">${esc(i.desc||dcDesc(i))}</small></button>
+     ${s?`<span class="muted" style="font-size:12px">확인함</span>`:`<button type="button" class="btn sm" data-dcseen="${esc(i.k)}">확인함</button>`}</div>`}).join("")}</div></section>`).join(""):`<div class="empty">${all.length?"조건에 맞는 변경이 없어요":"아직 모은 변경이 없어요 · ‘지금 새로고침’을 눌러 보세요"}</div>`}
+  <p class="hint">카드를 누르면 드라이브 미리 보기로 열려요 (보기 전용). 지운 파일은 미리 보기가 안 될 수 있어요. 최근 45일만 보여요.</p><div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`}
+async function dcSeen(keys){if(!keys.length||!db)return;const seen=Object.assign({},DC.seen);const t=nowISO();keys.forEach(k=>seen[k]=t);const cut=new Date(Date.now()-60*864e5).toISOString();Object.keys(seen).forEach(k=>{if(seen[k]<cut)delete seen[k]});DC.seen=seen;render();
+  try{await db.collection("acct/_drv/chgseen").doc("m").set({seen,at:t})}catch(e){toast("확인 표시를 저장하지 못했어요")}}
+const dcJ=r=>{let o=r&&(r.payload||r.structuredContent);if(!o&&r&&Array.isArray(r.content)){try{o=JSON.parse(r.content.map(c=>c.text||"").join(""))}catch(e){o=null}}if(typeof o==="string"){try{o=JSON.parse(o)}catch(e){o=null}}return o||{}};
+async function dcRefresh(){if(!me.admin||!db||DC.busy)return;if(!mcpCap){try{mcpCap=await window.claude.use("mcp")}catch(e){mcpCap=null}}if(!mcpCap){toast("구글 드라이브 연결을 쓸 수 없어요 (claude.ai 커넥터 확인)");return}
+  DC.busy=true;render();const t0=nowISO();
+  try{const g=await db.doc("acct/_drv/chgst/s").get();const st=g&&g.exists?g.data():{};const last=String(st.last||new Date(Date.now()-24*36e5).toISOString()).replace(/\.\d+Z$/,"Z");
+    const idx=Object.assign({},st.idx||{}),fold=Object.assign({},st.fold||{});const call=(tool,inp)=>mcpCap.callTool("Google Drive",tool,inp);
+    const files=[];let tok="";for(let p=0;p<3;p++){const o=dcJ(await call("search_files",Object.assign({query:`modifiedTime > '${last}' and mimeType != 'application/vnd.google-apps.folder'`,pageSize:100,excludeContentSnippets:true,orderBy:"modifiedTime desc"},tok?{pageToken:tok}:{})));(o.files||[]).forEach(f=>files.push(f));tok=o.nextPageToken||o.next_page_token||"";if(!tok)break}
+    try{const o=dcJ(await call("search_files",{query:`trashed = true and modifiedTime > '${last}' and mimeType != 'application/vnd.google-apps.folder'`,pageSize:50,excludeContentSnippets:true}));(o.files||[]).forEach(f=>{f.trashed=true;files.push(f)})}catch(e){}
+    const uniq={};files.forEach(f=>{if(f&&f.id&&(!uniq[f.id]||f.trashed))uniq[f.id]=f});const F=Object.values(uniq).slice(0,200);
+    const meta={};const pool=async(arr,fn,n)=>{let i=0;await Promise.all(Array.from({length:n},async()=>{while(i<arr.length){const x=arr[i++];try{await fn(x)}catch(e){}}}))};
+    await pool(F.slice(0,80),async f=>{meta[f.id]=dcJ(await call("get_file_metadata",{fileId:f.id,includeRichMetadata:true,excludeContentSnippets:true}))},6);
+    const pids=[...new Set(F.map(f=>f.parentId).filter(p=>p&&!fold[p]))].slice(0,40);
+    await pool(pids,async p=>{const o=dcJ(await call("get_file_metadata",{fileId:p,excludeContentSnippets:true}));if(o.title)fold[p]=o.title},6);
+    const items=F.map(f=>{const m=meta[f.id]||{},prev=idx[f.id],path=fold[f.parentId]||(f.parentId?"폴더 "+String(f.parentId).slice(0,6):"내 드라이브");
+      let kind="mod",old="",oldPath="";if(f.trashed)kind="del";else if(!prev&&f.createdTime&&f.createdTime>last)kind="new";else if(prev&&prev[0]&&prev[0]!==f.title){kind="ren";old=prev[0]}else if(prev&&prev[1]&&prev[1]!==f.parentId){kind="mov";oldPath=fold[prev[1]]||""}
+      const ts=f.modifiedTime||t0,it={k:f.id+"@"+ts,id:f.id,t:String(f.title||"").replace(/\d{8,}/g,"***"),m:f.mimeType||"",path,pid:f.parentId||"",who:m.lastModifyingUserName||"",ts,kind,old:old.replace(/\d{8,}/g,"***"),oldPath};it.desc=dcDesc(it);if(!f.trashed)idx[f.id]=[f.title,f.parentId||""];return it});
+    const byDay={};items.forEach(i=>{const d="d"+kday(i.ts).replace(/-/g,"");(byDay[d]=byDay[d]||[]).push(i)});
+    for(const d of Object.keys(byDay)){const cur=await db.doc("acct/_drv/chg/"+d).get();const have=cur&&cur.exists?(cur.data().items||[]):[];const m={};have.concat(byDay[d]).forEach(i=>m[i.k]=i);const arr=Object.values(m).sort((a,b)=>String(b.ts).localeCompare(String(a.ts))).slice(0,400);await db.collection("acct/_drv/chg").doc(d).set({items:arr,at:t0})}
+    const ks=Object.keys(idx);if(ks.length>4000)ks.slice(0,ks.length-4000).forEach(k=>delete idx[k]);
+    const newest=items.reduce((a,i)=>i.ts>a?i.ts:a,last);
+    await db.collection("acct/_drv/chgst").doc("s").set({last:newest>last?newest:last,idx,fold,at:t0,by:"지금 새로고침",n:items.length});
+    try{knock("열람",{what:"자료 변경 소식 새로고침",target:items.length+"건"})}catch(e){}toast(items.length?"바뀐 파일 "+items.length+"건을 모았어요":"지난 수집 뒤 바뀐 파일이 없어요")}
+  catch(e){toast("드라이브에서 못 읽었어요 · "+String((e&&(e.code||e.message))||"").slice(0,40))}
+  finally{DC.busy=false;render()}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-dcref],[data-dcseen],[data-dcall],[data-dcopen],[data-dcunseen]");if(!t||!me.admin)return;e.preventDefault();
+  if(t.dataset.dcref){dcRefresh();return}
+  if(t.dataset.dcunseen){DC.unseenOnly=!DC.unseenOnly;render();return}
+  if(t.dataset.dcseen){dcSeen([t.dataset.dcseen]);return}
+  if(t.dataset.dcall){const ks=[...document.querySelectorAll("[data-dcseen]")].map(b=>b.dataset.dcseen);dcSeen(ks);return}
+  if(t.dataset.dcopen){const i=dcItems().find(x=>x.k===t.dataset.dcopen);if(!i)return;drvPreview(i.id,i.t);if(!DC.seen[i.k])dcSeen([i.k])}});
+document.addEventListener("change",e=>{const el=e.target;if(!el)return;if(el.id==="dcWho"){DC.who=el.value;render()}else if(el.id==="dcFold"){DC.fold=el.value;render()}});
+
 
 // ===== 입력 시트 =====
 const NOTICE_FIELDS=[["title","제목","text",null,1],["pin","맨 위 고정","sel",["고정"]],["must","필독 (모두 읽었는지 확인)","sel",["","필독"]],["body","내용","area",null,1],["files","첨부","files",null,1]];
@@ -3178,7 +3346,7 @@ const apBase=n=>String(n||"").replace(/\s*\(대결[^)]*\)/g,"").replace(/\(법�
 function apBoxes(a){const dt=x=>String(x||"").slice(0,10);
   const B=[["기안",{n:staffNameOfUid(a.createdBy)||who(a.createdBy),d:dt(a.createdAt)}],["검토",null],["결재",null],["최종결재",null]];
   const H=(a.history||[]).filter(h=>h.result==="승인"||h.result==="반려");const RI={"검토":1,"결재":2,"최종결재":3};
-  if(hasAline(a)){a.aline.forEach(x=>{const h=H.filter(h=>apBase(h.name)===x.name).slice(-1)[0];if(h)B[RI[x.role]][1]={n:x.name+(h.result==="반려"?" (반려)":""),d:dt(h.at)}})}
+  if(hasAline(a)){a.aline.forEach(x=>{const h=H.filter(h=>apBase(h.name)===x.name).slice(-1)[0];if(h)B[RI[x.role]][1]={n:x.name+(h.result==="반려"?" (반려)":""),d:dt(h.at),s:h.result==="승인"&&sigOk(h.sig)?h.sig:""}})}
   else{const rv=H.find(h=>apBase(h.name)==="채진아");if(rv)B[1][1]={n:"채진아"+(rv.result==="반려"?" (반려)":""),d:dt(rv.at)};const A=H.filter(h=>h!==rv);
     if(A.length){const last=A[A.length-1],first=A[0];
       if(a.status==="승인"){B[2][1]={n:"최윤수",d:dt(first.at)};B[3][1]={n:"신혜현",d:dt(last.at)}}
@@ -3186,11 +3354,11 @@ function apBoxes(a){const dt=x=>String(x||"").slice(0,10);
       else B[2][1]={n:"최윤수",d:dt(first.at)}}}
   return B}
 // 화면 기록 줄: 결재란 순서대로 (누른 계정·대결 글자 없음)
-function apHistHTML(d){const B=apBoxes(d).slice(1).filter(b=>b[1]);const notes=(d.history||[]).filter(h=>h.note);return B.map(b=>`<div class="muted">${esc(b[1].d)} · ${esc(b[0])} ${esc(b[1].n)}</div>`).join("")+notes.map(h=>`<div class="muted">의견 (${esc(apBase(h.name)||"")}): ${esc(h.note)}</div>`).join("")+((d.history||[]).some(h=>h.result==="건너뜀")?'<div class="muted">검토 건너뜀</div>':"")}
+function apHistHTML(d){const B=apBoxes(d).slice(1).filter(b=>b[1]);const notes=(d.history||[]).filter(h=>h.note);return B.map(b=>`<div class="muted">${esc(b[1].d)} · ${esc(b[0])} ${esc(b[1].n)}${b[1].s?` <img src="${b[1].s}" alt="사인" style="height:22px;vertical-align:middle;background:#fff;border-radius:3px">`:""}</div>`).join("")+notes.map(h=>`<div class="muted">의견 (${esc(apBase(h.name)||"")}): ${esc(h.note)}</div>`).join("")+((d.history||[]).some(h=>h.result==="건너뜀")?'<div class="muted">검토 건너뜀</div>':"")}
 function apDocNo(a){if(a.docNo)return a.docNo;const ym=String(a.createdAt||"").slice(0,7);if(!ym)return "";const L=(S.approvals||[]).filter(x=>String(x.createdAt||"").slice(0,7)===ym).sort((x,y)=>String(x.createdAt).localeCompare(String(y.createdAt)));const n=L.findIndex(x=>x.id===a.id)+1;return ym.slice(2,4)+"-"+ym.slice(5,7)+"-"+String(n>0?n:1).padStart(2,"0")}
 function apPaperDoc(a){const co=cfg("company")||{},st=(S.staff||[]).find(x=>x.uid&&x.uid===a.createdBy)||{},dt=x=>String(x||"").slice(0,10),nm=st.name||who(a.createdBy),coName=co.name||"주식회사 홈퍼니싱";
   const wd=d=>{const t=new Date(String(d).slice(0,10)+"T00:00:00");return isNaN(t)?"":"일월화수목금토"[t.getDay()]},ymd=d=>{d=dt(d);return d?d.slice(0,4)+"년 "+(+d.slice(5,7))+"월 "+(+d.slice(8,10))+"일":"20　　년　　월　　일"};
-  const B=apBoxes(a),md=d=>d?String(d).slice(5,7).replace(/^0/,"")+" / "+String(d).slice(8,10).replace(/^0/,""):"/",apT=`<table class="ap"><tr><th rowspan="3" class="apl">결<br><br>재</th>${B.map(b=>`<th>${b[0]}</th>`).join("")}</tr><tr>${B.map(b=>`<td class="sg">${b[1]?esc(b[1].n.replace(/ \(반려\)$/,""))+(/반려/.test(b[1].n)?'<br><small style="color:#c62828">반려</small>':""):""}</td>`).join("")}</tr><tr>${B.map(b=>`<td class="dd">${b[1]&&b[1].d?esc(md(b[1].d)):"/"}</td>`).join("")}</tr></table>`;
+  const B=apBoxes(a),md=d=>d?String(d).slice(5,7).replace(/^0/,"")+" / "+String(d).slice(8,10).replace(/^0/,""):"/",apT=`<table class="ap"><tr><th rowspan="3" class="apl">결<br><br>재</th>${B.map(b=>`<th>${b[0]}</th>`).join("")}</tr><tr>${B.map(b=>`<td class="sg">${b[1]&&b[1].s?`<img src="${b[1].s}" alt="${esc(b[1].n)} 사인" style="display:block;margin:auto;max-width:21mm;max-height:13mm">`:b[1]?esc(b[1].n.replace(/ \(반려\)$/,""))+(/반려/.test(b[1].n)?'<br><small style="color:#c62828">반려</small>':""):""}</td>`).join("")}</tr><tr>${B.map(b=>`<td class="dd">${b[1]&&b[1].d?esc(md(b[1].d)):"/"}</td>`).join("")}</tr></table>`;
   const L=Array.isArray(a.hqlines)&&a.hqlines.length?a.hqlines:Array.isArray(a.lines)?a.lines:[];
   const amt=num(a.amount)||L.reduce((t,l)=>t+num(l.amount),0),W=n=>num(n)?num(n).toLocaleString("ko-KR"):"";
   const kind=a.kind||"",g=KIND_GROUP[kind]||"pay";let title=kind.replace(/\s*\(.*\)$/,""),body="",pre="",foot="위와 같이 보고하오니 결재하여 주시기 바랍니다.";
@@ -3243,7 +3411,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
   if(t.dataset.appreview){const a=(S.approvals||[]).find(x=>x.id===t.dataset.appreview);if(a)apPreview(a);return}
   const v=document.getElementById("ppVeil");if(!v)return;const a=(S.approvals||[]).find(x=>x.id===v.dataset.id);
   if(t.dataset.ppclose){v.remove();return}
-  if(t.dataset.ppprint){try{const w=document.getElementById("ppFrame").contentWindow;w.focus();w.print();setTimeout(()=>toast("인쇄 창이 안 뜨면 ‘PDF 저장’을 눌러 받은 PDF로 인쇄해 주세요"),900)}catch(er){toast("이 화면에서는 바로 인쇄가 막혀 있어요 · PDF로 받을게요");if(a)apPdf(a)}return}
+  if(t.dataset.ppprint){if(a)apPrintNow(a);return}
   if(t.dataset.pppdf&&a){apPdf(a)}});
 
 const FIXC=[["급여",/급여|월급|상여|임금/],["4대보험",/4대|국민연금|건강보험|고용보험|산재보험/],["월세",/월세|임대료|임차료/],["관리비",/관리비/],["통신비",/통신|인터넷|전화요금|휴대폰요금|KT|SKT|LGU|유플러스/i],["리스·할부",/리스|할부|렌탈|렌트/],["보험료",/보험료|화재보험|자동차보험|배상책임/],["세금",/부가세|부가가치세|법인세|원천세|주민세|지방세|종합소득세|재산세|자동차세|세금/]];
@@ -3357,11 +3525,12 @@ function drawSheet(){
   let apBox="";
   if(col==="approvals"&&id){
     const hist=apHistHTML(d);
-    const ppr=id?`${d.status==="승인"?`<button type="button" class="btn sm ok" data-apout="${esc(id)}">출력 (PDF)</button> `:""}<button type="button" class="btn sm pri" data-appreview="${esc(id)}">종이 미리 보기</button> <button type="button" class="btn sm" data-appaper="${esc(id)}">파일로 받기</button>`:"";
+    const ppr=id?`<button type="button" class="btn sm pri" data-apprint="${esc(id)}">출력</button> ${d.status==="승인"?`<button type="button" class="btn sm ok" data-apout="${esc(id)}">PDF 저장</button> `:""}<button type="button" class="btn sm" data-appreview="${esc(id)}">종이 미리 보기</button> <button type="button" class="btn sm" data-appaper="${esc(id)}">파일로 받기</button>`:"";
     const cdl=KIND_GROUP[d.kind]==="cert"&&d.status==="승인"?((me.admin?CERTS[id]:myCerts[id])?`<button type="button" class="btn ok sm" data-certdl="${esc(id)}">증명서 PDF 받기</button>`:`<span class="pill warn">발급 준비 중 (대표 화면이 열리면 만들어져요)</span>`):"";
     setTimeout(()=>{const f=document.getElementById("apInline");if(f&&sheet&&sheet.id===id)f.srcdoc=apPaperDoc(d)},0);
     apBox=`<details class="card" open style="padding:10px 12px"><summary style="cursor:pointer;font-weight:700">회사 양식 그대로 보기 <small class="muted">(서식 폴더 기안품의서·한글 양식 배치)</small></summary><iframe id="apInline" title="회사 양식" style="width:100%;height:min(1100px,80vh);border:1px solid var(--line);border-radius:8px;background:#e9e9e9;margin-top:8px"></iframe></details><div class="card" style="padding:12px 14px;display:grid;gap:8px">${amtLineHTML(d)}<div class="actions"><div>${pill(d.status||"결재 대기")} ${cdl} ${ppr} <span class="muted">기안 ${esc(who(d.createdBy))} · ${esc(day(d.createdAt))}</span></div></div>${lineHTML(d)}${hist}
     ${canDecide(d)?`<div class="f wide"><label for="decNote">결재 의견 (지금 차례: ${esc(curApprover(d))}${curApprover(d)==="신혜현"&&hasAline(d)?" · 최윤수 대표 계정으로 눌러요 (결재란에는 신혜현)":""})</label><input id="decNote" placeholder="예: 다음 주 발주 진행"></div><div style="display:flex;gap:8px;flex-wrap:wrap">${hasAline(d)&&curApprover(d)==="채진아"&&me.isOwner&&(staffByName("채진아")||{}).uid!==me.id?`<button class="btn ok" data-decide="승인">검토 넣기 (결재란에 채진아)</button><button class="btn" data-decide="건너뜀">검토 건너뛰기 (빈칸)</button>`:`<button class="btn ok" data-decide="승인">${curApprover(d)==="신혜현"?"최종결재 (결재란에 신혜현)":"승인"}</button>`}<button class="btn bad" data-decide="반려">반려</button></div>`:(["결재 대기","결재 진행"].includes(d.status)?`<p class="hint" style="margin:0">지금 결재 차례: ${esc(curApprover(d))}. 인사 관리에서 계정이 연결된 사람과 대표만 결재할 수 있어요.</p>`:"")}</div>`;
+    apBox=apTabsWrap(d,apBox);apAttCur=null;
   }
   let hrBlock="";
   if(col==="customers"&&id)hrBlock+=custQuotesHTML(d)+csResumeBtns(d.code)+cflowHTML(d);
@@ -3529,6 +3698,8 @@ async function decide(result){
     if(cur.name==="신혜현"){px=false;stamp={name:"신혜현",pressedBy:me.name||"최윤수",role:"최종결재"}}
     else if(cur.name==="최윤수"){px=false;stamp={name:"최윤수",role:"결재"}}
     else if(cur.name==="채진아"&&px){stamp={name:"채진아",role:"검토"}}}
+  // 결재란 사인: 승인 순간의 등록 사인을 기록에 같이 보관 (나중에 사인을 바꿔도 이 결재는 그대로)
+  if(stamp&&result==="승인"&&sigKey(stamp.name)){const sg=signOf(stamp.name);if(sg)stamp.sig=sg.data;else toast(stamp.name+" 사인이 아직 없어 이름으로 찍혀요 · 왼쪽 메뉴 ‘내 사인 등록’")}
   // 실제 누른 계정은 내부 기록(by·pressedBy)에만, 결재란 이름은 칸 이름 그대로
   const hist=(base.history||[]).concat([Object.assign({at:nowISO(),by:me.id,name,result,note},px?{pressedBy:me.name||"최윤수"}:{},stamp||{},result==="건너뜀"?{role:"검토",skipped:true}:{})]);
   const last=step>=l.length-1;
