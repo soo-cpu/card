@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 홈페이지 2026-11-06 v7 · 웜 베이지 (도메인 연결 전) -->
+<!-- 홈페이지 2026-11-09 v0 · 웜 베이지 · 1분 간편 견적 버튼 (도메인 연결 전) -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>홈퍼니싱 · 아르띠꼬 스튜디오</title>
 <meta name="description" content="주식회사 홈퍼니싱 · 아르띠꼬 스튜디오. 2014년부터 관공서·학교와 주거 공간을 디자인하고 설계해 온 인테리어 회사.">
@@ -21,11 +21,12 @@
   --serif:"Noto Serif KR","Nanum Myeongjo",serif;
   --latin:"Cormorant Garamond","Times New Roman",serif;
   --gut:24px;
+  --est-bg:#7a5f3f; --est-fg:#fbf8f3;
 }
-@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--ph:#2a251f;color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--ph:#2a251f;--est-bg:#c2a57a;--est-fg:#1b1815;color-scheme:dark}}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;font-weight:400;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;font-weight:400;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;padding-bottom:calc(136px + env(safe-area-inset-bottom))}
 a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
 img{display:block;max-width:100%}
 :focus-visible{outline:1px solid var(--pt);outline-offset:3px}
@@ -47,10 +48,15 @@ section.alt{background:var(--paper)}
 .hero img,.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hero video:not([src]){display:none}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,14,8,.28) 0%,rgba(20,14,8,0) 30%,rgba(20,14,8,.05) 55%,rgba(20,14,8,.48) 100%)}
-.hero .t{position:absolute;left:var(--gut);right:var(--gut);bottom:calc(112px + env(safe-area-inset-bottom));z-index:2}
+.hero .t{position:absolute;left:var(--gut);right:var(--gut);bottom:calc(164px + env(safe-area-inset-bottom));z-index:2}
 .hero .en{font-family:var(--latin);font-size:12px;letter-spacing:.38em;opacity:.92}
 .hero h1{font-family:var(--serif);font-weight:200;font-size:30px;line-height:1.5;margin:14px 0 0;letter-spacing:-.01em}
 .hero .co{margin-top:14px;font-size:13px;font-weight:300;opacity:.85;letter-spacing:.02em}
+/* 첫 화면 '1분 간편 견적' 버튼 */
+.hero .est{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:26px;height:56px;padding:0 22px;max-width:360px;background:rgba(251,248,243,.94);color:#2a2420;font-size:15px;font-weight:500;letter-spacing:.04em;box-shadow:0 8px 24px rgba(20,14,8,.22)}
+.hero .est small{display:block;font-size:11px;font-weight:300;color:#8c7f72;letter-spacing:.02em;margin-top:2px;line-height:1.2}
+.hero .est span{line-height:1.25}
+.hero .est i{font-style:normal;font-family:var(--latin);font-size:20px;color:#7a5f3f}
 
 /* 소개 한 줄 */
 .intro p{font-family:var(--serif);font-weight:200;font-size:22px;line-height:1.75;margin:20px 0 0}
@@ -130,6 +136,7 @@ footer .logo{color:var(--ink)}
 .bar{position:fixed;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;display:grid;grid-template-columns:1fr 1fr;box-shadow:0 10px 30px rgba(30,20,10,.18)}
 .bar a{display:flex;align-items:center;justify-content:center;gap:8px;height:54px;font-size:14px;letter-spacing:.06em;background:var(--paper);color:var(--ink)}
 .bar a.call{background:var(--ink);color:var(--bg)}
+.bar a.est{grid-column:1/-1;height:52px;background:var(--est-bg);color:var(--est-fg);font-weight:500;font-size:15px;letter-spacing:.04em}
 .bar svg{width:16px;height:16px}
 
 /* 사진 크게 보기 */
@@ -169,7 +176,7 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
 
 <header class="top">
   <a class="logo" href="#top">HOME FURNISHING</a>
-  <nav aria-label="메뉴"><a href="#record">실적</a><a href="#works">시공 사례</a><a href="#ceo">대표 인사</a><a href="#profile">지명원</a><a href="#contact">상담</a><a href="#map">오시는 길</a></nav>
+  <nav aria-label="메뉴"><a href="#record">실적</a><a href="#works">시공 사례</a><a href="#ceo">대표 인사</a><a href="#profile">지명원</a><a href="#contact">상담</a><a href="#map">오시는 길</a><a href="https://soo-cpu.github.io/card/estimate/">간편 견적</a></nav>
   <a class="tel" href="tel:15665904">1566-5904</a>
 </header>
 
@@ -182,6 +189,8 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
     <div class="en">Interior · Design · Since 2014</div>
     <h1>공간을 설계하고,<br>취향을 디자인합니다</h1>
     <div class="co">주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</div>
+    <!-- 간편견적 기본 주소. 도메인을 바꾸면 여기와 아래 고정 버튼 주소를 같이 바꾸기 -->
+    <a class="est" href="https://soo-cpu.github.io/card/estimate/"><span>1분 간편 견적 확인하기<small>평형·공정만 고르면 예상 범위가 바로 나와요</small></span><i aria-hidden="true">→</i></a>
   </div>
 </section>
 
@@ -297,6 +306,7 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
 
 <!-- 화면 아래 상담 버튼. 카카오톡 채널 주소가 생기면 href="#contact" 를 https://pf.kakao.com/… 로 바꾸기 -->
 <div class="bar">
+  <a class="est" href="https://soo-cpu.github.io/card/estimate/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>1분 간편 견적 확인하기</a>
   <a class="call" href="tel:15665904"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>전화 상담</a>
   <a href="#contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6L6.5 20l3.6-2.3c.6.1 1.2.1 1.9.1 5 0 9-3.1 9-7s-4-6.8-9-6.8z"/></svg>카카오톡 상담</a>
 </div>
