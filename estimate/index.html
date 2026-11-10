@@ -12,7 +12,8 @@
 <meta name="theme-color" content="#203864">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
-<!-- 간편견적 고객화면 v14 (공개 사이트판) · 2026-11-07 · 알림 메일 본문 새로 정리(항목별 칸·금액마다 VAT 기준·샷시 포함 여부·첨부 없음 표시)·글자를 \u 형태로 보내 깨짐 방지 · 단지·동 필수(안 쓰면 신청 버튼 꺼짐) · 이하 v13: 도배 시공 수량 = 전용㎡÷15(엑셀 방식) · 전기 공정 34평 공급가 약 400만 기준 평당 비례(배선 시공비·전기 자재비 두 줄로 나눔) · 이하 v12: 전기 공정 보강(배선 교체·분전반·콘센트·조명 설치·감지기)·문턱/현관 철거·도배 퍼티·타일 부자재 추가 · 샷시 포함/제외 선택(기본 포함) · 이하 v11: 버튼·평형 입력 고침, 워터마크 도면 2장 뺌, 접수 주소 연결 · 이하 v9: 배포용: 아파트 찾기 칸 뺌, 도면 직접 올리기 · 접수 안 될 때 신청 내용 복사 · 위치 "경기도 구리시"·결제 20/35/35/10·마루 시공 포함 표시 · 공용 단가표(견적 단가표 2026-11-04 v0) 기준 계산 · 회사 소개/견적/만료 화면 · 3일 고객 링크 · 원가·마진·하한가 없음 -->
+<!-- 간편견적 고객화면 v15 (공개 사이트판) · 2026-11-10 · 시안 미리 보기 추가(공간·스타일·마감재 → 시안 보기, 우리 시공 사진 바탕 컨셉 보드, 기기 하루 2장·전체 30장, 상담 신청에 시안 첨부) ·
+     이전 v14 · 2026-11-07 · 알림 메일 본문 새로 정리(항목별 칸·금액마다 VAT 기준·샷시 포함 여부·첨부 없음 표시)·글자를 \u 형태로 보내 깨짐 방지 · 단지·동 필수(안 쓰면 신청 버튼 꺼짐) · 이하 v13: 도배 시공 수량 = 전용㎡÷15(엑셀 방식) · 전기 공정 34평 공급가 약 400만 기준 평당 비례(배선 시공비·전기 자재비 두 줄로 나눔) · 이하 v12: 전기 공정 보강(배선 교체·분전반·콘센트·조명 설치·감지기)·문턱/현관 철거·도배 퍼티·타일 부자재 추가 · 샷시 포함/제외 선택(기본 포함) · 이하 v11: 버튼·평형 입력 고침, 워터마크 도면 2장 뺌, 접수 주소 연결 · 이하 v9: 배포용: 아파트 찾기 칸 뺌, 도면 직접 올리기 · 접수 안 될 때 신청 내용 복사 · 위치 "경기도 구리시"·결제 20/35/35/10·마루 시공 포함 표시 · 공용 단가표(견적 단가표 2026-11-04 v0) 기준 계산 · 회사 소개/견적/만료 화면 · 3일 고객 링크 · 원가·마진·하한가 없음 -->
 <style>
 :root{--navy:#1F4E79;--deep:#203864;--gold:#FFC000;--gray:#F2F2F2;--blue:#D1E3F3;
   --bg:#F2F2F2;--panel:#FFFFFF;--ink:#17202B;--sub:#5D6B7A;--line:#DCE3EC;--tint:#D1E3F3;--accent:#1F4E79;--head:#203864;
@@ -199,6 +200,14 @@ details.more[open]>summary::after{content:"－"}
 .planstate.ask{background:#FFF4D6;color:#5A4500}
 :root[data-theme="dark"] .planstate.ask{background:#3A3216;color:#F2DFA6}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .planstate.ask{background:#3A3216;color:#F2DFA6}}
+/* 시안 미리 보기 (v15) */
+.sian{display:grid;gap:10px}
+.sian .chips{justify-content:flex-start}
+.sian .slabel{font-size:12.5px;font-weight:700;color:var(--sub);text-align:left;margin:2px 0 -2px}
+.sian .out{display:grid;gap:10px}
+.sian .out img{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+.sian .limit{border:1px solid var(--line);background:var(--tint);border-radius:12px;padding:14px;display:grid;gap:10px;text-align:center}
+.sian .limit b{font-size:15px}
 .aibtn{background:var(--gold);color:#17202B;border:0;border-radius:12px;padding:13px;font-weight:700;width:100%}
 .aibtn:disabled{opacity:.6}
 .sechd{font-size:13px;font-weight:700;color:var(--head);padding:10px 2px 2px}
@@ -302,6 +311,19 @@ input[type="checkbox"]{width:20px;height:20px;padding:0;flex:none;margin:2px 0 0
   <div class="infobox"><div id="incl"></div><div id="excl"></div><div class="hint" style="font-size:12px">스타일별 대표 구성 기준이에요. 실측 후 상세 견적서로 확정해요.</div></div>
   <details class="more" id="more"><summary>자세히 보기 · 항목 더하고 빼기</summary><div class="mbody" id="mbody"></div></details>
   <p class="note">아르띠꼬 표준 단가로 계산한 예상 범위예요. 현장 상태와 자재 선택에 따라 달라지고, 정확한 금액은 무료 실측 후 상세 견적서로 안내드려요. 샷시는 창 크기·개수·브랜드에 따라 차이가 커서 평형 기준 범위로 보여 드리고, 실측 후 정확히 안내해요.</p>
+</section>
+
+<section class="card sian" id="sianCard" aria-labelledby="hsn" hidden>
+  <h2 id="hsn">우리 집 시안 미리 보기</h2>
+  <p class="hint" style="margin-top:-4px">공간·스타일·마감재를 고르면 아르띠꼬 시공 사진을 바탕으로 컨셉 시안을 만들어 드려요. <b>하루 2장</b>까지 볼 수 있어요.</p>
+  <p class="slabel">공간</p><div class="chips" id="sianSp"></div>
+  <p class="slabel">스타일</p><div class="chips" id="sianSt"></div>
+  <p class="slabel">주요 마감재</p><div class="chips" id="sianFi"></div>
+  <button type="button" class="aibtn" id="sianBtn">시안 보기</button>
+  <p class="note" id="sianMsg" aria-live="polite"></p>
+  <div class="limit" id="sianLimit" hidden><b>상담 시 더 보여드려요</b><span class="hint">오늘 볼 수 있는 시안을 다 봤어요. 상담 신청하시면 담당 실장이 원하시는 공간·스타일로 더 보여드려요.</span><button type="button" class="cta" id="sianAsk">상담 신청하기</button></div>
+  <div class="out" id="sianOut"></div>
+  <p class="note">컨셉 시안이에요. 실제 치수·구조와 다를 수 있고, 상담 신청하면 만든 시안이 함께 접수돼요.</p>
 </section>
 
 <section class="card" id="caseCard" aria-labelledby="hc" hidden>
@@ -470,7 +492,7 @@ $("pyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();
 $("pyGo").addEventListener("click",()=>{clearTimeout(pyT);if(pyApply())$("pyIn").blur()});
 $("s2").addEventListener("click",e=>{const b=e.target.closest("[data-preset],[data-style]");if(!b)return;$("s2").querySelectorAll("[data-preset],[data-style]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
   if(b.dataset.style){st.preset="전체 리모델링";st.style=b.dataset.style;st.sel=fullSel()}else{st.preset=b.dataset.preset;st.sel=new Set(DATA.presets[st.preset])}
-  ["s3","caseCard","reviewCard","flowCard","askCard","bar"].forEach(id=>$(id).hidden=false);$("more").open=false;render();
+  ["s3","sianCard","caseCard","reviewCard","flowCard","askCard","bar"].forEach(id=>$(id).hidden=false);$("more").open=false;render();
   setTimeout(()=>goTo("s3"),60)});
 $("sashChips").addEventListener("click",e=>{const b=e.target.closest("[data-sash]");if(!b)return;st.sash=b.dataset.sash==="1";render(true)});
 $("bathChips").addEventListener("click",e=>{const b=e.target.closest("[data-bath]");if(!b)return;st.bath=+b.dataset.bath;render()});
@@ -722,7 +744,8 @@ function message(){const g=id=>$(id).value.trim();const net=totalNet(),tot=vat(n
   if(nf)L.push("평면도 사진: "+nf+"장"+(home.planFrom==="auto"?" (도면 모음에서 불러옴)":""));
   if(np)L.push("도면 PDF: "+np+"개 ("+home.pdfs.map(p=>p.name).join(", ")+")");
   if(nr)L.push("스타일 참고사진: "+nr+"장");
-  if(!nf&&!np&&!nr&&home.planFrom!=="request")L.push("첨부 없음");
+  const SL=(SIAN&&SIAN.list)||[],ns=SL.length;if(ns)L.push("시안 미리보기: "+ns+"장 ("+SL.map(x=>x.label).join(" / ")+")");
+  if(!nf&&!np&&!nr&&!ns&&home.planFrom!=="request")L.push("첨부 없음");
   if(nf||np||nr||home.pickedConcept)L.push("원하는 스타일: "+CONCEPTS[home.concept].name);
   return L.join("\n")}
 let sentOk=false;
@@ -749,6 +772,71 @@ $("refIn").addEventListener("change",async e=>{const fs=[...e.target.files];e.ta
 function drawRefs(){const box=$("refThumbs");box.innerHTML="";home.refs.forEach((f,i)=>{const d=document.createElement("div");d.className="t";const c=document.createElement("canvas");c.width=176;c.height=176;
   const x=c.getContext("2d"),k=Math.max(176/f.c.width,176/f.c.height);x.drawImage(f.c,(176-f.c.width*k)/2,(176-f.c.height*k)/2,f.c.width*k,f.c.height*k);
   const b=document.createElement("button");b.type="button";b.textContent="×";b.setAttribute("aria-label","빼기");b.addEventListener("click",()=>{home.refs.splice(i,1);drawRefs();$("copyText").value=message()});d.append(c,b);box.appendChild(d)})}
+
+/* ---- 시안 미리 보기 (v15) ----
+   인트라넷 '이미지 생성'과 같은 방식: AI(Claude)에게 고른 조건 + 우리 시공 사진을 보내 색·자재·키워드(JSON)를 받고,
+   우리 시공 사진 위에 컨셉 보드로 그림. 서버(Apps Script sian)가 하루 한도(기기 2장 · 전체 30장)를 셈.
+   서버가 없거나 AI 연결이 없으면 스타일 기본 팔레트로 그림(이때도 한도는 같음) */
+const SIAN_SP=["거실","주방","침실","욕실"],SIAN_ST=["내추럴","모던","클래식","북유럽"],SIAN_FI=["화이트 오크","월넛","화이트 무광","웜그레이 무광","대리석 패턴","티크"];
+/* 보드 위 사진: 거실은 실제 시공 사진, 나머지는 3D 제안(아래 범례가 있어 위쪽 82%만 씀). 실제 시공 사진이 생기면 여기만 바꾸면 됨 (서버 SIAN_REF와 같게) */
+const SIAN_IMG={거실:{src:"../site/images/work-1.jpg",cap:"아르띠꼬 실제 시공 · 구리역 롯데캐슬 거실 (참고)",h:1},주방:{src:"img/c_kitchen.jpg",cap:"아르띠꼬 3D 제안 · 구리 동양아파트 34평 주방 (참고)",h:.82},
+  침실:{src:"img/c_room.jpg",cap:"아르띠꼬 3D 제안 · 구리 동양아파트 34평 안방 (참고)",h:.82},욕실:{src:"img/c_bath.jpg",cap:"아르띠꼬 3D 제안 · 구리 동양아파트 34평 욕실 (참고)",h:.82}};
+const SIAN_DEV_MAX=2;
+const SIAN_PAL={"내추럴":[["오크","#C49A6C"],["크림","#F3E9D8"],["세이지","#A3B18A"],["리넨","#E6DCC8"],["테라코타","#C26A4A"]],"모던":[["웜그레이","#8C8A86"],["오프화이트","#F2EFEA"],["차콜","#3A3A3C"],["월넛","#6B4A35"],["브라스","#B08D57"]],"클래식":[["아이보리","#F4EEDF"],["네이비","#1F2E4A"],["골드","#B8975A"],["마호가니","#5A2E1C"],["버건디","#6E1F2B"]],"북유럽":[["화이트","#F7F7F5"],["애쉬우드","#D8C3A5"],["더스티블루","#8DA3B5"],["라이트그레이","#CFCFCF"],["머스타드","#D9A441"]]};
+var SIAN={sp:"거실",st:"내추럴",fi:"화이트 오크",busy:false,list:[]};
+const sianDay=()=>{const d=new Date(Date.now()+9*3600e3);return d.toISOString().slice(0,10)};
+function sianDev(){let v="";try{v=localStorage.getItem("sianDev")||""}catch(e){}
+  if(!/^[a-z0-9]{12,32}$/.test(v)){v=(Date.now().toString(36)+Math.random().toString(36).slice(2,12)).replace(/[^a-z0-9]/g,"");try{localStorage.setItem("sianDev",v)}catch(e){}}return v}
+function sianUsed(){try{const o=JSON.parse(localStorage.getItem("sianCnt")||"{}");return o.d===sianDay()?(o.n|0):0}catch(e){return 0}}
+function sianMark(n){try{localStorage.setItem("sianCnt",JSON.stringify({d:sianDay(),n}))}catch(e){}}
+function sianChips(){const mk=(id,L,key)=>{$(id).innerHTML=L.map(v=>`<button type="button" class="chip" data-v="${v}" aria-pressed="${v===SIAN[key]}">${v}</button>`).join("")};
+  mk("sianSp",SIAN_SP,"sp");mk("sianSt",SIAN_ST,"st");mk("sianFi",SIAN_FI,"fi")}
+[["sianSp","sp"],["sianSt","st"],["sianFi","fi"]].forEach(([id,key])=>$(id).addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;SIAN[key]=b.dataset.v;sianChips()}));
+sianChips();
+function sianLimit(on){$("sianLimit").hidden=!on;$("sianBtn").hidden=on}
+function sianLeftMsg(){const left=Math.max(0,SIAN_DEV_MAX-sianUsed());$("sianMsg").textContent=left?"오늘 "+left+"장 더 볼 수 있어요.":"";if(!left)sianLimit(true)}
+$("sianAsk").addEventListener("click",()=>goTo("askCard"));
+function sianFallback(){const pal=(SIAN_PAL[SIAN.st]||SIAN_PAL["내추럴"]).map(([name,hex])=>({name,hex}));
+  return {title:SIAN.st+" "+SIAN.sp,summary:SIAN.fi+" 마감에 "+SIAN.st+" 색감을 맞춘 기본 컨셉이에요",palette:pal,
+    materials:["주요 마감: "+SIAN.fi,"벽: "+pal[1].name+" 톤 실크 벽지","포인트: "+pal[4].name+" 색 소품·조명","천장: 간접 조명 · 무몰딩 마감"],keywords:[SIAN.st,SIAN.sp,SIAN.fi,"수납 정리","간접 조명"],ai:false}}
+function sianAsk(p){const gas=window.google&&google.script&&google.script.run;
+  if(gas)return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej).sian(p));
+  if(!WEBAPP)return Promise.resolve(null);
+  const q=Object.keys(p).map(k=>k+"="+encodeURIComponent(p[k])).join("&");
+  return fetch(WEBAPP+"?sian=1&"+q).then(r=>r.json())}
+function loadImg(src){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=src})}
+async function sianDraw(m){const W=1200,H=1300,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  const F='"Noto Sans KR","Malgun Gothic",sans-serif';x.fillStyle="#fff";x.fillRect(0,0,W,H);
+  try{const R=SIAN_IMG[SIAN.sp],im=await loadImg(R.src),sh=im.height*R.h,ph=760,k=Math.max(W/im.width,ph/sh);
+    x.drawImage(im,0,0,im.width,sh,(W-im.width*k)/2,(ph-sh*k)/2,im.width*k,sh*k);
+    x.fillStyle="rgba(0,0,0,.45)";x.fillRect(0,700,W,60);x.fillStyle="#fff";x.font="500 22px "+F;x.fillText(R.cap,28,739)}catch(e){x.fillStyle="#eee";x.fillRect(0,0,W,760)}
+  const pal=(m.palette||[]).slice(0,5);pal.forEach((p,i)=>{x.fillStyle=/^#[0-9a-f]{6}$/i.test(p.hex||"")?p.hex:"#ccc";x.fillRect(i*W/5,760,W/5,26)});
+  x.fillStyle="#203864";x.font="800 46px "+F;x.fillText(String(m.title||"디자인 컨셉").slice(0,18),40,860);
+  x.fillStyle="#555";x.font="400 24px "+F;x.fillText(String(m.summary||"").slice(0,44),40,904);
+  pal.forEach((p,i)=>{const X=40+i*226;x.fillStyle=/^#[0-9a-f]{6}$/i.test(p.hex||"")?p.hex:"#ccc";x.beginPath();x.roundRect?x.roundRect(X,940,206,96,12):x.rect(X,940,206,96);x.fill();x.strokeStyle="#ddd";x.stroke();
+    x.fillStyle="#203864";x.font="700 21px "+F;x.fillText(String(p.name||"").slice(0,8),X,1068)});
+  x.fillStyle="#1F4E79";x.font="700 22px "+F;x.fillText("자재 · 마감",40,1116);
+  x.fillStyle="#333";x.font="400 21px "+F;(m.materials||[]).slice(0,5).forEach((t,i)=>x.fillText("· "+String(t).slice(0,24),40,1152+i*30));
+  x.fillStyle="#1F4E79";x.font="700 22px "+F;x.fillText("키워드",660,1116);
+  (m.keywords||[]).slice(0,6).forEach((t,i)=>{const X=660+(i%2)*260,Y=1134+Math.floor(i/2)*48;x.fillStyle="#D1E3F3";x.beginPath();x.roundRect?x.roundRect(X,Y,240,38,19):x.rect(X,Y,240,38);x.fill();
+    x.fillStyle="#1F4E79";x.font="500 19px "+F;x.textAlign="center";x.fillText(String(t).slice(0,10),X+120,Y+26);x.textAlign="left"});
+  x.fillStyle="#999";x.font="400 17px "+F;x.fillText("ártico studio · 컨셉 시안 (실제 시공과 다를 수 있어요) · "+SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi,40,H-24);
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.84));return {blob,url:URL.createObjectURL(blob)}}
+function sianShow(){const box=$("sianOut");box.innerHTML="";SIAN.list.slice().reverse().forEach(s=>{const f=document.createElement("figure");f.style.margin="0";
+  const im=document.createElement("img");im.src=s.url;im.alt=s.label+" 시안";const cap=document.createElement("figcaption");cap.className="hint";cap.style.textAlign="left";cap.textContent=s.label+(s.ai?"":" · 기본 팔레트");f.append(im,cap);box.appendChild(f)})}
+$("sianBtn").addEventListener("click",async()=>{if(SIAN.busy)return;const msg=$("sianMsg"),b=$("sianBtn");
+  if(sianUsed()>=SIAN_DEV_MAX){sianLimit(true);msg.textContent="";return}
+  SIAN.busy=true;b.disabled=true;b.textContent="시안 만드는 중이에요… (20~40초)";msg.textContent="";
+  let m=null,r=null,used=sianUsed()+1;
+  try{r=await sianAsk({dev:sianDev(),space:SIAN.sp,style:SIAN.st,finish:SIAN.fi,py:st.py||"",work:st.preset||""})}catch(e){r=null}
+  if(r&&r.ok===false&&r.limit){SIAN.busy=false;b.disabled=false;b.textContent="시안 보기";if(r.limit==="device")sianMark(SIAN_DEV_MAX);sianLimit(true);
+    if(r.limit==="total")$("sianLimit").querySelector(".hint").textContent="오늘 준비한 시안이 모두 나갔어요. 상담 신청하시면 담당 실장이 원하시는 공간·스타일로 더 보여드려요.";return}
+  if(r&&r.ok&&r.meta&&Array.isArray(r.meta.palette)&&r.meta.palette.length){m=r.meta;m.ai=!!r.ai;if(r.used)used=r.used}else m=sianFallback();
+  sianMark(used);
+  try{const d=await sianDraw(m);SIAN.list.push({sid:(r&&r.sid)||"",label:SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi,ai:m.ai,blob:d.blob,url:d.url,title:m.title||""});sianShow();$("copyText").value=message()}
+  catch(e){msg.textContent="시안을 그리지 못했어요. 다시 눌러 주세요."}
+  SIAN.busy=false;b.disabled=false;b.textContent="시안 보기";sianLeftMsg()});
+sianLeftMsg();
 
 /* ---- 스타일별 대표 컷 (주방·거실) 자리
    사진은 드라이브 '간편견적/스타일예시' 폴더에 '스타일_공간.jpg'(예: 화이트모던_주방.jpg)로 올리고,
@@ -794,7 +882,8 @@ async function saveRequest(){const rec=record();let ok=false;
     const files=[];for(const [i,f] of home.files.slice(0,3).entries())files.push({name:`평면도_${i+1}.jpg`,mime:"image/jpeg",b64:await b64(f.blob)});
     for(const p of home.pdfs.slice(0,3-files.length))files.push({name:p.name,mime:"application/pdf",b64:await b64(p.blob)});
     const refs=[];for(const [i,f] of home.refs.slice(0,5).entries())refs.push({name:`참고사진_${i+1}.jpg`,mime:"image/jpeg",b64:await b64(f.blob)});
-    const body=Object.assign({},rec,{files,refs,t:LINK&&LINK.t||""});
+    const sian=[];for(const [i,x] of SIAN.list.slice(0,4).entries())sian.push({sid:x.sid,label:x.label,name:`시안_${i+1}_${x.label.replace(/[^\w가-힣]+/g,"_")}.jpg`,mime:"image/jpeg",b64:await b64(x.blob)});
+    const body=Object.assign({},rec,{files,refs,sian,t:LINK&&LINK.t||""});
     if(gas)await new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej).submit(body));
     else await fetch(SHEET_API,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body).replace(/[\u007f-\uffff]/g,c=>"\\u"+("000"+c.charCodeAt(0).toString(16)).slice(-4))});
     ok=true}catch(e){lastErr=(e&&e.message)||"시트 저장 실패"}}
