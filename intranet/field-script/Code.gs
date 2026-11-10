@@ -23,6 +23,7 @@ var SAMPLE_URL = 'https://soo-cpu.github.io/card/field/sample/s';
 var ROOT_NAME = '현장소통 사진·기록';
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
   return out_({ ok: true, msg: '현장소통 서버 동작 중' });
 }
 
