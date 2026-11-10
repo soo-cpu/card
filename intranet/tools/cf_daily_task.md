@@ -40,7 +40,8 @@
      인트라넷 **미수금 메뉴는 이 표가 정답**이다 (입금 내역 계산 아님). 원본 숫자는 그대로, 고치지 않는다.
      스크립트가 '미수금 표 못 찾은 날짜'를 출력하면 보고(8번)에 적는다. 이미 있는 날짜에 `ar`만 없으면 `update`로 그 날짜의 `ar`만 더한다.
 5-3. 목표 관리 (2026-11-10 대표 지시, 이 단계는 `added`가 비어 있어도 한다):
-   - 드라이브 '사업 성장' 폴더(`1wYN_2VrwCTCkdQJt0alWZcSqhMnmAl38`)에서 `parentId = '그 폴더' and title contains '2027 사업계획'`으로 찾고, 이름에 `YYYY-MM-DD vN`이 있는 것 중 **vN이 가장 큰 것**(같으면 늦은 날짜)을 고른다.
+   - 드라이브 전체에서 `title contains '2027 사업계획' and trashed = false`로 찾고, 이름이 '2027 사업계획'으로 **시작**하고 `YYYY-MM-DD vN`이 있는 것 중 **vN이 가장 큰 것**(같으면 늦은 날짜)을 고른다 ('_조각 …'·'대화 기록 …'·'손익분기점' 같은 다른 파일은 빠짐).
+   - 경영 대시보드의 손익분기 목표도 이 파일의 '손익분기 매출'을 쓴다 (`fin/goalplan.bep`).
    - 인트라넷 `fin/goalplan`의 `src.title`과 다르면 그 파일을 받아 `python3 -I intranet/tools/goal_snap.py plan <md> "<파일 이름>"` → 결과로 `fin/goalplan`을 `set`(if_version, `src`·`checkedAt`·`at`=지금 포함), `config/goal`은 `update`로 `year`·`src`(title·date·v)·`months`·`margin`·`mixRes`·`mixPub`·`total`·`planAt`만 넣는다 (**고정비·손익분기·5-3은 config에 절대 넣지 않는다** — 직원도 읽는 문서). 3-2 표가 12달이 아니면 바꾸지 말고 보고에 적는다.
    - 계약 실적: `projects` 컬렉션 전체를 out_dir로 받고, `config/goal`을 파일로 받아 `python3 -I intranet/tools/goal_snap.py act <projects폴더> <goal.json> 2027` → `config/goal`을 `update`로 `act`(결과 그대로)·`actAt`=지금 (if_version).
    - 마진율은 대표 화면의 현장 원가 집계라 예전 값을 그대로 이어 쓴다 (대표 화면이 열리면 다시 계산됨).
