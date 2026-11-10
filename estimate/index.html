@@ -12,7 +12,8 @@
 <meta name="theme-color" content="#203864">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
-<!-- 간편견적 고객화면 v17 (공개 사이트판) · 2026-11-10 · 시안 바탕 되돌림: 주방·침실·욕실은 3D 제안 그대로(대표 지시), 비슷한 평형 사례에서만 동양아파트 34평 사진 뺀 상태 유지 · 서버 Apps Script v10과 짝
+<!-- 간편견적 고객화면 v18 (공개 사이트판) · 2026-11-10 · 시안 미리 보기를 AI 이미지 생성으로 변경(Gemini 이미지 모델, 참고는 거실 실제 시공 2장만, 동양아파트 사진 안 씀) · 아르띠꼬 더 보기 링크 통일·홈페이지 추가 · 서버 Apps Script v11과 짝
+     v17 · 2026-11-10 · 시안 바탕 되돌림: 주방·침실·욕실은 3D 제안 그대로(대표 지시), 비슷한 평형 사례에서만 동양아파트 34평 사진 뺀 상태 유지 · 서버 Apps Script v10과 짝
      v16 · 2026-11-10 · 비슷한 평형 사례에서 동양아파트 34평 3D 제안 4장 뺌 · 시안 미리 보기: 거실만 실제 시공 사진, 주방·침실·욕실은 색 보드 · 서버 Apps Script v9와 짝
      v15 · 2026-11-10 · 시안 미리 보기 추가(공간·스타일·마감재 → 시안 보기, 거실은 실제 시공 사진·주방·침실·욕실은 색 보드, 동양아파트 3D 제안 사례 사진 뺌, 기기 하루 2장·전체 30장, 상담 신청에 시안 첨부) ·
      이전 v14 · 2026-11-07 · 알림 메일 본문 새로 정리(항목별 칸·금액마다 VAT 기준·샷시 포함 여부·첨부 없음 표시)·글자를 \u 형태로 보내 깨짐 방지 · 단지·동 필수(안 쓰면 신청 버튼 꺼짐) · 이하 v13: 도배 시공 수량 = 전용㎡÷15(엑셀 방식) · 전기 공정 34평 공급가 약 400만 기준 평당 비례(배선 시공비·전기 자재비 두 줄로 나눔) · 이하 v12: 전기 공정 보강(배선 교체·분전반·콘센트·조명 설치·감지기)·문턱/현관 철거·도배 퍼티·타일 부자재 추가 · 샷시 포함/제외 선택(기본 포함) · 이하 v11: 버튼·평형 입력 고침, 워터마크 도면 2장 뺌, 접수 주소 연결 · 이하 v9: 배포용: 아파트 찾기 칸 뺌, 도면 직접 올리기 · 접수 안 될 때 신청 내용 복사 · 위치 "경기도 구리시"·결제 20/35/35/10·마루 시공 포함 표시 · 공용 단가표(견적 단가표 2026-11-04 v0) 기준 계산 · 회사 소개/견적/만료 화면 · 3일 고객 링크 · 원가·마진·하한가 없음 -->
@@ -317,7 +318,7 @@ input[type="checkbox"]{width:20px;height:20px;padding:0;flex:none;margin:2px 0 0
 
 <section class="card sian" id="sianCard" aria-labelledby="hsn" hidden>
   <h2 id="hsn">우리 집 시안 미리 보기</h2>
-  <p class="hint" style="margin-top:-4px">공간·스타일·마감재를 고르면 아르띠꼬 시공 사진을 바탕으로 컨셉 시안을 만들어 드려요. <b>하루 2장</b>까지 볼 수 있어요.</p>
+  <p class="hint" style="margin-top:-4px">공간·스타일·마감재를 고르면 AI가 아르띠꼬 시공 스타일로 우리 집 인테리어 시안을 새로 그려 드려요. <b>하루 2장</b>까지 볼 수 있어요.</p>
   <p class="slabel">공간</p><div class="chips" id="sianSp"></div>
   <p class="slabel">스타일</p><div class="chips" id="sianSt"></div>
   <p class="slabel">주요 마감재</p><div class="chips" id="sianFi"></div>
@@ -325,7 +326,7 @@ input[type="checkbox"]{width:20px;height:20px;padding:0;flex:none;margin:2px 0 0
   <p class="note" id="sianMsg" aria-live="polite"></p>
   <div class="limit" id="sianLimit" hidden><b>상담 시 더 보여드려요</b><span class="hint">오늘 볼 수 있는 시안을 다 봤어요. 상담 신청하시면 담당 실장이 원하시는 공간·스타일로 더 보여드려요.</span><button type="button" class="cta" id="sianAsk">상담 신청하기</button></div>
   <div class="out" id="sianOut"></div>
-  <p class="note">컨셉 시안이에요. 실제 치수·구조와 다를 수 있고, 상담 신청하면 만든 시안이 함께 접수돼요.</p>
+  <p class="note">AI가 그린 컨셉 시안이에요. 실제 치수·구조·자재와 다를 수 있고, 상담 신청하면 만든 시안이 함께 접수돼요.</p>
 </section>
 
 <section class="card" id="caseCard" aria-labelledby="hc" hidden>
@@ -771,17 +772,12 @@ function drawRefs(){const box=$("refThumbs");box.innerHTML="";home.refs.forEach(
   const x=c.getContext("2d"),k=Math.max(176/f.c.width,176/f.c.height);x.drawImage(f.c,(176-f.c.width*k)/2,(176-f.c.height*k)/2,f.c.width*k,f.c.height*k);
   const b=document.createElement("button");b.type="button";b.textContent="×";b.setAttribute("aria-label","빼기");b.addEventListener("click",()=>{home.refs.splice(i,1);drawRefs();$("copyText").value=message()});d.append(c,b);box.appendChild(d)})}
 
-/* ---- 시안 미리 보기 (v15) ----
-   인트라넷 '이미지 생성'과 같은 방식: AI(Claude)에게 고른 조건 + 우리 시공 사진을 보내 색·자재·키워드(JSON)를 받고,
-   우리 시공 사진 위에 컨셉 보드로 그림. 서버(Apps Script sian)가 하루 한도(기기 2장 · 전체 30장)를 셈.
-   서버가 없거나 AI 연결이 없으면 스타일 기본 팔레트로 그림(이때도 한도는 같음) */
+/* ---- 시안 미리 보기 (v18 · AI 이미지 생성) ----
+   고객이 고른 공간·스타일·마감재로 AI(구글 Gemini 이미지 모델)가 인테리어 사진을 새로 그림.
+   우리 스타일 참고는 거실 실제 시공 사진 2장(구리역 롯데캐슬·구의 현대)만 서버가 같이 보냄. 다른 사진은 쓰지 않음.
+   서버(Apps Script sian)가 하루 한도(기기 2장 · 전체 30장)를 세고, 실패하면 그 장은 세지 않음. 화면은 받은 그림 아래에 워터마크를 붙여 저장 */
 const SIAN_SP=["거실","주방","침실","욕실"],SIAN_ST=["내추럴","모던","클래식","북유럽"],SIAN_FI=["화이트 오크","월넛","화이트 무광","웜그레이 무광","대리석 패턴","티크"];
-/* 보드 위 사진: 거실은 실제 시공 사진, 주방·침실·욕실은 3D 제안(아래 범례가 있어 위쪽 82%만 씀) — 대표 결정 2026-11-10 유지.
-   (예상 공사비 아래 '비슷한 평형 사례'에서는 동양아파트 3D 제안을 뺐지만, 시안 바탕으로는 계속 씀) 사진이 없는 공간은 색 보드로 그림 */
-const SIAN_IMG={거실:{src:"../site/images/work-1.jpg",cap:"아르띠꼬 실제 시공 · 구리역 롯데캐슬 거실 (참고)",h:1},주방:{src:"img/c_kitchen.jpg",cap:"아르띠꼬 3D 제안 · 구리 동양아파트 34평 주방 (참고)",h:.82},
-  침실:{src:"img/c_room.jpg",cap:"아르띠꼬 3D 제안 · 구리 동양아파트 34평 안방 (참고)",h:.82},욕실:{src:"img/c_bath.jpg",cap:"아르띠꼬 3D 제안 · 구리 동양아파트 34평 욕실 (참고)",h:.82}};
 const SIAN_DEV_MAX=2;
-const SIAN_PAL={"내추럴":[["오크","#C49A6C"],["크림","#F3E9D8"],["세이지","#A3B18A"],["리넨","#E6DCC8"],["테라코타","#C26A4A"]],"모던":[["웜그레이","#8C8A86"],["오프화이트","#F2EFEA"],["차콜","#3A3A3C"],["월넛","#6B4A35"],["브라스","#B08D57"]],"클래식":[["아이보리","#F4EEDF"],["네이비","#1F2E4A"],["골드","#B8975A"],["마호가니","#5A2E1C"],["버건디","#6E1F2B"]],"북유럽":[["화이트","#F7F7F5"],["애쉬우드","#D8C3A5"],["더스티블루","#8DA3B5"],["라이트그레이","#CFCFCF"],["머스타드","#D9A441"]]};
 var SIAN={sp:"거실",st:"내추럴",fi:"화이트 오크",busy:false,list:[]};
 const sianDay=()=>{const d=new Date(Date.now()+9*3600e3);return d.toISOString().slice(0,10)};
 function sianDev(){let v="";try{v=localStorage.getItem("sianDev")||""}catch(e){}
@@ -795,51 +791,35 @@ sianChips();
 function sianLimit(on){$("sianLimit").hidden=!on;$("sianBtn").hidden=on}
 function sianLeftMsg(){const left=Math.max(0,SIAN_DEV_MAX-sianUsed());$("sianMsg").textContent=left?"오늘 "+left+"장 더 볼 수 있어요.":"";if(!left)sianLimit(true)}
 $("sianAsk").addEventListener("click",()=>goTo("askCard"));
-function sianFallback(){const pal=(SIAN_PAL[SIAN.st]||SIAN_PAL["내추럴"]).map(([name,hex])=>({name,hex}));
-  return {title:SIAN.st+" "+SIAN.sp,summary:SIAN.fi+" 마감에 "+SIAN.st+" 색감을 맞춘 기본 컨셉이에요",palette:pal,
-    materials:["주요 마감: "+SIAN.fi,"벽: "+pal[1].name+" 톤 실크 벽지","포인트: "+pal[4].name+" 색 소품·조명","천장: 간접 조명 · 무몰딩 마감"],keywords:[SIAN.st,SIAN.sp,SIAN.fi,"수납 정리","간접 조명"],ai:false}}
 function sianAsk(p){const gas=window.google&&google.script&&google.script.run;
   if(gas)return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej).sian(p));
   if(!WEBAPP)return Promise.resolve(null);
   const q=Object.keys(p).map(k=>k+"="+encodeURIComponent(p[k])).join("&");
   return fetch(WEBAPP+"?sian=1&"+q).then(r=>r.json())}
 function loadImg(src){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=src})}
-async function sianDraw(m){const W=1200,H=1300,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
-  const F='"Noto Sans KR","Malgun Gothic",sans-serif';x.fillStyle="#fff";x.fillRect(0,0,W,H);
-  const R=SIAN_IMG[SIAN.sp],pal0=(m.palette||[]).slice(0,5),okc=h=>/^#[0-9a-f]{6}$/i.test(h||"")?h:"#ccc";
-  if(!R){const wd=[.38,.22,.16,.14,.10];let X=0;pal0.forEach((p,i)=>{const w=Math.round(W*(wd[i]||.1));x.fillStyle=okc(p.hex);x.fillRect(X,0,i===pal0.length-1?W-X:w,760);X+=w});
-    x.fillStyle="rgba(255,255,255,.92)";x.beginPath();x.roundRect?x.roundRect(40,40,560,150,16):x.rect(40,40,560,150);x.fill();
-    x.fillStyle="#203864";x.font="800 40px "+F;x.fillText(SIAN.sp+" 색 · 마감 보드",68,104);x.fillStyle="#555";x.font="500 24px "+F;x.fillText(SIAN.st+" · 주요 마감 "+SIAN.fi,68,152);
-    x.fillStyle="rgba(0,0,0,.45)";x.fillRect(0,700,W,60);x.fillStyle="#fff";x.font="500 22px "+F;x.fillText("고른 스타일·마감재로 만든 색 보드예요 (사진 아님)",28,739)}
-  else try{const im=await loadImg(R.src),sh=im.height*R.h,ph=760,k=Math.max(W/im.width,ph/sh);
-    x.save();x.beginPath();x.rect(0,0,W,ph);x.clip();x.drawImage(im,0,0,im.width,sh,(W-im.width*k)/2,(ph-sh*k)/2,im.width*k,sh*k);x.restore();
-    x.fillStyle="rgba(0,0,0,.45)";x.fillRect(0,700,W,60);x.fillStyle="#fff";x.font="500 22px "+F;x.fillText(R.cap,28,739)}catch(e){x.fillStyle="#eee";x.fillRect(0,0,W,760)}
-  const pal=(m.palette||[]).slice(0,5);pal.forEach((p,i)=>{x.fillStyle=/^#[0-9a-f]{6}$/i.test(p.hex||"")?p.hex:"#ccc";x.fillRect(i*W/5,760,W/5,26)});
-  x.fillStyle="#203864";x.font="800 46px "+F;x.fillText(String(m.title||"디자인 컨셉").slice(0,18),40,860);
-  x.fillStyle="#555";x.font="400 24px "+F;x.fillText(String(m.summary||"").slice(0,44),40,904);
-  pal.forEach((p,i)=>{const X=40+i*226;x.fillStyle=/^#[0-9a-f]{6}$/i.test(p.hex||"")?p.hex:"#ccc";x.beginPath();x.roundRect?x.roundRect(X,940,206,96,12):x.rect(X,940,206,96);x.fill();x.strokeStyle="#ddd";x.stroke();
-    x.fillStyle="#203864";x.font="700 21px "+F;x.fillText(String(p.name||"").slice(0,8),X,1068)});
-  x.fillStyle="#1F4E79";x.font="700 22px "+F;x.fillText("자재 · 마감",40,1116);
-  x.fillStyle="#333";x.font="400 21px "+F;(m.materials||[]).slice(0,5).forEach((t,i)=>x.fillText("· "+String(t).slice(0,24),40,1152+i*30));
-  x.fillStyle="#1F4E79";x.font="700 22px "+F;x.fillText("키워드",660,1116);
-  (m.keywords||[]).slice(0,6).forEach((t,i)=>{const X=660+(i%2)*260,Y=1134+Math.floor(i/2)*48;x.fillStyle="#D1E3F3";x.beginPath();x.roundRect?x.roundRect(X,Y,240,38,19):x.rect(X,Y,240,38);x.fill();
-    x.fillStyle="#1F4E79";x.font="500 19px "+F;x.textAlign="center";x.fillText(String(t).slice(0,10),X+120,Y+26);x.textAlign="left"});
-  x.fillStyle="#999";x.font="400 17px "+F;x.fillText("ártico studio · 컨셉 시안 (실제 시공과 다를 수 있어요) · "+SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi,40,H-24);
-  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.84));return {blob,url:URL.createObjectURL(blob)}}
+/* AI 그림 + 아래 워터마크 띠 → JPEG (상담 신청 때 이 그림이 첨부됨) */
+async function sianDraw(src){const im=await loadImg(src),W=Math.min(1280,im.width),H=Math.round(im.height*W/im.width),B=Math.round(W*.075);
+  const c=document.createElement("canvas");c.width=W;c.height=H+B;const x=c.getContext("2d"),F='"Noto Sans KR","Malgun Gothic",sans-serif';
+  x.fillStyle="#fff";x.fillRect(0,0,W,H+B);x.drawImage(im,0,0,W,H);
+  x.fillStyle="rgba(255,255,255,.78)";x.font="700 "+Math.round(W*.022)+"px "+F;x.textAlign="right";x.fillText("ártico studio",W-Math.round(W*.02),Math.round(W*.04));x.textAlign="left";
+  x.fillStyle="#1F2E4A";x.fillRect(0,H,W,B);x.fillStyle="#fff";x.font="700 "+Math.round(B*.32)+"px "+F;x.fillText("ártico studio · AI 컨셉 시안",Math.round(W*.025),H+Math.round(B*.45));
+  x.fillStyle="rgba(255,255,255,.8)";x.font="400 "+Math.round(B*.24)+"px "+F;x.fillText(SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi+" · 실제 시공과 다를 수 있어요",Math.round(W*.025),H+Math.round(B*.82));
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.86));return {blob,url:URL.createObjectURL(blob)}}
 function sianShow(){const box=$("sianOut");box.innerHTML="";SIAN.list.slice().reverse().forEach(s=>{const f=document.createElement("figure");f.style.margin="0";
-  const im=document.createElement("img");im.src=s.url;im.alt=s.label+" 시안";const cap=document.createElement("figcaption");cap.className="hint";cap.style.textAlign="left";cap.textContent=s.label+(s.ai?"":" · 기본 팔레트");f.append(im,cap);box.appendChild(f)})}
+  const im=document.createElement("img");im.src=s.url;im.alt=s.label+" AI 시안";const cap=document.createElement("figcaption");cap.className="hint";cap.style.textAlign="left";cap.textContent=s.label;f.append(im,cap);box.appendChild(f)})}
 $("sianBtn").addEventListener("click",async()=>{if(SIAN.busy)return;const msg=$("sianMsg"),b=$("sianBtn");
   if(sianUsed()>=SIAN_DEV_MAX){sianLimit(true);msg.textContent="";return}
-  SIAN.busy=true;b.disabled=true;b.textContent="시안 만드는 중이에요… (20~40초)";msg.textContent="";
-  let m=null,r=null,used=sianUsed()+1;
+  SIAN.busy=true;b.disabled=true;b.textContent="AI가 그리는 중이에요… (20~60초)";msg.textContent="";
+  let r=null;
   try{r=await sianAsk({dev:sianDev(),space:SIAN.sp,style:SIAN.st,finish:SIAN.fi,py:st.py||"",work:st.preset||""})}catch(e){r=null}
-  if(r&&r.ok===false&&r.limit){SIAN.busy=false;b.disabled=false;b.textContent="시안 보기";if(r.limit==="device")sianMark(SIAN_DEV_MAX);sianLimit(true);
+  const done=()=>{SIAN.busy=false;b.disabled=false;b.textContent="시안 보기"};
+  if(r&&r.ok===false&&r.limit){done();if(r.limit==="device")sianMark(SIAN_DEV_MAX);sianLimit(true);
     if(r.limit==="total")$("sianLimit").querySelector(".hint").textContent="오늘 준비한 시안이 모두 나갔어요. 상담 신청하시면 담당 실장이 원하시는 공간·스타일로 더 보여드려요.";return}
-  if(r&&r.ok&&r.meta&&Array.isArray(r.meta.palette)&&r.meta.palette.length){m=r.meta;m.ai=!!r.ai;if(r.used)used=r.used}else m=sianFallback();
-  sianMark(used);
-  try{const d=await sianDraw(m);SIAN.list.push({sid:(r&&r.sid)||"",label:SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi,ai:m.ai,blob:d.blob,url:d.url,title:m.title||""});sianShow();$("copyText").value=message()}
-  catch(e){msg.textContent="시안을 그리지 못했어요. 다시 눌러 주세요."}
-  SIAN.busy=false;b.disabled=false;b.textContent="시안 보기";sianLeftMsg()});
+  if(!(r&&r.ok&&r.img)){done();msg.textContent="지금은 시안을 만들 수 없어요. (이번 시도는 횟수에 안 세요) 잠시 뒤 다시 누르시거나, 상담 신청하시면 담당 실장이 보여드려요.";return}
+  sianMark(r.used||sianUsed()+1);
+  try{const d=await sianDraw("data:"+(r.mime||"image/png")+";base64,"+r.img);SIAN.list.push({sid:r.sid||"",label:SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi,blob:d.blob,url:d.url});sianShow();$("copyText").value=message()}
+  catch(e){msg.textContent="시안을 보여 드리지 못했어요. 다시 눌러 주세요."}
+  done();sianLeftMsg()});
 sianLeftMsg();
 
 /* ---- 스타일별 대표 컷 (주방·거실) 자리
