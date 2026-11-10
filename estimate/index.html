@@ -559,9 +559,9 @@ if(MODE!=="quote"){
   $("introCard").hidden=false;
   if(MODE==="expired"){$("expiredMsg").hidden=false;$("introHint").textContent="새 링크가 필요하시면 전화 주세요. 확인 후 3일 동안 볼 수 있는 링크를 다시 보내드려요."}
 }
-const CHANNELS=[["네이버 플레이스","상담·방문 예약","https://m.place.naver.com/place/36428683/home"],["블로그","시공 사례","https://blog.naver.com/artico_studio"],
-  ["오늘의집","포트폴리오·견적","https://o2o.ohou.se/partner/myhome/13553169"],["유튜브","시공 영상","https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew"],
-  ["인스타그램","작업 사진","https://www.instagram.com/artico_design.studio"]];
+const CHANNELS=[["네이버 플레이스","상담·방문 예약","https://naver.me/GL8bt4G4"],["블로그","시공 사례","https://blog.naver.com/artico_studio"],
+  ["오늘의집","포트폴리오·견적","https://o2o.ohou.se/partner/myhome/13553169"],["인스타그램","작업 사진","https://www.instagram.com/artico_design.studio"],
+  ["유튜브","시공 영상","https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew"],["홈페이지","회사 소개·시공 사례","https://soo-cpu.github.io/card/site/"]];
 $("chan").innerHTML=CHANNELS.filter(c=>c[2]).map(([n,s,u])=>`<a href="${u}" target="_blank" rel="noopener">${n}<small>${s}</small></a>`).join("");
 if(!priceOk(window.__PRICE)&&PRICE_URL)fetch(PRICE_URL).then(r=>r.json()).then(p=>{if(priceOk(p)){PRICE=p;if(st.py){drawStyles();if(st.preset)render()}}}).catch(()=>{});
 
