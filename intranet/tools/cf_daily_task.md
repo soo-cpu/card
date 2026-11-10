@@ -36,6 +36,9 @@
 5-2. 엑셀 원본 보기 (2026-11-10 대표 지시): `python3 -I intranet/tools/cf_sheet.py "<xlsx>" <작업폴더> <지난달 1일 YYYY-MM-01>`을 실행해 `cf_sheets.json`을 만든다.
    그 안의 각 키(`cfsheet-YYYY-MM`)마다 인트라넷 `fin/<키>` 문서를 읽어(없으면 새로) `days`에 **새 날짜와 원본이 바뀐 날짜**를 더해 `set` (if_version 고정, 이미 있는 다른 날짜는 그대로 둔다). `at`=지금, `src`=파일 이름.
    이 자료는 대표 저장소(fin)라 직원은 직접 못 읽고, 대표 화면이 열릴 때 채진아 사본에 최근 14일만 들어간다. 이 단계는 `added`가 비어 있어도 한다.
+   - (2026-11-10 대표 지시) 각 날짜에 `ar` 칸이 같이 들어간다: 그날 시트 오른쪽 아래 '미수금(물대+시공)' 표 그대로(총 계약금·월·업체명·현재 미수액·실행가·PJ 담당·비고, 맨 아래 'N/N일 기준 미수금' 합계).
+     인트라넷 **미수금 메뉴는 이 표가 정답**이다 (입금 내역 계산 아님). 원본 숫자는 그대로, 고치지 않는다.
+     스크립트가 '미수금 표 못 찾은 날짜'를 출력하면 보고(8번)에 적는다. 이미 있는 날짜에 `ar`만 없으면 `update`로 그 날짜의 `ar`만 더한다.
 6. 자금 관리 반영: `new_cf_days.json`·`new_cf_items.json`·`new_cf_banks.json`을 각각 `cf_days.json`·`cf_items.json`·`cf_banks.json` 이름으로 바꿔
    Artifact `publish` (`url`=자금 관리, `asset: true`)로 올리고, 나온 url로 `datasets/<id>`를 `update`(if_version): `source.url`, `updated` = `{at: 지금, by: "클로드 매일 19시 자동 (cash flow ... 에서 MM/DD 추가, 원본 그대로)"}`. `cf_days` 설명의 기간·일수도 새 값으로.
 7. 원본 사본과 작업 파일을 지운다.

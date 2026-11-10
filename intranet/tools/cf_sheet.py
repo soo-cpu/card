@@ -10,6 +10,9 @@ cash flow(YYYY)M월.xlsx 의 날짜 시트(예: '11.04일')를 그대로 표 모
   python3 -I cf_sheet.py 원본.xlsx 작업폴더 [시작날짜 YYYY-MM-DD]
 만드는 것: 작업폴더/cf_sheets.json = {"cfsheet-YYYY-MM": {"days": {"YYYY-MM-DD": {...}}}}
   각 날짜: file, sheet, rows(글자 2차원 배열), m(병합 [행,열,행끝,열끝] 0부터), w(열 너비), b(굵은 칸 "행,열"), f({"행,열": "#색"}), al({"행,열": "r|c"})
+  ar: 그날 시트 오른쪽 아래 '미수금(물대+시공)' 표 그대로 (대표 지시 2026-11-10, 인트라넷 미수금 메뉴의 정답)
+      {"rows": [{"r","tot","mon","name","left","cost","pj","memo"}], "total", "totalLabel"}
+      열: 총 계약금(VAT포함) / 월 / 업체명 / 현재 미수액(VAT포함) / 실행가 / PJ 담당 / 비고. 맨 아래 'N/N일 기준 미수금' 줄 = total
 """
 import datetime, json, os, re, sys
 
@@ -102,6 +105,91 @@ def snap(ws):
     return {"rows": rows, "m": m, "w": w, "b": [k for k in b if keep(k)], "f": {k: v for k, v in f.items() if keep(k)}, "al": {k: v for k, v in al.items() if keep(k)}}
 
 
+AR_COLS = [("tot", "총계약금"), ("mon", "월"), ("name", "업체명"), ("left", "현재미수액"), ("cost", "실행가"), ("pj", "PJ담당"), ("memo", "비고")]
+
+
+def amt(v):
+    """숫자 칸은 원본 숫자 그대로 (반올림만). 글자면 쉼표를 뺀 숫자, 아니면 None."""
+    if isinstance(v, bool) or v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return int(round(v))
+    t = re.sub(r"[,\s원]", "", str(v))
+    return int(t) if re.fullmatch(r"-?\d+", t) else None
+
+
+def ar_txt(v):
+    """미수금 표 글자: 호수·지번(예: 2321-501호, 172-16)은 그대로 두고, 주민번호·계좌번호 모양(숫자 10자리 이상)만 지운다."""
+    if v is None:
+        return ""
+    if isinstance(v, (datetime.datetime, datetime.date)):
+        return v.strftime("%m.%d")
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return txt(v)
+    t = re.sub(r"\d{6}-\d{7}", "", str(v).strip())
+    t = re.sub(r"[\d][\d\-\s]{8,}[\d]", lambda m: "" if len(re.sub(r"\D", "", m.group(0))) >= 10 else m.group(0), t)
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+
+def ar_table(ws):
+    """'미수금(물대+시공)' 표를 찾아 줄을 그대로 옮긴다. 못 찾으면 None."""
+    key = lambda v: re.sub(r"\s|\(|\)", "", str(v or ""))
+    anchor = None
+    for row in ws.iter_rows():
+        for c in row:
+            if isinstance(c.value, str) and "미수금" in key(c.value) and "물대" in key(c.value):
+                anchor = c
+                break
+        if anchor:
+            break
+    if not anchor:
+        return None
+    # 머리 줄: 표 이름 칸 바로 위쪽(3줄 안)에서 '업체명'이 있는 줄
+    head = None
+    for hr in range(anchor.row - 1, max(anchor.row - 4, 0), -1):
+        if any("업체명" in key(ws.cell(hr, c).value) for c in range(1, ws.max_column + 1)):
+            head = hr
+            break
+    if not head:
+        return None
+    cols = {}
+    for c in range(1, ws.max_column + 1):
+        h = key(ws.cell(head, c).value).replace("(VAT포함)", "").replace("VAT포함", "")
+        for k, lab in AR_COLS:
+            if k not in cols and h.startswith(lab):
+                cols[k] = c
+    if "name" not in cols or "left" not in cols:
+        return None
+    # 병합된 칸(예: 월 'D83:D89')은 맨 위 칸 값을 그 아래 줄에도 쓴다
+    merged = {}
+    for rg in ws.merged_cells.ranges:
+        v = ws.cell(rg.min_row, rg.min_col).value
+        for r in range(rg.min_row, rg.max_row + 1):
+            for c in range(rg.min_col, rg.max_col + 1):
+                merged[(r, c)] = v
+
+    def val(r, k):
+        if k not in cols:
+            return None
+        c = cols[k]
+        v = ws.cell(r, c).value
+        return merged.get((r, c)) if v is None else v
+
+    rows, total, label = [], None, ""
+    for r in range(head + 1, ws.max_row + 1):
+        name = ar_txt(val(r, "name"))
+        if "기준미수금" in key(name):
+            total, label = amt(val(r, "left")), name
+            break
+        left, tot = amt(val(r, "left")), amt(val(r, "tot"))
+        if not name and left is None and tot is None:
+            continue
+        mon = val(r, "mon")
+        rows.append({"r": r, "tot": tot, "mon": ar_txt(mon), "name": name,
+                     "left": left, "cost": amt(val(r, "cost")), "pj": ar_txt(val(r, "pj")), "memo": ar_txt(val(r, "memo"))})
+    return {"rows": rows, "total": total, "totalLabel": label}
+
+
 def main():
     xlsx, wd = sys.argv[1], sys.argv[2]
     since = sys.argv[3] if len(sys.argv) > 3 else ""
@@ -121,9 +209,15 @@ def main():
             continue
         s = snap(wb[sn])
         s.update({"file": os.path.basename(xlsx), "sheet": sn})
+        a = ar_table(wb[sn])
+        if a:
+            s["ar"] = a
         out.setdefault("cfsheet-" + d[:7], {"days": {}})["days"][d] = s
     json.dump(out, open(os.path.join(wd, "cf_sheets.json"), "w", encoding="utf8"), ensure_ascii=False)
     print(json.dumps({k: sorted(v["days"]) for k, v in out.items()}, ensure_ascii=False))
+    noar = sorted(d for v in out.values() for d, x in v["days"].items() if "ar" not in x)
+    if noar:
+        print("미수금 표 못 찾은 날짜:", ", ".join(noar))
 
 
 if __name__ == "__main__":
