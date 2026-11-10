@@ -33,6 +33,9 @@
    - `fin/cfnew`를 `set` (if_version 고정): `days` = 기존 `cfnew.days` + `added` 날짜 줄(`new_cfhist.json`에서 해당 날짜 줄), 날짜 순. `at`=지금, `src` 유지.
    - 직원 사본: `members` 컬렉션의 각 uid에 대해 `acct/<uid>/fin` 문서 `all`이 있고 `revoked`가 아니면, `update`로 `histNew` = 위 `cfnew.days` 전체, `newAt`=지금. (버전이 다르다고 거절되면 그 버전으로 다시 — 이 두 칸만 바꾼다.)
 5-1. 입출금 줄 (2026-11-06 대표 지시): `new_fincf.json`의 각 줄을 인트라넷 `fincf/<id>`로 `batch` set (새 문서, `id` 칸은 빼고). `fincf_xl_marks.json`의 각 줄은 직원이 이미 넣은 같은 줄(날짜·구분·금액 같음)이라 새로 만들지 않고 `update`로 `xl`·`xlWhat`만 넣는다 (if_version 고정). `added`가 비어 있어도 `fincf_new`·`fincf_marks`가 있으면 이 단계는 한다.
+5-2. 엑셀 원본 보기 (2026-11-10 대표 지시): `python3 -I intranet/tools/cf_sheet.py "<xlsx>" <작업폴더> <지난달 1일 YYYY-MM-01>`을 실행해 `cf_sheets.json`을 만든다.
+   그 안의 각 키(`cfsheet-YYYY-MM`)마다 인트라넷 `fin/<키>` 문서를 읽어(없으면 새로) `days`에 **새 날짜와 원본이 바뀐 날짜**를 더해 `set` (if_version 고정, 이미 있는 다른 날짜는 그대로 둔다). `at`=지금, `src`=파일 이름.
+   이 자료는 대표 저장소(fin)라 직원은 직접 못 읽고, 대표 화면이 열릴 때 채진아 사본에 최근 14일만 들어간다. 이 단계는 `added`가 비어 있어도 한다.
 6. 자금 관리 반영: `new_cf_days.json`·`new_cf_items.json`·`new_cf_banks.json`을 각각 `cf_days.json`·`cf_items.json`·`cf_banks.json` 이름으로 바꿔
    Artifact `publish` (`url`=자금 관리, `asset: true`)로 올리고, 나온 url로 `datasets/<id>`를 `update`(if_version): `source.url`, `updated` = `{at: 지금, by: "클로드 매일 19시 자동 (cash flow ... 에서 MM/DD 추가, 원본 그대로)"}`. `cf_days` 설명의 기간·일수도 새 값으로.
 7. 원본 사본과 작업 파일을 지운다.
