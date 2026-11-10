@@ -12,7 +12,8 @@
 <meta name="theme-color" content="#203864">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
-<!-- 간편견적 고객화면 v18 (공개 사이트판) · 2026-11-10 · 시안 미리 보기를 AI 이미지 생성으로 변경(Gemini 이미지 모델, 참고는 거실 실제 시공 2장만, 동양아파트 사진 안 씀) · 아르띠꼬 더 보기 링크 통일·홈페이지 추가 · 서버 Apps Script v11과 짝
+<!-- 간편견적 고객화면 v19 (공개 사이트판) · 2026-11-10 · 평면도 참고 시안: 올린 평면도 첫 장을 1024px로 줄여 시안 요청에 같이 보냄(POST), 없으면 예전처럼 · 서버 Apps Script v12와 짝
+     v18 · 2026-11-10 · 시안 미리 보기를 AI 이미지 생성으로 변경(Gemini 이미지 모델, 참고는 거실 실제 시공 2장만, 동양아파트 사진 안 씀) · 아르띠꼬 더 보기 링크 통일·홈페이지 추가 · 서버 Apps Script v11과 짝
      v17 · 2026-11-10 · 시안 바탕 되돌림: 주방·침실·욕실은 3D 제안 그대로(대표 지시), 비슷한 평형 사례에서만 동양아파트 34평 사진 뺀 상태 유지 · 서버 Apps Script v10과 짝
      v16 · 2026-11-10 · 비슷한 평형 사례에서 동양아파트 34평 3D 제안 4장 뺌 · 시안 미리 보기: 거실만 실제 시공 사진, 주방·침실·욕실은 색 보드 · 서버 Apps Script v9와 짝
      v15 · 2026-11-10 · 시안 미리 보기 추가(공간·스타일·마감재 → 시안 보기, 거실은 실제 시공 사진·주방·침실·욕실은 색 보드, 동양아파트 3D 제안 사례 사진 뺌, 기기 하루 2장·전체 30장, 상담 신청에 시안 첨부) ·
@@ -662,7 +663,7 @@ $("planIn").addEventListener("change",async e=>{const fs=[...e.target.files];e.t
     if(f.type==="application/pdf"||/\.pdf$/i.test(f.name)){if(f.size>15e6){planNote("PDF가 너무 커요. 15MB 이하로 올려 주세요.");continue}home.pdfs.push({name:f.name,blob:f});if(!home.planFrom||home.planFrom==="request")home.planFrom="upload";continue}
     try{const c=await toCanvas(f,1600);const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.88));home.files.push({c,blob})}catch(err){planNote("열 수 없는 사진이 있어요. 캡처(PNG·JPG)나 PDF로 다시 올려 주세요.")}}
   home.cur=Math.max(0,home.files.length-1);if(home.files.length&&home.planFrom!=="auto")home.planFrom="upload";home.view="concept";syncTabs();drawThumbs();drawRender();$("copyText").value=message();if(home.files.length)setTimeout(()=>goTo("renderBox"),200)});
-function drawThumbs(){const box=$("thumbs");box.innerHTML="";home.files.forEach((f,i)=>{const d=document.createElement("div");d.className="t";const c=document.createElement("canvas");c.width=176;c.height=176;
+function drawThumbs(){setTimeout(()=>{try{if(!$("sianLimit").hidden)return;sianLeftMsg()}catch(e){}},0);const box=$("thumbs");box.innerHTML="";home.files.forEach((f,i)=>{const d=document.createElement("div");d.className="t";const c=document.createElement("canvas");c.width=176;c.height=176;
   const x=c.getContext("2d"),k=Math.min(176/f.c.width,176/f.c.height);x.fillStyle="#fff";x.fillRect(0,0,176,176);x.drawImage(f.c,(176-f.c.width*k)/2,(176-f.c.height*k)/2,f.c.width*k,f.c.height*k);
   c.addEventListener("click",()=>{home.cur=i;drawRender()});const b=document.createElement("button");b.type="button";b.textContent="×";b.setAttribute("aria-label","빼기");
   b.addEventListener("click",()=>{home.files.splice(i,1);home.cur=0;drawThumbs();drawRender();$("copyText").value=message()});d.append(c,b);box.appendChild(d)});
@@ -789,13 +790,20 @@ function sianChips(){const mk=(id,L,key)=>{$(id).innerHTML=L.map(v=>`<button typ
 [["sianSp","sp"],["sianSt","st"],["sianFi","fi"]].forEach(([id,key])=>$(id).addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;SIAN[key]=b.dataset.v;sianChips()}));
 sianChips();
 function sianLimit(on){$("sianLimit").hidden=!on;$("sianBtn").hidden=on}
-function sianLeftMsg(){const left=Math.max(0,SIAN_DEV_MAX-sianUsed());$("sianMsg").textContent=left?"오늘 "+left+"장 더 볼 수 있어요.":"";if(!left)sianLimit(true)}
+function sianLeftMsg(){const left=Math.max(0,SIAN_DEV_MAX-sianUsed());$("sianMsg").textContent=left?"오늘 "+left+"장 더 볼 수 있어요."+(home.files&&home.files.length?" 올려 주신 평면도도 참고해요.":" 아래 '우리 집 도면 올리기'에 평면도를 올리면 구조를 참고해 그려요."):"";if(!left)sianLimit(true)}
 $("sianAsk").addEventListener("click",()=>goTo("askCard"));
+/* 평면도(올린 사진 첫 장)를 1024px JPEG로 줄여 base64로. 없으면 "" (v19) */
+function sianPlan(){const f=home.files&&home.files[0];if(!f||!f.c)return "";const c=f.c,k=Math.min(1,1024/Math.max(c.width,c.height)),v=document.createElement("canvas");
+  v.width=Math.round(c.width*k);v.height=Math.round(c.height*k);const x=v.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,v.width,v.height);x.drawImage(c,0,0,v.width,v.height);
+  return v.toDataURL("image/jpeg",.8).split(",")[1]||""}
+function sianGet(p){const q=Object.keys(p).filter(k=>k!=="plan"&&k!=="planMime").map(k=>k+"="+encodeURIComponent(p[k])).join("&");return fetch(WEBAPP+"?sian=1&"+q).then(r=>r.json())}
 function sianAsk(p){const gas=window.google&&google.script&&google.script.run;
   if(gas)return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej).sian(p));
   if(!WEBAPP)return Promise.resolve(null);
-  const q=Object.keys(p).map(k=>k+"="+encodeURIComponent(p[k])).join("&");
-  return fetch(WEBAPP+"?sian=1&"+q).then(r=>r.json())}
+  if(!p.plan)return sianGet(p);
+  // 평면도가 있으면 POST (사진이 커서 주소에 못 실음). POST가 안 되면 평면도 없이 GET으로 한 번 더
+  const body=JSON.stringify(Object.assign({action:"sian"},p)).replace(/[\u007f-\uffff]/g,c=>"\\u"+("000"+c.charCodeAt(0).toString(16)).slice(-4));
+  return fetch(WEBAPP,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body}).then(r=>r.json()).catch(()=>sianGet(p))}
 function loadImg(src){return new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=j;im.src=src})}
 /* AI 그림 + 아래 워터마크 띠 → JPEG (상담 신청 때 이 그림이 첨부됨) */
 async function sianDraw(src){const im=await loadImg(src),W=Math.min(1280,im.width),H=Math.round(im.height*W/im.width),B=Math.round(W*.075);
@@ -811,13 +819,14 @@ $("sianBtn").addEventListener("click",async()=>{if(SIAN.busy)return;const msg=$(
   if(sianUsed()>=SIAN_DEV_MAX){sianLimit(true);msg.textContent="";return}
   SIAN.busy=true;b.disabled=true;b.textContent="AI가 그리는 중이에요… (20~60초)";msg.textContent="";
   let r=null;
-  try{r=await sianAsk({dev:sianDev(),space:SIAN.sp,style:SIAN.st,finish:SIAN.fi,py:st.py||"",work:st.preset||""})}catch(e){r=null}
+  const plan=sianPlan(),q={dev:sianDev(),space:SIAN.sp,style:SIAN.st,finish:SIAN.fi,py:st.py||"",work:st.preset||""};if(plan){q.plan=plan;q.planMime="image/jpeg"}
+  try{r=await sianAsk(q)}catch(e){r=null}
   const done=()=>{SIAN.busy=false;b.disabled=false;b.textContent="시안 보기"};
   if(r&&r.ok===false&&r.limit){done();if(r.limit==="device")sianMark(SIAN_DEV_MAX);sianLimit(true);
     if(r.limit==="total")$("sianLimit").querySelector(".hint").textContent="오늘 준비한 시안이 모두 나갔어요. 상담 신청하시면 담당 실장이 원하시는 공간·스타일로 더 보여드려요.";return}
   if(!(r&&r.ok&&r.img)){done();msg.textContent="지금은 시안을 만들 수 없어요. (이번 시도는 횟수에 안 세요) 잠시 뒤 다시 누르시거나, 상담 신청하시면 담당 실장이 보여드려요.";return}
   sianMark(r.used||sianUsed()+1);
-  try{const d=await sianDraw("data:"+(r.mime||"image/png")+";base64,"+r.img);SIAN.list.push({sid:r.sid||"",label:SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi,blob:d.blob,url:d.url});sianShow();$("copyText").value=message()}
+  try{const d=await sianDraw("data:"+(r.mime||"image/png")+";base64,"+r.img);SIAN.list.push({sid:r.sid||"",label:SIAN.sp+" · "+SIAN.st+" · "+SIAN.fi+(r.plan?" · 평면도 참고":""),blob:d.blob,url:d.url});sianShow();$("copyText").value=message()}
   catch(e){msg.textContent="시안을 보여 드리지 못했어요. 다시 눌러 주세요."}
   done();sianLeftMsg()});
 sianLeftMsg();
