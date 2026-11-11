@@ -1,0 +1,205 @@
+<!doctype html>
+<!-- 시공 사례 2026-11-11 v0 · 단지별 정리. 사례 추가: 아래 <article class="case"> 한 덩어리를 복사해 이름·구분·사진·설명만 바꾸기 -->
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>시공 사례 | 홈퍼니싱 · 아르띠꼬 스튜디오</title>
+<meta name="description" content="홈퍼니싱 · 아르띠꼬 스튜디오가 디자인하고 시공한 아파트와 상업 공간을 단지별로 모았습니다. 구리역 롯데캐슬 시그니처, 구의현대 2단지, 구리갈매 루샵.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f0e8">
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32.png">
+<link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+<meta property="og:title" content="시공 사례 | 홈퍼니싱 · 아르띠꼬 스튜디오"><meta property="og:description" content="디자인부터 시공까지 맡은 공간을 단지별로 모았습니다."><meta property="og:type" content="website"><meta property="og:url" content="https://soo-cpu.github.io/card/site/works/"><meta property="og:image" content="https://soo-cpu.github.io/card/site/images/og.jpg">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300&family=Cormorant+Garamond:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f0e8; --paper:#fbf8f3; --ink:#2a2420; --sub:#8c7f72; --line:#e3dace; --pt:#9a7b56; --ph:#e6dfd4;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --serif:"Noto Serif KR","Nanum Myeongjo",serif;
+  --latin:"Cormorant Garamond","Times New Roman",serif;
+  --gut:24px;
+  --est-bg:#7a5f3f; --est-fg:#fbf8f3;
+}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--ph:#2a251f;--est-bg:#c2a57a;--est-fg:#1b1815;color-scheme:dark}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;font-weight:400;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;padding-bottom:calc(136px + env(safe-area-inset-bottom))}
+a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+img{display:block;max-width:100%}
+:focus-visible{outline:1px solid var(--pt);outline-offset:3px}
+.in{max-width:1120px;margin:0 auto;padding:0 var(--gut)}
+.lbl{font-family:var(--latin);font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--pt)}
+h2{font-family:var(--serif);font-weight:300;font-size:26px;line-height:1.5;letter-spacing:-.01em;margin:18px 0 14px}
+.lead{color:var(--sub);margin:0;font-weight:300}
+section{padding:112px 0}
+section.alt{background:var(--paper)}
+
+/* 상단 */
+.top{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:22px var(--gut);color:#fff}
+.logo{font-family:var(--latin);font-weight:500;font-size:14px;letter-spacing:.34em}
+.top nav{display:none;gap:28px;font-size:13px;letter-spacing:.06em}
+.top .tel{font-size:13px;letter-spacing:.08em;opacity:.9}
+
+/* 하단 */
+footer{padding:72px 0 40px;border-top:1px solid var(--line);font-size:12px;line-height:1.9;color:var(--sub)}
+footer .logo{color:var(--ink)}
+.biz{display:grid;gap:22px;margin:28px 0}
+.biz b{color:var(--ink);font-weight:500}
+.nw{white-space:nowrap}
+.ch{display:flex;gap:10px;margin-bottom:20px}
+.ch a{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:50%;color:var(--sub)}
+
+/* 화면 아래 상담 버튼 (항상 보임) */
+.bar{position:fixed;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;display:grid;grid-template-columns:1fr 1fr;box-shadow:0 10px 30px rgba(30,20,10,.18)}
+.bar a{display:flex;align-items:center;justify-content:center;gap:8px;height:54px;font-size:14px;letter-spacing:.06em;background:var(--paper);color:var(--ink)}
+.bar a.call{background:var(--ink);color:var(--bg)}
+.bar a.est{grid-column:1/-1;height:52px;background:var(--est-bg);color:var(--est-fg);font-weight:500;font-size:15px;letter-spacing:.04em}
+.bar svg{width:16px;height:16px}
+
+/* 사진 크게 보기 */
+dialog{border:0;padding:0;max-width:100vw;max-height:100vh;width:100%;height:100%;background:rgba(20,16,12,.94)}
+dialog::backdrop{background:rgba(20,16,12,.94)}
+dialog img{width:100%;height:100%;object-fit:contain}
+dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0;background:none;color:#fff;font-size:28px;font-weight:200;cursor:pointer}
+
+/* 은은하게 나타나기 */
+.rv{opacity:0;transform:translateY(18px);transition:opacity 1s ease,transform 1s ease}
+.rv.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+
+/* 시공 사례 페이지 */
+.top{position:static;color:var(--ink);display:flex;justify-content:space-between;align-items:center;padding:20px var(--gut);border-bottom:1px solid var(--line)}
+.top .back{font-size:13px;color:var(--sub);letter-spacing:.04em}
+.head{padding-top:64px;padding-bottom:8px}
+h1{font-family:var(--serif);font-weight:300;font-size:30px;line-height:1.4;margin:16px 0 12px}
+.lead{color:var(--sub);margin:0;font-weight:300}
+.flt{display:flex;flex-wrap:wrap;gap:8px;margin-top:32px}
+.flt button{font:inherit;font-size:13px;padding:8px 16px;border:1px solid var(--line);background:transparent;color:var(--sub);cursor:pointer;border-radius:999px}
+.flt button[aria-pressed=true]{border-color:var(--ink);color:var(--ink)}
+.case{padding:56px 0;border-bottom:1px solid var(--line)}
+.case[hidden]{display:none}
+.case h2{font-family:var(--serif);font-weight:300;font-size:24px;margin:0}
+.meta{margin:8px 0 0;font-size:13px;color:var(--sub);letter-spacing:.02em}
+.gal{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:24px}
+.gal button{all:unset;display:block;cursor:zoom-in;background:var(--ph);aspect-ratio:4/5;overflow:hidden}
+.gal button:only-child{grid-column:1/-1}
+.gal img{width:100%;height:100%;object-fit:cover}
+.desc{margin:24px 0 0;font-weight:300;line-height:1.9}
+.go{display:inline-flex;gap:8px;margin-top:20px;font-size:14px;border-bottom:1px solid var(--ink);padding-bottom:3px}
+.go i{font-style:normal;color:var(--pt)}
+.more{padding-top:56px;padding-bottom:80px}
+.more p{margin:0;font-size:13px;color:var(--sub)}
+.chl{list-style:none;margin:16px 0 0;padding:0;border-top:1px solid var(--line)}
+.chl a{display:flex;align-items:baseline;gap:14px;padding:18px 2px;border-bottom:1px solid var(--line)}
+.chl b{font-weight:400;font-size:15px}.chl span{color:var(--sub);font-size:13px;font-weight:300;flex:1}.chl i{font-style:normal;color:var(--pt)}
+.bar{position:fixed;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;display:grid;grid-template-columns:1fr 1fr;box-shadow:0 10px 30px rgba(30,20,10,.18)}
+.bar a{display:flex;align-items:center;justify-content:center;height:52px;font-size:14px;letter-spacing:.04em;background:var(--paper);color:var(--ink)}
+.bar a.est{grid-column:auto;height:52px;font-size:14px;background:var(--est-bg);color:var(--est-fg);font-weight:500}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+@media (min-width:860px){
+  :root{--gut:48px}
+  body{padding-bottom:0}
+  h1{font-size:40px}
+  .head{padding-top:96px;padding-bottom:16px}
+  .case{display:grid;grid-template-columns:1.3fr 1fr;gap:64px;align-items:start;padding:80px 0}
+  .case .txt{order:2;position:sticky;top:32px}
+  .case .gal{order:1;margin-top:0}
+  .chl{display:grid;grid-template-columns:1fr 1fr;column-gap:48px}
+  .bar{left:auto;right:32px;bottom:32px;width:340px}
+}
+</style></head><body>
+
+<header class="top">
+  <a class="logo" href="../">HOME FURNISHING</a>
+  <a class="back" href="../">← 홈으로</a>
+</header>
+
+<main>
+<div class="in head">
+  <div class="lbl">Selected Works</div>
+  <h1>시공 사례</h1>
+  <p class="lead">단지별로 정리했습니다. 사진을 누르면 크게 볼 수 있습니다.</p>
+  <div class="flt" role="group" aria-label="공간 구분">
+    <button type="button" data-k="all" aria-pressed="true">전체</button>
+    <button type="button" data-k="apt" aria-pressed="false">아파트</button>
+    <button type="button" data-k="shop" aria-pressed="false">상업 공간</button>
+  </div>
+</div>
+
+<div class="in" id="list">
+  <article class="case" data-k="apt">
+    <div class="txt">
+      <h2>구리역 롯데캐슬 시그니처</h2>
+      <p class="meta">아파트 · 37평 · 2026</p>
+      <p class="desc">거실과 복도의 벽을 같은 질감으로 마감해 집 전체가 한 톤으로 이어지도록 했습니다. 천장 단차 안에 간접조명을 숨기고, 다이닝 옆에는 유리장과 원목 수납장을 짜 넣었습니다. 복도의 방문은 벽과 같은 마감으로 감추고 레일 조명 하나로 정리했습니다.</p>
+      <a class="go" href="https://soo-cpu.github.io/card/estimate/">비슷한 평형 예상 비용 보기<i aria-hidden="true">→</i></a>
+    </div>
+    <div class="gal">
+      <button type="button" data-full="../images/work-1.jpg"><img src="../images/work-1.jpg" alt="구리역 롯데캐슬 시그니처 거실과 다이닝" loading="lazy"></button>
+      <button type="button" data-full="../images/hero.jpg"><img src="../images/hero.jpg" alt="구리역 롯데캐슬 시그니처 복도" loading="lazy"></button>
+    </div>
+  </article>
+
+  <article class="case" data-k="apt">
+    <div class="txt">
+      <h2>구의현대 2단지</h2>
+      <p class="meta">아파트 · 2023</p>
+      <p class="desc">거실에서 주방까지 천장 라인 조명을 길게 이어 공간이 하나로 읽히게 했습니다. 주방은 거실을 마주 보는 아일랜드로 구성하고, 현관 쪽 유리 중문 안에는 곡선 조명 거울을 두어 들어서는 순간의 인상을 만들었습니다.</p>
+      <a class="go" href="https://soo-cpu.github.io/card/estimate/">비슷한 평형 예상 비용 보기<i aria-hidden="true">→</i></a>
+    </div>
+    <div class="gal">
+      <button type="button" data-full="../images/work-2.jpg"><img src="../images/work-2.jpg" alt="구의현대 2단지 거실과 주방" loading="lazy"></button>
+    </div>
+  </article>
+
+  <article class="case" data-k="shop">
+    <div class="txt">
+      <h2>구리갈매 루샵</h2>
+      <p class="meta">상업 공간 · 매장 · 2022</p>
+      <p class="desc">검은 철판 계단에 원목 디딤판을 얹어 2층으로 오르는 동선을 매장의 중심으로 삼았습니다. 계단 아래 남는 자리에는 작은 실내 정원을 들이고, 입구에는 석재 질감의 안내 데스크를 놓았습니다.</p>
+      <a class="go" href="../#contact">매장·상업 공간 상담 신청<i aria-hidden="true">→</i></a>
+    </div>
+    <div class="gal">
+      <button type="button" data-full="../images/work-3.jpg"><img src="../images/work-3.jpg" alt="구리갈매 루샵 매장 2층 계단과 안내 데스크" loading="lazy"></button>
+    </div>
+  </article>
+</div>
+
+<div class="in more">
+  <p>더 많은 현장은 각 채널에 올리고 있습니다.</p>
+  <ul class="chl">
+    <li><a href="https://blog.naver.com/artico_studio" target="_blank" rel="noopener"><b>아르띠꼬 블로그</b><span>현장별 설계 이야기</span><i aria-hidden="true">→</i></a></li>
+    <li><a href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener"><b>인스타그램</b><span>현장 사진</span><i aria-hidden="true">→</i></a></li>
+    <li><a href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew/shorts" target="_blank" rel="noopener"><b>유튜브 쇼츠</b><span>짧은 현장 영상</span><i aria-hidden="true">→</i></a></li>
+    <li><a href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener"><b>오늘의집</b><span>포트폴리오</span><i aria-hidden="true">→</i></a></li>
+    <li><a href="https://naver.me/GL8bt4G4" target="_blank" rel="noopener"><b>네이버 플레이스</b><span>방문 예약</span><i aria-hidden="true">→</i></a></li>
+  </ul>
+</div>
+</main>
+
+<footer><div class="in">
+  <a class="logo" href="../">HOME FURNISHING</a>
+  <div class="biz"><div><b>주식회사 홈퍼니싱</b> · 아르띠꼬 스튜디오<br><span class="nw">대표번호 <a href="tel:15665904">1566-5904</a></span></div></div>
+  <div>© 2026 Home Furnishing · Artico Studio</div>
+</div></footer>
+
+<div class="bar">
+  <a class="est" href="https://soo-cpu.github.io/card/estimate/">1분 간편 견적</a>
+  <a href="../#contact">상담 신청</a>
+</div>
+
+<dialog id="lb"><button type="button" aria-label="닫기">×</button><img alt=""></dialog>
+
+<script>
+// 구분 필터
+(function(){var bs=document.querySelectorAll('.flt button'),cs=document.querySelectorAll('.case');
+bs.forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.k;
+ bs.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+ cs.forEach(function(c){c.hidden=!(k==='all'||c.dataset.k===k)})})})})();
+// 사진 크게 보기
+(function(){var d=document.getElementById('lb'),im=d.querySelector('img');
+document.querySelectorAll('[data-full]').forEach(function(b){b.setAttribute('aria-label',b.querySelector('img').alt+' 크게 보기');
+ b.addEventListener('click',function(){im.src=b.dataset.full;im.alt=b.querySelector('img').alt;if(d.showModal)d.showModal();else d.setAttribute('open','')})});
+d.addEventListener('click',function(){d.close?d.close():d.removeAttribute('open')})})();
+</script>
+</body></html>
