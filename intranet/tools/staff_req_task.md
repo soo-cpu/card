@@ -32,3 +32,9 @@
 - 직원별 `acct/<직원 uid>/askq` 문서 중 status가 '대기'인 것: 인트라넷 사용법·접속 문제면 답을 `a`에 쓰고 status '답함', answeredAt, answeredBy:'예약 작업'으로 update(if_version). 직원은 물어보기 창에서 답을 봄.
 - 답할 수 없거나 권한·데이터 변경·돈 관련이면 status '대표 전달'로 바꾼다 (대표 빨간 불에 뜸). 새로 '대표 전달'이 생기면 4번처럼 알림 1회 (같은 건 중복 금지, notifiedAt).
 - 직원 uid 목록은 `staff` 컬렉션의 uid. 질문 내용에 주민번호·계좌번호가 있으면 답에 옮기지 않는다.
+
+## 대표 지시.md → 대표 지시 등록 (다음 지시 2026-11-11 v9)
+- 드라이브 인트라넷 폴더(`1ZQiRja_aLNH_l6_m2HI5Praaqyrwl17B`)의 `대표 지시.md`를 읽는다 (읽기만).
+- `- 받는 사람 | 제목 | 설명 | 연결 화면 | 마감일` 형식 줄마다: 번호 = `md_` + 줄 전체의 hashStr (인트라넷 `hashStr` 와 같은 djb2: h=5381; h=((h<<5)+h+charCode)|0; 결과 `(h>>>0).toString(36)`), 이미 `acct/_ord/o/<번호>`가 있으면 건너뛴다.
+- 없으면 `acct/_ord/o/<번호>` = `{to:[uid…], toNames, title, desc, link, due, at, by:"클로드 예약 작업", src:"대표 지시.md", ack:{}}`, 받는 사람마다 `mine/<uid>/orders/<번호>` = `{title, desc, link, due, at, from:"대표 최윤수", status:"new"}` 를 새로 만든다 (덮어쓰기·삭제 없음). 이름은 staff 컬렉션 name 으로 uid 를 찾는다(실장·차장 같은 직함은 뗀다). 연결 화면 값: price(단가 입력)·projects·quotes·sites·customers·approvals·reports·manuals·calendar·home.
+- 대표 화면도 열릴 때 같은 방식(30분마다)으로 등록하니 번호로 두 번 안 들어간다.
