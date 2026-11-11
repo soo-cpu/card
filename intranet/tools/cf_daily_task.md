@@ -43,7 +43,7 @@
    - 드라이브 전체에서 `title contains '2027 사업계획' and trashed = false`로 찾고, 이름이 '2027 사업계획'으로 **시작**하고 `YYYY-MM-DD vN`이 있는 것 중 **vN이 가장 큰 것**(같으면 늦은 날짜)을 고른다 ('_조각 …'·'대화 기록 …'·'손익분기점' 같은 다른 파일은 빠짐).
    - 경영 대시보드의 손익분기 목표도 이 파일의 '손익분기 매출'을 쓴다 (`fin/goalplan.bep`).
    - 인트라넷 `fin/goalplan`의 `src.title`과 다르면 그 파일을 받아 `python3 -I intranet/tools/goal_snap.py plan <md> "<파일 이름>"` → 결과로 `fin/goalplan`을 `set`(if_version, `src`·`checkedAt`·`at`=지금 포함), `config/goal`은 `update`로 `year`·`src`(title·date·v)·`months`·`margin`·`mixRes`·`mixPub`·`total`·`planAt`만 넣는다 (**고정비·손익분기·5-3은 config에 절대 넣지 않는다** — 직원도 읽는 문서). 3-2 표가 12달이 아니면 바꾸지 말고 보고에 적는다.
-   - 계약 실적: `projects` 컬렉션 전체를 out_dir로 받고, `config/goal`을 파일로 받아 `python3 -I intranet/tools/goal_snap.py act <projects폴더> <goal.json> 2027` → `config/goal`을 `update`로 `act`(결과 그대로)·`actAt`=지금 (if_version).
+   - 계약 실적 (2026-11-11 v1 바뀜): `projects` 컬렉션 전체를 out_dir로 받고, `fin/goalact`를 파일로 받아 `python3 -I intranet/tools/goal_snap.py act <projects폴더> <goalact.json> 2027` → 결과의 `list`·`noDate`는 `fin/goalact`에 `set`(at=지금, if_version), `agg`(월별 합계)는 `config/goal`에 `update`로 `agg`·`noDateN`·`actAt`만 (if_version). **현장별 금액·마진 줄(list)은 config에 절대 넣지 않는다** (직원 공용 문서).
    - 마진율은 대표 화면의 현장 원가 집계라 예전 값을 그대로 이어 쓴다 (대표 화면이 열리면 다시 계산됨).
 6. 자금 관리 반영: `new_cf_days.json`·`new_cf_items.json`·`new_cf_banks.json`을 각각 `cf_days.json`·`cf_items.json`·`cf_banks.json` 이름으로 바꿔
    Artifact `publish` (`url`=자금 관리, `asset: true`)로 올리고, 나온 url로 `datasets/<id>`를 `update`(if_version): `source.url`, `updated` = `{at: 지금, by: "클로드 매일 19시 자동 (cash flow ... 에서 MM/DD 추가, 원본 그대로)"}`. `cf_days` 설명의 기간·일수도 새 값으로.

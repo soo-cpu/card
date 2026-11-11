@@ -9,7 +9,7 @@
 
 사용:
   python3 -I goal_snap.py plan 사업계획.md 파일이름 > goalplan.json
-  python3 -I goal_snap.py act projects폴더 이전_goal.json 연도 > act.json
+  python3 -I goal_snap.py act projects폴더 이전_goalact.json 연도 > act.json   (이전 마진율은 fin/goalact 에서 이어 씀)
 """
 import json, os, re, sys
 
@@ -78,7 +78,7 @@ def kind(cat):
 def act(pdir, prev_path, year):
     prev = json.load(open(prev_path, encoding="utf8")) if prev_path and os.path.exists(prev_path) else {}
     prev = prev.get("data", prev)
-    old = {x["no"]: x for x in ((prev.get("act") or {}).get("list") or [])}
+    old = {x["no"]: x for x in (prev.get("list") or (prev.get("act") or {}).get("list") or [])}
     out, nodate = [], []
     for f in sorted(os.listdir(pdir)):
         if not f.endswith(".json") or f.startswith("."):
@@ -111,4 +111,20 @@ if __name__ == "__main__":
         g["src"] = {"title": sys.argv[3], "date": m.group(1) if m else "", "v": int(m.group(2)) if m else 0}
         print(json.dumps(g, ensure_ascii=False))
     else:
-        print(json.dumps(act(sys.argv[2], sys.argv[3], int(sys.argv[4])), ensure_ascii=False))
+        # 결과: {"list","noDate"} = fin/goalact (대표 저장소), "agg" = config/goal 의 월별 합계 (전 직원 공용, 현장별 금액 없음)
+        a = act(sys.argv[2], sys.argv[3], int(sys.argv[4]))
+        y = int(sys.argv[4])
+        agg = {}
+        for x in a["list"]:
+            if int(x["d"][:4]) != y:
+                continue
+            m = str(int(x["d"][5:7]))
+            g = agg.setdefault(m, {"tot": 0, "res": 0, "pub": 0, "n": 0})
+            g["tot"] += x["amt"]
+            g["n"] += 1
+            if x["kind"] == "주거":
+                g["res"] += x["amt"]
+            elif x["kind"] == "관공서":
+                g["pub"] += x["amt"]
+        a["agg"] = agg
+        print(json.dumps(a, ensure_ascii=False))
