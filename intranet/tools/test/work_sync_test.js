@@ -5,12 +5,12 @@ const RULES=OLD.concat(process.env.NOWORK?[]:[{path:"work",read:"interact",write
 const now=new Date().toISOString();
 const SEED={"staff/st_jjh":{name:"정진혁",uid:"u_jjh",level:"실무 팀",state:"재직",pos:"실장",email:"jjh@test"},"staff/st_bom":{name:"이봄이",uid:"u_bom",level:"실무 팀",state:"재직",pos:"실장",email:"bom@test"},
  "members/u_jjh":{active:true,staffId:"st_jjh",name:"정진혁"},"members/u_bom":{active:true,staffId:"st_bom",name:"이봄이"},
- "projects/p1":{no:"P-2611-901",title:"시험 현장",custName:"홍길동",custCode:"C-2611-901",stage:"상담",mgr:"정진혁",contractAmt:"33000000",estCost:"",perf:"순수 인테리어",inq:"2026-11-01",work:"욕실",updatedAt:"2026-11-01T00:00:00Z"},
+ "projects/p1":{no:"P-2611-901",title:"시험 현장",custName:"홍길동",custCode:"C-2611-901",stage:"상담",mgr:"정진혁",contractAmt:"33000000",estCost:"",perf:"순수 인테리어",approvals:[{amt:1500000,t:"자재"}],inq:"2026-11-01",work:"욕실",updatedAt:"2026-11-01T00:00:00Z"},
  "projects/p2":{no:"P-2611-902",title:"미확정 현장",custName:"김시험",stage:"견적",mgr:"정진혁",contractAmt:"5000000",amtLock:"미확정",inq:"2026-11-02",updatedAt:"2026-11-01T00:00:00Z"},"ppriv/p1":{estCost:"20000000",updatedAt:"2026-11-01T00:00:00Z"},
  "customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:[1],stage:"1-상담영업",updatedAt:"2026-11-01T00:00:00Z"},
  "cpriv/c1":{tel:"010-1234-5678",addr:"서울시 시험구 1",updatedAt:"2026-11-01T00:00:00Z"},
  "sites/s1":{pno:"P-2611-901",name:"시험 현장",mgr:"정진혁",status:"공사 중",logs:[],updatedAt:"2026-11-01T00:00:00Z"},
- "quotes/q1":{qno:"Q-2611-901",pno:"P-2611-901",name:"홍길동",amount:"3000000",status:"작성",updatedAt:"2026-11-01T00:00:00Z"}};
+ "quotes/q1":{qno:"Q-2611-901",pno:"P-2611-901",name:"홍길동",amount:"3000000",qCost:"2100000",status:"작성",updatedAt:"2026-11-01T00:00:00Z"}};
 const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},bom:{id:"u_bom",name:"이봄이",email:"bom@test",isOwner:false}};
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900}});
  await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));
@@ -24,7 +24,7 @@ const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true}
  let A=await open('admin');await wait(9000);let d=await D();
  console.log('1 work keys',Object.keys(d).filter(k=>k.startsWith('work/')));
  const wp=d['work/all/projects/p1']||{};console.log('1 project contractAmt',wp.contractAmt,'estCost' in wp?'estCost:'+wp.estCost:'no estCost','perf' in wp?'perf!':'no perf');
- const wc=d['work/all/customers/c1']||{};console.log('1 customer tel',wc.tel,wc.addr);
+ const wc=d['work/all/customers/c1']||{};console.log('1 no qCost',!('qCost' in (d['work/all/quotes/q1']||{})),'no approvals',!('approvals' in wp));console.log('1 customer tel',wc.tel,wc.addr);
  await A.close();
  // 2) 정진혁 화면 (대표 화면 닫힘) → 공사 내용 고쳐 저장
  let J=await open('jjh');await wait(7000);
@@ -49,7 +49,7 @@ const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true}
  await B.close();await J.close();
  // 4) 대표 화면 → 원본 반영 + 기록
  A=await open('admin');await wait(9000);d=await D();
- console.log('4 original p1.work',d['projects/p1'].work,'orig estCost',JSON.stringify(d['projects/p1'].estCost),'perf',d['projects/p1'].perf,'contractAmt',d['projects/p1'].contractAmt,'estCost ppriv',d['ppriv/p1'].estCost);
+ console.log('4 orig keeps approvals',JSON.stringify(d['projects/p1'].approvals),'q1 qCost',d['quotes/q1'].qCost);console.log('4 original p1.work',d['projects/p1'].work,'orig estCost',JSON.stringify(d['projects/p1'].estCost),'perf',d['projects/p1'].perf,'contractAmt',d['projects/p1'].contractAmt,'estCost ppriv',d['ppriv/p1'].estCost);
  console.log('4 log',JSON.stringify(Object.keys(d).filter(k=>k.startsWith('acct/_work/log')).map(k=>({by:d[k].byName,prev:d[k].prev}))));
  console.log('4 work p1 by',(d['work/all/projects/p1']||{}).__by);
  await A.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb'));D['projects/p1']=Object.assign({},D['projects/p1'],{stage:'계약',updatedAt:new Date().toISOString(),__at:new Date().toISOString()});localStorage.setItem('mockdb',JSON.stringify(D));new BroadcastChannel('mockdb').postMessage(1)});await wait(7000);d=await D();
