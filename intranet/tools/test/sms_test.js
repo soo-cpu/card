@@ -19,6 +19,8 @@ const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true}
 // 가짜 드라이브: localStorage 'mockdrive' 에 파일을 둠 (create_file · search_files · download_file_content)
 const FAKEMCP=`window.__mcpCalls=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{window.__mcpCalls.push([sv,tool,JSON.stringify(inp)]);const D=JSON.parse(localStorage.getItem('mockdrive')||'{}');const wrap=o=>({content:[{type:'text',text:JSON.stringify(o)}]});
  if(tool==='create_file'&&window.__MCPDENYCREATE)return {isError:true,content:[{type:'text',text:'The caller does not have permission'}]};
+ if(tool==='search_files'&&window.__MCPSEARCHFAIL>0){window.__MCPSEARCHFAIL--;throw new Error('deadline exceeded')}
+ if(tool==='create_file'&&window.__MCPFLAKY>0){window.__MCPFLAKY--;const id='f_'+Math.random().toString(36).slice(2,9);D[id]={id,title:inp.title,parentId:inp.parentId||'',text:inp.textContent||'',mime:inp.contentMimeType||'',modifiedTime:new Date().toISOString()};localStorage.setItem('mockdrive',JSON.stringify(D));return {isError:true,content:[{type:'text',text:'deadline exceeded'}]}}
  if(tool==='create_file'){const id='f_'+Math.random().toString(36).slice(2,9);D[id]={id,title:inp.title,parentId:inp.parentId||'',text:inp.textContent||'',mime:inp.contentMimeType||'',noconv:!!inp.disableConversionToGoogleType,modifiedTime:new Date().toISOString()};localStorage.setItem('mockdrive',JSON.stringify(D));return wrap({id,title:inp.title,viewUrl:'http://drive.test/'+id})}
  if(tool==='search_files'){const q=inp.query||'',m=/title = '([^']+)'/.exec(q),c=/title contains '([^']+)'/.exec(q),p=/parentId = '([^']+)'/.exec(q);return wrap({files:Object.values(D).filter(f=>(!m||f.title===m[1])&&(!c||f.title.includes(c[1]))&&(!p||f.parentId===p[1])).map(f=>({id:f.id,title:f.title,parentId:f.parentId,modifiedTime:f.modifiedTime}))})}
  if(tool==='download_file_content'){const f=D[inp.fileId];if(!f)return wrap({});const u=new TextEncoder().encode(f.text);let b='';u.forEach(x=>b+=String.fromCharCode(x));return wrap({content:btoa(b)})}
@@ -226,6 +228,23 @@ const bytes=t=>{let n=0;for(const ch of t){const c=ch.codePointAt(0);n+=c===10?2
  await TA.clock.setFixedTime(new Date('2026-11-14T03:00:00Z'));/* 한국 시간 낮 12시 */await TA.locator('[data-smsact="preview"]').click();await wait(400);
  ok('낮 12시(한국): 여러 명 실제 발송 열림 + 빨간 안내 한 줄',!(await TA.locator('[data-smsact="send"]').isDisabled())&&/실제로 보내기 \(2명\)/.test(await TA.locator('[data-smsact="send"]').innerText())&&(await TA.locator('#smsReal').count())===1);
  await TA.close();await T.ctx.close();
+
+ // ── ⑦ 검토 반려 2026-11-12: (A) 원본이 더 새것이어도 문자 기록이 안 사라짐 (C) 드라이브가 파일을 만들고도 오류를 돌려줄 때 다시 눌러도 요청 파일 1개
+ {const E7=await mkctx({viewport:{width:1280,height:900}});let A7=await E7.open('admin');await wait(6000);await A7.close();let d7=await E7.D();
+  const en={id:'20261112120000_abc123',at:'2026-11-12T03:00:00.000Z',by:'정진혁',tpl:'직접 쓰기',msg:'시험',to:'01011112222',test:true,status:'시험 성공',code:'1',message:'',msg_id:'T0',type:'SMS'};
+  const m0=d7['mine/u_jjh/customers/c1'],w0=d7['work/all/customers/c1'];
+  ok('7A 준비: 정진혁 사본·공용 칸에 고객 줄이 있음',!!m0&&!!w0);
+  if(m0&&w0){await E7.setDb('mine/u_jjh/customers/c1',Object.assign({},m0,{smsLog:[en]}));await E7.setDb('work/all/customers/c1',Object.assign({},w0,{smsLog:[en],__by:'u_jjh'}));const nw=new Date().toISOString();await E7.setDb('customers/c1',Object.assign({},d7['customers/c1'],{memo:'대표가 나중에 고침',updatedAt:nw,__at:nw}));
+   A7=await E7.open('admin');await wait(14000);d7=await E7.D();const n=k=>((d7[k]||{}).smsLog||[]).length;
+   ok('7A 원본이 직원 사본보다 새것이어도 문자 기록 유지: 원본·정진혁 사본·공용 칸 모두 1건 · 대표가 고친 메모도 그대로',n('customers/c1')===1&&n('mine/u_jjh/customers/c1')===1&&n('work/all/customers/c1')===1&&d7['customers/c1'].memo==='대표가 나중에 고침'&&d7['customers/c1'].tel==='',[n('customers/c1'),n('mine/u_jjh/customers/c1'),n('work/all/customers/c1')].join('/'));
+   ok('7A 다른 직원(이봄이) 사본에도 문자 기록이 내려감',n('mine/u_bom/customers/c1')===1,String(n('mine/u_bom/customers/c1')));await A7.close()}
+  const P7=await E7.open('jjh');await go(P7,'#customers');await P7.evaluate(()=>{window.__MCPFLAKY=1;window.__MCPSEARCHFAIL=1});
+  await P7.locator('#view tbody [data-sel]').first().check();await wait(200);await P7.locator('[data-smssel]').click();await wait(500);await P7.locator('[data-smsact="preview"]').click();await wait(400);await P7.locator('[data-smsact="send"]').click();await wait(1800);
+  const t7=await P7.locator('.toast').allInnerTexts();const f7a=(await E7.F()).filter(f=>/^sms_req_/.test(f.title)).length;
+  ok('7C 드라이브가 파일을 만들고도 오류 + 확인도 실패: ‘잠깐 끊겼어요 · 다시 눌러 주세요’ 안내 (폴더 공유 안내 아님)',t7.some(t=>/잠깐 끊겼어요/.test(t))&&!t7.some(t=>/폴더 공유가 아직/.test(t))&&f7a===1,t7.join(' | ')+' 파일 '+f7a);
+  await P7.locator('[data-smsact="send"]').click();await wait(2500);const f7=(await E7.F()).filter(f=>/^sms_req_/.test(f.title));d7=await E7.D();const lg7=Object.keys(d7).filter(k=>/^mine\/u_jjh\/customers\//.test(k)).flatMap(k=>(d7[k].smsLog||[]).filter(e=>f7[0]&&e.id===JSON.parse(f7[0].text).id));
+  ok('7C 다시 누름: 새 요청 파일을 만들지 않고(1개 그대로) 성공 처리 · 기록 1건 · create_file 은 1번만 불림',f7.length===1&&lg7.length===1&&(await P7.evaluate(()=>window.__mcpCalls.filter(c=>c[1]==='create_file'&&/sms_req_/.test(c[2])).length))===1,'파일 '+f7.length+' 기록 '+lg7.length);
+  await P7.close();await E7.ctx.close()}
 
  // ── ⑥ confirm/alert/prompt: 문자 코드에 0건 + 화면 대화상자는 okAsk(기존 방식)가 부른 confirm 뿐
  const blk=HTML.slice(HTML.indexOf('// ===== 문자 발송 (알리고'),HTML.indexOf('// ===== v0.95 (다음 지시 2026-11-09 v1)'));

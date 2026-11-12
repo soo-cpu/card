@@ -491,8 +491,10 @@ let DEV_NEW=false,DEV_MEM="";function devId(){if(DEV_MEM)return DEV_MEM;try{let 
 function devAdopt(id){DEV_MEM=id;try{localStorage.setItem(DEV_KEY,id)}catch(e){}}
 function devName(){const u=navigator.userAgent||"";const os=/iPhone|iPad/.test(u)?"아이폰":/Android/.test(u)?"안드로이드":/Mac/.test(u)?"맥":/Windows/.test(u)?"윈도우":"기기";const br=/SamsungBrowser/.test(u)?"삼성 인터넷":/CriOS|Chrome/.test(u)?"크롬":/Safari/.test(u)?"사파리":/Firefox/.test(u)?"파이어폭스":"브라우저";return os+" · "+br}
 async function knock(result,extra){if(PV)return false;if(!db||!me.id)return false;const en=Object.assign({at:nowISO(),dev:devId(),devName:devName(),result},extra||{});
-  try{let prev=[];try{const g=await db.doc("knock/"+me.id).get();prev=(g&&g.exists&&g.data().log)||[]}catch(e){}
+  try{const prev=await knockPrev(db,me.id);if(!prev){await db.collection("knock/"+me.id+"/late").doc(String(Date.now())).set(en);return true}/* 읽기 실패: 기록을 1건으로 덮어쓰지 않고 따로 남김 */
     await db.collection("knock").doc(me.id).set({uid:me.id,name:me.staffName||me.name||"",email:me.email||"",last:en,log:[en].concat(prev).slice(0,200)});return true}catch(e){return false}}
+// 접속 기록 읽기: 두 번 해 보고 그래도 못 읽으면 null (없는 문서는 빈 목록)
+async function knockPrev(rdb,uid){for(let i=0;i<2;i++){try{const g=await rdb.doc("knock/"+uid).get();return (g&&g.exists&&g.data().log)||[]}catch(e){await new Promise(r=>setTimeout(r,400))}}return null}
 function lockScreen(title,msg){document.body.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F2F2F2;font-family:'Malgun Gothic',system-ui,sans-serif;padding:16px"><div style="max-width:360px;background:#fff;border-radius:14px;padding:28px 22px;text-align:center;border-top:6px solid #1F4E79"><div style="font-size:40px" aria-hidden="true">🔒</div><h2 style="color:#203864;margin:8px 0">${esc(title)}</h2><p style="color:#444;line-height:1.6">${esc(msg)}</p><p style="color:#999;font-size:12px;margin-top:18px">ⓒ HOME FURNISHING CO. all rights reserved.</p></div></div>`}
 const once=path=>new Promise(res=>{let done=false,un=null,t0=null;const fin=L=>{if(done)return;done=true;res(L);try{typeof un==="function"&&un()}catch(e){}};try{un=db.collection(path).onSnapshot(s=>{const L=s.docs.map(d=>Object.assign({id:d.id},d.data()));if(L.length){fin(L);return}if(!t0)t0=setTimeout(()=>fin(L),1500)},()=>fin([]))}catch(e){res([])}setTimeout(()=>fin([]),8000)});
 // 접속 관문 (v16-1): 대표가 연결한 계정 + 허락된 기기만. 통과 전에는 다른 데이터를 하나도 안 불러옴
@@ -518,7 +520,7 @@ function listenAdminSec(){if(!db||!me.admin)return;
   db.collection("knock").onSnapshot(s=>{autoLink(s.docs.map(x=>Object.assign({id:x.id},x.data())));KNOCK=s.docs.flatMap(x=>{const d=x.data();return (d.log||[]).map(l=>Object.assign({uid:x.id,name:d.name||""},l))}).sort((a,b)=>String(b.at).localeCompare(String(a.at)));render()},()=>{});
   db.collection("creq").onSnapshot(s=>{CREQ=s.docs.flatMap(x=>{const d=x.data();return (d.reqs||[]).map(r=>Object.assign({uid:x.id,name:d.name||""},r))});render()},()=>{});
   db.collection("devok").onSnapshot(s=>{DEVOK=s.docs.map(x=>Object.assign({id:x.id},x.data()));render()},()=>{});
-  db.collection("members").onSnapshot(s=>{MEMBERS=s.docs.map(x=>Object.assign({id:x.id},x.data()));syncMembers();render()},()=>{});}
+  db.collection("members").onSnapshot(s=>{MEMBERS=s.docs.map(x=>Object.assign({id:x.id},x.data()));memReady=true;syncMembers();render()},()=>{});}
 function listenDevs(){if(!db||!me.admin)return;S.staff.map(s=>s.uid).filter(Boolean).forEach(u=>{if(devSubs[u])return;devSubs[u]=1;db.collection("access/"+u+"/devs").onSnapshot(s=>{DEVS[u]=s.docs.map(x=>Object.assign({id:x.id,uid:u},x.data()));render()},()=>{})})}
 let memBusy=false,linkBusy=false;
 document.addEventListener("click",async e=>{const t=e.target.closest("[data-linkgo]");if(!t||!me.admin)return;const u=t.dataset.linkgo,sel=document.querySelector('[data-linksel="'+u+'"]'),st=sel&&S.staff.find(s=>s.id===sel.value);if(!st)return;
@@ -534,7 +536,8 @@ async function autoLink(docs){if(!me.admin||linkBusy||!S.staff.length)return;lin
   const st=S.staff.find(s=>normEmail(s.email)===em&&s.state!=="퇴사");if(!st||st.uid===k.id)continue;if(st.uid&&st.uid!==k.id)continue;if(S.staff.some(s=>s.uid===k.id))continue;
   const o=Object.assign({},st);delete o.id;o.uid=k.id;o.linkedAt=nowISO();o.linkedBy="이메일 자동";o.updatedAt=nowISO();o.updatedBy=me.id;await put("staff",st.id,o);
   await db.collection("members").doc(k.id).set({name:st.name,staffId:st.id,active:true,at:nowISO(),by:me.id,why:"이메일 자동 연결 "+em});toast(st.name+" 계정을 이메일로 연결했어요")}}catch(e){}linkBusy=false}
-async function syncMembers(){if(!me.admin||memBusy||!S.staff.length)return;memBusy=true;try{for(const s of S.staff){if(s.uid&&s.state!=="퇴사"&&!MEMBERS.some(m=>m.id===s.uid))await db.collection("members").doc(s.uid).set({name:s.name,staffId:s.id,active:true,at:nowISO(),by:me.id})}}catch(e){}memBusy=false}
+let memReady=false;/* 명단을 읽기 전에는 '없는 줄 알고' 다시 쓰지 않음 */
+async function syncMembers(){if(!me.admin||memBusy||!memReady||!S.staff.length)return;memBusy=true;try{for(const s of S.staff){if(s.uid&&s.state!=="퇴사"&&!MEMBERS.some(m=>m.id===s.uid))await db.collection("members").doc(s.uid).set({name:s.name,staffId:s.id,active:true,at:nowISO(),by:me.id})}}catch(e){}memBusy=false}
 const devState=(u,dv)=>{const o=DEVOK.find(x=>x.id===u+"__"+dv.id);if(o)return o.ok?"허락":"거절";if(dv.first)return "처음 기기";const n=DEVOK.find(x=>x.id===u+"__nm_"+hashStr(dv.devName||""));return n&&n.ok?"허락 (같은 종류 기기)":"승인 대기"};
 // 고객 담당 (v16-3): 내가 담당한 고객만, 나머지는 가림 + 열람 요청
 const grantOk=code=>!!code&&GRANTS.some(g=>g.uid===me.id&&g.code===code&&!g.revoked&&(!g.until||g.until>=todayStr()));
@@ -776,6 +779,10 @@ function ownedFor(s,col,r){const n=s.name,u=s.uid;if(!r)return false;if(isCoBoss
 const IDXF={customers:["code","area","status","stage","steps","mgr","inq","createdBy","route"],projects:["no","cat","stage","mgr","custCode","inq","start","end","endPlan","ptype","route","createdBy","hsCode","perf"],quotes:["qno","pno","code","status","staff","d","ver","preset","hs","createdBy"],sites:["pno","code","type","mgr","status","start","end","proc","progress","createdBy"]};
 function idxRow(col,r){const o={id:r.id};IDXF[col].forEach(k=>{if(r[k]!==undefined)o[k]=r[k]});if(col==="customers")o.name=maskName(r.name);if(col==="projects"){o.title=maskPlace(r.title);o.custName=r.custName?maskName(r.custName):""}if(col==="quotes"){o.name=maskName(r.name);o.site=maskPlace(r.site)}if(col==="sites"){o.name=maskPlace(r.name);o.customer=maskName(r.customer)}o.__masked=1;return o}
 const clean=r=>{const o=Object.assign({},r);["id","__leak","__leakCost","__masked","__rawTel"].forEach(k=>delete o[k]);if(o.tel!==undefined)o.tel="";if(o.addr!==undefined&&(o.code!==undefined&&o.name!==undefined&&o.steps!==undefined))o.addr="";if(o.estCost!==undefined)o.estCost="";return o};
+// 문자 기록 지키기 (검토 반려 2026-11-12): 고객 줄을 '원본이 더 새것'이라 건너뛰더라도 문자 기록(smsLog)만은 항상 합쳐 원본에 씀 (지우는 일 없음, 같은 번호는 한 줄)
+const smsJs=L=>JSON.stringify(Array.isArray(L)?L:[]);
+async function smsKeep(rows){for(const x of rows||[]){if(!x||!Array.isArray(x.smsLog)||!x.smsLog.length||x.__deleted)continue;const c=S.customers.find(r=>r.id===x.id);if(!c)continue;const m=smsMerge(c.smsLog,x.smsLog);if(smsJs(m)===smsJs(c.smsLog))continue;
+  try{const o=clean(c);o.tel="";o.addr="";o.smsLog=m;await db.collection("customers").doc(c.id).set(o);c.smsLog=m}catch(e){}}}
 async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at||r.updatedAt||"");const G=await goneSet();const stf=S.staff.filter(x=>x.uid&&x.state!=="퇴사");
   // 0) 지운 것·합친 것 먼저 (다음 지시 2026-11-06 v4): 원본에 없는 사본은 정리. 직원이 만든 줄은 지우지 않고 '__gone'(숨김·내용 보관)
   for(const s of stf){const u=s.uid,mu=MU[u]||{},rd=muReady[u]||{};
@@ -786,6 +793,7 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
   ISO.forEach(col=>{if(S[col].length)isoPrev[col]=new Set(S[col].map(r=>r.id))});
   for(const s of stf){const u=s.uid,mu=MU[u]||{},rd=muReady[u]||{};
     for(const col of ISO){if(!rd[col]||!S[col].length)continue;const mine=(mu[col]||[]).filter(r=>!r.__gone);
+      if(col==="customers")await smsKeep(mu[col]||[]);
       // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만 · 지운 것·합친 것은 다시 올리지 않음)
       for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(c&&T(c)>=T(x))continue;if(!c&&G.has(col+"__"+x.id))continue;
         if(x.__deleted){await db.collection("mine/"+u+"/"+col).doc(x.id).delete();continue}
@@ -794,7 +802,9 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
         await db.collection(col).doc(x.id).set(o)}
       // 원본 → 직원: 담당분은 전체, 나머지는 가린 목록 1개
       const own=S[col].filter(r=>ownedFor(s,col,r)),ownIds=new Set(own.map(r=>r.id));
-      for(const r of own){const h=(mu[col]||[]).find(x=>x.id===r.id);if(h&&!h.__gone&&T(h)>=T(r))continue;const o=clean(r);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
+      for(const r of own){const h=(mu[col]||[]).find(x=>x.id===r.id);
+        if(h&&!h.__gone&&T(h)>=T(r)){if(col==="customers"&&(r.smsLog||h.smsLog)){const m=smsMerge(r.smsLog,h.smsLog);if(smsJs(m)!==smsJs(h.smsLog)){const o2=Object.assign({},h);delete o2.id;o2.smsLog=m;await db.collection("mine/"+u+"/"+col).doc(r.id).set(o2)}}continue}
+        const o=clean(r);if(col==="customers"&&h&&Array.isArray(h.smsLog))o.smsLog=smsMerge(o.smsLog,h.smsLog);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
       for(const h of mine.filter(x=>!ownIds.has(x.id)&&x.__by!==u))await db.collection("mine/"+u+"/"+col).doc(h.id).delete();
       if(col!=="reports"){const rows=s.scope==="담당 건만"?[]:S[col].filter(r=>!ownIds.has(r.id)).map(r=>idxRow(col,r));const js=JSON.stringify(rows),key=u+"/"+col;if(isoSent[key]!==js){await db.collection("mine/"+u+"/idx").doc(col).set({rows,at:nowISO()});isoSent[key]=js}}}
     if(ISO.every(c=>rd[c]))try{await db.collection("mine/"+u+"/idx").doc("sync").set({at:nowISO()})}catch(e){}}}
@@ -823,6 +833,7 @@ async function workPut(col,id,data,stamp){if(!db||!WORK_COLS.includes(col))retur
 async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||w.tel||"",addr:cpv.addr||w.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
 async function workSync(){if(PV||!me.admin||mode!=="shared"||!db)return;const G=await goneSet();let up=0,down=0,gone=0;
   for(const col of WORK_COLS){if(!workReady[col]||!S[col].length)continue;const W=WORKD[col]||{},took=new Set();
+    if(col==="customers")await smsKeep(Object.entries(W).map(([id,x])=>Object.assign({},x,{id})));
     // 1) 직원이 공용 칸에서 고친 것·새로 만든 것 → 원본 (명단에 있는 직원 + 고칠 수 있는 건만)
     for(const [id,x] of Object.entries(W)){if(!x.__by||x.__by==="admin")continue;const c=S[col].find(r=>r.id===id);
       if(c&&wkT(c)>=wkT(x))continue;if(!c&&G.has(col+"__"+id))continue;
@@ -836,7 +847,8 @@ async function workSync(){if(PV||!me.admin||mode!=="shared"||!db)return;const G=
       await db.collection(col).doc(id).set(o);took.add(id);up++}
     // 2) 원본 → 공용 칸 (바뀐 줄만)
     const jobs=[];for(const r of S[col]){if(took.has(r.id))continue;const o=workRow(col,r),h=W[r.id];
-      if(h&&h.__by&&h.__by!=="admin"&&wkT(h)>wkT(r)){const s=S.staff.find(z=>z.uid===h.__by&&z.state!=="퇴사");if(s&&ownedFor(s,col,r))continue}
+      if(col==="customers"&&h&&Array.isArray(h.smsLog))o.smsLog=smsMerge(o.smsLog,h.smsLog);
+      if(h&&h.__by&&h.__by!=="admin"&&wkT(h)>wkT(r)){const s=S.staff.find(z=>z.uid===h.__by&&z.state!=="퇴사");if(s&&ownedFor(s,col,r)){if(col==="customers"&&smsJs(o.smsLog)!==smsJs(h.smsLog)){const o2=Object.assign({},h);delete o2.id;o2.smsLog=o.smsLog||[];jobs.push(()=>db.collection(WKP(col)).doc(r.id).set(o2))}continue}}
       const js=stableJs(o);if(h){const hh=Object.assign({},h);delete hh.id;if(stableJs(hh)===js)continue}if(workSent[col+"/"+r.id]===js)continue;
       jobs.push(()=>db.collection(WKP(col)).doc(r.id).set(o).then(()=>{workSent[col+"/"+r.id]=js;down++}))}
     for(let i=0;i<jobs.length;i+=8)await Promise.all(jobs.slice(i,i+8).map(f=>f().catch(()=>{})));
@@ -1500,11 +1512,11 @@ function pvTop(){let b=document.getElementById("pvTop");if(!PV){if(b)b.remove();
   b.innerHTML=`<b>${esc(pvLabel(PV))} 화면 미리 보기 중 (읽기 전용)</b><small>${esc(PV.level||PV.duty||"일반 직원")} 권한 · 저장·수정·삭제·결재는 되지 않아요</small><button type="button" class="btn sm" data-pvexit="1">내 화면으로 돌아가기</button>`}
 // 돌아가기 (검토 반려 2026-11-12): 대표 권한·진짜 저장소를 먼저 되돌리면 새로고침을 기다리는 틈에 가려진 화면 자료로 자동 저장(견적 임시 저장·채움률·빈칸 목록 등)이 대표 이름으로 나감
 // → 새로고침 직전까지 읽기 전용 그대로 두고(PV·me·db 안 바꿈), '끝' 기록 한 줄만 진짜 저장소에 직접 씀
-async function pvEndLog(rdb,m,nm){if(!rdb||!m||!m.id)return;const en={at:nowISO(),dev:devId(),devName:devName(),result:"열람",what:"직원 화면 미리 보기 끝",target:nm};let prev=[];
-  try{const g=await rdb.doc("knock/"+m.id).get();prev=(g&&g.exists&&g.data().log)||[]}catch(e){}
+async function pvEndLog(rdb,m,nm){if(!rdb||!m||!m.id)return;const en={at:nowISO(),dev:devId(),devName:devName(),result:"열람",what:"직원 화면 미리 보기 끝",target:nm};const prev=await knockPrev(rdb,m.id);
+  if(!prev){await rdb.collection("knock/"+m.id+"/late").doc(String(Date.now())).set(en);return}
   await rdb.collection("knock").doc(m.id).set({uid:m.id,name:m.staffName||m.name||"",email:m.email||"",last:en,log:[en].concat(prev).slice(0,200)})}
 async function pvExit(){if(!PV||PVbusy)return;PVbusy=true;const nm=pvLabel(PV);
-  try{await Promise.race([pvEndLog(PVdb,PVme,nm),new Promise(r=>setTimeout(r,4000))])}catch(e){}
+  try{await Promise.race([pvEndLog(PVdb,PVme,nm),new Promise(r=>setTimeout(r,9000))])}catch(e){}/* '끝' 기록이 늦어도 남게 9초까지 기다림 */
   try{location.hash="#preview"}catch(e){}location.reload()}
 function pvApply(){if(!PV)return;const s=PV;ISO.forEach(col=>{S[col]=(S[col]||[]).flatMap(r=>{if(r.__masked)return s.scope==="담당 건만"?[]:[r];if(ownedFor(s,col,r)){if(amtLocked(r)&&!isAcct(s)){const o=Object.assign({},r);AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});return [o]}return [r]}return col==="reports"||s.scope==="담당 건만"?[]:[idxRow(col,r)]})});
   S.customers.forEach(c=>{if(!c.__masked&&!custMineFor(s,c)){c.tel="";c.addr=""}});S.hr=[]}
@@ -1529,6 +1541,7 @@ function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify(S))}catch(e){t
 const ISO=["customers","projects","quotes","sites","reports"];
 const isoMe=col=>mode==="shared"&&!me.admin&&ISO.includes(col)&&!!me.id;
 async function put(col,id,data){
+  if(PV)return pvDeny(); // 미리 보기: 저장 길 맨 앞에서 거절 (백업·버전 보관 같은 곁가지 저장도 시작하지 않음)
   if(col==="quotes"){try{await qSnap(id,"덮어쓰기 전 자동 백업")}catch(e){}const qv=await qvBefore(id,data);await putRaw(col,id,qv.data);if(db){const a=S.quotes,i=a.findIndex(x=>x.id===id),row=Object.assign({id},qv.data);i<0?a.unshift(row):a[i]=Object.assign({},a[i],row)}if(qv.n)qvAfter(id,qv);return}
   return putRaw(col,id,data)}
 async function putRaw(col,id,data){
@@ -1549,6 +1562,7 @@ async function calMark(col,data,how){if(!db||!me.admin||!["projects","customers"
     if(how==="unmark"&&(t.startsWith("[삭제됨] ")||o.delMark)){o.title=t.replace(/^\[삭제됨\] /,"");delete o.delMark;await db.collection("cal").doc(id).set(o);n++}}
   return n}
 async function remove(col,id,grp){
+  if(PV)return pvDeny();
   if(col==="quotes"){try{await qSnap(id,"지우기 전 자동 백업")}catch(e){}}
   if(db&&isoMe(col)){await db.collection("mine/"+me.id+"/"+col).doc(id).set({__deleted:true,__by:me.id,__at:nowISO()});return}
   if(db&&TRASH_COLS.includes(col)){const r=(S[col]||[]).find(x=>x.id===id)||{};const o=JSON.parse(JSON.stringify(r));delete o.id;await db.collection("acct/_trash/t").doc(trashKey(col,id)).set({col,id,data:o,at:nowISO(),by:me.id,byName:myName(),grp:grp||"",title:String(r.title||r.name||r.qno||r.code||r.site||r.no||"").slice(0,80)});await db.collection(col).doc(id).delete();try{await calMark(col,o,"mark")}catch(e){}return}
@@ -2624,10 +2638,10 @@ function qvGroup(id,pno){if(!pno){const q=(S.quotes||[]).find(x=>x.id===id);pno=
 function qvBody(d){const o=JSON.parse(JSON.stringify(d||{}));["id","__by","__at","sv","svAt"].forEach(k=>delete o[k]);return o}
 function qvSig(d){const o=qvBody(d);["updatedAt","updatedBy"].forEach(k=>delete o[k]);return JSON.stringify(o,Object.keys(o).sort())}
 function qvLocal(qid){try{return JSON.parse(localStorage.getItem("hf-qver-"+qid)||"[]")||[]}catch(e){return []}}
-function qvLocalPut(qid,v){try{const L=qvLocal(qid).filter(x=>x.vid!==v.vid);L.push(v);L.sort((a,b)=>String(a.at).localeCompare(String(b.at)));localStorage.setItem("hf-qver-"+qid,JSON.stringify(L.slice(-40)))}catch(e){}}
+function qvLocalPut(qid,v){if(PV)return;try{const L=qvLocal(qid).filter(x=>x.vid!==v.vid);L.push(v);L.sort((a,b)=>String(a.at).localeCompare(String(b.at)));localStorage.setItem("hf-qver-"+qid,JSON.stringify(L.slice(-40)))}catch(e){}}
 function qvLabel(prev,data){if(!prev)return "새 견적";const a=JSON.stringify((prev.items||[]).map(l=>[l.name,num(l.q),num(l.price)])),b=JSON.stringify((data.items||[]).map(l=>[l.name,num(l.q),num(l.price)]));if(a!==b)return "품목·금액";if(num(prev.amount)!==num(data.amount))return "금액";const P=["prog","progHist","lostWhy","sentAt","sentVia","sentBy","sentHist","sent","updatedAt","updatedBy"],x=Object.assign({},qvBody(prev)),y=Object.assign({},qvBody(data));P.forEach(k=>{delete x[k];delete y[k]});return qvSig(x)===qvSig(y)?"진행 단계·발송 기록":"견적 정보"}
 function qvMake(qid,n,data,label){const at=nowISO();return {vid:"v"+String(n).padStart(4,"0")+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),qid,n,at,by:me.id||"",byName:myName()||"",label,qno:data.qno||"",amount:num(data.amount),cnt:(data.items||[]).length,data:qvBody(data)}}
-async function qvWrite(v,uidOverride){if(!(db&&mode==="shared"&&me.id)){qvLocalPut(v.qid,v);return true}
+async function qvWrite(v,uidOverride){if(PV)return true;/* 미리 보기: 브라우저에도 서버에도 남기지 않음 */if(!(db&&mode==="shared"&&me.id)){qvLocalPut(v.qid,v);return true}
   qvLocalPut(v.qid,Object.assign({},v,{pending:1}));
   try{await db.collection(qvCol(uidOverride||me.id,v.qid)).doc(v.vid).set(Object.assign({},v,{pending:null}));qvLocalPut(v.qid,v);return true}catch(e){qvRetryLater();return false}}
 async function qvBefore(id,data){const prev=(S.quotes||[]).find(x=>x.id===id);data=Object.assign({},data);
@@ -2639,7 +2653,7 @@ async function qvBefore(id,data){const prev=(S.quotes||[]).find(x=>x.id===id);da
 async function qvAfter(id,qv){const v=qvMake(id,qv.n,qv.data,qv.label);qvGroup(id,qv.data.pno).forEach(g=>delete QVC[g]);const ok=await qvWrite(v);
   if(!ok)saveNote(false,"견적은 저장됐지만 v"+qv.n+" 보관본을 서버에 못 올렸어요 · 이 브라우저에 남겨 두고 다시 올릴게요");
   if(sheet&&sheet.id===id)document.querySelectorAll(".qvBox").forEach(el=>{const o=el.open;el.outerHTML=qVerHTML(id);if(o)document.querySelectorAll(".qvBox").forEach(x=>x.open=true)})}
-async function qvRetry(){qvRetryT=null;if(!(db&&mode==="shared"&&me.id))return;let left=0;
+async function qvRetry(){qvRetryT=null;if(PV)return;if(!(db&&mode==="shared"&&me.id))return;let left=0;
   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith("hf-qver-"))continue;const L=JSON.parse(localStorage.getItem(k)||"[]");
     for(const v of L.filter(x=>x.pending)){try{const c=Object.assign({},v);delete c.pending;await db.collection(qvCol(me.id,v.qid)).doc(v.vid).set(c);qvLocalPut(v.qid,c)}catch(e){left++}}}}catch(e){}
   if(left)qvRetryLater()}
@@ -3742,7 +3756,7 @@ function smsCheck(M){const rows=M.targets.map(c=>{const msg=smsFill(M.text,c);re
   if(rows.some(r=>r.bytes>SMS_MAXB))block.push("글이 너무 길어요 ("+SMS_MAXB+"바이트까지)");
   const left=[...new Set(one.match(/\{[^{}\n]{1,12}\}/g)||[])];if(left.length)warn.push("바뀌지 않은 자리 표시가 그대로 나가요: "+left.join(" "));
   if(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u.test(one))warn.push("이모지·특수 그림 글자는 문자에서 깨질 수 있어요");
-  const ad=M.tpl==="재방문 안내"||/^\s*\(광고\)/.test(raw);
+  const ad=M.tpl==="재방문 안내"||/\(광고\)/.test(raw);/* '직접 쓰기'라도 글에 (광고)가 있으면 광고 규칙 */
   if(ad){const adBad=[];if(!/^\(광고\)/.test(one))adBad.push("광고 문자는 맨 앞에 (광고) 를 적어야 해요");
     if(!smsCfg().optout)adBad.push("수신거부 번호를 설정에 넣어 주세요 (서식 자료실 › 문자 발송 › 무료 수신거부 번호)");
     else if(!/무료\s*수신거부\s*080[\d-]{7,}\s*$/.test(one))adBad.push("광고 문자는 맨 끝에 ‘무료수신거부 "+smsCfg().optout+"’ 를 적어야 해요");
@@ -3790,9 +3804,18 @@ async function smsMcp(){if(PV)return null;if(!mcpCap){try{mcpCap=await window.cl
 async function smsSend(){const M=SMS;if(!M||M.busy||M.step!==2)return;if(!smsCan()){toast("문자 보내기 권한이 없어요");return}const K=smsCheck(M);if(K.block.length){toast(K.block[0]);return}
   M.busy=true;smsDraw();const cap=await smsMcp();
   if(!cap){M.busy=false;smsDraw();toast("구글 드라이브 연결이 없어 문자를 보낼 수 없어요 · ‘문구 복사’로 직접 보내 주세요");return}
-  const id=smsNewId(),at=nowISO(),by=smsBy(),req={v:1,id,at,by,test:!!M.test,tpl:M.tpl,items:K.rows.map(r=>({to:r.c.tel,name:r.c.name,cust:r.c.code,msg:r.msg}))};
-  try{const r=await cap.callTool("Google Drive","create_file",{title:"sms_req_"+id+".json",parentId:SMS_DIR,textContent:JSON.stringify(req),contentMimeType:"application/json",disableConversionToGoogleType:true});if(r&&r.isError)throw new Error("drive")}
-  catch(e){M.busy=false;smsDraw();toast(me.admin?"요청 파일을 만들지 못했어요 (구글 드라이브 연결·‘문자 발송함’ 폴더 확인) · 문자는 나가지 않았어요":"문자 발송함 폴더 공유가 아직 안 됐어요 · 대표에게 알려 주세요 (문자는 나가지 않았어요)");return}
+  // 요청 번호는 같은 내용이면 한 번만 정함 (다시 눌러도 같은 번호 → 요청 파일이 두 개 생겨 두 번 나가는 일 없음)
+  const items=K.rows.map(r=>({to:r.c.tel,name:r.c.name,cust:r.c.code,msg:r.msg})),sig=JSON.stringify([!!M.test,M.tpl,items]);
+  if(M.sendSig!==sig){M.sendSig=sig;M.sendId=smsNewId();M.sendAt=nowISO();M.sendTried=0}
+  const id=M.sendId,at=M.sendAt,by=smsBy(),req={v:1,id,at,by,test:!!M.test,tpl:M.tpl,items};
+  const made=async()=>{try{const t="sms_req_"+id+".json",o=dcJ(await cap.callTool("Google Drive","search_files",{query:`title = '${t}' and parentId = '${SMS_DIR}' and trashed = false`,pageSize:5,excludeContentSnippets:true}));return (o.files||[]).some(x=>x&&(x.title||x.name)===t&&!x.trashed)}catch(e){return null}};
+  let okReq=false,why="";
+  if(M.sendTried)okReq=(await made())===true; // 앞에서 오류가 났어도 파일이 이미 만들어졌으면 성공으로
+  if(!okReq){M.sendTried=(M.sendTried||0)+1;
+    try{const r=await cap.callTool("Google Drive","create_file",{title:"sms_req_"+id+".json",parentId:SMS_DIR,textContent:JSON.stringify(req),contentMimeType:"application/json",disableConversionToGoogleType:true});if(r&&r.isError)throw new Error(String((r.content&&r.content[0]&&r.content[0].text)||"drive"));okReq=true}
+    catch(e){why=String((e&&e.code)||"")+" "+String((e&&e.message)||"");const m2=await made();if(m2===true)okReq=true;else if(m2===null)why+=" search_fail"}}
+  if(!okReq){M.busy=false;smsDraw();const perm=/permission|forbidden|403|404|not.?found|insufficient|access|권한/i.test(why)&&!/search_fail/.test(why);
+    toast(perm?(me.admin?"‘문자 발송함’ 폴더에 쓸 수 없어요 (폴더·구글 드라이브 연결 확인) · 문자는 나가지 않았어요":"문자 발송함 폴더 공유가 아직 안 됐어요 · 대표에게 알려 주세요 (문자는 나가지 않았어요)"):"구글 드라이브 연결이 잠깐 끊겼어요 · 요청이 올라갔는지 확인하지 못했어요. 잠시 뒤 ‘보내기’를 다시 눌러 주세요 (같은 요청 번호라 두 번 나가지 않아요)");return}
   let bad=0;for(const r of K.rows){try{await smsLogSave(r.c.id,L=>L.concat([{id,at,by,tpl:M.tpl,msg:r.msg,to:r.c.tel,test:!!M.test,status:"대기",code:"",message:"",msg_id:"",type:r.type}]))}catch(e){bad++}}
   try{logAct("customers",M.test?"문자 시험 발송 요청":"문자 발송 요청",K.rows.length+"명 · "+M.tpl)}catch(e){}
   if(bad)toast("고객 카드 기록 "+bad+"건을 남기지 못했어요 (요청은 보냈어요)");

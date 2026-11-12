@@ -13,7 +13,7 @@ const kid=(n)=>'2026111213'+String(1000+n)+'_abc'+String(100+n);
 srv.listen(0,'127.0.0.1',async()=>{const url='http://127.0.0.1:'+srv.address().port+'/send/';
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'smsrelay-')),Q=path.join(root,'문자 발송함'),ST=path.join(root,'state');fs.mkdirSync(Q);
   const envP=path.join(root,'.env');const env=o=>fs.writeFileSync(envP,Object.entries(Object.assign({ALIGO_API_KEY:KEY,ALIGO_USER_ID:'hfuser',ALIGO_SENDER:'1566-5904'},o)).map(([k,v])=>k+'='+v).join('\n'));
-  const run=(extra)=>new Promise(done=>{const c=spawn(PWSH,['-NoLogo','-NoProfile','-File',PS1,'-Queue',Q,'-EnvFile',envP,'-ApiUrl',url,'-StateDir',ST].concat(extra||[]));let stderr='',stdout='';c.stdout.on('data',d=>stdout+=d);c.stderr.on('data',d=>stderr+=d);c.on('close',status=>done({status,stdout,stderr}))});/* 가짜 알리고가 같은 node 안에서 돌아서 기다리는 방식(spawnSync)은 못 씀 */
+  const run=(extra)=>new Promise(done=>{const c=spawn(PWSH,['-NoLogo','-NoProfile','-File',PS1,'-Queue',Q,'-EnvFile',envP,'-ApiUrl',run.url||url,'-StateDir',ST].concat((extra||[]).includes('-NowUtc')?[]:['-NowUtc','2026-11-12T03:00:00Z']/* 한국 시간 낮 12시로 고정 (시간 규칙 시험은 따로 줌) */).concat(extra||[]));let stderr='',stdout='';c.stdout.on('data',d=>stdout+=d);c.stderr.on('data',d=>stderr+=d);c.on('close',status=>done({status,stdout,stderr}))});/* 가짜 알리고가 같은 node 안에서 돌아서 기다리는 방식(spawnSync)은 못 씀 */
   const req=(n,o,raw)=>{const id=kid(n);fs.writeFileSync(path.join(Q,'sms_req_'+id+'.json'),raw!==undefined?raw:JSON.stringify(Object.assign({v:1,id,at:iso(0),by:'정진혁',test:false,tpl:'직접 쓰기',items:[{to:'01011112222',name:'홍길동',cust:'C-1',msg:'홍길동 고객님 안녕하세요'}]},o)));return id};
   const res=id=>{const p=path.join(Q,'sms_res_'+id+'.json');if(!fs.existsSync(p))return null;const b=fs.readFileSync(p);return Object.assign(JSON.parse(b.toString('utf8').replace(/^﻿/,'')),{__bom:b[0]===0xEF})};
   const b=fs.readFileSync(PS1);ok('스크립트가 UTF-8 BOM 으로 저장됨',b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF);
@@ -47,9 +47,30 @@ srv.listen(0,'127.0.0.1',async()=>{const url='http://127.0.0.1:'+srv.address().p
   // 7) 50명 넘음
   const h=req(7,{items:Array.from({length:51},(_,i)=>({to:'0101234'+String(1000+i),name:'',cust:'',msg:'x'}))});const h0=calls.length;await run();x=res(h);
   ok('7 51명 요청: 한 건도 보내지 않고 실패',x&&/50명/.test(x.error)&&x.fail===51&&calls.length===h0,x&&x.error);
-  // 8) 알리고에 연결이 안 됨: 결과를 쓰지 않고 다음 번에 다시 → 연결되면 나감
-  mode='down';const k=req(8,{test:true});await run();const noRes=res(k)===null;mode='ok';await run();x=res(k);
-  ok('8 연결 실패 때는 결과를 쓰지 않고, 다음 번에 다시 보내 성공',noRes&&x&&x.ok===1,JSON.stringify(x));
+  // 8) 알리고에 아예 닿지 못함(연결 거부): 결과를 쓰지 않고 다음 번에 다시 → 연결되면 나감
+  run.url='http://127.0.0.1:1/send/';const k=req(8,{test:true});await run();const noRes=res(k)===null;run.url='';await run();x=res(k);
+  ok('8 연결 거부(알리고에 안 닿음) 때는 결과를 쓰지 않고, 다음 번에 다시 보내 성공',noRes&&x&&x.ok===1,JSON.stringify(x));
+  // 8-1) 요청이 알리고에 닿은 뒤 끊김: 나갔을 수 있으니 다시 보내지 않고 -999 로 끝
+  mode='down';const k0=calls.length;const k2=req(10,{test:true});await run();mode='ok';const k1=calls.length;await run();x=res(k2);
+  ok('8-1 알리고에 닿은 뒤 끊김: 다시 보내지 않고 -999 결과로 끝 (알리고 호출 1번)',x&&x.ok===0&&x.results[0].code==='-999'&&k1===k0+1&&calls.length===k1,JSON.stringify(x&&x.results)+' 호출 '+(calls.length-k0));
+  // 8-2) test 칸이 없는 요청은 시험으로
+  env({SMS_FORCE_TEST:'N'});const t0=calls.length;const tid=kid(11);fs.writeFileSync(path.join(Q,'sms_req_'+tid+'.json'),JSON.stringify({v:1,id:tid,at:iso(0),by:'정진혁',tpl:'직접 쓰기',items:[{to:'01011112222',name:'홍길동',cust:'C-1',msg:'test 칸 없음'}]}));await run();x=res(tid);
+  ok('8-2 요청에 test 칸이 없으면 시험으로 보냄 (testmode_yn=Y)',x&&x.test===true&&x.ok===1&&calls[t0]&&calls[t0].testmode_yn==='Y',JSON.stringify(x));
+  // 8-3) 실제 발송 2명 이상은 08~21시(한국)만 · 광고 글 규칙
+  const n0b=calls.length;const two=[{to:'01011110011',name:'',cust:'',msg:'가'},{to:'01011110012',name:'',cust:'',msg:'나'}];
+  const h1=req(12,{items:two});await run(['-NowUtc','2026-11-12T14:30:00Z']);x=res(h1);
+  ok('8-3 밤 11시 30분(한국) 실제 2명: 한 건도 보내지 않고 -904',x&&x.fail===2&&x.results[0].code==='-904'&&calls.length===n0b,JSON.stringify(x&&x.results.map(q=>q.code)));
+  const h2=req(13,{items:[two[0]]});await run(['-NowUtc','2026-11-12T14:30:00Z']);x=res(h2);
+  ok('8-3 밤이라도 실제 1명(광고 아님)은 나감',x&&x.ok===1&&calls.length===n0b+1,JSON.stringify(x&&x.results.map(q=>q.code)));
+  const h3=req(14,{items:[{to:'01011110013',name:'',cust:'',msg:'(광고) 아르띠꼬 재방문 안내'}]});await run();x=res(h3);
+  ok('8-3 (광고) 글에 무료수신거부 문구가 없으면 낮에도 막음 (-904)',x&&x.fail===1&&x.results[0].code==='-904'&&/수신거부/.test(x.error)&&calls.length===n0b+1,x&&x.error);
+  const adOk='(광고) 아르띠꼬 재방문 안내\n무료수신거부 080-123-4567';
+  const h4=req(15,{items:[{to:'01011110014',name:'',cust:'',msg:adOk}]});await run(['-NowUtc','2026-11-12T14:30:00Z']);x=res(h4);
+  ok('8-3 (광고) 글은 문구가 맞아도 밤에는 막음',x&&x.fail===1&&x.results[0].code==='-904'&&calls.length===n0b+1,x&&x.error);
+  const h5=req(16,{items:[{to:'01011110015',name:'',cust:'',msg:adOk}]});await run();x=res(h5);
+  ok('8-3 (광고) 글 + 문구 맞음 + 낮: 나감',x&&x.ok===1&&calls.length===n0b+2,JSON.stringify(x&&x.results.map(q=>q.code)));
+  const h6=req(17,{test:true,items:two});await run(['-NowUtc','2026-11-12T14:30:00Z']);x=res(h6);
+  ok('8-3 시험 발송은 밤에도 열림 (2명)',x&&x.ok===2&&x.test===true,JSON.stringify(x&&x.results.map(q=>q.code)));
   // 9) 키 없음: 요청을 실패로 끝내지 않고 그대로 둠
   fs.writeFileSync(envP,'SMS_FORCE_TEST=Y\n');const m=req(9,{});r=await run();ok('9 .env 에 키가 없으면 보내지 않고 그대로 둠 (종료 코드 2)',res(m)===null&&r.status===2,'status '+r.status+' '+r.stderr.slice(0,200));
   env({});await run();ok('9 키를 채우면 다음 번에 나감',res(m)&&res(m).ok===1);
@@ -57,5 +78,5 @@ srv.listen(0,'127.0.0.1',async()=>{const url='http://127.0.0.1:'+srv.address().p
   const log=fs.readFileSync(path.join(ST,'sms_relay.log'),'utf8');
   ok('10 로그에 키·전체 전화번호 없음 (뒤 4자리만) · 보낸 사람 이름 있음',!log.includes(KEY)&&!/01\d{8,9}/.test(log)&&/\*\*\*2222/.test(log)&&/보낸 사람=정진혁/.test(log),log.split('\n').slice(0,4).join(' | '));
   ok('10 결과 파일에 키 없음',fs.readdirSync(Q).filter(f=>/^sms_res_/.test(f)).every(f=>!fs.readFileSync(path.join(Q,f),'utf8').includes(KEY)));
-  ok('요청 파일 9개 모두 그대로 남아 있음',fs.readdirSync(Q).filter(f=>/^sms_req_/.test(f)).length===9);
+  ok('요청 파일 17개 모두 그대로 남아 있음',fs.readdirSync(Q).filter(f=>/^sms_req_/.test(f)).length===17,String(fs.readdirSync(Q).filter(f=>/^sms_req_/.test(f)).length));
   srv.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)});
