@@ -512,17 +512,25 @@ function lockScreen(title,msg){document.body.innerHTML=`<div style="min-height:1
 // ===== 구독 한도 지킴이 (v0.99-25): claude.ai 저장소는 화면 하나에 실시간 구독 64개까지. 65번째부터는 조용히 거절돼서(대표 화면이 직원 사본을 못 읽어 동기화가 멈췄던 원인)
 // 한도 가까이 차면 그 뒤 구독은 주기적으로 다시 읽기(get)로 바꾸고, 거절된 구독도 다시 읽기로 이어 감. 직원별 사본처럼 급하지 않은 것은 처음부터 다시 읽기("poll")
 const SUB_MAX=54,SUBSTAT={live:0,poll:0,fail:0};
-function subGuard(raw){const every=()=>(+window.__SUBPOLL||40000);
+function subGuard(raw){const every=()=>(+window.__SUBPOLL||40000),polls=new Set();
   const sig=s=>{try{return s&&s.docs?JSON.stringify(s.docs.map(d=>[d.id,d.data()])):JSON.stringify([!!(s&&s.exists),s&&s.exists?s.data():null])}catch(e){return String(Math.random())}};
-  const poll=(t,cb,err)=>{let stop=false,last=null,timer=null,told=false,n=0;SUBSTAT.poll++;
-    const run=async()=>{if(stop)return;{try{const s=await t.get();n++;if(stop)return;const g=sig(s);if(g!==last){last=g;cb(s)}}catch(e){if(!told){told=true;SUBSTAT.fail++;try{err&&err(e)}catch(x){}}if(/permission|denied|not_granted|unauth|preview/i.test(String((e&&e.code)||"")+" "+String((e&&e.message)||""))){stop=true;return}}}
+  const poll=(t,cb,err,path)=>{let stop=false,last=null,timer=null,told=false,busy=false,again=false;SUBSTAT.poll++;
+    const run=async()=>{if(stop)return;if(busy){again=true;return}busy=true;clearTimeout(timer);
+      try{const s=await t.get();if(!stop){const g=sig(s);if(g!==last){last=g;cb(s)}}}catch(e){if(!told){told=true;SUBSTAT.fail++;try{err&&err(e)}catch(x){}}if(/permission|denied|not_granted|unauth|preview/i.test(String((e&&e.code)||"")+" "+String((e&&e.message)||""))){stop=true}}
+      busy=false;if(stop)return;if(again){again=false;timer=setTimeout(run,60);return}
       timer=setTimeout(run,every()*(document.hidden?3:1)*(0.85+Math.random()*0.3))};/* 창이 뒤에 있을 때는 3배 천천히 */
-    run();return ()=>{if(stop)return;stop=true;clearTimeout(timer);SUBSTAT.poll--}};
-  const sub=(t,cb,err,how)=>{if(how==="poll"||SUBSTAT.live>=SUB_MAX)return poll(t,cb,err);SUBSTAT.live++;let dead=false,alt=null,un=null;
-    try{un=t.onSnapshot(cb,e=>{const c=String((e&&e.code)||"");if(!dead&&(c==="resource_exhausted"||c==="unavailable")){dead=true;SUBSTAT.live--;alt=poll(t,cb,err);return}try{err&&err(e)}catch(x){}})}catch(e){SUBSTAT.live--;return poll(t,cb,err)}
+    const rec={path,kick:()=>{if(stop)return;if(busy){again=true;return}clearTimeout(timer);timer=setTimeout(run,60)}};polls.add(rec);
+    run();return ()=>{if(stop)return;stop=true;clearTimeout(timer);polls.delete(rec);SUBSTAT.poll--}};
+  // 이 화면이 직접 쓴 칸은 다시 읽기를 기다리지 않고 바로 다시 읽음 (다시 읽기로 받는 칸이 내 저장 직후에도 옛 값이라, 같은 일을 또 하던 것 막기)
+  const touch=(path,isCol)=>{const par=isCol?path:String(path).split("/").slice(0,-1).join("/");polls.forEach(x=>{if(x.path===path||x.path===par)x.kick()})};
+  const sub=(t,cb,err,how,path)=>{if(how==="poll"||SUBSTAT.live>=SUB_MAX)return poll(t,cb,err,path);SUBSTAT.live++;let dead=false,alt=null,un=null;
+    try{un=t.onSnapshot(cb,e=>{const c=String((e&&e.code)||"");if(!dead&&(c==="resource_exhausted"||c==="unavailable")){dead=true;SUBSTAT.live--;alt=poll(t,cb,err,path);return}try{err&&err(e)}catch(x){}})}catch(e){SUBSTAT.live--;return poll(t,cb,err,path)}
     return ()=>{if(alt){alt();return}if(!dead){dead=true;SUBSTAT.live--}try{typeof un==="function"&&un()}catch(e){}}};
-  const wrap=o=>new Proxy({},{get(_,k){if(k==="onSnapshot")return (cb,err,how)=>sub(o,cb,err,how);const v=o[k];if(typeof v!=="function")return v;return (...a)=>{const r=v.apply(o,a);return r&&typeof r==="object"&&typeof r.then!=="function"&&typeof r.onSnapshot==="function"?wrap(r):r}}});
-  return wrap(raw)}
+  const wrap=(o,path)=>new Proxy({},{get(_,k){if(k==="onSnapshot")return (cb,err,how)=>sub(o,cb,err,how,path);const v=o[k];if(typeof v!=="function")return v;
+    if(k==="set"||k==="update"||k==="delete"||k==="add")return (...a)=>{const r=v.apply(o,a);try{Promise.resolve(r).then(()=>touch(path,k==="add"),()=>{})}catch(e){}return r};
+    return (...a)=>{const r=v.apply(o,a);if(!(r&&typeof r==="object"&&typeof r.then!=="function"&&typeof r.onSnapshot==="function"))return r;
+      let np=path;if(k==="collection")np=(path?path+"/":"")+a[0];else if(k==="doc")np=(path?path+"/":"")+(a[0]!=null&&a[0]!==""?a[0]:(r.id||""));return wrap(r,np)}}});
+  return wrap(raw,"")}
 const once=path=>new Promise(res=>{let done=false,un=null,t0=null;const fin=L=>{if(done)return;done=true;res(L);try{typeof un==="function"&&un()}catch(e){}};try{un=db.collection(path).onSnapshot(s=>{const L=s.docs.map(d=>Object.assign({id:d.id},d.data()));if(L.length){fin(L);return}if(!t0)t0=setTimeout(()=>fin(L),1500)},()=>fin([]))}catch(e){res([])}setTimeout(()=>fin([]),8000)});
 // 접속 관문 (v16-1): 대표가 연결한 계정 + 허락된 기기만. 통과 전에는 다른 데이터를 하나도 안 불러옴
 async function gateCheck(){
@@ -788,7 +796,7 @@ function custMineFor(s,c){if(isCoBoss(s)||isCo2(s)||isTeam(s))return true;const 
   if((n&&c.mgr===n)||c.createdBy===u)return true;if(!code)return false;
   return S.projects.some(p=>p.custCode===code&&((n&&p.mgr===n)||p.createdBy===u))||S.quotes.some(q=>q.code===code&&((n&&q.staff===n)||q.createdBy===u))||siteMgrOf(n,code)}
 const MU={},muSubs={},isoSent={};
-const muReady={},isoPrev={};let SYNC_AT="";
+const muReady={},isoPrev={},isoMark={};let SYNC_AT="";
 function listenMineOf(u){if(!db||!me.admin||muSubs[u])return;muSubs[u]=1;MU[u]={};muReady[u]={};ISO.forEach(col=>{db.collection("mine/"+u+"/"+col).onSnapshot(x=>{MU[u][col]=x.docs.map(d=>Object.assign({id:d.id},d.data()));muReady[u][col]=true;queueSync()},()=>{},"poll")})}
 // 대표 화면에서 지운 것(휴지통)·합친 것(acct/_gone/g) 목록
 // 이미 합쳐진 번호 (대표 정리 2026-11-06: 김정래 P-2610-003 → P-2611-004, 그 번호로 자동 생긴 중복 현장) · 백업: 드라이브 「직원 사본 백업 2026-11-06 v0.json」
@@ -796,9 +804,9 @@ const GONE_SEED=["projects__P-2610-003","sites__simw4cdcrwqnym","projects__P-261
 // 방금 지운 것 (v0.99-26 검토 반려): 맞추기가 휴지통 목록을 읽는 사이에 대표가 지우면 그 목록에 없어 '위조 표시'로 잘못 보고 지웠음 → 이 화면에서 지운 키는 따로 들고 항상 합쳐서 봄 (되살리면 뺌)
 const GONE_NOW=new Map();
 const GONE_NO={}; // 휴지통에 있는 프로젝트 번호·고객코드 (대표 화면) — 지운 번호를 새 줄에 다시 쓰지 않게
-async function goneSet(){const G=new Set(GONE_SEED);const has0=G.has.bind(G);G.has=k=>has0(k)||GONE_NOW.has(k);let got=null;try{got=await once("acct/_trash/t")}catch(e){}
+async function goneSet(){const G=new Set(GONE_SEED);const has0=G.has.bind(G);G.has=k=>has0(k)||GONE_NOW.has(k);G.ok=true;/* 휴지통·지운 목록을 끝까지 읽었는지 (못 읽었으면 그 목록을 믿고 삭제 표시를 지우지 않음) */const all=async p=>{const s=await db.collection(p).get();return s.docs.map(d=>Object.assign({id:d.id},d.data()))};/* 한 번 읽기(get): 빈 칸에서 1.5초씩 기다리던 것 없앰 */let got=null;try{got=await all("acct/_trash/t")}catch(e){G.ok=false}
   if(got){Object.keys(GONE_NO).forEach(k=>delete GONE_NO[k]);got.forEach(x=>{const d=x.data||{},v=x.col==="projects"?(d.no||x.id):x.col==="customers"?d.code:(x.col==="quotes"||x.col==="sites")?d.pno:"";if(v)GONE_NO[x.col+"__"+x.id]=String(v)})}
-  (got||[]).forEach(x=>G.add(x.col+"__"+x.id));try{(await once("acct/_gone/g")).forEach(x=>G.add(x.col+"__"+x.rid))}catch(e){}GONE_NOW.forEach((v,k)=>G.add(k));return G}
+  (got||[]).forEach(x=>G.add(x.col+"__"+x.id));try{(await all("acct/_gone/g")).forEach(x=>G.add(x.col+"__"+x.rid))}catch(e){G.ok=false}GONE_NOW.forEach((v,k)=>G.add(k));return G}
 function ownedFor(s,col,r){const n=s.name,u=s.uid;if(!r)return false;if(isCoBoss(s)||isCo2(s))return true;if(isTeam(s)&&col!=="reports")return true;
   if(col==="reports")return r.createdBy===u||(n&&r.who===n)||s.role==="최종 결재";
   if(col==="customers")return custMineFor(s,r);
@@ -841,7 +849,7 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
         const o=clean(r);if(col==="customers"&&hf&&Array.isArray(hf.smsLog))o.smsLog=smsMerge(o.smsLog,hf.smsLog);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
       for(const h of mine.filter(x=>!ownIds.has(x.id)&&x.__by!==u))await db.collection("mine/"+u+"/"+col).doc(h.id).delete();
       if(col!=="reports"){const rows=s.scope==="담당 건만"?[]:S[col].filter(r=>!ownIds.has(r.id)).map(r=>idxRow(col,r));const js=JSON.stringify(rows),key=u+"/"+col;if(isoSent[key]!==js){await db.collection("mine/"+u+"/idx").doc(col).set({rows,at:nowISO()});isoSent[key]=js}}}catch(e){window.__isoFail=(window.__isoFail||0)+1}}
-    if(ISO.every(c=>rd[c]))try{await db.collection("mine/"+u+"/idx").doc("sync").set({at:nowISO()})}catch(e){}}}
+    if(ISO.every(c=>rd[c])&&!(Date.now()-(isoMark[u]||0)<300000))try{await db.collection("mine/"+u+"/idx").doc("sync").set({at:nowISO()});isoMark[u]=Date.now()}catch(e){}/* 맞춘 시각 표시는 5분에 한 번만 (가만히 있을 때 계속 쓰지 않게) */}}
 // ===== 공용 작업 칸 work (대표 승인 2026-11-11, 다음 지시 v6): 직원이 바로 읽고 쓰는 현장·고객·프로젝트·견적 칸 =====
 // 저장: work/all/{customers|projects|quotes|sites}/{id} — 인트라넷을 공유받은 사람(직원)만 읽고 씀. 원본(customers·projects·quotes·sites·cpriv)은 대표 전용 그대로
 // 넣는 칸: 번호·현장명·고객명·고객 전화번호·주소·단계·담당·일정·공정·현장 일지·사진 목록·계약 금액 (대표 결정) / 빼는 칸: 원가·마진·성과금 (주민번호·계좌·급여는 이 4개 메뉴에 없음)
@@ -884,7 +892,7 @@ async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.lengt
     let G2=null;const AGE=+window.__GONEAGE||180000;
     for(const k of Object.keys(WGONE)){if(want[k]||GONE_NOW.has(k))continue;const t=WGONE[k]||{},i=k.indexOf("__"),col=k.slice(0,i),id=k.slice(i+2);
       const back=WORK_COLS.includes(col)&&S[col].some(r=>r.id===id); // 원본에 살아 있음 (되살림 · 같은 번호로 새로 등록)
-      if(!back){if(G.has(k))continue;const age=Date.now()-(Date.parse(t.at||"")||0);if(!(age>(t.by===me.id?AGE*5:AGE)))continue;if(!G2)G2=await goneSet();if(G2.has(k))continue}
+      if(!back){if(G.has(k)||!G.ok)continue;const age=Date.now()-(Date.parse(t.at||"")||0);if(!(age>(t.by===me.id?AGE*5:AGE)))continue;if(!G2)G2=await goneSet();if(!G2.ok||G2.has(k))continue}
       if(GONE_NOW.has(k))continue;
       try{await db.collection(GONEP).doc(k).delete();delete WGONE[k];gone++}catch(e){}}}
   for(const col of WORK_COLS){if(!workReady[col]||!S[col].length)continue;const W=WORKD[col]||{},took=new Set();
@@ -1361,7 +1369,8 @@ document.addEventListener("click",async e=>{const t=e.target.closest("[data-cosa
   if(t.dataset.appaper){const a=(S.approvals||[]).find(x=>x.id===t.dataset.appaper);if(a)apPaper(a);return}
   if(t.dataset.certdl){const c=me.admin?CERTS[t.dataset.certdl]:myCerts[t.dataset.certdl];if(!c)return;try{const b=await (await fetch("/_blob/"+c.pdf)).blob();const dl=await window.claude.use("downloads");if(dl)await dl.save({filename:c.name||"증명서.pdf",data:b});else window.open("/_blob/"+c.pdf,"_blank")}catch(err){window.open("/_blob/"+c.pdf,"_blank")}}});
 function queueSync(){if(!me.admin||mode!=="shared")return;clearTimeout(syncT);syncT=setTimeout(privSync,2500);goalQueue()}
-async function privSync(){if(PV)return;if(syncBusy||!privReady.c||!privReady.p||!S.customers.length)return;syncBusy=true;const now=nowISO();
+let syncAgain=false;/* 맞추는 중에 또 바뀌면(직원 저장 등) 버리지 않고 끝난 뒤 한 번 더 */
+async function privSync(){if(PV)return;if(syncBusy){syncAgain=true;return}if(!privReady.c||!privReady.p||!S.customers.length)return;syncBusy=true;syncAgain=false;const now=nowISO();
   try{
     // 1) 고객 문서에 남은 전화·주소 → 대표 전용으로 옮기고 원래 칸은 비움
     for(const c of S.customers){const raw=c.__rawTel!==undefined;const p=PRIVC[c.id]||{};
@@ -1400,7 +1409,7 @@ async function privSync(){if(PV)return;if(syncBusy||!privReady.c||!privReady.p||
       for(const [id,p] of Object.entries(PRIVP)){const h=(COSTC[s.uid]||{})[id];if(!h||h.estCost!==p.estCost)await db.collection("acct/"+s.uid+"/cost").doc(id).set({estCost:p.estCost,updatedAt:p.updatedAt||now,by:"admin"})}
       for(const st of S.staff){const h=S.hr.find(x=>x.id===st.id);if(!h)continue;const v={name:st.name,monthly:h.monthly||"",salary:h.salary||"",bank:h.bank||"",account:h.account||"",holder:h.holder||"",updatedAt:h.updatedAt||""};const key=s.uid+"/"+st.id,js=JSON.stringify(v);if(paySent[key]===js)continue;await db.collection("acct/"+s.uid+"/pay").doc(st.id).set(v);paySent[key]=js}}
   }catch(e){}
-  syncBusy=false}
+  syncBusy=false;if(syncAgain){syncAgain=false;queueSync()}}
 function codeOf(col,r){return col==="customers"?r.code:col==="projects"?r.custCode:col==="quotes"?(r.code||(pjOf(r.pno)||{}).custCode):((pjOf(r.pno)||{}).custCode||r.code)}
 function openLocked(col,r){const code=codeOf(col,r),m=maskRow(col,r);
   const label=col==="customers"?m.name+" 고객 · "+(m.addr||""):((m.custName||m.name||m.customer||"○○")+" 고객 · "+(m.title||m.site||m.name||""));
@@ -4440,7 +4449,7 @@ async function apMigrate(){if(!me.isOwner||!db||mode!=="shared"||apMigBusy)retur
     const ok=(a.history||[]).filter(h=>h.result==="승인").map(h=>String(h.name||"").replace(/\s*\(.*$/,""));let st=0;while(st<al.length-1&&ok.includes(al[st].name))st++;
     const o=Object.assign({},a,{aline:al,step:st,status:st>0?"결재 진행":"결재 대기",approver:"신혜현",lineOld:{reviewer:a.reviewer||"",approver:a.approver||"",step:a.step||0,at:nowISO()},
       history:(a.history||[]).concat([{at:nowISO(),by:me.id,name:"인트라넷",result:"결재 라인 변경",note:"기안 → 채진아 → 최윤수 → 신혜현 (대표 지시 2026-11-06)"}])});delete o.id;
-    await put("approvals",a.id,o);n++}
+    await put("approvals",a.id,o);Object.assign(a,o);/* 화면 값도 바로 맞춤: 저장소 소식이 늦게 와도 같은 서류를 또 고치지 않게 */n++}
   if(n)logAct("approvals","결재 라인 새로 맞춤",n+"건")}catch(e){}apMigBusy=false}
 async function apCfSync(){if(!me.admin||!db||mode!=="shared"||apCfBusy)return;const L=(S.approvals||[]).filter(a=>a.status==="승인"&&Array.isArray(a.hqlines)&&a.hqlines.some(l=>num(l.amount))&&!a.cfSynced);if(!L.length)return;apCfBusy=true;
   try{for(const a of L){let n=0;for(let i=0;i<a.hqlines.length;i++){const l=a.hqlines[i];if(!num(l.amount))continue;const dd=String(l.due||a.due||todayStr()).slice(0,10);
@@ -5209,7 +5218,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   try{workListen()}catch(e){}
   if(!me.admin){try{ordListen()}catch(e){}}else{setTimeout(()=>{try{ordMdCheck()}catch(e){}},8000);setInterval(()=>{try{ordMdCheck()}catch(e){}},31*6e4)}
   db.collection("cgrant").onSnapshot(s=>{GRANTS=s.docs.map(x=>Object.assign({id:x.id},x.data()));render();queueSync()},()=>{});
-  if(window.__MOCKUSER)window.__hfT={pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()}}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
+  if(window.__MOCKUSER)window.__hfT={busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()}}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
   if(me.admin)db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
   render();
 })();
