@@ -84,9 +84,10 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.
  await wait(8000);
  d=await D();{const ch=Object.keys(Object.assign({},before,d)).filter(k=>JSON.stringify(before[k])!==JSON.stringify(d[k]));
   /* 새로고침 뒤 대표 화면이 늘 다시 쓰는 것(시각만 바뀜): 접속 기록·내 계정 표시·맞춘 시각·단가 사본(내용 같음) */const same=(k,f)=>JSON.stringify((before[k]||{})[f])===JSON.stringify((d[k]||{})[f]);
-  const badK=ch.filter(k=>k!=='knock/u_boss'&&k!=='members/u_boss'&&!/^(mine\/[^/]+\/idx\/sync|work\/sync)$/.test(k)&&!(/^acct\/[^/]+\/ccost\/current$/.test(k)&&same(k,'items')&&same(k,'revoked')));
+  /* 새로고침 뒤 첫 맞추기가 다시 쓰는 사본(가린 목록·재무 사본): 시각(at·updatedAt)만 바뀌고 내용이 같으면 괜찮음 (v0.99-26: 맞추기가 빨라져 8초 안에 끝남) */const strip=o=>{const x=Object.assign({},o||{});delete x.at;delete x.updatedAt;return JSON.stringify(x)},sameBut=k=>before[k]!==undefined&&d[k]!==undefined&&strip(before[k])===strip(d[k]);
+  const badK=ch.filter(k=>k!=='knock/u_boss'&&k!=='members/u_boss'&&!(/^mine\/[^/]+\/idx\/(customers|projects|quotes|sites|reports)$|^acct\/[^/]+\/(fin|nsum)\/all$/.test(k)&&sameBut(k))&&!/^(mine\/[^/]+\/idx\/sync|work\/sync)$/.test(k)&&!(/^acct\/[^/]+\/ccost\/current$/.test(k)&&same(k,'items')&&same(k,'revoked')));
   ok('돌아가기 뒤: 대표 계정 견적 임시 저장(acct/u_boss/qdraft) 없음',!Object.keys(d).some(k=>/^acct\/u_boss\/qdraft\//.test(k)),Object.keys(d).filter(k=>/qdraft/.test(k)).join(','));
-  ok('돌아가기 뒤: 채움률(config/fill)·빈칸 목록(mine/*/idx/blanks)·원본이 가려진 자료로 바뀌지 않음',badK.length===0&&JSON.stringify(before['config/fill'])===JSON.stringify(d['config/fill'])&&JSON.stringify(before['quotes/q1'])===JSON.stringify(d['quotes/q1']),'바뀐 문서: '+ch.join(','));
+  ok('돌아가기 뒤: 채움률(config/fill)·빈칸 목록(mine/*/idx/blanks)·원본이 가려진 자료로 바뀌지 않음',badK.length===0&&JSON.stringify(before['config/fill'])===JSON.stringify(d['config/fill'])&&JSON.stringify(before['quotes/q1'])===JSON.stringify(d['quotes/q1']),'걸린 것: '+badK.join(',')+' | '+(badK[0]?JSON.stringify(before[badK[0]]).slice(0,200)+' → '+JSON.stringify(d[badK[0]]).slice(0,200):'')+' | 바뀐 문서: '+ch.join(','));
   const lsEnd=await A.evaluate(()=>Object.keys(localStorage).filter(k=>/^hf-qdraft-|^hf_draft_u_jjh|^hf_cal_draft_u_jjh/.test(k)));ok('돌아가기 뒤: 브라우저에도 미리 보기 임시 저장 없음',lsEnd.length===0,lsEnd.join(','))}
  await A.evaluate(()=>{location.hash='#quotes'});await wait(900);await A.locator('button[data-open="quotes"]').first().click();await wait(1500);
  ok('돌아온 대표 화면: 견적에 ‘이어서 하기’(임시 저장본) 안 뜸',!/이어서 하기|임시 저장본/.test(await A.locator('.sheet').first().innerText().catch(()=>'')));await A.keyboard.press('Escape');await wait(300);
