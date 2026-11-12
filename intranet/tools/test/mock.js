@@ -18,5 +18,7 @@ function colRef(path){const c={path,doc:id=>docRef(path+"/"+(id||Math.random().t
  onSnapshot:(cb,err)=>{if(!rule(path,"read")){err&&setTimeout(()=>err(new Error("denied")),0);return ()=>{}}const l={kind:"c",path,cb};listeners.push(l);setTimeout(()=>cb(snapCol(path)),0);return ()=>{const i=listeners.indexOf(l);if(i>=0)listeners.splice(i,1)}}};return c}
 const db={collection:p=>colRef(p),doc:p=>docRef(p)};
 const user={me:async()=>({id:U.id,name:U.name,email:U.email,isOwner:U.isOwner,canEdit:true,avatarUrl:""})};
-window.claude={use:async n=>{if(n==="db")return db;if(n==="user")return user;throw new Error("no "+n)}};
+// 파일 저장소 흉내 (2026-11-12 첨부 시험용): window.__MOCKASSETS=false 로 끄면 실제처럼 없음
+const assets={upload:async(blob,o)=>{const id="as_"+Math.random().toString(36).slice(2,10);(window.__mockUploads=window.__mockUploads||[]).push({id,name:blob.name||"",size:blob.size,type:(o&&o.type)||blob.type});return {id,url:"/_blob/"+id,sizeBytes:blob.size,contentType:(o&&o.type)||blob.type}}};
+window.claude={use:async n=>{if(n==="db")return db;if(n==="user")return user;if(n==="assets"&&window.__MOCKASSETS!==false)return assets;throw new Error("no "+n)}};
 })();
