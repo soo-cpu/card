@@ -86,6 +86,23 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
  const r6=await put(J,'customers','cN',Object.assign({},NEW.customers[1],{name:'새고객 김시험 (되살린 뒤 수정)'}));await wait(2000);
  ok('5 되살린 뒤에는 다시 저장됨 → 이봄이 화면에 보임',r6==='ok'&&(await val(B,'customers','cN','name'))==='새고객 김시험 (되살린 뒤 수정)',r6);
 
+ // 7) 검토 반려 2026-11-12: 직원 수정 직후 대표 삭제 → 삭제 표시가 중간에 지워지지 않음(직원 화면에 다시 안 보임) · 삭제 직후 낡은 화면 저장·직접 쓰기 → 원본에 안 되살아남
+ {let n=0;for(const [col,gap] of [['customers',2700],['customers',3600],['quotes',3200],['customers',6000],['sites',4200]]){n++;const id='r'+n+col[0],base=Object.assign({},NEW[col][1]);if(base.code)base.code='C-2611-96'+n;if(base.qno)base.qno='Q-2611-96'+n;base[NEW[col][2]]='경합 시험 '+n;
+   await put(J,col,id,base);await wait(1500);await put(B,col,id,Object.assign({},base,{memo:'이봄이 수정'}));
+   let up=false;for(let i=0;i<12&&!up;i++){await wait(1000);up=!!(await D())[col+'/'+id]}/* 원본에 올라올 때까지 */
+   await put(B,col,id,Object.assign({},base,{memo:'이봄이 다시 수정'}));await wait(gap);/* 직원 수정이 대표 화면 맞추기를 막 깨운 때 */
+   await A.evaluate(([c,i])=>window.__hfT.rmCascade(c,i),[col,id]);
+   await wait(600);const stale=await put(J,col,id,Object.assign({},base,{memo:'낡은 화면 저장'}));const nw=new Date().toISOString(),raw=Object.assign({},base,{memo:'직접 씀',updatedAt:nw,__by:'u_jjh',__at:nw});
+   await setDb('work/all/'+col+'/'+id,raw);await setDb('mine/u_jjh/'+col+'/'+id,raw);
+   let seen=0,noTomb=0,back=0;for(let i=0;i<36;i++){await wait(500);const x=await D();if(!x['work/all/gone/'+col+'__'+id])noTomb++;if(x[col+'/'+id])back++;if(await has(B,col,id)||await has(J,col,id))seen++}
+   const x=await D();
+   ok('7 '+col+' (수정 '+gap+'ms 뒤 삭제): 18초 동안 삭제 표시 유지 · 직원 화면에 다시 안 보임 · 원본에 안 되살아남 · 낡은 저장 거절',noTomb===0&&back===0&&seen<=2/* 직접 쓴 줄이 대표 화면에 닿기 전 한순간은 숨김 표시가 가림 */&&/^err/.test(stale)&&!x[col+'/'+id]&&!x['work/all/'+col+'/'+id]&&!!x['acct/_trash/t/'+col+'__'+id],'표시 없음 '+noTomb+'회 · 원본 되살아남 '+back+'회 · 직원 화면에 보임 '+seen+'회 · 낡은 저장 '+stale)}
+  // 삭제 요청 승인(원본에 이미 없는 줄): 직원 사본 내용이 휴지통에 한 건 남음
+  const nw=new Date().toISOString();await setDb('mine/u_bom/projects/pOld',{no:'P-2610-999',title:'옛 프로젝트 (원본에 없음)',mgr:'이봄이',stage:'계약',updatedAt:nw,__by:'u_bom',__at:nw});
+  await setDb('mine/u_bom/delreq/projects__pOld',{col:'projects',id:'pOld',title:'옛 프로젝트 (원본에 없음)',what:'프로젝트',reason:'두 번 등록됨',at:nw,by:'u_bom',byName:'이봄이',status:'실행 요청',until:new Date(Date.now()+864e5).toISOString(),execAt:nw});await wait(9000);
+  const hasBtn=true;const y=await D();
+  ok('7 삭제 요청 승인(원본에 없는 줄): 휴지통에 직원 사본 내용 1건 · 삭제 표시 · 요청 ‘삭제함’ · 이봄이 화면에서 사라짐',hasBtn&&(((y['acct/_trash/t/projects__pOld']||{}).data)||{}).title==='옛 프로젝트 (원본에 없음)'&&!!y['work/all/gone/projects__pOld']&&(y['mine/u_bom/delreq/projects__pOld']||{}).status==='삭제함'&&!(await has(B,'projects','pOld')),JSON.stringify((y['mine/u_bom/delreq/projects__pOld']||{}).status)+' '+!!y['acct/_trash/t/projects__pOld'])}
+
  // 6) 돈 정보·원본 보존
  d=await D();const wk=Object.keys(d).filter(k=>k.startsWith('work/'));
  ok('6 공용 칸에 원가·마진·성과금 칸 없음',wk.every(k=>!['estCost','perf','qCost','approvals','pc','margin','marginRate','bonus','bonusBase'].some(f=>d[k]&&f in d[k]&&d[k][f]!==''&&d[k][f]!==undefined)),wk.length+'문서');

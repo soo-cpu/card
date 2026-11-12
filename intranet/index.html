@@ -259,6 +259,8 @@ body.consulting .fbbtn{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 body.cs-cust .fbbtn{display:none}@media print{#askFab,#askVeil{display:none!important}}
 @media print{.fbbtn{display:none}}
 .flow{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px;background:var(--panel)}
+/* 상세 창 안쪽이 화면 폭을 넘지 않게 (v0.99-26 검토 반려): 창이 가장 넓은 칸에 맞춰 늘어나던 것 → 한 칸을 창 폭에 맞춤 */
+.sheet{grid-template-columns:minmax(0,1fr)}.sheet>*{min-width:0}.sheet select,.sheet input,.sheet textarea{max-width:100%}.sheet .form>*{min-width:0}
 .hub{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0}
 .hubc{border:1px solid var(--line,#D9D9D9);border-top:4px solid #1F4E79;border-radius:10px;background:#fff;padding:10px;min-width:0}
 .hubc h4{margin:0 0 6px;font-size:14px;color:#203864;display:flex;justify-content:space-between;gap:6px;align-items:center}
@@ -791,7 +793,9 @@ function listenMineOf(u){if(!db||!me.admin||muSubs[u])return;muSubs[u]=1;MU[u]={
 // 대표 화면에서 지운 것(휴지통)·합친 것(acct/_gone/g) 목록
 // 이미 합쳐진 번호 (대표 정리 2026-11-06: 김정래 P-2610-003 → P-2611-004, 그 번호로 자동 생긴 중복 현장) · 백업: 드라이브 「직원 사본 백업 2026-11-06 v0.json」
 const GONE_SEED=["projects__P-2610-003","sites__simw4cdcrwqnym"];
-async function goneSet(){const G=new Set(GONE_SEED);try{(await once("acct/_trash/t")).forEach(x=>G.add(x.col+"__"+x.id))}catch(e){}try{(await once("acct/_gone/g")).forEach(x=>G.add(x.col+"__"+x.rid))}catch(e){}return G}
+// 방금 지운 것 (v0.99-26 검토 반려): 맞추기가 휴지통 목록을 읽는 사이에 대표가 지우면 그 목록에 없어 '위조 표시'로 잘못 보고 지웠음 → 이 화면에서 지운 키는 따로 들고 항상 합쳐서 봄 (되살리면 뺌)
+const GONE_NOW=new Map();
+async function goneSet(){const G=new Set(GONE_SEED);const has0=G.has.bind(G);G.has=k=>has0(k)||GONE_NOW.has(k);try{(await once("acct/_trash/t")).forEach(x=>G.add(x.col+"__"+x.id))}catch(e){}try{(await once("acct/_gone/g")).forEach(x=>G.add(x.col+"__"+x.rid))}catch(e){}GONE_NOW.forEach((v,k)=>G.add(k));return G}
 function ownedFor(s,col,r){const n=s.name,u=s.uid;if(!r)return false;if(isCoBoss(s)||isCo2(s))return true;if(isTeam(s)&&col!=="reports")return true;
   if(col==="reports")return r.createdBy===u||(n&&r.who===n)||s.role==="최종 결재";
   if(col==="customers")return custMineFor(s,r);
@@ -811,7 +815,7 @@ async function smsKeep(rows){for(const x of rows||[]){if(!x||!Array.isArray(x.sm
 async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at||r.updatedAt||"");const G=await goneSet();const stf=S.staff.filter(x=>x.uid&&x.state!=="퇴사");
   // 0) 지운 것·합친 것 먼저 (다음 지시 2026-11-06 v4): 원본에 없는 사본은 정리. 직원이 만든 줄은 지우지 않고 '__gone'(숨김·내용 보관)
   for(const s of stf){const u=s.uid,mu=MU[u]||{},rd=muReady[u]||{};
-    for(const col of ISO){if(!rd[col]||!S[col].length)continue;const ids=new Set(S[col].map(r=>r.id)),prev=isoPrev[col]||new Set();
+    for(const col of ISO){if(!rd[col]||!S[col].length)continue;const ids=new Set(S[col].filter(r=>!G.has(col+"__"+r.id)).map(r=>r.id)),prev=isoPrev[col]||new Set();
       for(const h of (mu[col]||[])){if(ids.has(h.id)||h.__gone||h.__deleted)continue;try{
         if(h.__by!==u){await db.collection("mine/"+u+"/"+col).doc(h.id).delete();continue}
         if(G.has(col+"__"+h.id)||prev.has(h.id)){const o=Object.assign({},h);delete o.id;o.__gone=true;o.__goneAt=nowISO();o.__goneWhy="대표 화면에서 지움·합침 (내용은 보관)";await db.collection("mine/"+u+"/"+col).doc(h.id).set(o)}}catch(e){window.__isoFail=(window.__isoFail||0)+1}}}}
@@ -820,16 +824,18 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
     for(const col of ISO){if(!rd[col]||!S[col].length)continue;try{const mine=(mu[col]||[]).filter(r=>!r.__gone);
       if(col==="customers")await smsKeep(mu[col]||[]);
       // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만 · 지운 것·합친 것은 다시 올리지 않음)
-      for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(c&&T(c)>=T(x))continue;if(!c&&G.has(col+"__"+x.id))continue;
+      for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(G.has(col+"__"+x.id))continue;if(c&&T(c)>=T(x))continue;
         if(x.__deleted){await db.collection("mine/"+u+"/"+col).doc(x.id).delete();continue}
         if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;o.__at=x.__at;if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
         if(col==="customers"){const p=PRIVC[x.id]||{};if((x.tel||x.addr)&&String(x.__at)>String(p.updatedAt||""))await db.collection("cpriv").doc(x.id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
         await db.collection(col).doc(x.id).set(o)}
       // 원본 → 직원: 담당분은 전체, 나머지는 가린 목록 1개
-      const own=S[col].filter(r=>ownedFor(s,col,r)),ownIds=new Set(own.map(r=>r.id));
+      const own=S[col].filter(r=>ownedFor(s,col,r)&&!G.has(col+"__"+r.id)),ownIds=new Set(own.map(r=>r.id));
       for(const r of own){const h=(mu[col]||[]).find(x=>x.id===r.id);
         if(h&&!h.__gone&&T(h)>=T(r)){if(col==="customers"&&(r.smsLog||h.smsLog)){const m=smsMerge(r.smsLog,h.smsLog);if(smsJs(m)!==smsJs(h.smsLog)){const o2=Object.assign({},h);delete o2.id;o2.smsLog=m;await db.collection("mine/"+u+"/"+col).doc(r.id).set(o2)}}continue}
-        const o=clean(r);if(col==="customers"&&h&&Array.isArray(h.smsLog))o.smsLog=smsMerge(o.smsLog,h.smsLog);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
+        let hf=h;try{const g=await db.doc("mine/"+u+"/"+col+"/"+r.id).get();if(g&&g.exists)hf=Object.assign({id:r.id},g.data())}catch(e){}
+        if(hf&&hf!==h&&!hf.__gone&&T(hf)>=T(r))continue;/* 그 사이 직원이 저장함 → 다음 맞추기에서 원본으로 올라감 */
+        const o=clean(r);if(col==="customers"&&hf&&Array.isArray(hf.smsLog))o.smsLog=smsMerge(o.smsLog,hf.smsLog);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
       for(const h of mine.filter(x=>!ownIds.has(x.id)&&x.__by!==u))await db.collection("mine/"+u+"/"+col).doc(h.id).delete();
       if(col!=="reports"){const rows=s.scope==="담당 건만"?[]:S[col].filter(r=>!ownIds.has(r.id)).map(r=>idxRow(col,r));const js=JSON.stringify(rows),key=u+"/"+col;if(isoSent[key]!==js){await db.collection("mine/"+u+"/idx").doc(col).set({rows,at:nowISO()});isoSent[key]=js}}}catch(e){window.__isoFail=(window.__isoFail||0)+1}}
     if(ISO.every(c=>rd[c]))try{await db.collection("mine/"+u+"/idx").doc("sync").set({at:nowISO()})}catch(e){}}}
@@ -846,12 +852,12 @@ const WORKD={},workReady={},workSent={};let WORK_AT="";
 // 직원 화면은 합칠 때 이것부터 봐서 숨기고, 낡은 화면에서 다시 저장해도 받지 않음. 되살리면 표시를 지움. 대표 화면이 휴지통·지운 목록(acct/_trash, acct/_gone)과 맞춰서 직원이 임의로 만든 표시는 지움
 const GONEP="work/all/gone",WGONE={};let wgoneReady=false;
 const goneKey=(col,id)=>col+"__"+id,isGone=(col,id)=>!!WGONE[goneKey(col,id)];
-async function goneMark(col,id){if(!db||!me.admin||mode!=="shared"||PV||!WORK_COLS.includes(col)||!id)return;const k=goneKey(col,id),o={col,id,by:me.id,byName:myName(),at:nowISO()};
+async function goneMark(col,id){if(!db||!me.admin||mode!=="shared"||PV||!WORK_COLS.includes(col)||!id)return;const k=goneKey(col,id),o={col,id,by:me.id,byName:myName(),at:nowISO()};GONE_NOW.set(k,Date.now());
   try{await db.collection(GONEP).doc(k).set(o);WGONE[k]=o}catch(e){}
   try{await db.collection(WKP(col)).doc(id).delete();if(WORKD[col])delete WORKD[col][id];delete workSent[col+"/"+id]}catch(e){}}
 // 삭제 표시가 있는 줄이 공용 칸에 다시 올라오면(낡은 화면·옛 버전) 대표 화면이 보는 즉시 뺌 — 전체 맞추기를 기다리지 않음
 function goneSweep(col){if(!me.admin||PV||!wgoneReady||!db)return;Object.keys(WORKD[col]||{}).forEach(id=>{if(isGone(col,id)&&!(S[col]||[]).some(r=>r.id===id)){delete WORKD[col][id];try{db.collection(WKP(col)).doc(id).delete().catch(()=>{})}catch(e){}}})}
-async function goneClear(col,id){if(!db||!me.admin||mode!=="shared"||PV||!WORK_COLS.includes(col))return;const k=goneKey(col,id);try{await db.collection(GONEP).doc(k).delete();delete WGONE[k]}catch(e){}try{await db.collection("acct/_gone/g").doc(trashKey(col,id)).delete()}catch(e){}}
+async function goneClear(col,id){if(!db||!me.admin||mode!=="shared"||PV||!WORK_COLS.includes(col))return;const k=goneKey(col,id);GONE_NOW.delete(k);try{await db.collection(GONEP).doc(k).delete();delete WGONE[k]}catch(e){}try{await db.collection("acct/_gone/g").doc(trashKey(col,id)).delete()}catch(e){}}
 const stableJs=v=>JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&!Array.isArray(x)?Object.keys(x).sort().reduce((o,kk)=>{o[kk]=x[kk];return o},{}):x);
 const wkT=r=>String((r&&(r.__at||r.updatedAt))||"");
 function workRow(col,r){const o=clean(r);WORK_DROP.forEach(k=>delete o[k]);
@@ -867,16 +873,22 @@ async function workPut(col,id,data,stamp){if(!db||!WORK_COLS.includes(col))retur
   if(col==="customers"){const w=(WORKD.customers||{})[id]||{},p=PRIVC[id]||{};o.tel=data.tel||p.tel||w.tel||"";o.addr=data.addr||p.addr||w.addr||""}
   o.__by=me.id;o.__at=stamp||nowISO();await db.collection(WKP(col)).doc(id).set(o);(WORKD[col]=WORKD[col]||{})[id]=o}
 async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||w.tel||"",addr:cpv.addr||w.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
-async function workSync(){if(PV||!me.admin||mode!=="shared"||!db)return;const G=await goneSet();let up=0,down=0,gone=0;
+async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.length)return;/* 직원 명단을 읽기 전에는 맞추지 않음: 직원이 쓴 줄을 '모르는 사람 것'으로 보고 덮거나 빼던 길 */const G=await goneSet();let up=0,down=0,gone=0;
   // 0) 삭제 표시 맞추기: 휴지통·지운 목록에 있고 원본에 없는 것 → 표시 / 원본에 다시 있거나(되살림) 목록에 없는 표시 → 지움
   if(wgoneReady&&WORK_COLS.every(c=>S[c].length)){const want={};G.forEach(k=>{const i=k.indexOf("__"),col=k.slice(0,i),id=k.slice(i+2);if(WORK_COLS.includes(col)&&id&&!S[col].some(r=>r.id===id))want[k]={col,id}});
     for(const k of Object.keys(want)){if(WGONE[k])continue;const o=Object.assign({by:me.id,byName:myName(),at:nowISO()},want[k]);try{await db.collection(GONEP).doc(k).set(o);WGONE[k]=o;gone++}catch(e){}}
-    for(const k of Object.keys(WGONE)){if(want[k])continue;try{await db.collection(GONEP).doc(k).delete();delete WGONE[k];gone++}catch(e){}}}
+    // 표시를 지우는 것은: 원본에 다시 있을 때(되살림) / 휴지통·지운 목록에 없고 만든 지 3분(대표가 만든 것은 15분) 지난 것만. 지우기 직전에 휴지통을 다시 읽음
+    let G2=null;const AGE=+window.__GONEAGE||180000;
+    for(const k of Object.keys(WGONE)){if(want[k]||G.has(k))continue;const t=WGONE[k]||{},i=k.indexOf("__"),col=k.slice(0,i),id=k.slice(i+2);
+      const back=WORK_COLS.includes(col)&&S[col].some(r=>r.id===id);
+      if(!back){const age=Date.now()-(Date.parse(t.at||"")||0);if(!(age>(t.by===me.id?AGE*5:AGE)))continue}
+      if(!G2)G2=await goneSet();if(G2.has(k))continue;
+      try{await db.collection(GONEP).doc(k).delete();delete WGONE[k];gone++}catch(e){}}}
   for(const col of WORK_COLS){if(!workReady[col]||!S[col].length)continue;const W=WORKD[col]||{},took=new Set();
     if(col==="customers")await smsKeep(Object.entries(W).map(([id,x])=>Object.assign({},x,{id})));
     // 1) 직원이 공용 칸에서 고친 것·새로 만든 것 → 원본 (명단에 있는 직원 + 고칠 수 있는 건만)
     for(const [id,x] of Object.entries(W)){if(!x.__by||x.__by==="admin")continue;const c=S[col].find(r=>r.id===id);
-      if(c&&wkT(c)>=wkT(x))continue;if(!c&&G.has(col+"__"+id))continue;
+      if(G.has(col+"__"+id))continue;if(c&&wkT(c)>=wkT(x))continue;
       const s=S.staff.find(z=>z.uid===x.__by&&z.state!=="퇴사"&&z.intra!=="사용 안 함");if(!s)continue;if(c&&!ownedFor(s,col,c))continue;
       const o=Object.assign({},x);delete o.__by;delete o.id;if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);
       if(c){const cc=clean(c);WORK_DROP.forEach(k=>{if(cc[k]!==undefined)o[k]=cc[k]});if(amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c.amtLock)o.amtLock=c.amtLock}
@@ -886,14 +898,14 @@ async function workSync(){if(PV||!me.admin||mode!=="shared"||!db)return;const G=
       try{await db.collection("acct/_work/log").doc(col+"__"+id+"__"+Date.now()).set({col,id,by:x.__by,byName:s.name||"",at:x.__at,applied:nowISO(),isNew:!c,prev:JSON.stringify(prev).slice(0,60000),title:String(o.title||o.name||o.site||o.no||o.qno||"").slice(0,80)})}catch(e){}
       await db.collection(col).doc(id).set(o);took.add(id);up++}
     // 2) 원본 → 공용 칸 (바뀐 줄만)
-    const jobs=[];for(const r of S[col]){if(took.has(r.id))continue;const o=workRow(col,r),h=W[r.id];
+    const jobs=[];for(const r of S[col]){if(took.has(r.id)||G.has(col+"__"+r.id))continue;const o=workRow(col,r),h=W[r.id];
       if(col==="customers"&&h&&Array.isArray(h.smsLog))o.smsLog=smsMerge(o.smsLog,h.smsLog);
       if(h&&h.__by&&h.__by!=="admin"&&wkT(h)>wkT(r)){const s=S.staff.find(z=>z.uid===h.__by&&z.state!=="퇴사");if(s&&ownedFor(s,col,r)){if(col==="customers"&&smsJs(o.smsLog)!==smsJs(h.smsLog)){const o2=Object.assign({},h);delete o2.id;o2.smsLog=o.smsLog||[];jobs.push(()=>db.collection(WKP(col)).doc(r.id).set(o2))}continue}}
       const js=stableJs(o);if(h){const hh=Object.assign({},h);delete hh.id;if(stableJs(hh)===js)continue}if(workSent[col+"/"+r.id]===js)continue;
-      jobs.push(()=>db.collection(WKP(col)).doc(r.id).set(o).then(()=>{workSent[col+"/"+r.id]=js;down++}))}
+      jobs.push(()=>{const cur=(WORKD[col]||{})[r.id];/* 쓰기 직전에 지금 공용 칸을 다시 봄: 맞추는 사이 직원이 더 새로 저장했으면 옛 원본으로 덮지 않음 */if(cur&&cur.__by&&cur.__by!=="admin"&&wkT(cur)>wkT(r)&&S.staff.some(z=>z.uid===cur.__by&&z.state!=="퇴사"&&ownedFor(z,col,r)))return Promise.resolve();return db.collection(WKP(col)).doc(r.id).set(o).then(()=>{workSent[col+"/"+r.id]=js;down++})})}
     for(let i=0;i<jobs.length;i+=8)await Promise.all(jobs.slice(i,i+8).map(f=>f().catch(()=>{})));
     // 3) 원본에 없는 공용 줄: 대표가 지운 것·합친 것이면 공용 칸에서도 뺌 (원본은 휴지통에 그대로)
-    const ids=new Set(S[col].map(r=>r.id));for(const [id,x] of Object.entries(W)){if(ids.has(id)||took.has(id))continue;if(x.__by==="admin"||G.has(col+"__"+id)||!S.staff.some(z=>z.uid===x.__by&&z.state!=="퇴사")){try{await db.collection(WKP(col)).doc(id).delete();gone++}catch(e){}}}}
+    const ids=new Set(S[col].filter(r=>!G.has(col+"__"+r.id)).map(r=>r.id));for(const [id,x] of Object.entries(W)){if(ids.has(id)||took.has(id))continue;if(x.__by==="admin"||G.has(col+"__"+id)||!S.staff.some(z=>z.uid===x.__by&&z.state!=="퇴사")){try{await db.collection(WKP(col)).doc(id).delete();gone++}catch(e){}}}}
   if(up||down||gone||!WORK_AT){WORK_AT=nowISO();try{await db.doc("work/sync").set({at:WORK_AT,up,down,gone})}catch(e){}}}
 // ===== 대표 지시 팝업 (다음 지시 2026-11-11 v9) =====
 // 원본: acct/_ord/o/{id} (대표만) · 받는 직원 사본: mine/{uid}/orders/{id} (그 직원만 읽고 상태만 바꿈)
@@ -1606,7 +1618,7 @@ async function remove(col,id,grp){
   if(PV)return pvDeny();
   if(col==="quotes"){try{await qSnap(id,"지우기 전 자동 백업")}catch(e){}}
   if(db&&isoMe(col)){await db.collection("mine/"+me.id+"/"+col).doc(id).set({__deleted:true,__by:me.id,__at:nowISO()});return}
-  if(db&&TRASH_COLS.includes(col)){const r=(S[col]||[]).find(x=>x.id===id)||{};const o=JSON.parse(JSON.stringify(r));delete o.id;await db.collection("acct/_trash/t").doc(trashKey(col,id)).set({col,id,data:o,at:nowISO(),by:me.id,byName:myName(),grp:grp||"",title:String(r.title||r.name||r.qno||r.code||r.site||r.no||"").slice(0,80)});await db.collection(col).doc(id).delete();try{await goneMark(col,id)}catch(e){}try{await calMark(col,o,"mark")}catch(e){}return}
+  if(db&&TRASH_COLS.includes(col)){const gk=col+"__"+id;if(me.admin&&WORK_COLS.includes(col))GONE_NOW.set(gk,Date.now());/* 휴지통에 쓰기 전부터 '지우는 중'으로 표시 */try{const r=(S[col]||[]).find(x=>x.id===id)||{};const o=JSON.parse(JSON.stringify(r));delete o.id;await db.collection("acct/_trash/t").doc(trashKey(col,id)).set({col,id,data:o,at:nowISO(),by:me.id,byName:myName(),grp:grp||"",title:String(r.title||r.name||r.qno||r.code||r.site||r.no||"").slice(0,80)});await db.collection(col).doc(id).delete();try{await goneMark(col,id)}catch(e){}try{await calMark(col,o,"mark")}catch(e){}}catch(e){GONE_NOW.delete(gk);throw e}return}
   if(db){await db.collection(col).doc(id).delete()}
   else{S[col]=S[col].filter(x=>x.id!==id);saveLocal();render()}
 }
@@ -2618,11 +2630,16 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
     try{await db.collection("mine/"+me.id+"/delreq").doc(key).set(Object.assign({},r,{did:undefined,status:"실행 요청",execAt:nowISO()}));sheet=null;drawSheet();toast("삭제했어요 · 대표 화면에서 휴지통으로 옮겨져요")}catch(er){toast("지우지 못했어요")}}});
 // 대표 화면: 직원별 삭제 요청 구독 + 허용된 '실행 요청'은 바로 휴지통으로
 function drOwner(){if(!me.admin||!db||mode!=="shared")return;(S.staff||[]).filter(x=>x.uid&&x.state!=="퇴사").forEach(st=>{if(drSubs[st.uid])return;drSubs[st.uid]=1;try{db.collection("mine/"+st.uid+"/delreq").onSnapshot(s=>{DRALL[st.uid]=s.docs.map(d=>Object.assign({},d.data(),{did:d.id,uid:st.uid}));drExec();try{redDraw()}catch(e){}},()=>{})}catch(e){}})}
+// 원본에 이미 없는 줄의 삭제 요청 (v0.99-26 검토 반려): 규칙대로 휴지통에 한 건 남김(직원 사본에 남아 있던 내용) + 지운 목록 + 삭제 표시
+async function drLost(uid,r){const rid=r.id;if(!rid||!r.col)return;
+  try{let h=null;try{const g=await db.doc("mine/"+uid+"/"+r.col+"/"+rid).get();if(g&&g.exists)h=g.data()}catch(e){}if(!h)h=((MU[uid]||{})[r.col]||[]).find(x=>x.id===rid);if(h&&TRASH_COLS.includes(r.col)&&!(await once("acct/_trash/t")).some(t=>t.col===r.col&&t.id===rid)){const o=Object.assign({},h);["id","__by","__at","__gone","__goneAt","__goneWhy","__deleted","__masked"].forEach(k=>delete o[k]);
+    await db.collection("acct/_trash/t").doc(trashKey(r.col,rid)).set({col:r.col,id:rid,data:o,at:nowISO(),by:me.id,byName:myName(),grp:"",title:String(r.title||o.title||o.name||o.qno||"").slice(0,80),src:"직원 사본에 남아 있던 내용 (원본에는 이미 없던 줄 · 삭제 요청 승인)"})}}catch(e){}
+  try{if(ISO.includes(r.col))await db.collection("acct/_gone/g").doc(trashKey(r.col,rid)).set({col:r.col,rid,at:nowISO(),by:me.id,why:"삭제 요청 승인 (원본에 이미 없음)"});await goneMark(r.col,rid)}catch(e){}}
 let drBusy=false;async function drExec(){if(drBusy)return;drBusy=true;try{for(const r of Object.values(DRALL).flat().filter(x=>x.status==="실행 요청")){const o=Object.assign({},r);delete o.uid;delete o.did;
-  if(!r.until||new Date(r.until)<new Date(r.execAt||0)){o.status="거절";o.note="허용 시간이 지나 실행 안 함"}else{if((S[r.col]||[]).some(x=>x.id===r.id))await rmCascade(r.col,r.id);o.status="삭제함";o.doneBy="직원 (대표 허용)";o.doneAt=nowISO()}
+  if(!r.until||new Date(r.until)<new Date(r.execAt||0)){o.status="거절";o.note="허용 시간이 지나 실행 안 함"}else{if((S[r.col]||[]).some(x=>x.id===r.id))await rmCascade(r.col,r.id);else await drLost(r.uid,r);o.status="삭제함";o.doneBy="직원 (대표 허용)";o.doneAt=nowISO()}
   await db.collection("mine/"+r.uid+"/delreq").doc(r.did).set(o)}}catch(e){}drBusy=false}
 async function drDecide(uid,did,how){const r=(DRALL[uid]||[]).find(x=>x.did===did);if(!r)return;const o=Object.assign({},r);delete o.uid;delete o.did;const rid=r.id;
-  if(how==="go"){if(!await okAsk("‘"+(r.title||"")+"’을(를) 휴지통으로 옮길까요?"))return;if((S[r.col]||[]).some(x=>x.id===rid))await rmCascade(r.col,rid);else{try{if(ISO.includes(r.col))await db.collection("acct/_gone/g").doc(trashKey(r.col,rid)).set({col:r.col,rid,at:nowISO(),by:me.id,why:"삭제 요청 승인 (원본에 이미 없음)"});await goneMark(r.col,rid)}catch(e){}}o.status="삭제함";o.doneBy="대표";o.doneAt=nowISO()}
+  if(how==="go"){if(!await okAsk("‘"+(r.title||"")+"’을(를) 휴지통으로 옮길까요?"))return;if((S[r.col]||[]).some(x=>x.id===rid))await rmCascade(r.col,rid);else await drLost(uid,r);o.status="삭제함";o.doneBy="대표";o.doneAt=nowISO()}
   if(how==="ok"){o.status="허용";o.until=new Date(Date.now()+864e5).toISOString();o.okAt=nowISO()}
   if(how==="no"){o.status="거절";o.noAt=nowISO()}
   await db.collection("mine/"+uid+"/delreq").doc(did).set(o);logAct("delreq","삭제 요청 "+(how==="go"?"직접 삭제":how==="ok"?"24시간 허용":"거절"),(r.byName||"")+" · "+(r.title||""));toast(how==="go"?"휴지통으로 옮겼어요":how==="ok"?"24시간 허용했어요":"거절했어요");try{redDraw()}catch(e){}render()}
@@ -5171,7 +5188,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   const MINE={},IDX={};const mergeIso=col=>{const tomb=id=>WORK_COLS.includes(col)&&isGone(col,id);const own=(MINE[col]||[]).filter(r=>!r.__deleted&&!r.__gone&&!tomb(r.id)),ids=new Set((MINE[col]||[]).map(r=>r.id));
     // 공용 작업 칸이 있으면: 줄마다 더 새것 (내 사본 ↔ 공용 칸). '담당 건만' 직원은 내 사본에 있는 줄만
     const W=WORK_COLS.includes(col)&&workReady[col]?WORKD[col]||{}:null;
-    if(W&&Object.keys(W).length){const lim=(myStaff()||{}).scope==="담당 건만",dead=new Set((MINE[col]||[]).filter(r=>r.__deleted||r.__gone).map(r=>r.id)),byId={};
+    if(W&&Object.keys(W).length){const lim=(myStaff()||{}).scope==="담당 건만",dead=new Set((MINE[col]||[]).filter(r=>r.__deleted||(r.__gone&&!(W[r.id]&&wkT(W[r.id])>String(r.__goneAt||"")))/* 대표가 되살린 줄(공용 칸이 숨김 표시보다 새것)은 다시 보임 */).map(r=>r.id)),byId={};
       Object.entries(W).forEach(([id,w])=>{if(dead.has(id)||tomb(id)||(lim&&!ids.has(id)))return;byId[id]=Object.assign({id},w)});
       own.forEach(m=>{const w=byId[m.id];if(!w||wkT(m)>=wkT(w)){byId[m.id]=m;return}if(amtLocked(w))AMT_KEYS.forEach(k=>{if(m[k]!==undefined)w[k]=m[k]})});
       S[col]=Object.values(byId).concat(lim?[]:(IDX[col]||[]).filter(r=>!byId[r.id]&&!dead.has(r.id)&&!tomb(r.id)));return}

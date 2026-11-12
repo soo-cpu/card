@@ -28,6 +28,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
   const sh=p=>p.evaluate(()=>{const s=window.__hfT.sheet();return s?s.col+'|'+s.id:''});
   const close=async p=>{await p.evaluate(()=>window.__hfT.closeSheet());await wait(300)};
   const wide=p=>p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2);
+  const fit=p=>p.evaluate(()=>{const s=document.querySelector('.sheet');return !!s&&s.scrollWidth<=s.clientWidth+2&&s.getBoundingClientRect().right<=window.innerWidth+2&&[...s.querySelectorAll('#pjHub .hubc,.custHub .hubp')].every(e=>e.getBoundingClientRect().right<=s.getBoundingClientRect().left+s.clientWidth+2)});/* 상세 창 안쪽도 옆으로 안 밀림 */
   const A0=await open('admin',12000);/* 대표 화면이 먼저 공용 칸·직원 사본을 채움 */
   for(const who of ['admin','jjh','bom','cja']){const P=who==='admin'?A0:await open(who);const tag=vn+' '+USERS[who].name+': ';
    // 1) 프로젝트 상세 → 카드 4개
@@ -37,7 +38,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
    ok(tag+'고객(이름·코드·전화) · 현장(공정 타일·진행률 40%·마지막 일지) · 견적 2건(차수·상태)',/홍길동/.test(t)&&/C-2611-901/.test(t)&&/010-1234-5678/.test(t)&&/타일/.test(t)&&/40%/.test(t)&&/욕실 벽 타일 시공 중/.test(t)&&/1차/.test(t)&&/2차/.test(t)&&/계약/.test(t),t.replace(/\s+/g,' ').slice(0,260));
    ok(tag+'카드에 원가·마진·성과금·A/S 비용·과거 결재 금액 없음',!MONEY.test(t)&&!/마진|원가|성과/.test(t),(t.match(MONEY)||[]).join(','));
    if(who==='jjh'||who==='bom')ok(tag+'금액 미확정 견적은 금액 숨김',/금액 미확정/.test(t)&&!/5,555,000|5555000/.test(t));
-   ok(tag+'가로 넘침 없음 (프로젝트 상세)',await wide(P));
+   ok(tag+'가로 넘침 없음 (프로젝트 상세 · 창 안쪽 폭도)',await wide(P)&&await fit(P),await P.evaluate(()=>{const s=document.querySelector('.sheet');return s.scrollWidth+'/'+s.clientWidth}));
    if(vn!=='PC'){const w=await hub.locator('.hubc').evaluateAll(L=>L.map(e=>Math.round(e.getBoundingClientRect().left)));ok(tag+'휴대폰: 카드가 한 줄에 하나씩',new Set(w).size===1,w.join(','))}
    // 2) 카드를 누르면 그 메뉴 상세로
    await hub.locator('.hubi[data-open="sites"]').first().click();await wait(900);const s1=await sh(P);await close(P);
@@ -47,7 +48,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
    // 3) 고객 카드: 이 고객의 모든 것 (프로젝트 2건)
    const ch=P.locator('.sheet .custHub');const cn=await ch.locator('.hubp').count();const ct=cn?await ch.innerText():'';
    ok(tag+'고객 카드 ‘이 고객의 모든 것’: 프로젝트 2건이 프로젝트별로 (현장 진행·견적·사후관리 A/S·하자보수)',cn===2&&/P-2611-901/.test(ct)&&/P-2605-902/.test(ct)&&/40%/.test(ct)&&/싱크대 하부 실리콘 보수/.test(ct)&&/하자보수 2027-05-01/.test(ct)&&!MONEY.test(ct),cn+' '+ct.replace(/\s+/g,' ').slice(0,200));
-   ok(tag+'가로 넘침 없음 (고객 카드)',await wide(P));
+   ok(tag+'가로 넘침 없음 (고객 카드 · 창 안쪽 폭도)',await wide(P)&&await fit(P));
    await ch.locator('[data-open="projects"]').first().click();await wait(900);ok(tag+'고객 카드에서 프로젝트를 누르면 프로젝트 상세',/^projects\|p[12]$/.test(await sh(P)),await sh(P));await close(P);
    // 4) 고객 이름으로 찾기 (고객 관리·프로젝트)
    for(const h of ['#customers','#projects']){await go(P,h);await P.locator('#q').fill('홍길');await P.locator('#q').dispatchEvent('input');await wait(1100);
