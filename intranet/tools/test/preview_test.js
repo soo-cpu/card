@@ -65,6 +65,9 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.
  ok('미리 보기에서 견적 작성 칸을 고칠 수 있음 (시험이 그 경로를 탐)',qiN===1,'data-qe 칸 '+qiN);
  ok('견적을 만져도 ‘서버 임시 저장 실패 · 연결되면 자동으로 다시 올려요’ 문구 없음',!/서버 임시 저장 실패|자동으로 다시 올려요/.test(qeTxt));
  await A.evaluate(()=>{window.dispatchEvent(new Event('pagehide'));document.dispatchEvent(new Event('visibilitychange'))});await wait(500);
+ // 검토 반려 2026-11-12: 미리 보기에서 견적 '저장'을 눌러도 버전 보관본이 브라우저에 남지 않음 (남으면 돌아온 뒤 대표 이름으로 올라감)
+ {const sv=A.locator('.sheet button').filter({hasText:/^저장/}).first();const nsv=await sv.count();if(nsv){await sv.click().catch(()=>{});await wait(1500)}
+  ok('미리 보기에서 견적 ‘저장’을 눌러도 브라우저에 버전 보관본(hf-qver-*)이 안 남음',nsv>0&&(await A.evaluate(()=>Object.keys(localStorage).filter(k=>/^hf-qver-/.test(k)).length))===0,'저장 버튼 '+nsv)}
  await A.keyboard.press('Escape');await wait(300);
  await A.evaluate(()=>{location.hash='#calendar'});await wait(800);if(await A.locator('[data-calnew]').count()){await A.locator('[data-calnew]').first().click();await wait(500);const ct=A.locator('#calVeil [data-cf="title"]');if(await ct.count()){await ct.fill('미리 보기 일정');await wait(400)}const cc=A.locator('#calVeil [data-calclose]');if(await cc.count())await cc.first().click();await wait(300)}
  await A.evaluate(()=>{location.hash='#projects'});await wait(800);await A.locator('tr[data-open]').first().click({timeout:5000});await wait(800);{const w=A.locator('[data-k="work"]').first();if(await w.count())await w.fill('미리 보기 임시 저장 시험')}
@@ -87,6 +90,8 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.
   const lsEnd=await A.evaluate(()=>Object.keys(localStorage).filter(k=>/^hf-qdraft-|^hf_draft_u_jjh|^hf_cal_draft_u_jjh/.test(k)));ok('돌아가기 뒤: 브라우저에도 미리 보기 임시 저장 없음',lsEnd.length===0,lsEnd.join(','))}
  await A.evaluate(()=>{location.hash='#quotes'});await wait(900);await A.locator('button[data-open="quotes"]').first().click();await wait(1500);
  ok('돌아온 대표 화면: 견적에 ‘이어서 하기’(임시 저장본) 안 뜸',!/이어서 하기|임시 저장본/.test(await A.locator('.sheet').first().innerText().catch(()=>'')));await A.keyboard.press('Escape');await wait(300);
+ await A.evaluate(()=>{window.dispatchEvent(new Event('online'))});await wait(3000);d=await D();
+ ok('견적 저장 → 돌아온 뒤 online: 대표 계정으로 견적 버전(acct/u_boss/qv_*)이 올라가지 않음 · 원본 견적 그대로',!Object.keys(d).some(k=>/\/qv_/.test(k))&&JSON.stringify(before['quotes/q1'])===JSON.stringify(d['quotes/q1']),Object.keys(d).filter(k=>/\/qv_/.test(k)).join(','));
  // 돌아가기 (위에서 이미 눌렀음)
  n=await navs(A);ok('내 화면으로 돌아가기 → 대표 메뉴 복귀',n.includes('#preview')&&n.includes('#bonus')&&!(await A.locator('#pvTop').count()));
  d=await D();const lg=(d['knock/u_boss']||{}).log||[];ok('접속 기록: 끝',lg.some(l=>l.what==='직원 화면 미리 보기 끝'&&l.target==='정진혁 실장'));

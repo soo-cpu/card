@@ -14,7 +14,8 @@ param(
   [string]$ApiUrl = "https://apis.aligo.in/send/",
   [string]$StateDir = "",
   [switch]$Loop,
-  [int]$IntervalSec = 20
+  [int]$IntervalSec = 20,
+  [string]$NowUtc = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -111,6 +112,30 @@ function New-ItemResult($To, [bool]$Ok, [string]$Code, [string]$Message, [string
   return [ordered]@{ to = [string]$To; ok = $Ok; code = $Code; message = $Message; msg_id = $MsgId; type = $Type; test = $Test }
 }
 
+function Get-KstHour {
+  # 한국 시간 '시' (시험할 때만 -NowUtc 로 시각을 정해 줌)
+  $u = (Get-Date).ToUniversalTime()
+  if ($NowUtc) { try { $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal; $u = [datetime]::Parse($NowUtc, [System.Globalization.CultureInfo]::InvariantCulture, $styles) } catch { } }
+  return $u.AddHours(9).Hour
+}
+
+function Test-ConnectFail($Ex) {
+  # 알리고에 아예 닿지 못한 경우만 참 (이름 풀이 실패·연결 거부·망 끊김). 시간 초과·응답 깨짐·중간에 끊김은 요청이 닿았을 수 있어 거짓
+  $e = $Ex
+  for ($i = 0; $i -lt 8 -and $e; $i++) {
+    if ($e -is [System.Net.Sockets.SocketException]) {
+      $c = [string]$e.SocketErrorCode
+      return (@("HostNotFound", "ConnectionRefused", "NetworkUnreachable", "HostUnreachable", "TryAgain", "NoData", "NetworkDown") -contains $c)
+    }
+    if ($e -is [System.Net.WebException]) {
+      $st = [string]$e.Status
+      if (@("NameResolutionFailure", "ConnectFailure", "ProxyNameResolutionFailure") -contains $st) { return $true }
+    }
+    $e = $e.InnerException
+  }
+  return $false
+}
+
 function Get-DayState {
   $today = (Get-Date).ToString("yyyy-MM-dd")
   $path = Join-Path $StateDir "sms_relay_day.json"
@@ -163,7 +188,9 @@ function Invoke-Request([System.IO.FileInfo]$File, $Cfg) {
   }
 
   # 2) 24시간 지난 요청은 보내지 않음
-  $reqTest = [bool]$req.test
+  # 요청에 test 칸이 없으면 시험으로 봄 (실수로 실제 발송이 되지 않게)
+  $reqTest = $true
+  if ($req.PSObject.Properties.Name -contains "test") { $reqTest = [bool]$req.test }
   $age = ((Get-Date).ToUniversalTime() - (Get-RequestTime $req $File)).TotalHours
   if ($age -gt 24) {
     $msg = "시간 지남 (요청한 지 24시간이 지나 보내지 않았어요)"
@@ -180,6 +207,31 @@ function Invoke-Request([System.IO.FileInfo]$File, $Cfg) {
     $rs = @(); foreach ($it in $items) { $rs += (New-ItemResult $it.to $false "-903" $msg "" "" $reqTest) }
     Save-Result $id (New-Result $id $reqTest $msg $rs)
     Write-RelayLog ("멈춘 요청 " + $id + " : 다시 보내지 않음")
+    return
+  }
+  # 3-1) 실제 발송 규칙 (화면과 같은 규칙을 중계에도): 2명 이상·광고 글은 08~21시(한국 시간)만, 광고 글은 맨 앞 (광고)·맨 끝 무료수신거부 080
+  $realN = 0; $adBad = ""; $hasAd = $false
+  foreach ($it in $items) {
+    $t0 = Get-TelDigits $it.to
+    $isT = ($reqTest -or $Cfg.ForceTest)
+    if (-not $isT -and $Cfg.OnlyTo.Count -gt 0 -and ($Cfg.OnlyTo -notcontains $t0)) { $isT = $true }
+    if ($isT) { continue }
+    $realN++
+    $m0 = (([string]$it.msg) -replace "`r`n", "`n" -replace "`r", "`n").Trim()
+    if ($m0.Contains("(광고)")) {
+      $hasAd = $true
+      if (-not $m0.StartsWith("(광고)")) { $adBad = "광고 문자는 맨 앞에 (광고) 를 적어야 해요" }
+      elseif ($m0 -notmatch "무료\s*수신거부\s*080[\d-]{7,}\s*$") { $adBad = "광고 문자는 맨 끝에 무료수신거부 080 번호를 적어야 해요" }
+    }
+  }
+  $hr = Get-KstHour
+  $block = ""
+  if ($adBad) { $block = $adBad }
+  elseif (($realN -ge 2 -or $hasAd) -and ($hr -lt 8 -or $hr -ge 21)) { $block = "여러 명·광고 문자는 오전 8시 ~ 밤 9시(한국 시간)에만 실제로 보낼 수 있어요" }
+  if ($block) {
+    $rs = @(); foreach ($it in $items) { $rs += (New-ItemResult $it.to $false "-904" $block "" "" $false) }
+    Save-Result $id (New-Result $id $false $block $rs)
+    Write-RelayLog ("막음 " + $id + " : " + $block)
     return
   }
   [System.IO.File]::WriteAllText($mark, (Get-Date).ToString("s"), $Utf8NoBom)
@@ -209,14 +261,15 @@ function Invoke-Request([System.IO.FileInfo]$File, $Cfg) {
       if (-not $isTest) { $allTest = $false; if ($okNow) { $day.real = $day.real + 1; Save-DayState $day } }
       Write-RelayLog ("  " + $id + " " + (Get-TelMask $to) + " " + $type + " 시험=" + $isTest + " 결과=" + $code)
     } catch {
-      if ($first) {
-        # 첫 건부터 알리고에 닿지 못함(인터넷 끊김 등) → 아무것도 안 나갔으니 결과를 쓰지 않고 다음 번에 다시
+      if ($first -and (Test-ConnectFail $_.Exception)) {
+        # 첫 건부터 알리고에 아예 닿지 못함(이름 풀이·연결 거부) → 아무것도 안 나갔으니 결과를 쓰지 않고 다음 번에 다시
+        # (시간 초과·응답 깨짐은 요청이 닿았을 수 있어 다시 보내지 않고 아래에서 -999 로 끝냄)
         Remove-Item -LiteralPath $mark -ErrorAction SilentlyContinue
         Write-RelayLog ("연결 실패 " + $id + " : 다음 번에 다시 해요 (" + $_.Exception.Message + ")")
         return
       }
       if (-not $isTest) { $allTest = $false }
-      $results += (New-ItemResult $to $false "-999" "알리고에 연결하지 못했어요" "" $type $isTest)
+      $results += (New-ItemResult $to $false "-999" "알리고 응답을 확인하지 못했어요 (나갔을 수 있어 다시 보내지 않았어요 · 알리고 발송 내역을 확인해 주세요)" "" $type $isTest)
       Write-RelayLog ("  " + $id + " " + (Get-TelMask $to) + " 연결 실패")
     }
     $first = $false
