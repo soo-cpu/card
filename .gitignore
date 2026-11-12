@@ -7,3 +7,6 @@
 # 문자 중계 기록·상태 (대표 PC에서만 생김)
 sms_relay_state/
 문자 발송함/
+
+# 작업 사본(worktree)
+.claude/worktrees/
