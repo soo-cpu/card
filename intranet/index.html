@@ -1365,7 +1365,7 @@ async function pdfToJpeg(f){try{const L=await getPdfLib();const doc=await L.getD
   return new File([b],String(f.name||"PDF").replace(/\.pdf$/i,"")+(doc.numPages>n?" (PDF 앞 "+n+"쪽)":" (PDF "+n+"쪽)")+".jpg",{type:"image/jpeg"})}
   catch(er){const e=new Error("pdf");e.friendly=(f&&f.name||"PDF")+" : PDF를 사진으로 바꾸지 못했어요. 화면을 캡처해서 올려 주세요";throw e}}
 // 엑셀 원본 그대로 보관 (2026-11-05 지시 2·5): 파일 저장소가 엑셀을 받지 않아 DB(xfile)에 조각으로 저장 · 링크 /_blob/xf_… 를 누르면 원본 엑셀로 내려받기
-const XF_CH=500000;
+const XF_CH=180000 /* 2026-11-12: 50만 자 조각은 저장소 문서 크기 제한에 걸려 200KB 넘는 PDF가 invalid_argument 로 실패(채진아 농협카드 명세서 461KB) → 18만 자 조각 */;
 const b64of=buf=>{const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
 async function xfSave(f){if(!db){const e=new Error("db");e.friendly="저장소 연결이 없어 파일을 올릴 수 없어요 (연습 모드)";throw e}if(f.size>15*1024*1024){const e=new Error("big");e.code="too_large";throw e}
   const b=b64of(await f.arrayBuffer()),id=newId("xf"),n=Math.max(1,Math.ceil(b.length/XF_CH));
