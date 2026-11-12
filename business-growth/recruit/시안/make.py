@@ -41,6 +41,7 @@ BODY = """
       <tr><th>근무 시간</th><td>[근무 시간]</td></tr>
     </table>
   </section>
+  {extra}
   <section class="s-apply"><h2><span>06</span>지원 방법</h2>
     <div class="point"><b>접수</b> [접수 방법]<i></i><b>마감</b> [마감일]<i></i><b>절차</b> 서류 → 면접 → 최종 합격</div>
   </section>
@@ -124,9 +125,41 @@ table{font-size:17px;margin-left:34px;width:calc(100% - 34px)}th,td{padding:7px 
 .point{margin-left:34px;border:1px solid #C9A46A;padding:18px 22px;font-size:17px}.point b{color:#C9A46A;font-weight:500;margin-right:8px}
 footer{padding:30px 64px 44px;font-size:16px;color:#9c958a}footer b{color:#C9A46A;margin-right:10px;font-weight:500}
 """)
+EXTRA = """<section class="s-more"><h2><span>&nbsp;</span>우리가 한 일 먼저 보기</h2>
+    <div class="photos"><img src="img/work-1.jpg"><img src="img/work-2.jpg"><img src="img/work-3.jpg"></div>
+    <div class="ch">
+      <div><b>Homepage</b>soo-cpu.github.io/card/site</div>
+      <div><b>Blog</b>blog.naver.com/artico_studio</div>
+      <div><b>Instagram</b>@artico_design.studio</div>
+      <div><b>YouTube</b>아르띠꼬 스튜디오 채널 · 쇼츠</div>
+    </div>
+  </section>"""
+D["E"] = ("홈페이지 느낌", "Cormorant+Garamond:wght@400;500&family=Noto+Serif+KR:wght@200;300;400&family=Noto+Sans+KR:wght@300;400;500", """
+body{font-family:'Noto Sans KR',sans-serif;color:#ede6dc;background:#1b1815;font-weight:300}
+header{height:560px;padding:0 56px 54px;display:flex;flex-direction:column;justify-content:flex-end;
+ background:linear-gradient(180deg,#1b181522 0%,#1b181588 45%,#1b1815 100%),url(img/hero.jpg) center/cover}
+.tag{font-family:'Cormorant Garamond',serif;font-size:0;letter-spacing:.3em;color:#c2a57a}
+.tag:before{content:"RECRUIT · 경력직 채용";font-size:17px}
+.co{margin-top:18px;font-size:15px;color:#a39a8e;letter-spacing:.04em}
+h1{margin-top:10px;font-family:'Noto Serif KR',serif;font-size:44px;font-weight:300;line-height:1.45;color:#fff}
+.lead{margin-top:16px;font-size:17px;color:#c2a57a}
+main{padding:18px 56px 6px}
+section{padding:32px 0;border-bottom:1px solid #332d27;display:grid;grid-template-columns:200px 1fr}
+h2{font-family:'Noto Serif KR',serif;font-size:21px;font-weight:300;color:#ede6dc}
+h2 span{display:block;font-family:'Cormorant Garamond',serif;font-size:20px;color:#c2a57a;margin-bottom:2px}
+ul{list-style:none;padding:0;font-size:17px}li{margin:0 0 8px;padding-left:18px;position:relative}
+li:before{content:"";position:absolute;left:0;top:13px;width:8px;height:1px;background:#c2a57a}
+table{font-size:17px}th,td{padding:0 0 10px;vertical-align:top}th{width:120px;color:#a39a8e;font-weight:300}
+.s-more{display:block}.s-more h2{margin-bottom:18px}.s-more h2 span{display:none}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.photos img{width:100%;height:170px;object-fit:cover;display:block}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin-top:20px;font-size:16px;color:#ede6dc}
+.ch b{display:inline-block;width:110px;font-family:'Cormorant Garamond',serif;font-weight:500;font-size:18px;color:#c2a57a}
+.point{font-size:17px;line-height:2}.point b{color:#c2a57a;font-weight:400;margin-right:10px}.point i{display:block;width:0;height:0}
+footer{padding:30px 56px 44px;font-size:16px;color:#a39a8e}footer b{color:#c2a57a;margin-right:10px;font-weight:400}
+""")
 for k,(name,font,css) in D.items():
     html = f"""<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>채용공고 디자인 시안 {k} · {name}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={font}&display=swap">
-<style>{BASE}{css}</style></head><body>{BODY.replace('{k}', k+' · '+name)}</body></html>"""
+<style>{BASE}{css}</style></head><body>{BODY.replace('{k}', k+' · '+name).replace('{extra}', EXTRA if k=='E' else '')}</body></html>"""
     open(f"채용공고 디자인 시안 2026-11-13 v0 {k}.html","w").write(html)
