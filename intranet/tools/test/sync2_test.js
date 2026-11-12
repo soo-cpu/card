@@ -103,10 +103,34 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const hasBtn=true;const y=await D();
   ok('7 삭제 요청 승인(원본에 없는 줄): 휴지통에 직원 사본 내용 1건 · 삭제 표시 · 요청 ‘삭제함’ · 이봄이 화면에서 사라짐',hasBtn&&(((y['acct/_trash/t/projects__pOld']||{}).data)||{}).title==='옛 프로젝트 (원본에 없음)'&&!!y['work/all/gone/projects__pOld']&&(y['mine/u_bom/delreq/projects__pOld']||{}).status==='삭제함'&&!(await has(B,'projects','pOld')),JSON.stringify((y['mine/u_bom/delreq/projects__pOld']||{}).status)+' '+!!y['acct/_trash/t/projects__pOld'])}
 
+ // 8) 재검토 반려 2026-11-12: 휴지통에 같은 번호 기록이 남아 있어도 살아 있는 줄은 계속 보임 · 지운 번호는 새 줄에 다시 안 씀
+ {const nw=new Date().toISOString(),tr=(col,id,data)=>setDb('acct/_trash/t/'+col+'__'+id,{col,id,data,at:nw,by:'u_boss',byName:'최윤수',grp:'',title:String(data.title||data.name||'')});
+  await tr('projects','P-2611-904',{no:'P-2611-904',title:'지운 옛 프로젝트'});await tr('projects','P-2611-905',{no:'P-2611-905',title:'지운 옛 프로젝트 2'});await tr('customers','cGone',{code:'C-2611-977',name:'지운 고객'});
+  await tr('customers','c1',{code:'C-2611-901',name:'홍길동 (옛 휴지통 기록)'});await setDb('acct/_gone/g/projects__p1',{col:'projects',rid:'p1',at:nw,by:'u_boss',why:'옛 기록'});
+  let t=null;for(let i=0;i<15;i++){await wait(2000);t=await D();if(t['work/all/gone/projects__P-2611-904']&&t['work/all/gone/projects__P-2611-905']&&t['work/all/gone/customers__cGone'])break}
+  ok('8 휴지통에만 있는 것(원본에 없음)에는 삭제 표시가 생기고 번호도 같이 적힘',(t['work/all/gone/projects__P-2611-904']||{}).no==='P-2611-904'&&(t['work/all/gone/customers__cGone']||{}).no==='C-2611-977',JSON.stringify(t['work/all/gone/customers__cGone']));
+  ok('8 원본에 살아 있는 줄(c1·p1)은 휴지통·지운 목록에 같은 id 기록이 있어도: 삭제 표시 없음 · 공용 칸에 그대로 · 두 직원 화면에 보임',!t['work/all/gone/customers__c1']&&!t['work/all/gone/projects__p1']&&!!t['work/all/customers/c1']&&!!t['work/all/projects/p1']&&await has(J,'customers','c1')&&await has(B,'projects','p1')&&await has(B,'customers','c1')&&await has(J,'projects','p1'));
+  const used=[await A.evaluate(()=>window.__hfT.pnoUsed()),await J.evaluate(()=>window.__hfT.pnoUsed()),await B.evaluate(()=>window.__hfT.pnoUsed())];
+  ok('8 지운 프로젝트 번호(P-2611-904·905)는 대표·정진혁·이봄이 화면 모두 ‘쓴 번호’로 셈 (새 프로젝트가 그 번호를 다시 받지 않음)',used.every(u=>u.includes('P-2611-904')&&u.includes('P-2611-905')),used.map(u=>u.filter(x=>/90[45]/.test(x)).join('+')).join(' / '));
+  const cc=[await A.evaluate(()=>window.__hfT.nextCustCode('2026-11-12')),await J.evaluate(()=>window.__hfT.nextCustCode('2026-11-12')),await B.evaluate(()=>window.__hfT.nextCustCode('2026-11-12'))];
+  ok('8 지운 고객코드(C-2611-977) 다음 번호부터 줌 (세 화면)',cc.every(c=>c==='C-2611-978'),cc.join(','));
+  // 대표가 휴지통에 있는 번호와 같은 번호로 새 프로젝트를 등록(옛 자료 옮기기 등) → 공용 칸·직원 화면에 나옴
+  await put(A,'projects','P-2611-904',{no:'P-2611-904',title:'같은 번호 새 프로젝트',custName:'홍길동',custCode:'C-2611-901',stage:'상담',mgr:'정진혁',inq:'2026-11-12',pays:[],files:[]});
+  let v=null,sec=0;for(let i=0;i<13;i++){await wait(2000);sec+=2;v=await D();if(v['work/all/projects/P-2611-904']&&!v['work/all/gone/projects__P-2611-904']&&await has(J,'projects','P-2611-904')&&await has(B,'projects','P-2611-904'))break}
+  ok('8 휴지통에 같은 번호가 있는 새 프로젝트(대표 등록): 공용 칸·두 직원 화면에 나옴 · 삭제 표시 풀림 · 휴지통 기록은 그대로',!!v['work/all/projects/P-2611-904']&&!v['work/all/gone/projects__P-2611-904']&&await has(J,'projects','P-2611-904')&&await has(B,'projects','P-2611-904')&&!!v['acct/_trash/t/projects__P-2611-904'],sec+'초');
+  const rj=await put(J,'projects','P-2611-904',{no:'P-2611-904',title:'같은 번호 새 프로젝트 (정진혁 수정)',custName:'홍길동',custCode:'C-2611-901',stage:'상담',mgr:'정진혁',inq:'2026-11-12',pays:[],files:[]});await wait(2000);
+  ok('8 그 프로젝트를 직원이 고쳐 저장 → 거절 없이 저장 · 이봄이 화면에 보임',rj==='ok'&&(await val(B,'projects','P-2611-904','title'))==='같은 번호 새 프로젝트 (정진혁 수정)',rj);
+  // 직원이 새 프로젝트를 새 번호로 등록 (지운 번호를 피해서) → 저장됨
+  const freeNo=await J.evaluate(()=>{const u=window.__hfT.pnoUsed();for(let i=906;i<999;i++){const n='P-2611-'+i;if(!u.includes(n))return n}});
+  const rn=await put(J,'projects',freeNo,{no:freeNo,title:'직원 새 프로젝트',custName:'홍길동',custCode:'C-2611-901',stage:'상담',mgr:'정진혁',inq:'2026-11-12',pays:[],files:[]});await wait(2500);
+  ok('8 직원 새 프로젝트(지운 번호를 피한 새 번호 '+freeNo+'): 저장됨 · 이봄이 화면에 보임',rn==='ok'&&freeNo!=='P-2611-904'&&freeNo!=='P-2611-905'&&await has(B,'projects',freeNo),rn);
+  await put(A,'projects','p1',Object.assign({},(await D())['projects/p1'],{work:'욕실 (대표 수정 · 지운 목록에 옛 기록 있음)'}));let w=null;for(let i=0;i<10;i++){await wait(2000);w=await D();if((w['work/all/projects/p1']||{}).work==='욕실 (대표 수정 · 지운 목록에 옛 기록 있음)')break}
+  ok('8 지운 목록에 옛 기록이 있는 살아 있는 프로젝트(p1): 대표 수정이 공용 칸·직원 화면으로 계속 내려감',(w['work/all/projects/p1']||{}).work==='욕실 (대표 수정 · 지운 목록에 옛 기록 있음)'&&(await val(B,'projects','p1','work'))==='욕실 (대표 수정 · 지운 목록에 옛 기록 있음)')}
+
  // 6) 돈 정보·원본 보존
  d=await D();const wk=Object.keys(d).filter(k=>k.startsWith('work/'));
  ok('6 공용 칸에 원가·마진·성과금 칸 없음',wk.every(k=>!['estCost','perf','qCost','approvals','pc','margin','marginRate','bonus','bonusBase'].some(f=>d[k]&&f in d[k]&&d[k][f]!==''&&d[k][f]!==undefined)),wk.length+'문서');
- ok('6 원래 있던 원본(p1·c1·q1·s1)·대표 전용 원가 그대로',d['projects/p1'].title==='시험 현장'&&d['customers/c1'].name==='홍길동'&&d['quotes/q1'].qCost==='2100000'&&d['sites/s1'].name==='시험 현장'&&d['ppriv/p1'].estCost==='20000000');
+ ok('6 원래 있던 원본(p1·c1·q1·s1)·대표 전용 원가 그대로',d['projects/p1'].title==='시험 현장'&&d['projects/p1'].contractAmt==='33000000'&&d['customers/c1'].name==='홍길동'&&d['quotes/q1'].qCost==='2100000'&&d['sites/s1'].name==='시험 현장'&&d['ppriv/p1'].estCost==='20000000');
  ok('6 직원 화면이 대표 전용 칸에 쓰려다 거절된 것 0',(await J.evaluate(()=>window.__mockDenied.length))===0&&(await B.evaluate(()=>window.__mockDenied.length))===0,JSON.stringify(await J.evaluate(()=>window.__mockDenied)));
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
