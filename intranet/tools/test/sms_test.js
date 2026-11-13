@@ -59,7 +59,7 @@ const bytes=t=>{let n=0;for(const ch of t){const c=ch.codePointAt(0);n+=c===10?2
  ok('2 전화 없는 고객은 빠짐 (박무전 · 전화번호 없음)',/박무전 · 전화번호 없음/.test(skT),skT.replace(/\n/g,' | '));
  ok('2 집 전화(형식 틀림)·같은 번호 중복도 빠짐',/최집전화 · 휴대폰 번호 형식이 아니에요/.test(skT)&&/홍길동 배우자 · 같은 번호가 이미 있어요/.test(skT));
  ok('1 시험 발송 체크가 처음엔 켜져 있음',await A.locator('#smsTest').isChecked());
- ok('1 문구 고르기 4가지',(await A.locator('#smsTpl option').allInnerTexts()).join(',')==='상담 후 안내,사후관리 안내,재방문 안내,직접 쓰기');
+ ok('1 문구 고르기: 기존 4가지 + 단계별 7가지 (v0.99-30 13번)',(await A.locator('#smsTpl option').allInnerTexts()).join(',')==='상담 후 안내,상담 후 1차,상담 후 2차,견적 후 1차,견적 후 2차,계약 직전,계약 유도 1차,계약 유도 2차,사후관리 안내,재방문 안내,직접 쓰기');
  // ③ 90바이트 경계
  const t90='가'.repeat(45),t91='가'.repeat(45)+'a';
  await A.locator('#smsText').fill(t90);await wait(200);const b90=await A.locator('#smsBytes').evaluate(e=>[e.dataset.b,e.dataset.t]);
