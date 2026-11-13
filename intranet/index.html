@@ -1073,7 +1073,10 @@ async function workPut(col,id,data,stamp,base){if(!db||!WORK_COLS.includes(col))
   if(col==="customers"){let w=(WORKD.customers||{})[id]||{};const p=PRIVC[id]||{};/* 내 화면이 낡았을 수 있으니 공용 칸의 지금 줄을 읽어 그 번호·주소를 먼저 씀 */if(!me.admin){try{const g=await db.doc(WKP(col)+"/"+id).get();if(g&&g.exists)w=g.data()}catch(e){}}
     o.tel=data.tel||(me.admin?p.tel||w.tel:w.tel||p.tel)||"";o.addr=data.addr||(me.admin?p.addr||w.addr:w.addr||p.addr)||""}
   if(base===undefined){const w0=(WORKD[col]||{})[id];if(w0)o.__base=wkT(w0)}o.__by=me.id;o.__at=stamp||nowISO();await db.collection(WKP(col)).doc(id).set(o);(WORKD[col]=WORKD[col]||{})[id]=o}
-async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||"",addr:cpv.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
+// 고객 전화·주소 사본을 쓸 때 빈 칸 채우기 (검토 권고 2026-11-13): 한 칸만 고쳐도 다른 칸이 빈 값으로 cshare·cpriv 에 들어가 원본을 지우지 않게 —
+// 비어 있는 칸은 대표 사본(PRIVC) → 공용 칸(work)의 지금 값 → 화면의 고객 줄 순서로 채움
+function cpFill(id,o){const pc=PRIVC[id]||{},w=(WORKD.customers||{})[id]||{},r=(S.customers||[]).find(x=>x.id===id)||{};const f=k=>String(o&&o[k]||"").trim()||pc[k]||w[k]||(r.__masked?"":r[k])||"";return Object.assign({},o,{tel:f("tel"),addr:f("addr")})}
+async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||w.tel||"",addr:cpv.addr||w.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
 async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.length)return;/* 직원 명단을 읽기 전에는 맞추지 않음: 직원이 쓴 줄을 '모르는 사람 것'으로 보고 덮거나 빼던 길 */const G=await goneSet();let up=0,down=0,gone=0;
   // 0) 삭제 표시 맞추기: 휴지통·지운 목록에 있고 원본에 없는 것 → 표시 / 원본에 다시 있거나(되살림) 목록에 없는 표시 → 지움
   if(wgoneReady&&WORK_COLS.every(c=>S[c].length)){const want={};G.forEach(k=>{const i=k.indexOf("__"),col=k.slice(0,i),id=k.slice(i+2);if(WORK_COLS.includes(col)&&id&&!S[col].some(r=>r.id===id))want[k]={col,id}});
@@ -1609,7 +1612,7 @@ async function privSync(){if(PV)return;if(syncBusy){syncAgain=true;return}if(!pr
     for(const c of S.customers){const raw=c.__rawTel!==undefined;const p=PRIVC[c.id]||{};
       if(c.__leak){await db.collection("cpriv").doc(c.id).set({tel:c.__leak.tel||p.tel||"",addr:c.__leak.addr||p.addr||"",updatedAt:now});const o=Object.assign({},c);["id","__leak","tel","addr"].forEach(k=>delete o[k]);o.tel="";o.addr="";await db.collection("customers").doc(c.id).set(o)}}
     // 2) 직원이 입력한 사본이 더 새것이면 대표 전용에 반영
-    for(const u of Object.keys(CSH))for(const [id,x] of Object.entries(CSH[u]||{})){const p=PRIVC[id]||{};if(!x.revoked&&x.by===u&&String(x.updatedAt||"")>String(p.updatedAt||""))await db.collection("cpriv").doc(id).set({tel:x.tel||"",addr:x.addr||"",updatedAt:x.updatedAt})}
+    for(const u of Object.keys(CSH))for(const [id,x] of Object.entries(CSH[u]||{})){const p=PRIVC[id]||{};if(!x.revoked&&x.by===u&&String(x.updatedAt||"")>String(p.updatedAt||""))await db.collection("cpriv").doc(id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.updatedAt})}
     for(const u of Object.keys(COSTC))for(const [id,x] of Object.entries(COSTC[u]||{})){const p=PRIVP[id]||{};if(x.by===u&&String(x.updatedAt||"")>String(p.updatedAt||""))await db.collection("ppriv").doc(id).set(Object.assign({},PRIVP[id]||{},{estCost:x.estCost,updatedAt:x.updatedAt}))}
     for(const p of S.projects){if(p.__leakCost!==undefined){await db.collection("ppriv").doc(p.id).set(Object.assign({},PRIVP[p.id]||{},{estCost:p.__leakCost,updatedAt:now}));const o=Object.assign({},p);["id","__leakCost"].forEach(k=>delete o[k]);o.estCost="";await db.collection("projects").doc(p.id).set(o)}}
     // 3) 담당·승인 직원에게 사본 / 대상이 아니면 비움(회수)
@@ -2713,7 +2716,7 @@ async function custTelSet(cu,tel){if(!custSeen(cu))return false;const from=Strin
   if(from&&telDigits(from)!==telDigits(tel))row.telLog=(Array.isArray(cu.telLog)?cu.telLog:[]).concat([{at:nowISO(),by:me.id,name:myName(),from}]).slice(-30);
   const cpv={tel,updatedAt:nowISO()};if(mode==="shared"){row.tel="";row.addr=""}else row.tel=tel;
   await put("customers",cu.id,row);
-  if(mode==="shared"&&db){const pc=PRIVC[cu.id]||{},full=Object.assign({tel:pc.tel||"",addr:pc.addr||cu.addr||""},cpv);if(me.admin)await db.collection("cpriv").doc(cu.id).set(full);else await db.collection("cshare/"+me.id+"/c").doc(cu.id).set(Object.assign({},full,{by:me.id}));await workTel(cu.id,cpv)}
+  if(mode==="shared"&&db){const full=cpFill(cu.id,Object.assign({addr:cu.addr||""},cpv));if(me.admin)await db.collection("cpriv").doc(cu.id).set(full);else await db.collection("cshare/"+me.id+"/c").doc(cu.id).set(Object.assign({},full,{by:me.id}));await workTel(cu.id,cpv)}
   const loc=S.customers.find(c=>c.id===cu.id);if(loc){loc.tel=tel;if(row.telLog)loc.telLog=row.telLog}logAct("customers","전화번호 "+(from?"수정":"입력"),cu.name||cu.code||"");return true}
 document.addEventListener("change",e=>{const el=e.target;if(!el||!el.dataset)return;if(el.dataset.telfmt){const f=telFmt(el.value);if(f!==el.value)el.value=f;const w=el.parentElement&&el.parentElement.querySelector(".telmiss");if(w&&telDigits(f))w.remove();return}
   // 고객코드를 바꾸면 그 고객 카드의 번호를 전화번호 칸에 (칸이 비었거나 앞 고객 번호 그대로일 때만)
@@ -2744,7 +2747,7 @@ function aptName(addr){const T=String(addr||"").replace(/[(),]/g," ").trim().spl
   return nm.length>=2?nm.slice(0,40):""}
 function dupByTel(tel,exceptId){const d=telDigits(tel);if(d.length<8)return null;return S.customers.find(c=>c.id!==exceptId&&telDigits(c.tel)===d)||null}
 async function makeCustomer(f){const code=nextCustCode(),id=newId("cu"),T=todayStr();const cu={code,name:f.name||"",tel:mode==="shared"?"":(f.tel||""),addr:mode==="shared"?"":(f.addr||""),inq:T,route:f.route||"",mgr:(myStaff()||{}).name||"",status:"진행중",steps:[1,2],stage:"1-상담영업",memo:f.memo||"",files:[],area:f.area||"",py:f.py||"",createdAt:nowISO(),createdBy:me.id,updatedAt:nowISO(),updatedBy:me.id};
-  await put("customers",id,cu);if(mode==="shared"&&db){const cpv={tel:f.tel||"",addr:f.addr||"",updatedAt:nowISO()};if(me.admin)await db.collection("cpriv").doc(id).set(cpv);else await db.collection("cshare/"+me.id+"/c").doc(id).set(Object.assign(cpv,{by:me.id}));workTel(id,cpv)}
+  await put("customers",id,cu);if(mode==="shared"&&db){const cpv=cpFill(id,{tel:f.tel||"",addr:f.addr||"",updatedAt:nowISO()});if(me.admin)await db.collection("cpriv").doc(id).set(cpv);else await db.collection("cshare/"+me.id+"/c").doc(id).set(Object.assign({},cpv,{by:me.id}));workTel(id,cpv)}
   logAct("customers","견적에서 고객 등록",f.name||"");return Object.assign({id},cu)}
 function qCustHTML(d){return "";/* 14번: 전화번호 칸은 견적 화면에 늘 있음 (qTel · ctel) */if(d.code)return "";return `<div class="f"><label>고객 연락처 (새 손님이면 고객 카드가 자동으로 만들어져요)</label><input data-k="qTel" inputmode="tel" placeholder="010-0000-0000" value="${esc(d.qTel||"")}"></div>`}
 function custQuotesHTML(d){if(!d.code)return "";const Q=S.quotes.filter(q=>q.code===d.code).sort((a,b)=>String(b.d||b.createdAt||"").localeCompare(String(a.d||a.createdAt||"")));
@@ -5284,7 +5287,7 @@ async function saveSheet(){
   sheet.busy=true;
   try{
     await put(col,docId,row);
-    if(privC&&db){const o=Object.assign({},privC,{updatedAt:nowISO()}),pc=PRIVC[docId]||{},full=Object.assign({tel:pc.tel||"",addr:pc.addr||""},o);if(me.admin)await db.collection("cpriv").doc(docId).set(full);else await db.collection("cshare/"+me.id+"/c").doc(docId).set(Object.assign({},full,{by:me.id}));workTel(docId,o)}
+    if(privC&&db){const o=Object.assign({},privC,{updatedAt:nowISO()}),full=cpFill(docId,o);if(me.admin)await db.collection("cpriv").doc(docId).set(full);else await db.collection("cshare/"+me.id+"/c").doc(docId).set(Object.assign({},full,{by:me.id}));workTel(docId,o)}
     if(privP&&db){const o=Object.assign({},privP,{updatedAt:nowISO()});if(me.admin)await db.collection("ppriv").doc(docId).set(Object.assign({},PRIVP[docId]||{},o));else await db.collection("acct/"+me.id+"/cost").doc(docId).set(Object.assign(o,{by:me.id}))}
     if(acctRow)await db.collection("acct/"+acctUid+"/days").doc(docId).set(acctRow);
     if(col==="staff"&&me.admin&&db&&row.uid&&row.state!=="퇴사"){try{await db.collection("members").doc(row.uid).set({name:row.name,staffId:docId,active:true,at:nowISO(),by:me.id})}catch(e){}}
