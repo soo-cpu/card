@@ -1449,6 +1449,8 @@ document.addEventListener("click",async e=>{const t=e.target.closest("[data-cosa
   if(t.dataset.certdl){const c=me.admin?CERTS[t.dataset.certdl]:myCerts[t.dataset.certdl];if(!c)return;try{const b=await (await fetch("/_blob/"+c.pdf)).blob();const dl=await window.claude.use("downloads");if(dl)await dl.save({filename:c.name||"증명서.pdf",data:b});else window.open("/_blob/"+c.pdf,"_blank")}catch(err){window.open("/_blob/"+c.pdf,"_blank")}}});
 function queueSync(){if(!me.admin||mode!=="shared")return;clearTimeout(syncT);syncT=setTimeout(privSync,2500);goalQueue()}
 let syncAgain=false;/* 맞추는 중에 또 바뀌면(직원 저장 등) 버리지 않고 끝난 뒤 한 번 더 */
+// 직원 본인 '내 인사 정보' 사본 모양 (계좌는 끝 4자리만 · 주민번호는 안 넣음) — 대표 화면이 acct/<계정>/me/hr 에 넣고, 미리 보기도 같은 모양으로 보여 줌
+function myHrOf(s,h){h=h||{};return {name:s.name,joined:s.joined||"",pos:s.pos||"",title:s.title||"",monthly:h.monthly||"",salary:h.salary||"",payMonth:h.payMonth||"",payday:h.payday||"",bank:h.bank||"",account:h.account?("****"+String(h.account).replace(/\D/g,"").slice(-4)):"",payHist:h.payHist||[],payMonthly:h.payMonthly||[],license:h.license||[],appoint:h.appoint||[],edu2:h.edu2||[]}}
 async function privSync(){if(PV)return;if(syncBusy){syncAgain=true;return}if(!privReady.c||!privReady.p||!S.customers.length)return;syncBusy=true;syncAgain=false;const now=nowISO();
   try{
     // 1) 고객 문서에 남은 전화·주소 → 대표 전용으로 옮기고 원래 칸은 비움
@@ -1483,7 +1485,7 @@ async function privSync(){if(PV)return;if(syncBusy){syncAgain=true;return}if(!pr
     // 4-0) 인사 사본 (다음 지시 v0, 대표 결정 2026-11-02): 재무·인사 담당 = 전 직원 인사카드(주민번호 포함) / 직원 본인 = 내 인사 정보
     for(const s of S.staff.filter(x=>x.uid&&x.state!=="퇴사")){
       if(isHrMgr(s))for(const st of S.staff){const h=S.hr.find(x=>x.id===st.id)||{};const v=Object.assign({},h,{name:st.name,updatedAt:h.updatedAt||""});delete v.id;const key="hr/"+s.uid+"/"+st.id,js=JSON.stringify(v);if(hrSent[key]===js)continue;await db.collection("acct/"+s.uid+"/hrall").doc(st.id).set(v);hrSent[key]=js}
-      const h=S.hr.find(x=>x.id===s.id)||{};const mine={name:s.name,joined:s.joined||"",pos:s.pos||"",title:s.title||"",monthly:h.monthly||"",salary:h.salary||"",payMonth:h.payMonth||"",payday:h.payday||"",bank:h.bank||"",account:h.account?("****"+String(h.account).replace(/\D/g,"").slice(-4)):"",payHist:h.payHist||[],payMonthly:h.payMonthly||[],license:h.license||[],appoint:h.appoint||[],edu2:h.edu2||[]};const k2="me/"+s.uid,js2=JSON.stringify(mine);if(hrSent[k2]!==js2){await db.collection("acct/"+s.uid+"/me").doc("hr").set(mine);hrSent[k2]=js2}}
+      const h=S.hr.find(x=>x.id===s.id)||{};const mine=myHrOf(s,h);const k2="me/"+s.uid,js2=JSON.stringify(mine);if(hrSent[k2]!==js2){await db.collection("acct/"+s.uid+"/me").doc("hr").set(mine);hrSent[k2]=js2}}
     // 4) 경리 사본: 예상 원가 + 급여액·계좌 (주민번호는 안 보냄)
     for(const s of S.staff.filter(x=>x.uid&&x.state!=="퇴사"&&isAcct(x))){
       for(const [id,p] of Object.entries(PRIVP)){const h=(COSTC[s.uid]||{})[id];if(!h||h.estCost!==p.estCost)await db.collection("acct/"+s.uid+"/cost").doc(id).set({estCost:p.estCost,updatedAt:p.updatedAt||now,by:"admin"})}
@@ -1647,6 +1649,10 @@ async function pvStart(id){if(!me.admin||mode!=="shared"||PV||PVbusy)return;cons
   try{await Promise.race([knock("열람",{what:"직원 화면 미리 보기 시작",target:pvLabel(st)}),new Promise(r=>setTimeout(r,4000))])}catch(e){}
   try{qdFlushNow();qdFlushAll()}catch(e){}Object.keys(qdPend).forEach(k=>{clearTimeout(qdT[k]);delete qdPend[k]});pvNoteN=0;
   PVme=Object.assign({},me);PVdb=db;PV=Object.assign({},st);
+  // 내 인사 정보 (대표 지시 2026-11-13 8번): 미리 보기에서 급여 칸이 늘 비어 보이던 것 — 실제 직원 로그인이 받는 본인 사본과 같은 모양으로 채움 (그 직원 것만 · 다른 직원 급여는 안 넣음)
+  try{MYHR=myHrOf(st,S.hr.find(x=>x.id===st.id));[HRALL,PAYC].forEach(o=>Object.keys(o).forEach(k=>delete o[k]));
+    if(isHrMgr(st))S.staff.forEach(x=>{const v=Object.assign({},S.hr.find(y=>y.id===x.id)||{},{name:x.name});delete v.id;HRALL[x.id]=v});
+    if(isAcct(st))S.staff.forEach(x=>{const hh=S.hr.find(y=>y.id===x.id);if(hh)PAYC[x.id]={name:x.name,monthly:hh.monthly||"",salary:hh.salary||"",bank:hh.bank||"",account:hh.account||"",holder:hh.holder||"",updatedAt:hh.updatedAt||""}})}catch(e){}
   me.admin=false;me.isOwner=false;me.canEdit=false;me.id=st.uid||("pv_"+st.id);me.name=st.name;me.staffName=st.name;db=pvRO(db);
   if(assets)assets=new Proxy(assets,{get(t,p){if(p==="upload"||p==="delete"||p==="remove")return pvDeny;const v=t[p];return typeof v==="function"?v.bind(t):v}});
   PVmcp=mcpCap;mcpCap={callTool:(sv,tool,inp)=>/^(search_files|get_file_metadata)$/.test(tool)&&PVmcp?PVmcp.callTool(sv,tool,inp):pvDeny()};
