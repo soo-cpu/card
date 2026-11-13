@@ -44,6 +44,7 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
  const S=(p,col)=>p.evaluate(c=>window.__hfT.S()[c].map(r=>Object.assign({},r)),col);
  const noOver=p=>p.evaluate(()=>{const s=[...document.querySelectorAll('.veil .sheet')].pop();return document.documentElement.scrollWidth<=window.innerWidth+2&&(!s||s.scrollWidth<=s.clientWidth+2)});
  const askYes=async(p,yes)=>{const n=await p.locator('.okask').count();if(n){await p.locator('.okask [data-ok="'+(yes?1:0)+'"]').click();await wait(2500)}return n};
+ const telD=v=>String(v||'').replace(/\D/g,'');
  const VPS=[['PC',{viewport:{width:1280,height:900}}],['Pixel 7',devices['Pixel 7']]];
 
  // ================= 14 (+17) =================
@@ -123,6 +124,17 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
     ok(tag+nm+': 프로젝트 화면에 원가·마진·성과금 숫자 없음 · 권한 밖 쓰기 시도 0',!MONEY.test(t)&&!den.length,den.join(','))}
    D=await dbv();ok(tag+'원본 문서가 사라진 것 없음 (고객·프로젝트·견적)',['customers/c1','customers/c2','projects/p1','projects/p3','projects/p4','quotes/q1','cpriv/c1'].every(k=>D[k]));
    }
+   await ctx.close()}
+  // 낡은 화면(구독이 멈춘 화면)에서 저장해도 번호가 옛 값으로 돌아가지 않음 — 정진혁 화면: 바뀐 문서만 부르기 + 다른 창 소식 끊음 + 다시 읽기 없음
+  if(on('14')){const BCW=`(()=>{const _BC=window.BroadcastChannel;window.BroadcastChannel=class{constructor(n){this.b=new _BC(n);this.b.onmessage=e=>{if(!window.__mute&&this.onmessage)this.onmessage(e)}}postMessage(m){this.b.postMessage(m)}close(){this.b.close()}}})();if(window.__MOCKUSER.id==='u_jjh'){window.__MOCKEXACT=true;window.__SUBPOLL=1e9}`;
+   const {ctx,open,dbv}=await mk(VPS[0][1],BASE,STUB+BCW);const A=await open('admin',12000);const B=await open('bom',8000);const J2=await open('jjh',9000);await J2.evaluate(()=>{window.__mute=true});
+   await openS(J2,'customers','c1');const seen=await val(J2,'tel');
+   await openS(B,'customers','c1');await fill(B,'tel','010-4444-5555');await fill(B,'addr','서울시 새주소 9');await save(B,3000);let D=null;for(let i=0;i<20;i++){await wait(1000);D=await dbv();if((D['cpriv/c1']||{}).tel==='010-4444-5555')break}
+   const j2tel=await J2.evaluate(()=>(window.__hfT.S().customers.find(c=>c.id==='c1')||{}).tel);
+   await J2.evaluate(()=>{const el=document.querySelector('#sheetForm [data-k="memo"]');el.value='낡은 화면 메모';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))});await save(J2,2500);D=await dbv();const w1=D['work/all/customers/c1']||{};
+   for(let i=0;i<20;i++){await wait(1000);D=await dbv();if(D['customers/c1'].memo==='낡은 화면 메모')break}await wait(4000);D=await dbv();const w2=D['work/all/customers/c1']||{};
+   ok('14 낡은 화면 준비: 정진혁의 멈춘 화면은 옛 번호(010-1234-5678)를 보고 있고, 원본은 이봄이가 바꾼 010-4444-5555',seen==='010-1234-5678'&&telD(j2tel)==='01012345678'&&D['cpriv/c1'].tel==='010-4444-5555',seen+' '+j2tel);
+   ok('14 낡은 화면에서 메모만 저장: 공용 칸·대표 원본의 번호·주소는 이봄이 것 그대로 · 메모는 저장 · 옛 번호 기록(telLog)도 남음',w1.tel==='010-4444-5555'&&w2.tel==='010-4444-5555'&&D['cpriv/c1'].tel==='010-4444-5555'&&D['cpriv/c1'].addr==='서울시 새주소 9'&&w2.addr==='서울시 새주소 9'&&D['customers/c1'].memo==='낡은 화면 메모'&&(D['customers/c1'].telLog||[]).length===1,JSON.stringify([w1.tel,w2.tel,D['cpriv/c1'],D['customers/c1'].memo,(D['customers/c1'].telLog||[]).length]));
    await ctx.close()}
   // 현장명 자동 규칙 (코드 단위)
   if(on('14')){const {ctx,open}=await mk(VPS[0][1],BASE,STUB);const A=await open('admin',9000);

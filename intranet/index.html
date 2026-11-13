@@ -1062,9 +1062,10 @@ function workListen(){if(!db||mode!=="shared")return;WORK_COLS.forEach(col=>{if(
   if(!me.admin&&!workReady.meta){workReady.meta=1;try{db.doc("work/sync").onSnapshot(x=>{WORK_AT=(x&&x.exists&&x.data().at)||"";render()},()=>{})}catch(e){}}}
 // 직원 저장 → 공용 칸 (전화·주소는 지운 값으로 덮지 않음: 빈 칸이면 지금 값 유지)
 async function workPut(col,id,data,stamp,base){if(!db||!WORK_COLS.includes(col))return;const o=Object.assign({},data);WORK_DROP.forEach(k=>delete o[k]);delete o.id;delete o.__base;if(base!==undefined)o.__base=base||"";
-  if(col==="customers"){const w=(WORKD.customers||{})[id]||{},p=PRIVC[id]||{};o.tel=data.tel||p.tel||w.tel||"";o.addr=data.addr||p.addr||w.addr||""}
+  if(col==="customers"){let w=(WORKD.customers||{})[id]||{};const p=PRIVC[id]||{};/* 내 화면이 낡았을 수 있으니 공용 칸의 지금 줄을 읽어 그 번호·주소를 먼저 씀 */if(!me.admin){try{const g=await db.doc(WKP(col)+"/"+id).get();if(g&&g.exists)w=g.data()}catch(e){}}
+    o.tel=data.tel||(me.admin?p.tel||w.tel:w.tel||p.tel)||"";o.addr=data.addr||(me.admin?p.addr||w.addr:w.addr||p.addr)||""}
   if(base===undefined){const w0=(WORKD[col]||{})[id];if(w0)o.__base=wkT(w0)}o.__by=me.id;o.__at=stamp||nowISO();await db.collection(WKP(col)).doc(id).set(o);(WORKD[col]=WORKD[col]||{})[id]=o}
-async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||w.tel||"",addr:cpv.addr||w.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
+async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||"",addr:cpv.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
 async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.length)return;/* 직원 명단을 읽기 전에는 맞추지 않음: 직원이 쓴 줄을 '모르는 사람 것'으로 보고 덮거나 빼던 길 */const G=await goneSet();let up=0,down=0,gone=0;
   // 0) 삭제 표시 맞추기: 휴지통·지운 목록에 있고 원본에 없는 것 → 표시 / 원본에 다시 있거나(되살림) 목록에 없는 표시 → 지움
   if(wgoneReady&&WORK_COLS.every(c=>S[c].length)){const want={};G.forEach(k=>{const i=k.indexOf("__"),col=k.slice(0,i),id=k.slice(i+2);if(WORK_COLS.includes(col)&&id&&!S[col].some(r=>r.id===id))want[k]={col,id}});
@@ -2545,9 +2546,9 @@ const telOfCode=code=>{const c=custByCode(code);return custSeen(c)?String(c.tel|
 const TEL_KEYS={projects:{tel:"custTel",code:"custCode",name:"custName"},quotes:{tel:"qTel",code:"code",name:"name"}};
 async function custTelSet(cu,tel){if(!custSeen(cu))return false;const from=String(cu.tel||"");const row=Object.assign({},cu,{updatedAt:nowISO(),updatedBy:me.id});["id","__leak","__leakCost","__masked","__rawTel"].forEach(k=>delete row[k]);
   if(from&&telDigits(from)!==telDigits(tel))row.telLog=(Array.isArray(cu.telLog)?cu.telLog:[]).concat([{at:nowISO(),by:me.id,name:myName(),from}]).slice(-30);
-  const cpv={tel,addr:cu.addr||"",updatedAt:nowISO()};if(mode==="shared"){row.tel="";row.addr=""}else row.tel=tel;
+  const cpv={tel,updatedAt:nowISO()};if(mode==="shared"){row.tel="";row.addr=""}else row.tel=tel;
   await put("customers",cu.id,row);
-  if(mode==="shared"&&db){if(me.admin)await db.collection("cpriv").doc(cu.id).set(cpv);else await db.collection("cshare/"+me.id+"/c").doc(cu.id).set(Object.assign({},cpv,{by:me.id}));await workTel(cu.id,cpv)}
+  if(mode==="shared"&&db){const pc=PRIVC[cu.id]||{},full=Object.assign({tel:pc.tel||"",addr:pc.addr||cu.addr||""},cpv);if(me.admin)await db.collection("cpriv").doc(cu.id).set(full);else await db.collection("cshare/"+me.id+"/c").doc(cu.id).set(Object.assign({},full,{by:me.id}));await workTel(cu.id,cpv)}
   const loc=S.customers.find(c=>c.id===cu.id);if(loc){loc.tel=tel;if(row.telLog)loc.telLog=row.telLog}logAct("customers","전화번호 "+(from?"수정":"입력"),cu.name||cu.code||"");return true}
 document.addEventListener("change",e=>{const el=e.target;if(!el||!el.dataset)return;if(el.dataset.telfmt){const f=telFmt(el.value);if(f!==el.value)el.value=f;const w=el.parentElement&&el.parentElement.querySelector(".telmiss");if(w&&telDigits(f))w.remove();return}
   // 고객코드를 바꾸면 그 고객 카드의 번호를 전화번호 칸에 (칸이 비었거나 앞 고객 번호 그대로일 때만)
@@ -5065,7 +5066,8 @@ async function saveSheet(){
   if(!id&&!me.admin&&sheet.data.mgr&&!row.mgr)row.mgr=sheet.data.mgr;
   if(col==="projects"){if(!(await telLink("projects",row,id)))return;delete row.custTel;if(sheet.data){sheet.data.custCode=row.custCode||"";delete sheet.data.custTel}}
   let privC=null,privP=null;["__leak","__leakCost","__masked"].forEach(k=>delete row[k]);
-  if(col==="customers"&&mode==="shared"){privC={tel:row.tel||"",addr:row.addr||""};row.tel="";row.addr=""}
+  if(col==="customers"&&mode==="shared"){/* 낡은 창 저장이 번호·주소를 옛 값으로 되돌리지 않게: 이 창에서 실제로 고친 칸만 보냄 (손대지 않은 칸은 저장소의 지금 값 그대로) */const d0=sheet.d0||{},tCh=!id||telDigits(d.tel)!==telDigits(d0.tel),aCh=!id||(d.addr!==undefined&&String(d.addr||"").trim()!==String(d0.addr||"").trim());
+    if(tCh||aCh){privC={};if(tCh)privC.tel=row.tel||"";if(aCh)privC.addr=row.addr||""}row.tel="";row.addr=""}
   if(col==="projects"&&mode==="shared"){if(canMoney()&&row.estCost!==undefined&&row.estCost!==(base.estCost??""))privP={estCost:row.estCost};row.estCost=""}
   let acctRow=null,acctUid="";
   if(col==="reports"){
@@ -5080,7 +5082,7 @@ async function saveSheet(){
   sheet.busy=true;
   try{
     await put(col,docId,row);
-    if(privC&&db){const o=Object.assign({},privC,{updatedAt:nowISO()});if(me.admin)await db.collection("cpriv").doc(docId).set(o);else await db.collection("cshare/"+me.id+"/c").doc(docId).set(Object.assign(o,{by:me.id}));workTel(docId,o)}
+    if(privC&&db){const o=Object.assign({},privC,{updatedAt:nowISO()}),pc=PRIVC[docId]||{},full=Object.assign({tel:pc.tel||"",addr:pc.addr||""},o);if(me.admin)await db.collection("cpriv").doc(docId).set(full);else await db.collection("cshare/"+me.id+"/c").doc(docId).set(Object.assign({},full,{by:me.id}));workTel(docId,o)}
     if(privP&&db){const o=Object.assign({},privP,{updatedAt:nowISO()});if(me.admin)await db.collection("ppriv").doc(docId).set(Object.assign({},PRIVP[docId]||{},o));else await db.collection("acct/"+me.id+"/cost").doc(docId).set(Object.assign(o,{by:me.id}))}
     if(acctRow)await db.collection("acct/"+acctUid+"/days").doc(docId).set(acctRow);
     if(col==="staff"&&me.admin&&db&&row.uid&&row.state!=="퇴사"){try{await db.collection("members").doc(row.uid).set({name:row.name,staffId:docId,active:true,at:nowISO(),by:me.id})}catch(e){}}
