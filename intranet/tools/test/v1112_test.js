@@ -40,7 +40,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(name,v,extr
   await p.evaluate(()=>{const dt=new DataTransfer();dt.items.add(new File(['x'],"캡처.png",{type:'image/png'}));document.querySelector('.sheet h3').dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}))});await wait(1200);
   ok(tag+' 창 아무 곳 Ctrl+V',/캡처\.png/.test(await p.locator('#fileList').innerText()));
   await p.screenshot({path:OUT+'/attach_'+tag+'.png'});
-  await p.keyboard.press('Escape');await wait(300)}
+  await p.keyboard.press('Escape');await wait(300);if(await p.locator('#navAsk').count()){await p.locator('#navAsk [data-nav="drop"]').click();await wait(300)}} /* v0.99-27: 고치던 내용이 있으면 확인 창 → ‘저장 안 함’ */
  // ===== PC (대표) =====
  let E=await mk({viewport:{width:1280,height:900}});let A=await open(E,'admin');
  await attachTest(A,'PC');
