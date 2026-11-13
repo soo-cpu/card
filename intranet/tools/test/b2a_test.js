@@ -198,6 +198,58 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
   const i6=HTML.indexOf('// ===== 캐시플로우 월별 보기'),b6=HTML.slice(i6,HTML.indexOf('document.addEventListener("click",e=>{const t=e.target.closest("[data-cfio],[data-cfday]'));
   ok('6 코드: alert/confirm/prompt/window.open/iframe 0 · 새 저장 칸 없음(설정은 기존 fin/cfset 에만)',i6>0&&b6.length>2000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe/.test(b6)&&!/collection\(|\.doc\(/.test(b6)&&/finPut\("cfset"/.test(b6),b6.length+'자');
  }
+ // ================= 19 =================
+ if(on('19')){
+  const D=n=>new Date(Date.now()+9*36e5+n*864e5).toISOString().slice(0,10);
+  const site=(id,pno,name,o)=>({["sites/"+id]:Object.assign({pno,name,customer:"홍길동",addr:"",mgr:"정진혁",status:"착공 전",start:"",end:"",proc:"",progress:"",logs:[],files:[],updatedAt:T0},o)});
+  const proj=(id,no,title,o)=>({["projects/"+id]:Object.assign({no,title,custName:"홍길동",custCode:"C-2611-901",stage:"계약",mgr:"정진혁",contractAmt:1000,cat:"주거",inq:"2026-10-01",files:[],updatedAt:T0},o)});
+  const SEED=Object.assign({},STAFF,{"customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",createdAt:T0,updatedAt:T0}},
+   proj("pA","P-2611-801","교문초 시험",{start:D(-11),endPlan:D(7)}),site("sA","P-2611-801","교문초 시험",{start:D(-11),end:D(7)}),          // 착공일 지남 → 공사 중
+   proj("pB","P-2611-802","착공 예정 현장",{start:D(7),endPlan:D(30)}),site("sB","P-2611-802","착공 예정 현장",{start:D(7),end:D(30)}),      // 아직 → 착공 전
+   proj("pC","P-2611-803","보류 현장",{start:D(-5),endPlan:D(20)}),site("sC","P-2611-803","보류 현장",{status:"보류",start:D(-5),end:D(20)}), // 사람이 보류 → 그대로
+   proj("pD","P-2611-804","프로젝트에만 착공일",{start:D(-3),endPlan:D(10)}),site("sD","P-2611-804","프로젝트에만 착공일",{}),               // 현장 카드엔 날짜 없음 → 프로젝트 날짜로
+   proj("pE","P-2611-805","준공 예정일 지난 현장",{start:D(-30),endPlan:D(-2)}),site("sE","P-2611-805","준공 예정일 지난 현장",{start:D(-30),end:D(-2)}), // 준공일 지남 → 건드리지 않음
+   proj("pF","P-2611-806","오늘 착공",{start:D(0),endPlan:D(9)}),site("sF","P-2611-806","오늘 착공",{start:D(0),end:""}),                      // 오늘 착공 · 준공일 빈칸 → 공사 중
+   proj("pG","P-2611-807","이미 준공",{stage:"준공",start:D(-40),end:D(-10)}),site("sG","P-2611-807","이미 준공",{status:"준공",start:D(-40),end:D(-10)}));
+  for(const [vn,opt] of [['PC',{viewport:{width:1280,height:900}}],['Pixel 7',devices['Pixel 7']]]){const tag='19 '+vn+' ';
+   const {ctx,open,seed}=await mk(opt,SEED,STUB);const A=await open('admin',12000);
+   const st=p=>p.evaluate(()=>Object.fromEntries(window.__hfT.S().sites.map(s=>[s.id,s.status])));
+   let m=await st(A);
+   ok(tag+'대표: 착공일 ≤ 오늘 < 준공(예정)일인 ‘착공 전’ 현장은 ‘공사 중’ (교문초 같은 경우 · 오늘 착공 · 프로젝트에만 착공일이 있는 현장 포함)',m.sA==='공사 중'&&m.sF==='공사 중'&&m.sD==='공사 중',JSON.stringify(m));
+   ok(tag+'착공일이 아직 안 된 현장은 ‘착공 전’ 그대로 · 사람이 정한 ‘보류’·‘준공’은 덮지 않음 · 준공 예정일이 지난 ‘착공 전’은 건드리지 않음',m.sB==='착공 전'&&m.sC==='보류'&&m.sG==='준공'&&m.sE==='착공 전',JSON.stringify(m));
+   await A.evaluate(()=>{location.hash='#sites'});await wait(1200);const lt=(await A.locator('#view').innerText()).replace(/\s+/g,' ');
+   const rowSt=await A.evaluate(()=>{const o={};document.querySelectorAll('#view [data-id]').forEach(el=>{const t=(el.innerText||'').replace(/\s+/g,' ');['교문초 시험','착공 예정 현장','보류 현장'].forEach(n=>{if(t.includes(n)&&!o[n])o[n]=(/공사 중/.test(t)?'공사 중':/착공 전/.test(t)?'착공 전':/보류/.test(t)?'보류':'?')})});return o});
+   ok(tag+'현장 관리 목록: 교문초 시험 = 공사 중 · 착공 예정 현장 = 착공 전 · 보류 현장 = 보류',rowSt['교문초 시험']==='공사 중'&&rowSt['착공 예정 현장']==='착공 전'&&rowSt['보류 현장']==='보류',JSON.stringify(rowSt));
+   await A.evaluate(()=>{location.hash='#home'});await wait(1000);
+   const tile=await A.evaluate(()=>{const S=window.__hfT.S();return S.sites.filter(x=>x.status==="공사 중").length});
+   const tileTxt=await A.evaluate(()=>{const a=[...document.querySelectorAll('#view a[href="#sites"],#view [data-go="sites"]')].map(x=>(x.innerText||'').replace(/\s+/g,' '));return a.join(' / ')});
+   ok(tag+'홈 타일의 공사 중 현장 수 = 3 (화면에 쓰는 같은 목록)',tile===3&&(!tileTxt||/3/.test(tileTxt)),tile+' :: '+tileTxt.slice(0,120));
+   // 프로젝트 단계 표시: 단계 값은 ‘계약’ 그대로, 흐름은 ‘현장 관리’
+   await A.evaluate(()=>{location.hash='#projects'});await wait(600);await A.evaluate(()=>window.__hfT.open('projects','pA'));await wait(1200);
+   const fl=await A.evaluate(()=>{const v=document.querySelector('#veil');const cur=v.querySelector('[aria-current="step"],.flow .on,.pflow .on,[data-flowcur]');return [(v.innerText||'').replace(/\s+/g,' ').slice(0,600),cur?cur.textContent:'']});
+   ok(tag+'프로젝트 창: 현장이 공사 중이면 지금 단계가 ‘현장 관리’ · ‘현장 열기 · 공사 중’',/현장 열기 · 공사 중/.test(fl[0]),fl[1]+' :: '+fl[0].slice(0,260));
+   const stg=await A.evaluate(()=>window.__hfT.S().projects.find(p=>p.id==='pA').stage);ok(tag+'프로젝트에 저장된 단계 값은 그대로 ‘계약’ (화면에서만 현장 관리로 읽음)',stg==='계약',stg);
+   await A.evaluate(()=>window.__hfT.closeSheet());
+   // 저장값: 대표 화면이 바꾸고 옛 값은 기록으로
+   let dbs=null;for(let i=0;i<40;i++){dbs=await seed.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb'));return ['sA','sB','sC','sD','sE','sF','sG'].map(k=>D['sites/'+k])});if(dbs[0].status==='공사 중'&&dbs[3].status==='공사 중'&&dbs[5].status==='공사 중')break;await wait(1000)}
+   const lg=dbs[0].statusLog||[];
+   ok(tag+'대표 화면이 열려 있으면 저장값도 ‘공사 중’으로 · 옛 값(착공 전)·바꾼 때·이유를 그 현장 기록(statusLog)에 남김 · 다른 칸(착공일·담당·이름)은 그대로',dbs[0].status==='공사 중'&&lg.length===1&&lg[0].from==='착공 전'&&lg[0].to==='공사 중'&&lg[0].by==='자동'&&/착공일/.test(lg[0].why)&&!!lg[0].at&&dbs[0].start===D(-11)&&dbs[0].mgr==='정진혁'&&dbs[0].name==='교문초 시험',JSON.stringify(lg));
+   ok(tag+'안 바뀌어야 할 현장의 저장값은 그대로 (착공 예정·보류·준공 예정일 지남·준공) · 기록도 안 생김',dbs[1].status==='착공 전'&&dbs[2].status==='보류'&&dbs[4].status==='착공 전'&&dbs[6].status==='준공'&&[1,2,4,6].every(i=>!dbs[i].statusLog),[1,2,4,6].map(i=>dbs[i].status).join(','));
+   await wait(3000);const d2=await seed.evaluate(()=>(JSON.parse(localStorage.getItem('mockdb'))['sites/sA'].statusLog||[]).length);ok(tag+'한 번만 바꿈 (다시 맞춰도 기록이 늘지 않음)',d2===1,d2);
+   // 사람이 다시 ‘보류’로 두면 그대로
+   await A.evaluate(async()=>{const s=Object.assign({},window.__hfT.S().sites.find(x=>x.id==='sF'));delete s.id;s.status='보류';await window.__hfT.put('sites','sF',s)});await wait(5000);
+   const sf=await seed.evaluate(()=>JSON.parse(localStorage.getItem('mockdb'))['sites/sF'].status);ok(tag+'자동으로 바뀐 뒤 사람이 ‘보류’로 바꾸면 다시 덮지 않음',sf==='보류'&&(await st(A)).sF==='보류',sf);
+   // 직원 화면: 정진혁·이봄이·채진아도 같은 상태로 보임
+   for(const [who,nm] of [['jjh','정진혁'],['bom','이봄이'],['cja','채진아']]){const P=await open(who,9000);const ms=await st(P);await P.evaluate(()=>{location.hash='#sites'});await wait(1000);const t=(await P.locator('#view').innerText()).replace(/\s+/g,' ');
+    ok(tag+nm+': 현장 관리에서 교문초 시험 = 공사 중 · 착공 예정 = 착공 전 · 거절된 쓰기 0',(ms.sA==='공사 중'||ms.sA===undefined)&&(ms.sB==='착공 전'||ms.sB===undefined)&&(ms.sA!==undefined||who==='bom')&&(await P.evaluate(()=>window.__mockDenied.length))===0,JSON.stringify(ms).slice(0,160));await P.close()}
+   await A.close();await ctx.close()}
+  // 직원만 열려 있을 때(대표 화면이 아직 안 바꿨을 때)도 읽을 때 ‘공사 중’
+  {const {ctx,open,seed}=await mk({viewport:{width:1280,height:900}},Object.assign({},SEED,{"work/all/sites/sA":Object.assign({},SEED["sites/sA"],{__at:T0}),"work/all/projects/pA":Object.assign({},SEED["projects/pA"],{__at:T0})}),STUB);const J=await open('jjh',9000);
+   const ms=await J.evaluate(()=>Object.fromEntries(window.__hfT.S().sites.map(s=>[s.id,s.status])));const raw=await seed.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb'));return [D['sites/sA'].status,Object.keys(D).filter(k=>/sites/.test(k)&&/sA/.test(k)).map(k=>k+'='+D[k].status).join(',')]});
+   ok('19 정진혁만 열려 있을 때: 저장값은 아직 ‘착공 전’이어도 화면은 ‘공사 중’으로 읽음 (대표 원본은 안 건드림)',ms.sA==='공사 중'&&raw[0]==='착공 전',JSON.stringify(ms)+' :: '+raw[1]);await J.close();await ctx.close()}
+  const i19=HTML.indexOf('// ===== 현장 상태 자동'),b19=HTML.slice(i19,HTML.indexOf('function render(){try{siteAutoFix()'));
+  ok('19 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0',i19>0&&b19.length>800&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(/.test(b19),b19.length+'자');
+ }
  //__MORE__
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
