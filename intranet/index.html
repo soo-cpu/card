@@ -606,6 +606,10 @@ const isAcct=s=>!!s&&(/경리|회계/.test([s.title,s.pos].join(" "))||s.level==
 // 전체 담당 = 대표와 같은 범위 열람 + 입력·수정 (삭제·권한 변경 불가) / 실무 팀 = 현장·영업·디자인 함께 열람·입력·수정, 재무·인사 숨김
 // 권한 정리 2026-11-04: 인사·노무·경영·회계는 대표(최윤수)·전체 담당(채진아)만. 공동대표(신혜현)는 고객·프로젝트·결재 열람과 최종 승인만
 const isCoBoss=s=>!!s&&s.level==="전체 담당"&&s.state!=="퇴사";
+// 과거 결재(종이 기안품의서 목록: 제목·업체·금액)와 그 합계 (대표 지시 2026-11-13 0번): 결재를 전부 보는 사람(대표·전체 담당·공동대표)만. 그 밖의 직원 사본·공용 칸에는 넣지 않고 화면에도 안 그림
+const STAFF_HIDE=["approvals","costTotal"];
+const apAllFor=s=>!!s&&s.state!=="퇴사"&&(s.level==="전체 담당"||s.level==="공동대표");
+const apAll=()=>me.admin||mode!=="shared"||apAllFor(myStaff());
 const isCo2=s=>!!s&&s.level==="공동대표"&&s.state!=="퇴사";
 const isTeam=s=>!!s&&s.level==="실무 팀"&&s.state!=="퇴사";
 // 공휴일 (대체공휴일·선거일 포함, 2026~2027) · 대표가 업무 보고 화면에서 추가 휴일을 더 적을 수 있음
@@ -903,16 +907,17 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
       // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만 · 지운 것·합친 것은 다시 올리지 않음)
       for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(GONE_NOW.has(col+"__"+x.id)||(!c&&G.has(col+"__"+x.id)))continue;if(c&&T(c)>=T(x))continue;
         if(x.__deleted){await db.collection("mine/"+u+"/"+col).doc(x.id).delete();continue}
-        if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;o.__at=x.__at;if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
+        if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;delete o.__base;o.__at=x.__at;if(c){STAFF_HIDE.forEach(k=>{if(c[k]!==undefined)o[k]=c[k];else delete o[k]});keepFiles(o,c,x)}if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
         if(col==="customers"){const p=PRIVC[x.id]||{};if((x.tel||x.addr)&&String(x.__at)>String(p.updatedAt||""))await db.collection("cpriv").doc(x.id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
         await db.collection(col).doc(x.id).set(o)}
       // 원본 → 직원: 담당분은 전체, 나머지는 가린 목록 1개
       const own=S[col].filter(r=>ownedFor(s,col,r)&&!GONE_NOW.has(col+"__"+r.id)),ownIds=new Set(own.map(r=>r.id));
       for(const r of own){const h=(mu[col]||[]).find(x=>x.id===r.id);
+        if(h&&!h.__gone&&T(h)>=T(r)&&!apAllFor(s)&&STAFF_HIDE.some(k=>h[k]!==undefined)){const o3=Object.assign({},h);delete o3.id;STAFF_HIDE.forEach(k=>delete o3[k]);try{await db.collection("mine/"+u+"/"+col).doc(r.id).set(o3)}catch(e){}}
         if(h&&!h.__gone&&T(h)>=T(r)){if(col==="customers"&&(r.smsLog||h.smsLog)){const m=smsMerge(r.smsLog,h.smsLog);if(smsJs(m)!==smsJs(h.smsLog)){const o2=Object.assign({},h);delete o2.id;o2.smsLog=m;await db.collection("mine/"+u+"/"+col).doc(r.id).set(o2)}}continue}
         let hf=h;try{const g=await db.doc("mine/"+u+"/"+col+"/"+r.id).get();if(g&&g.exists)hf=Object.assign({id:r.id},g.data())}catch(e){}
         if(hf&&hf!==h&&!hf.__gone&&T(hf)>=T(r))continue;/* 그 사이 직원이 저장함 → 다음 맞추기에서 원본으로 올라감 */
-        const o=clean(r);if(col==="customers"&&hf&&Array.isArray(hf.smsLog))o.smsLog=smsMerge(o.smsLog,hf.smsLog);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
+        const o=clean(r);if(!apAllFor(s))STAFF_HIDE.forEach(k=>delete o[k]);if(col==="customers"&&hf&&Array.isArray(hf.smsLog))o.smsLog=smsMerge(o.smsLog,hf.smsLog);if(amtLocked(r)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});o.__by="admin";o.__at=T(r)||nowISO();await db.collection("mine/"+u+"/"+col).doc(r.id).set(o)}
       for(const h of mine.filter(x=>!ownIds.has(x.id)&&x.__by!==u))await db.collection("mine/"+u+"/"+col).doc(h.id).delete();
       if(col!=="reports"){const rows=s.scope==="담당 건만"?[]:S[col].filter(r=>!ownIds.has(r.id)).map(r=>idxRow(col,r));const js=JSON.stringify(rows),key=u+"/"+col;if(isoSent[key]!==js){await db.collection("mine/"+u+"/idx").doc(col).set({rows,at:nowISO()});isoSent[key]=js}}}catch(e){window.__isoFail=(window.__isoFail||0)+1}}
     if(ISO.every(c=>rd[c])&&!(Date.now()-(isoMark[u]||0)<300000))try{await db.collection("mine/"+u+"/idx").doc("sync").set({at:nowISO()});isoMark[u]=Date.now()}catch(e){}/* 맞춘 시각 표시는 5분에 한 번만 (가만히 있을 때 계속 쓰지 않게) */}}
@@ -922,7 +927,7 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
 // 맞추기: 직원 저장 → 공용 칸에 바로 (다른 직원 화면에 바로 보임) → 대표 화면이 열릴 때 원본에 반영 (옛 값은 acct/_work/log 에 기록, 원본 삭제 없음)
 //         대표 저장 → 원본 → 대표 화면이 공용 칸도 같이 맞춤. 공용 칸에서 줄이 지워져도 원본이 남아 대표 화면이 다시 채움
 const WORK_COLS=["customers","projects","quotes","sites"];
-const WORK_DROP=["estCost","perf","qCost","approvals","pc","margin","marginRate","bonus","bonusBase","__leak","__leakCost","__masked","__rawTel","__deleted","__gone","__goneAt","__goneWhy"];
+const WORK_DROP=["estCost","perf","qCost","approvals","costTotal","pc","margin","marginRate","bonus","bonusBase","__leak","__leakCost","__masked","__rawTel","__deleted","__gone","__goneAt","__goneWhy"];
 const WKP=col=>"work/all/"+col;
 const WORKD={},workReady={},workSent={};let WORK_AT="";
 // 삭제 표시 (v0.99-25): work/all/gone/{칸__id} = {col,id,by,byName,at} — 대표가 지운 것(휴지통·완전삭제·합침)을 공용으로 적어 둠.
@@ -937,6 +942,9 @@ function goneSweep(col){if(!me.admin||PV||!wgoneReady||!db)return;Object.keys(WO
 async function goneClear(col,id){if(!db||!me.admin||mode!=="shared"||PV||!WORK_COLS.includes(col))return;const k=goneKey(col,id);GONE_NOW.delete(k);try{await db.collection(GONEP).doc(k).delete();delete WGONE[k]}catch(e){}try{await db.collection("acct/_gone/g").doc(trashKey(col,id)).delete()}catch(e){}}
 const stableJs=v=>JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&!Array.isArray(x)?Object.keys(x).sort().reduce((o,kk)=>{o[kk]=x[kk];return o},{}):x);
 const wkT=r=>String((r&&(r.__at||r.updatedAt))||"");
+// 낡은 화면에서 저장해도 첨부가 빠지지 않게 (2026-11-13 9·10번: 대표가 붙인 PDF가 30분 뒤 직원 저장으로 사라졌던 것):
+// 직원이 저장할 때 보고 있던 줄의 시각(__base)이 원본보다 옛것이거나 없으면, 원본에만 있는 첨부를 그대로 둠. 최신을 보고 뺀 것만 빠짐
+function keepFiles(o,c,x){if(!c||!Array.isArray(c.files)||!c.files.length)return;if(x&&x.__base&&String(x.__base)>=wkT(c))return;const have=new Set((o.files||[]).map(f=>f&&f.id));const add=c.files.filter(f=>f&&f.id&&!have.has(f.id));if(add.length)o.files=(Array.isArray(o.files)?o.files:[]).concat(add)}
 function workRow(col,r){const o=clean(r);WORK_DROP.forEach(k=>delete o[k]);
   if(col==="customers"){const p=PRIVC[r.id]||{};o.tel=p.tel||"";o.addr=p.addr||""}
   if(amtLocked(r))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});
@@ -1432,7 +1440,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest("[data-cert
 document.addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.sealup){sealUpload(e.target.files&&e.target.files[0]);e.target.value=""}});
 document.addEventListener("click",async e=>{const t=e.target.closest("[data-cosave],[data-certdl]");if(!t)return;
   if(t.dataset.cosave&&me.admin){const o={},ins=document.querySelectorAll("[data-co]");if(!ins.length){toast("회사 정보는 서식 자료실 › 회사 기본 정보에서 고쳐요");location.hash="#forms";return}ins.forEach(i=>{o[i.dataset.co]=i.value.trim()});const oldCo=Object.assign({},cfg("company"));delete oldCo.id;try{await put("config","company",Object.assign(oldCo,o,{at:nowISO()}));toast("저장했어요")}catch(err){toast("저장하지 못했어요")}return}
-  if(t.dataset.appaper){const a=(S.approvals||[]).find(x=>x.id===t.dataset.appaper);if(a)apPaper(a);return}
+  if(t.dataset.appaper){const a=apById(t.dataset.appaper);if(a)apPaper(a);return}
   if(t.dataset.certdl){const c=me.admin?CERTS[t.dataset.certdl]:myCerts[t.dataset.certdl];if(!c)return;try{const b=await (await fetch("/_blob/"+c.pdf)).blob();const dl=await window.claude.use("downloads");if(dl)await dl.save({filename:c.name||"증명서.pdf",data:b});else window.open("/_blob/"+c.pdf,"_blank")}catch(err){window.open("/_blob/"+c.pdf,"_blank")}}});
 function queueSync(){if(!me.admin||mode!=="shared")return;clearTimeout(syncT);syncT=setTimeout(privSync,2500);goalQueue()}
 let syncAgain=false;/* 맞추는 중에 또 바뀌면(직원 저장 등) 버리지 않고 끝난 뒤 한 번 더 */
@@ -1984,6 +1992,14 @@ function canSeeRow(col,r){if(!r||me.admin||mode!=="shared")return true;const s=m
   if(col==="manuals"&&manLimited(r))return isHrMgr(myStaff());
   if(col==="approvals")return isCoBoss(s)||isCo2(s)||r.createdBy===me.id||(!isTeam(s)&&((!!s.name&&lineOf(r).includes(s.name))||s.role==="최종 결재"));
   return true}
+// 결재 서류를 화면에 그릴 때는 이 두 함수로만 (대표 지시 2026-11-13 0번): 볼 수 있는 결재만 · 번호로 찾을 때도 권한 확인
+const apVis=()=>(S.approvals||[]).filter(r=>canSeeRow("approvals",r));
+const apById=id=>{const a=(S.approvals||[]).find(x=>x.id===id);return a&&canSeeRow("approvals",a)?a:null};
+// 최근 활동 (0번): 대표는 전부 · 직원(미리 보기 포함)은 본인이 한 것 + 공지 + 본인이 볼 수 있는 결재 서류 것만. 재무·인사·경리 등 못 보는 메뉴의 활동은 아예 안 보임
+const ACT_OPEN=["notices","manuals","projects","quotes","sites","customers","as","approvals","reports","feedback"];
+function actSee(a){if(!a)return false;if(me.admin||mode!=="shared")return true;const col=a.col||"notices";if(!ACT_OPEN.includes(col))return false;
+  if(col==="approvals"){const t=String(a.title||"");return !!t&&apVis().some(r=>String(r.title||r.name||"").slice(0,60)===t)}
+  if(col==="notices")return true;return !!me.id&&a.by===me.id}
 // ===== 공지·댓글·알림 (다음 지시 v32) — 카톡형 채팅은 만들지 않음, 기록이 남는 소통만 =====
 const canNotice=()=>me.admin||mode!=="shared"||isHrMgr(myStaff())||isCo2(myStaff());
 const NREAD={},NRALL={},nrSubs={};let NSUM={},SEEN={},nOn=false;
@@ -2975,7 +2991,7 @@ const onlyMine=()=>mode==="shared"&&!me.admin&&((myStaff()||{}).scope==="담당 
 function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&(me.admin||isCoBoss(myStaff())))return h;if(h==="recv"&&canMoney())return h;if(["fdash","fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks")return h;if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
 function renderNav(){
   const r=route();
-  const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||S.approvals.filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
+  const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||apVis().filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
   let h=`<a href="#home" ${r==="home"?'aria-current="page"':""}><span>홈</span>${badgeN()?`<span class="cnt" style="background:#c62828;color:#fff">${badgeN()}</span>`:""}</a>`,g="";
   NAV_ORDER.forEach(k=>{if(k==="staff"&&onlyMine()){h+=`<a href="#forms" ${r==="forms"?'aria-current="page"':""}><span>서식 자료실</span></a><a href="#myhr" ${r==="myhr"?'aria-current="page"':""}><span>내 인사 정보</span></a>`;return}if(MOD[k].grp!==g){g=MOD[k].grp;h+=`<div class="grp">${esc(g)}</div>`}
     if(k==="projects")h+=`<a href="#goal" ${r==="goal"?'aria-current="page"':""}><span>목표 관리</span></a>`;
@@ -3066,9 +3082,9 @@ let chkAll=false;
 function checks(){
   const out=[],T=todayStr(),add=(lvl,col,id,title,text,top)=>out.push({lvl,col,id,title,text,top:top||0,who:chkOwner(col,id)});
   if(me.admin){const un=S.staff.filter(s=>s.state!=="퇴사"&&!s.uid);if(un.length)add("bad","staff",un[0].id,"계정 미연결 직원 "+un.length+"명","인사 관리에서 연결해 주세요: "+un.map(s=>s.name).join(", "))}
-  S.approvals.forEach(a=>{if(num(a.amount)>=1e9)add("bad","approvals",a.id,a.title||a.kind||"결재","금액 자릿수 확인 ("+won(a.amount)+")")});
+  apVis().forEach(a=>{if(num(a.amount)>=1e9)add("bad","approvals",a.id,a.title||a.kind||"결재","금액 자릿수 확인 ("+won(a.amount)+")")});
   S.projects.forEach(p=>{if(p.stage==="미계약 종료")return;const t=(p.no||"")+" "+(p.title||"");
-    (p.approvals||[]).forEach(a=>{if(num(a.amt)>=1e9)add("bad","projects",p.id,t,"과거 결재 "+(a.no||"")+" 금액 자릿수 확인 ("+won(a.amt)+")")});
+    if(apAll())(p.approvals||[]).forEach(a=>{if(num(a.amt)>=1e9)add("bad","projects",p.id,t,"과거 결재 "+(a.no||"")+" 금액 자릿수 확인 ("+won(a.amt)+")")});
     const m=pjMoney(p);
     if(m.over&&canMoney())add("bad","projects",p.id,t,"예상 원가 초과 (공사 원가 "+won(m.build)+" > 예상 "+won(m.est)+")");
     if(canMoney()&&m.cost&&num(p.contractAmt)&&m.margin!==null){if(m.margin<0)add("bad","projects",p.id,t,"마진율 "+m.margin+"% (0% 미만)");else if(m.margin<15)add("warn","projects",p.id,t,"마진율 "+m.margin+"% (15% 미만)")}
@@ -3305,7 +3321,7 @@ function renderBlanks(){const adm=me.admin;let L;if(adm){L=fillCalc().rows;fillQ
   return `<div class="head"><div><h1>빈칸 목록${adm?" · "+esc(sel):""}</h1><p>메뉴마다 꼭 채울 칸 중 비어 있는 것 · 누르면 그 항목이 열려요 · 채우면 목록과 대표 홈 채움률이 같이 바뀌어요</p></div>${chips}</div>${body||`<div class="empty">${none}</div>`}
   <p class="hint">이번 주 목표와 실제 완료 수는 ‘업무 보고’에 적어 주세요 (빈칸·스캔). 스캔본은 공유드라이브 「경영 회계 재무(채진아 차장) › 회사 서류 › 연도 › 분류」에 넣어요.</p>`}
 function renderHome(){
-  const open=S.approvals.filter(x=>["결재 대기","결재 진행"].includes(x.status));
+  const open=apVis().filter(x=>["결재 대기","결재 진행"].includes(x.status));
   const mine=S.approvals.filter(x=>canDecide(x));
   const live=S.sites.filter(x=>x.status==="공사 중");
   const cust=S.customers.filter(x=>(x.status||"진행중")==="진행중");
@@ -3328,7 +3344,7 @@ function renderHome(){
   const wdw=new Date().getDay(),weekCard=me.admin&&((wdw===5&&new Date().getHours()>=12)||wdw===6||wdw===0)?weekHTML(true):"";
   const myFb=S.feedback.filter(x=>me.id&&x.createdBy===me.id&&x.status==="완료"&&String(x.doneAt||"")>new Date(Date.now()-14*864e5).toISOString());
   const fbCard=myFb.length?`<section class="card"><h2>내 개선 요청이 처리됐어요 ${myFb.length}건</h2><div class="list">${myFb.map(x=>`<div class="item" data-open="feedback" data-id="${esc(x.id)}"><span class="pill ok">완료</span><div class="t"><b>${esc(x.body)}</b><small>${esc(x.reply||"")}</small></div><span></span></div>`).join("")}</div></section>`:"";
-  const acts=S.activity.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,12);
+  const acts=S.activity.filter(actSee).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,12);
   return `${secCards()}${pracCard()}${(()=>{try{return ordCardHTML()}catch(e){return ""}})()}${(()=>{try{return goalHomeLine()}catch(e){return ""}})()}${band}${leadNoteHTML()}${noticeTopHTML()}${proxyCardHTML()}
   <div class="head"><div><h1>${esc(me.name?me.name+"님, 안녕하세요":"홈퍼니싱 인트라넷")}</h1><p>${new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})} · 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</p></div>
   <div class="tools"><button class="btn pri" data-new="reports">오늘 업무 보고</button><button class="btn pri" data-new="approvals">결재 올리기</button>${canNotice()?'<button class="btn" data-new="notices">공지 쓰기</button>':""}${me.admin?`${pvPicker()}<button class="btn" data-exportself="1">이 버전 드라이브에 보관</button><button class="btn" data-backup="1">백업 파일 받기</button>`:""}</div></div>
@@ -4112,7 +4128,7 @@ function apPrintNow(a){if(!a)return;const html=apPaperDoc(a);const css=(html.mat
   const title=(a.kind||"결재").replace(/\s*\(.*\)$/,"")+" "+(a.title||"").slice(0,30);
   try{knock("열람",{what:"결재 서류 출력",target:title})}catch(e){}
   printHTML(body,css,title,()=>{toast("이 화면에서는 인쇄 창이 막혀 있어요 · PDF로 열어 드릴게요 (PDF 화면의 인쇄 버튼)");apPreview(a);const f=document.getElementById("ppFrame");let ok=0;const go=()=>{if(ok)return;ok=1;apPdf(a)};if(f)f.addEventListener("load",()=>setTimeout(go,300),{once:true});setTimeout(go,2500)})}
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-apprint]");if(!t)return;e.preventDefault();const a=(S.approvals||[]).find(x=>x.id===t.dataset.apprint);apPrintNow(a)});
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-apprint]");if(!t)return;e.preventDefault();const a=apById(t.dataset.apprint);if(a)apPrintNow(a)});
 
 // 2) 결재란 사인 (최윤수·신혜현): 본인과 관리자만 등록·변경 · 다른 직원은 못 봄(대표 전용 저장소 seal, 본인 칸 acct/본인)
 // 승인할 때 그때 사인을 결재 기록(history.sig)에 같이 저장 → 나중에 사인을 바꿔도 끝난 결재는 그대로
@@ -4474,9 +4490,9 @@ async function apPdf(a){const f=document.getElementById("ppFrame");if(!f)return;
     let dl2=null;try{dl2=await window.claude.use("downloads")}catch(e){}if(dl2){await dl2.save({filename:name,data:blob});toast("PDF를 저장했어요")}else{const u=URL.createObjectURL(blob);window.open(u,"_blank")}}
   catch(e){toast("PDF를 만들지 못했어요 · ‘출력’에서 PDF로 저장을 골라 주세요");try{apPaper(a)}catch(x){}}}
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-appreview],[data-ppprint],[data-pppdf],[data-ppclose],[data-apout]");if(!t)return;e.preventDefault();
-  if(t.dataset.apout){const a=(S.approvals||[]).find(x=>x.id===t.dataset.apout);if(!a)return;apPreview(a);const f=document.getElementById("ppFrame");let done=0;const go=()=>{if(done)return;done=1;apPdf(a)};if(f)f.addEventListener("load",()=>setTimeout(go,300),{once:true});setTimeout(go,2500);return}
-  if(t.dataset.appreview){const a=(S.approvals||[]).find(x=>x.id===t.dataset.appreview);if(a)apPreview(a);return}
-  const v=document.getElementById("ppVeil");if(!v)return;const a=(S.approvals||[]).find(x=>x.id===v.dataset.id);
+  if(t.dataset.apout){const a=apById(t.dataset.apout);if(!a)return;apPreview(a);const f=document.getElementById("ppFrame");let done=0;const go=()=>{if(done)return;done=1;apPdf(a)};if(f)f.addEventListener("load",()=>setTimeout(go,300),{once:true});setTimeout(go,2500);return}
+  if(t.dataset.appreview){const a=apById(t.dataset.appreview);if(a)apPreview(a);return}
+  const v=document.getElementById("ppVeil");if(!v)return;const a=apById(v.dataset.id);
   if(t.dataset.ppclose){v.remove();return}
   if(t.dataset.ppprint){if(a)apPrintNow(a);return}
   if(t.dataset.pppdf&&a){apPdf(a)}});
@@ -4612,7 +4628,7 @@ function drawSheet(){
   if(col==="staff"&&me.admin)hrBlock+=`<h4>인사기록카드 · 개인정보·급여·계좌 (대표 전용 · 직원 화면에는 안 보임)</h4>`+bnHTML(id)+HR_FIELDS.map(f=>fieldHTML(f,sheet.hr,"hr_")+(f[0]==="holder"?lvHrBox(d):"")).join("");
   if(col==="staff"&&id&&(me.admin||(mode==="shared"&&isHrMgr(myStaff()))))hrBlock+=payMonthlyHTML(me.admin?(S.hr.find(x=>x.id===id)||{}):(HRALL[id]||{}));
   if(col==="staff"&&id&&mode==="shared"&&(me.admin||isHrMgr(myStaff())))hrBlock+=`<div class="f wide"><div class="chips"><label class="hint">지급 월 <input type="month" id="psYm2" value="${ymNow()}"></label><button type="button" class="btn sm" data-payslip="${esc(id)}">급여명세서 출력 (PDF)</button></div></div>`;
-  if(col==="projects"&&id){const q=S.quotes.filter(x=>x.pno===d.no),st=S.sites.filter(x=>x.pno===d.no),ap=d.approvals||[],ap2=S.approvals.filter(x=>x.pno===d.no||(x.lines||[]).some(l=>String(l.pno||"").trim()===d.no)),as2=S.as.filter(x=>x.pno===d.no);
+  if(col==="projects"&&id){const q=S.quotes.filter(x=>x.pno===d.no),st=S.sites.filter(x=>x.pno===d.no),ap=apAll()?(d.approvals||[]):[],ap2=apVis().filter(x=>x.pno===d.no||(x.lines||[]).some(l=>String(l.pno||"").trim()===d.no)),as2=S.as.filter(x=>x.pno===d.no);
     hrBlock+=leadHTML(d);hrBlock+=gjHTML(d,id);hrBlock+=`<h4>이 프로젝트로 바로 하기</h4><div class="f wide"><div class="chips"><button class="btn sm" type="button" data-pnew="quotes">+ 견적 (${esc(nextQno(d.no))})</button><button class="btn sm" type="button" data-pnew="approvals">+ 결재</button><button class="btn sm" type="button" data-pnew="as">+ A/S 접수</button>${canMoney()?`<button class="btn sm" type="button" data-pact="pays">수금 일정 자동 (10/40/40/10)</button>`:""}<button class="btn sm" type="button" data-hscopy="1">한샘 등록용 복사</button><button class="btn sm" type="button" data-prop="1">제안서 만들기</button><button class="btn pri sm" type="button" data-cs="from" data-no="${esc(d.no)}">상담 진행 모드 (고객용 화면)</button>${["문의","상담","견적"].includes(d.stage)||(d.stage==="계약"&&!st.length)?`<button class="btn ok sm" type="button" data-pact="contract">계약 → 현장 관리로 넘기기</button>`:""}${["계약","시공"].includes(d.stage)?`<button class="btn ok sm" type="button" data-pact="done">준공 처리 (하자보수 만료일 계산)</button>`:""}</div><span class="hint">계약을 누르면 같은 번호로 현장이 만들어지고, 준공을 누르면 준공일(비어 있으면 오늘)로 하자보수 ${esc(d.warrantyMonths||WARRANTY_DEFAULT)}개월 만료일이 계산돼요.</span></div>`;
     {const pp=S.projects.find(x=>x.id===id);if(pcCan(pp)){const lk=pcLocked(id);hrBlock+=sheet.pcOpen?`<h4>원가 관리 (견적·실행·사후)</h4>${pcHTML(pp)}`:`${(()=>{try{const c=pcGet(pp.id)||{lines:[]},K=pcContract(pp),ca=K.amt,e=pcSum(c,"est"),po=pcPostSum(c),na=(c.post||[]).filter(r=>r.apId).length,mr=x=>ca&&x?" · 마진 "+Math.round((ca-x)/ca*1000)/10+"%":"";return `<div class="f wide"><div class="tablebox" style="margin:0"><table><tbody><tr><td>계약 견적 금액 <span class="hint">${esc(K.src||"")}</span></td><td class="num"><b>${ca?won(ca):"—"}</b></td></tr><tr><td>실행 원가 (예상)</td><td class="num">${e?won(e)+mr(e):"— 입력 전"}</td></tr><tr><td>사후 원가 <span class="hint">전자결재 지급 건 중 이 프로젝트·현장명이 들어간 것이 자동으로 쌓여요${na?" · 자동 "+na+"건":""}</span></td><td class="num">${po?won(po)+mr(po):"— 아직 없음"}</td></tr></tbody></table></div></div>`}catch(er){return ""}})()}<div class="f wide" style="flex-direction:row;display:flex;justify-content:flex-end"><button type="button" class="btn sm" data-pcopen="1" aria-label="원가 관리 열기" style="border-color:#203864;color:#203864;font-weight:700">원가 관리 (견적·실행·사후)${["계약"].includes(d.stage)&&!lk?" · 실행 원가 입력 필요":""}</button></div>`}}
     if(canMoney()){const m=pjMoney(d);hrBlock+=`<h4>돈 흐름 (VAT 포함)</h4><div class="f wide"><div class="tablebox"><table><tbody>
@@ -4630,7 +4646,7 @@ function drawSheet(){
     {const has=x=>String(x.pno||"").trim()===d.no;const rp=S.reports.filter(r=>r.ppno===d.no||[].concat(r.work||[],r.sales||[],r.design||[]).some(has)).sort((a,b)=>String(b.d).localeCompare(String(a.d)));
      if(rp.length)hrBlock+=`<h4>사진·작업 일지 (업무 보고) ${rp.length}일</h4><div class="f wide">${rp.map(r=>{const ws=[].concat(r.work||[],r.sales||[],r.design||[]).filter(has);const ph=r.ppno===d.no?(r.files||[]).filter(f=>/^image\//.test(f.type||"")):[];return `<div class="rpday"><b data-open="reports" data-id="${esc(r.id)}" style="cursor:pointer">${esc(day(r.d))}</b> · ${esc(r.who||who(r.createdBy))} (${esc(r.rk||"")})<div class="muted">${ws.map(x=>esc([x.proc||x.act,x.people?x.people+"명":"",x.prog,x.text].filter(Boolean).join(" · "))).join("<br>")}${r.issue?"<br>특이사항: "+esc(r.issue):""}</div>${ph.length?`<div class="rpph">${ph.map(f=>`<a href="/_blob/${esc(f.id)}" target="_blank" rel="noopener" download="${esc(f.name||"사진")}"><img src="/_blob/${esc(f.id)}" alt="${esc(day(r.d))} 사진" loading="lazy"></a>`).join("")}</div>`:""}</div>`}).join("")}<span class="hint">사진을 누르면 크게 보거나 내려받을 수 있어요 (고객에게 보낼 때)</span></div>`}
     if(ap2.length||as2.length)hrBlock+=`<h4>인트라넷에서 올린 결재 ${ap2.length} · A/S ${as2.length}</h4><div class="f wide">${ap2.map(x=>`<div class="muted" data-open="approvals" data-id="${esc(x.id)}" style="cursor:pointer">결재 ${esc(day(x.createdAt))} · ${esc(x.kind)} · ${esc(x.title)} · ${won(x.amount)} ${pill(x.status)}</div>`).join("")}${as2.map(x=>`<div class="muted" data-open="as" data-id="${esc(x.id)}" style="cursor:pointer">A/S ${esc(day(x.d))} · ${esc(x.content||"")} ${pill(x.status)}</div>`).join("")}</div>`;
-    hrBlock+=`<h4>이 프로젝트에 붙은 것 · 견적 ${q.length} · 현장 ${st.length} · 결재(기안품의서) ${ap.length}건 ${won(d.costTotal)}</h4><div class="f wide">${q.map(x=>`<div class="muted">견적 ${esc(x.qno||"")} ${esc(day(x.d))} · ${esc(x.work||"")} · ${won(x.amount)} ${pill(x.status)}</div>`).join("")}${st.map(x=>`<div class="muted">현장 ${esc(x.name)} · ${esc(day(x.start))}~${esc(day(x.end))} · ${won(x.amt)} ${pill(x.status)}</div>`).join("")}${ap.length?`<div class="tablebox" style="margin-top:6px"><table><thead><tr><th>문서번호</th><th>날짜</th><th>제목</th><th>업체</th><th>금액</th></tr></thead><tbody>${ap.map(a=>`<tr><td>${esc(a.no)}</td><td>${esc(a.d)}</td><td>${esc(a.title)}</td><td>${esc(a.vendor)}</td><td class="num">${won(a.amt)}</td></tr>`).join("")}</tbody></table></div>`:""}${!q.length&&!st.length&&!ap.length?'<span class="hint">아직 붙은 견적·현장·결재가 없어요</span>':""}</div>`}
+    hrBlock+=`<h4>이 프로젝트에 붙은 것 · 견적 ${q.length} · 현장 ${st.length} · ${apAll()?`결재(기안품의서) ${ap.length}건 ${won(d.costTotal)}`:""}</h4><div class="f wide">${q.map(x=>`<div class="muted">견적 ${esc(x.qno||"")} ${esc(day(x.d))} · ${esc(x.work||"")} · ${won(x.amount)} ${pill(x.status)}</div>`).join("")}${st.map(x=>`<div class="muted">현장 ${esc(x.name)} · ${esc(day(x.start))}~${esc(day(x.end))} · ${won(x.amt)} ${pill(x.status)}</div>`).join("")}${ap.length?`<div class="tablebox" style="margin-top:6px"><table><thead><tr><th>문서번호</th><th>날짜</th><th>제목</th><th>업체</th><th>금액</th></tr></thead><tbody>${ap.map(a=>`<tr><td>${esc(a.no)}</td><td>${esc(a.d)}</td><td>${esc(a.title)}</td><td>${esc(a.vendor)}</td><td class="num">${won(a.amt)}</td></tr>`).join("")}</tbody></table></div>`:""}${!q.length&&!st.length&&!ap.length?'<span class="hint">아직 붙은 견적·현장·결재가 없어요</span>':""}</div>`}
   if(col==="reports"&&(d.__unlinked||(id&&d.unlinked)))hrBlock=`<div class="f wide"><span class="hint"><span class="pill warn">이름 미연결</span> 계정이 아직 인사 관리와 연결되지 않았어요. ‘작성자’에서 내 이름을 고르고 저장하면, 대표가 연결하는 날 자동으로 내 기록으로 옮겨져요.</span></div>`+hrBlock;
   if(col==="customers"&&id)hrBlock+=smsCardHTML(id);
   if(col==="customers"&&id&&d.code){const pj=S.projects.filter(x=>x.custCode===d.code);if(pj.length)hrBlock+=`<h4>이 고객의 프로젝트 ${pj.length}건</h4><div class="f wide">${pj.map(p=>`<div class="muted" data-open="projects" data-id="${esc(p.id)}" style="cursor:pointer">${esc(p.no)} · ${esc(p.title||"")} · ${esc(p.cat||"")} ${pill(p.stage)}</div>`).join("")}</div>`}
