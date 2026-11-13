@@ -26,5 +26,5 @@ const user={me:async()=>({id:U.id,name:U.name,email:U.email,isOwner:U.isOwner,ca
 // 파일 저장소 흉내 (2026-11-12 첨부 시험용): window.__MOCKASSETS=false 로 끄면 실제처럼 없음
 const assets={upload:async(blob,o)=>{if(window.__MOCKPDFDENY&&((o&&o.type)||blob.type)==="application/pdf"){const e=new Error("invalid");e.code="invalid_argument";throw e}const id="as_"+Math.random().toString(36).slice(2,10);(window.__mockUploads=window.__mockUploads||[]).push({id,name:blob.name||"",size:blob.size,type:(o&&o.type)||blob.type});return {id,url:"/_blob/"+id,sizeBytes:blob.size,contentType:(o&&o.type)||blob.type}}};
 // 구글 드라이브 커넥터 흉내 (2026-11-12 문자 시험용): window.__MOCKMCP 를 넣은 시험에서만 있음
-window.claude={use:async n=>{if(n==="db")return db;if(n==="mcp"&&window.__MOCKMCP)return window.__MOCKMCP;if(n==="user")return user;if(n==="assets"&&window.__MOCKASSETS!==false)return assets;throw new Error("no "+n)}};
+window.claude={use:async n=>{if(n==="db")return db;if(n==="mcp"&&window.__MOCKMCP)return window.__MOCKMCP;if(n==="user")return user;if(n==="assets"&&window.__MOCKASSETS!==false)return assets;if(n==="sample"&&window.__MOCKSAMPLE)return window.__MOCKSAMPLE;throw new Error("no "+n)}};
 })();

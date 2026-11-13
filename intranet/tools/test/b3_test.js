@@ -230,6 +230,88 @@ const MONEY=/12,345,678|98,765|원가|마진|성과금/;
   const i3=HTML.indexOf('// 공정표 → 공용 캘린더 (2026-11-05 지시 · 2026-11-13 3번'),b3=HTML.slice(i3,HTML.indexOf('// ===== 현장 사진·파일 (대표 지시 2026-11-13 2번)'));
   ok('3 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0 (빠진 일정은 숨김) · 새 저장 칸 없음(cal·projects 만)',i3>0&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(/.test(b3)&&(b3.match(/collection\("([^"]+)"\)/g)||[]).every(x=>/"cal"/.test(x)),b3.length+'자');
  }
+ // ================= 4 =================
+ if(on('4')){
+  const AIW=`window.__aiLog=[];window.__MOCKSAMPLE=(()=>{const f=async()=>({text:''});f.json=async(prompt,o)=>{const im=(o&&o.images)||[];const dims=[];for(const b of im){try{const bm=await createImageBitmap(b);dims.push(bm.width+'x'+bm.height)}catch(e){dims.push('?')}}window.__aiLog.push({prompt,n:im.length,dims,tier:o&&o.modelTier});if(window.__aiFail)throw {code:window.__aiFail,message:'mock'};
+   if(/공정표/.test(prompt))return {items:[{date:'2026-11-02',proc:'철거'},{date:'2026-11-03',proc:'철거'},{date:'2026-11-05',proc:'목공'}],note:''};return window.__aiAns||{proc:'철거',pct:62,why:'벽체 철거가 대부분 끝남'}};f.limits=async()=>({images:true});return f})();`;
+  const SCH=[{proc:"철거",start:"2026-11-02",end:"2026-11-04"},{proc:"목공",start:"2026-11-05",end:"2026-11-10"}];
+  const today=new Date(Date.now()+9*36e5).toISOString().slice(0,10);
+  const lim=Array.from({length:15},(_,i)=>({id:'pgL'+i,kind:'추정',at:today+'T01:00:00Z',by:'u_x',byName:'누군가',proc:'철거',pct:10}));
+  const SEED4=Object.assign({},SEED,{"projects/p1":Object.assign({},SEED["projects/p1"],{sched:SCH}),"projects/p2":Object.assign({},SEED["projects/p2"],{sched:SCH}),
+   "projects/p3":Object.assign({},SEED["projects/p1"],{no:"P-2611-903",title:"정진혁 현장",sched:SCH}),"projects/p4":Object.assign({},SEED["projects/p2"],{no:"P-2611-904",title:"이봄이 현장",sched:SCH,progLog:lim}),
+   "sites/s2":{pno:"P-2611-902",name:"남의 현장",status:"공사 중",mgr:"이봄이",files:[],updatedAt:T0},"sites/s3":{pno:"P-2611-903",name:"정진혁 현장",status:"공사 중",mgr:"정진혁",files:[],updatedAt:T0},"sites/s4":{pno:"P-2611-904",name:"이봄이 현장",status:"공사 중",mgr:"이봄이",files:[],updatedAt:T0}});
+  const PJ={admin:['p1','s1'],cja:['p2','s2'],jjh:['p3','s3'],bom:['p4','s4']};
+  const pgOf=(d,pid,who)=>(((who==='admin'?d['projects/'+pid]:d['work/all/projects/'+pid])||{}).progLog||[]);
+  for(const [vn,opt] of VPS){
+   const {ctx,open,dbv}=await mk(opt,SEED4,STUB+AIW);const A=await open('admin',12000);
+   for(const who of WHO){const P=who==='admin'?A:await open(who,9000);const tag='4 '+vn+' '+USERS[who].name+': ';const [pid,sid]=PJ[who];
+    await openS(P,'sites',sid);
+    ok(tag+'현장 일지 창에 공정 진행 칸(전체 %·공정별 막대·직접 % 입력)',(await P.locator('#pgBox').count())===1&&/전체 0%/.test(await P.locator('#pgBox').innerText())&&(await P.locator('#pgBox [data-pgman]').count())===1);
+    const n0=await P.evaluate(()=>window.__aiLog.length);await putFiles(P,'#phBox input[data-phin]',['공사 사진']);let d,L=[];
+    for(let i=0;i<20;i++){await wait(700);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='추정'&&e.by===USERS[who].id)||(who==='bom'&&i>8))break}
+    const ai=await P.evaluate(n=>window.__aiLog.slice(n),n0);
+    if(who==='bom'){ok(tag+'하루 횟수(프로젝트 15번)를 다 쓴 프로젝트: AI 를 부르지 않음 · 사진은 저장',ai.length===0&&!L.some(e=>e.by==='u_bom')&&((d['work/all/projects/'+pid]||{}).photos||[]).length===1,JSON.stringify([ai.length,L.length]));
+     await P.locator('#pgBox [data-pgman]').click();await wait(400);await P.selectOption('#pgProc','목공');await P.fill('#pgPct','40');await P.locator('#pgBox [data-pgsave]').click();
+     for(let i=0;i<15;i++){await wait(600);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='확인'))break}
+     const c=L.find(e=>e.kind==='확인');ok(tag+'직접 % 입력 → 확인 기록(직접) · 전체 = 공정표 기간 비중 (목공 6/9 × 40% = 27%)',c&&c.src==='직접'&&c.proc==='목공'&&c.pct===40&&/전체 27%/.test(await P.locator('#pgBox').innerText()),JSON.stringify(c));
+     await close(P);await P.close();continue}
+    const sg=L.find(e=>e.kind==='추정'&&e.by===USERS[who].id);
+    ok(tag+'사진을 올리면 AI 에 줄인 사진 1장 + 공정 목록 → ‘추정’ 기록 (철거 62→60% · 근거 · 사진 id)',ai.length===1&&ai[0].n===1&&ai[0].dims.every(x=>{const [w,h]=x.split('x').map(Number);return Math.max(w,h)<=1024})&&/철거 \/ 목공/.test(ai[0].prompt)&&/개인정보는 설명하지 마세요/.test(ai[0].prompt)&&!/12,345,678|12345678|홍길동|김철수/.test(ai[0].prompt)&&sg&&sg.proc==='철거'&&sg.pct===60&&/벽체/.test(sg.why)&&(sg.phs||[]).length===1,JSON.stringify([ai.map(x=>[x.n,x.dims,x.tier]),sg]));
+    await wait(800);let t=await P.locator('#pgBox').innerText();
+    ok(tag+'확인 전에는 ‘추정’ 표시만 · 전체 % 는 그대로 0%',/추정/.test(t)&&/철거 약 60%/.test(t.replace(/\s+/g,' '))&&/전체 0%/.test(t),t.replace(/\s+/g,' ').slice(0,160));
+    await P.locator('#pgBox [data-pgok]').first().click();for(let i=0;i<15;i++){await wait(600);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='확인'&&e.ref===sg.id))break}
+    await wait(700);t=await P.locator('#pgBox').innerText();
+    ok(tag+'‘맞아요’ → 확인 기록(AI 확인) · 전체 = 철거 3/9 × 60% = 20% · 추정 칸 사라짐',L.some(e=>e.kind==='확인'&&e.ref===sg.id&&e.src==='AI 확인'&&e.pct===60)&&/전체 20%/.test(t)&&(await P.locator('#pgBox [data-pgok]').count())===0,t.replace(/\s+/g,' ').slice(0,160));
+    // 고치기
+    await P.evaluate(()=>{window.__aiAns={proc:'목공',pct:30,why:'천장 틀 일부'}});await putFiles(P,'#phBox input[data-phin]',['목공 사진']);
+    for(let i=0;i<20;i++){await wait(700);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='추정'&&e.proc==='목공'))break}await wait(800);
+    await P.locator('#pgBox [data-pgfix]').first().click();await wait(400);await P.fill('#pgPct','50');await P.locator('#pgBox [data-pgsave]').click();
+    for(let i=0;i<15;i++){await wait(600);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='확인'&&e.src==='고침'))break}await wait(700);t=await P.locator('#pgBox').innerText();
+    ok(tag+'‘고치기’ → 목공 50% (고침) · 전체 = (3×60 + 6×50)/9 = 53%',L.some(e=>e.kind==='확인'&&e.src==='고침'&&e.proc==='목공'&&e.pct===50)&&/전체 53%/.test(t),t.replace(/\s+/g,' ').slice(0,160));
+    if(who==='admin'){
+     // 아니에요 → 무시 · 진행률 그대로
+     await P.evaluate(()=>{window.__aiAns={proc:'철거',pct:100,why:'다 끝남'}});await putFiles(P,'#phBox input[data-phin]',['또 사진']);for(let i=0;i<20;i++){await wait(700);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='추정'&&e.pct===100))break}await wait(800);
+     await P.locator('#pgBox [data-pgno]').first().click();await wait(1500);d=await dbv();L=pgOf(d,pid,who);t=await P.locator('#pgBox').innerText();
+     ok(tag+'‘아니에요’ → 무시 기록 · 진행률 그대로 53%',L.some(e=>e.kind==='무시')&&/전체 53%/.test(t));
+     // AI 오류 → 사진은 저장, 실패 기록(횟수에 셈)
+     const ph0=((d['projects/'+pid]||{}).photos||[]).length;await P.evaluate(()=>{window.__aiFail='rate_limited'});await putFiles(P,'#phBox input[data-phin]',['오류 사진']);
+     for(let i=0;i<20;i++){await wait(700);d=await dbv();L=pgOf(d,pid,who);if(L.some(e=>e.kind==='AI 실패'))break}
+     ok(tag+'AI 오류(한도 등) → 사진은 저장 · ‘AI 실패’ 기록 · 진행률은 안 바뀜',L.some(e=>e.kind==='AI 실패'&&e.err==='rate_limited')&&((d['projects/'+pid]||{}).photos||[]).length===ph0+1);
+     await P.evaluate(()=>{window.__aiFail=null});
+    }
+    ok(tag+'공정 진행 칸에 돈 정보 없음',!MONEY.test(await P.locator('#pgBox').innerText()));
+    await close(P);
+    await go(P,'#sites');await wait(800);const cell=await P.locator('[data-sprog="'+(who==='admin'?'P-2611-901':who==='cja'?'P-2611-902':'P-2611-903')+'"]').first().innerText().catch(()=>'');
+    ok(tag+'현장 관리 목록에 공정 진행 막대 (전체 % · 공정별 % · 갱신 날짜)',/공정 53%/.test(cell)&&/철거 60%/.test(cell)&&/목공 50%/.test(cell)&&/갱신/.test(cell),cell.replace(/\s+/g,' '));
+    await openS(P,'projects',pid);await tab(P,'prog');ok(tag+'프로젝트 진행 상황 탭에도 같은 공정 진행 막대',(await P.locator('#pgBox').isVisible())&&/전체 53%/.test(await P.locator('#pgBox').innerText()));await close(P);
+    if(who!=='admin')await P.close()}
+   ok('4 '+vn+' 휴대폰·PC 가로 넘침 없음 (공정 진행 칸)',await A.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
+   // PDF·사진 공정표 → AI → 같은 확인 창
+   await openS(A,'projects','p1');await tab(A,'cust');const n1=await A.evaluate(()=>window.__aiLog.length);
+   await putFiles(A,'#fileIn',['현장 공정표']);for(let i=0;i<20&&!(await A.locator('#gjVeil').count());i++)await wait(500);
+   const g=await A.evaluate(()=>window.__hfT.gj());const ai2=await A.evaluate(n=>window.__aiLog.slice(n),n1);
+   ok('4 '+vn+' 사진 공정표(이름에 공정표)는 AI 로 읽어 같은 확인 창 (철거 11-02~11-03 · 목공 11-05) · 아직 캘린더에 안 넣음',g&&g.rows.map(r=>r.proc+':'+r.start.slice(5)+'~'+r.end.slice(5)).join(',')==='철거:11-02~11-03,목공:11-05~11-05'&&ai2.length===1&&/공정표/.test(ai2[0].prompt)&&/AI가 읽은 결과/.test(g.note),JSON.stringify(g&&g.rows));
+   await A.locator('#gjVeil [data-gjclose]').click();await close(A);
+   await ctx.close()}
+  // AI 없는 화면(연습 모드·권한 없음): 사진은 저장 · 직접 입력 안내
+  {const {ctx,open,dbv}=await mk({viewport:{width:1280,height:900}},SEED4,STUB);await open('admin',12000);const J=await open('jjh',10000);await openS(J,'sites','s3');
+   await putFiles(J,'#phBox input[data-phin]',['AI 없는 사진']);await wait(4000);const d=await dbv();const w=d['work/all/projects/p3']||{};
+   ok('4 AI 를 못 쓰는 화면: 사진은 저장 · 추정 없음 · ‘AI 추정을 쓸 수 없어요 · 직접 % 입력’ 안내',(w.photos||[]).length===1&&!(w.progLog||[]).length&&/AI 추정을 쓸 수 없어요/.test(await J.locator('#pgBox').innerText()));
+   await ctx.close()}
+  // 낡은 창 저장 보호: 정진혁 화면 멈춤 → 이봄이가 추정 확인 → 정진혁 낡은 프로젝트 창 저장 → 진행 기록 남음
+  {const FREEZE=BCW+`if(window.__MOCKUSER.id==='u_jjh'){window.__MOCKEXACT=true;window.__SUBPOLL=1e9}`;
+   const S2=Object.assign({},SEED4,{"projects/p1":Object.assign({},SEED4["projects/p1"],{progLog:[{id:'pgS1',kind:'추정',at:'2026-11-12T01:00:00Z',by:'u_cja',byName:'채진아',proc:'철거',pct:80,why:'거의 끝'}]})});
+   const {ctx,open,dbv}=await mk({viewport:{width:1280,height:900}},S2,STUB+FREEZE);const A=await open('admin',12000);const B=await open('bom',9000);const J=await open('jjh',10000);await J.evaluate(()=>{window.__mute=true});
+   await openS(J,'projects','p1');await openS(B,'sites','s1');await B.locator('#pgBox [data-pgok]').click();let d;
+   for(let i=0;i<25;i++){await wait(1000);d=await dbv();if((d['projects/p1'].progLog||[]).some(e=>e.kind==='확인'))break}
+   await J.evaluate(()=>{const el=document.querySelector('#sheetForm [data-k="memo"]');el.value='정진혁 낡은 창';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))});await J.locator('#saveSheet').click();
+   for(let i=0;i<25;i++){await wait(1000);d=await dbv();if(d['projects/p1'].memo==='정진혁 낡은 창')break}await wait(4000);d=await dbv();
+   const pl=d['projects/p1'].progLog||[],wl=(d['work/all/projects/p1']||{}).progLog||[];
+   ok('4 낡은 창 저장(정진혁 멈춘 화면): 메모는 바뀌고 이봄이의 확인 기록·채진아 추정은 원본·공용 칸에 그대로',d['projects/p1'].memo==='정진혁 낡은 창'&&pl.some(e=>e.kind==='확인'&&e.byName==='이봄이')&&pl.some(e=>e.id==='pgS1')&&wl.some(e=>e.kind==='확인'),JSON.stringify([pl.map(e=>e.kind+':'+e.byName),wl.length]));
+   await ctx.close()}
+  const i4=HTML.indexOf('// ===== 공정 진행률 (대표 지시 2026-11-13 4번'),b4=HTML.slice(i4,HTML.indexOf('\n',HTML.indexOf('if(await pgAdd(pid,{kind:"확인",ref,proc,pct,src:ref?"고침":"직접"}))')));
+  ok('4 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기 0 · 새 저장 칸 없음(프로젝트 줄 progLog 만) · fetch 없음(외부 주소 안 부름)',i4>0&&b4.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(|collection\(|fetch\(/.test(b4),b4.length+'자');
+ }
  // @@B3_MORE@@
  console.log('\n== 묶음 3 시험: '+R.filter(x=>x).length+' / '+R.length+' 통과 · 페이지 오류 '+errs.length+' · 브라우저 창(alert 등) '+dialogs.length);errs.slice(0,10).forEach(e=>console.log('  오류: '+e));dialogs.slice(0,5).forEach(e=>console.log('  창: '+e));
  await b.close();process.exit(R.every(x=>x)&&!errs.length?0:1)})();
