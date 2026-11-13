@@ -147,6 +147,47 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
    const pp=(await S(A,'projects')).find(p=>p.custName==='직접손님');ok('14 사람이 직접 적은 현장명은 덮지 않음',!!pp&&pp.title==='직접 적은 이름',pp&&pp.title);
    await ctx.close()}
  }
+ // ================= 16 =================
+ if(on('16')){
+  for(const [vn,opt] of VPS){const tag='16 '+vn+' ';
+   const {ctx,open,dbv}=await mk(opt,BASE,STUB);const A=await open('admin',12000);const J=await open('jjh',8000);const B=await open('bom',8000);const C=await open('cja',8000);
+   for(const [P,nm] of [[A,'최윤수'],[C,'채진아'],[J,'정진혁'],[B,'이봄이']]){
+    await go(P,'#consult');const r=await P.evaluate(()=>{const a=document.querySelector('a[href="#consult"]'),v=document.getElementById('view'),all=document.body.innerText;const pos=id=>{const e=document.getElementById(id);return e?[...v.querySelectorAll('input,select')].indexOf(e):-1};
+     return {menu:a?a.innerText.trim():'',h1:(v.querySelector('h1')||{}).innerText||'',old:/상담 진행/.test(all),h2:[...v.querySelectorAll('h2')].map(x=>x.innerText.replace(/\s+/g,' ').slice(0,24)).join(' / '),first:pos('cn_name')>=0&&pos('cn_name')<pos('cn_tel')&&pos('cn_tel')<pos('cn_addr')&&pos('cn_addr')<pos('cs_pno'),hash:location.hash,over:document.documentElement.scrollWidth<=window.innerWidth+2}});
+    ok(tag+nm+': 왼쪽 메뉴·화면 제목이 ‘간편 견적 상담’ (주소 #consult 그대로) · ‘상담 진행’ 글자 없음 · 고객 정보 등록(이름·전화번호·주소)이 맨 먼저',r.menu==='간편 견적 상담'&&r.h1==='간편 견적 상담'&&!r.old&&/^1\. 고객 정보 등록/.test(r.h2)&&r.first&&r.hash==='#consult'&&r.over,JSON.stringify(r));
+    await openS(P,'projects','p1');const pt=await P.locator('.sheet').innerText();await close(P);ok(tag+nm+': 프로젝트 창의 버튼·안내도 ‘간편 견적 상담’',/간편 견적 상담/.test(pt)&&!/상담 진행/.test(pt))}
+   // 고객 정보 없이 상담 시작 안 됨
+   await go(J,'#consult');await J.locator('[data-cs="begin"]').click();await wait(400);
+   const st0=await J.evaluate(()=>({form:!!document.getElementById('cn_name'),foc:document.activeElement&&document.activeElement.id}));
+   ok(tag+'정진혁: 고객 정보(프로젝트) 없이 ‘상담 시작’ → 시작 안 됨 · 이름 칸으로 안내',st0.form&&st0.foc==='cn_name',JSON.stringify(st0));
+   // 적던 글이 화면 새로 그리기에 지워지지 않음
+   await J.locator('#cn_name').fill('오상담');await J.locator('#cn_tel').fill('01066667777');await J.locator('#cn_tel').dispatchEvent('change');
+   await A.evaluate(async()=>{const s=Object.assign({},window.__hfT.S().projects.find(x=>x.id==='p4'));delete s.id;s.memo='다른 사람이 저장';await window.__hfT.put('projects','p4',s)});await wait(5000);
+   const kept=await J.evaluate(()=>[document.getElementById('cn_name').value,document.getElementById('cn_tel').value].join('|'));
+   ok(tag+'정진혁: 고객 정보를 적는 중에 다른 사람 저장이 들어와 화면이 다시 그려져도 적던 글이 그대로',kept==='오상담|010-6666-7777',kept);
+   // 저장 → 프로젝트·고객 카드로 바로 연결 → 상담 화면
+   const n0=(await S(J,'projects')).length;await J.locator('#cn_addr').fill('구리 인창 아름마을LG 101동 303호');await J.locator('#cn_py').fill('24');await J.locator('[data-cs="new"]').click();await wait(4000);
+   const jp=(await S(J,'projects')).find(p=>p.custName==='오상담'),jc=(await S(J,'customers')).find(c=>c.name==='오상담');const inCs=await J.evaluate(()=>!!document.querySelector('#view .cs')&&!document.getElementById('cn_name'));
+   ok(tag+'정진혁: 고객 정보를 저장하면 프로젝트(번호 자동·단계 상담·현장명 아름마을LG)와 고객 카드(번호 010-6666-7777)가 만들어져 이어지고 바로 상담 화면으로',!!jp&&!!jc&&jp.custCode===jc.code&&jp.stage==='상담'&&jp.title==='아름마을LG'&&jc.tel==='010-6666-7777'&&inCs&&(await S(J,'projects')).length===n0+1,JSON.stringify([jp&&jp.no,jp&&jp.title,jc&&jc.tel,inCs]));
+   await wait(2500);await go(B,'#projects');const lb=await B.locator('#view').innerText();ok(tag+'이봄이: 그 프로젝트가 프로젝트 목록에 바로 보임',!!jp&&lb.includes(jp.no)&&/오상담/.test(lb));
+   // 고른 내용 → 그 프로젝트의 견적으로 (기존 흐름)
+   await J.locator('[data-cs="go"][data-i="7"]').click();await wait(400);await J.locator('[data-cs="t"]').first().click();await wait(400);await J.locator('[data-cs="go"][data-i="8"]').click();await wait(400);
+   if(!(await J.locator('[data-cs="save"]').isVisible().catch(()=>false))){await J.locator('[data-cs="cust"]').click();await wait(400)}
+   await J.locator('[data-cs="save"]').click();await wait(4000);const jq=(await S(J,'quotes')).filter(q=>jp&&q.pno===jp.no);
+   ok(tag+'정진혁: 상담에서 고른 내용이 그 프로젝트의 견적(프로젝트번호-1차)으로 저장됨',jq.length===1&&jq[0].qno===jp.no+'-1차'&&jq[0].code===jc.code&&(jq[0].items||[]).length>=1,JSON.stringify(jq.map(q=>[q.qno,q.code,(q.items||[]).length])));
+   // 같은 고객·같은 주소 → 기존 프로젝트로 잇기
+   await wait(2500);await go(B,'#consult');const nb0=(await S(B,'projects')).length;await B.locator('#cn_name').fill('오상담');await B.locator('#cn_tel').fill('010-6666-7777');await B.locator('#cn_addr').fill('구리 인창 아름마을LG 101동 303호');await B.locator('[data-cs="new"]').click();await wait(900);
+   const dv=await B.evaluate(()=>{const v=document.getElementById('dupVeil');return v?v.innerText.replace(/\s+/g,' '):''});const ovd=await noOver(B);
+   await B.locator('#dupVeil [data-csdup]').first().click();await wait(1500);const bcs=await B.evaluate(()=>({cs:!!document.querySelector('#view .cs'),t:(document.querySelector('#view .cs-top')||{}).innerText||''}));
+   ok(tag+'이봄이: 같은 고객·같은 주소로 등록하려 하면 화면 안 창으로 기존 프로젝트를 보여 주고 → ‘이 프로젝트로 상담’ → 새로 만들지 않고 그 프로젝트로 상담 시작',!!jp&&dv.includes(jp.no)&&/이미 있는 프로젝트/.test(dv)&&ovd&&bcs.cs&&/오상담/.test(bcs.t)&&(await S(B,'projects')).length===nb0,dv.slice(0,160)+' '+JSON.stringify(bcs));
+   // 같은 전화번호(다른 주소) → 그 고객의 새 프로젝트 (고객 카드는 새로 만들지 않음)
+   await go(C,'#consult');const nc0=(await S(C,'customers')).length;await C.locator('#cn_name').fill('홍길동');await C.locator('#cn_tel').fill('01012345678');await C.locator('#cn_addr').fill('남양주 다산 자이 202동 1001호');await C.locator('[data-cs="new"]').click();await wait(900);
+   const asked=await askYes(C,true);await wait(1500);const cp=(await S(C,'projects')).find(p=>p.addr==='남양주 다산 자이 202동 1001호');
+   ok(tag+'채진아: 같은 전화번호 고객이 있으면 물어보고 → 그 고객(C-2611-901)의 새 프로젝트로 등록 · 고객 카드는 늘지 않음',asked===1&&!!cp&&cp.custCode==='C-2611-901'&&cp.title==='자이'&&(await S(C,'customers')).length===nc0,JSON.stringify([asked,cp&&cp.custCode,cp&&cp.title]));
+   const jt=await J.locator('#view').innerText();const den=await J.evaluate(()=>window.__mockDenied.filter(x=>!/^(activity|access|knock)/.test(x)));
+   ok(tag+'정진혁 상담 화면에 원가·마진·성과금 숫자 없음 · 권한 밖 쓰기 0',!MONEY.test(jt)&&!den.length,den.join(','));
+   await ctx.close()}
+ }
  //__MORE__
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
