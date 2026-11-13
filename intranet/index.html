@@ -998,10 +998,11 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
   for(const s of stf){const u=s.uid,mu=MU[u]||{},rd=muReady[u]||{};
     for(const col of ISO){if(!rd[col]||!S[col].length)continue;try{const mine=(mu[col]||[]).filter(r=>!r.__gone);
       if(col==="customers")await smsKeep(mu[col]||[]);
+      if(keepsCol(col))await logsUp(col,(mu[col]||[]).filter(r=>r.__by===u));
       // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만 · 지운 것·합친 것은 다시 올리지 않음)
       for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(GONE_NOW.has(col+"__"+x.id)||(!c&&G.has(col+"__"+x.id)))continue;if(c&&T(c)>=T(x))continue;
         if(x.__deleted){await db.collection("mine/"+u+"/"+col).doc(x.id).delete();continue}
-        if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;delete o.__base;o.__at=x.__at;if(c){STAFF_HIDE.forEach(k=>{if(c[k]!==undefined)o[k]=c[k];else delete o[k]});if(keepFiles(o,c,x))o.__at=nowISO()}if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
+        if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;delete o.__base;o.__at=x.__at;if(c){STAFF_HIDE.forEach(k=>{if(c[k]!==undefined)o[k]=c[k];else delete o[k]});if(keepFiles(o,c,x))o.__at=nowISO();if(keepLogs(col,o,c))o.__at=nowISO()}if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
         if(col==="customers"){const p=PRIVC[x.id]||{};if((x.tel||x.addr)&&String(x.__at)>String(p.updatedAt||""))await db.collection("cpriv").doc(x.id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
         await db.collection(col).doc(x.id).set(o)}
       // 원본 → 직원: 담당분은 전체, 나머지는 가린 목록 1개
@@ -1038,6 +1039,18 @@ const stableJs=v=>JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&!Array.isArray
 const wkT=r=>String((r&&(r.__at||r.updatedAt))||"");
 // 낡은 화면에서 저장해도 첨부가 빠지지 않게 (2026-11-13 9·10번: 대표가 붙인 PDF가 30분 뒤 직원 저장으로 사라졌던 것):
 // 직원이 저장할 때 보고 있던 줄의 시각(__base)이 원본보다 옛것이거나 없으면, 원본에만 있는 첨부를 그대로 둠. 최신을 보고 뺀 것만 빠짐
+// 덧붙이기만 하는 기록 칸 (검토 반려 고침 2026-11-13): 연락 기록(acLog)·점검 연락 표시(acChk)·현장 상태 기록(statusLog)·전화번호 옛 값(telLog)은 낡은 화면 저장으로 줄이 사라지지 않게 —
+// 다른 쪽(c)에만 있는 줄(id 기준)·키를 o 에 다시 넣음. 지우기는 없음. 넣은 개수를 돌려줌
+const KEEP_LOG={projects:["acLog"],sites:["statusLog"],customers:["telLog"]},KEEP_MAP={projects:["acChk"]};
+const keepsCol=col=>!!(KEEP_LOG[col]||KEEP_MAP[col]);
+const logKey=e=>e&&typeof e==="object"?(e.id?"id:"+e.id:e.by==="자동"?"auto|"+(e.to||""):stableJs(e)):String(e);
+function keepLogs(col,o,c){if(!c||!o)return 0;let n=0;
+  (KEEP_LOG[col]||[]).forEach(k=>{const a=Array.isArray(c[k])?c[k]:[];if(!a.length)return;const b=Array.isArray(o[k])?o[k]:[],have=new Set(b.map(logKey)),add=a.filter(e=>!have.has(logKey(e)));if(!add.length)return;
+    const all=add.concat(b);o[k]=all.every(e=>e&&e.at)?all.slice().sort((x,y)=>String(x.at).localeCompare(String(y.at))):all;n+=add.length});
+  (KEEP_MAP[col]||[]).forEach(k=>{const a=c[k]&&typeof c[k]==="object"?c[k]:null;if(!a)return;const b=o[k]&&typeof o[k]==="object"?o[k]:{};const add=Object.keys(a).filter(x=>b[x]===undefined);if(!add.length)return;const m=Object.assign({},b);add.forEach(x=>{m[x]=a[x]});o[k]=m;n+=add.length});return n}
+// 직원 줄을 '원본이 더 새것'이라 건너뛰더라도, 직원이 덧붙인 기록 줄은 원본에 합침 (문자 기록 smsKeep 과 같은 방식)
+async function logsUp(col,rows){if(!keepsCol(col)||!me.admin||PV||!db)return;for(const x of rows||[]){if(!x||x.__deleted||x.__gone||!x.__by||x.__by==="admin")continue;const c=S[col].find(r=>r.id===x.id);if(!c)continue;const s=S.staff.find(z=>z.uid===x.__by&&z.state!=="퇴사"&&z.intra!=="사용 안 함");if(!s||!ownedFor(s,col,c))continue;
+    const o=clean(c);if(!keepLogs(col,o,x))continue;if(col==="customers"){o.tel="";o.addr=""}if(col==="projects")o.estCost="";o.__at=nowISO();try{await db.collection(col).doc(c.id).set(o);(KEEP_LOG[col]||[]).concat(KEEP_MAP[col]||[]).forEach(k=>{if(o[k]!==undefined)c[k]=o[k]})}catch(e){}}}
 function keepFiles(o,c,x){if(!c||!Array.isArray(c.files)||!c.files.length)return 0;if(x&&x.__base&&String(x.__base)>=wkT(c))return 0;const have=new Set((o.files||[]).map(f=>f&&f.id));const add=c.files.filter(f=>f&&f.id&&!have.has(f.id));if(add.length)o.files=(Array.isArray(o.files)?o.files:[]).concat(add);return add.length}
 function workRow(col,r){const o=clean(r);WORK_DROP.forEach(k=>delete o[k]);
   if(col==="customers"){const p=PRIVC[r.id]||{};o.tel=p.tel||"";o.addr=p.addr||""}
@@ -1065,12 +1078,13 @@ async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.lengt
       try{await db.collection(GONEP).doc(k).delete();delete WGONE[k];gone++}catch(e){}}}
   for(const col of WORK_COLS){if(!workReady[col]||!S[col].length)continue;const W=WORKD[col]||{},took=new Set();
     if(col==="customers")await smsKeep(Object.entries(W).map(([id,x])=>Object.assign({},x,{id})));
+    if(keepsCol(col))await logsUp(col,Object.entries(W).map(([id,x])=>Object.assign({},x,{id})));
     // 1) 직원이 공용 칸에서 고친 것·새로 만든 것 → 원본 (명단에 있는 직원 + 고칠 수 있는 건만)
     for(const [id,x] of Object.entries(W)){if(!x.__by||x.__by==="admin")continue;const c=S[col].find(r=>r.id===id);
       if(GONE_NOW.has(col+"__"+id)||(!c&&G.has(col+"__"+id)))continue;if(c&&wkT(c)>=wkT(x))continue;
       const s=S.staff.find(z=>z.uid===x.__by&&z.state!=="퇴사"&&z.intra!=="사용 안 함");if(!s)continue;if(c&&!ownedFor(s,col,c))continue;
       const o=Object.assign({},x);delete o.__by;delete o.__base;delete o.id;if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);
-      if(c){const nf=keepFiles(o,c,x);if(nf)o.__at=nowISO();/* 낡은 화면 저장: 원본에만 있던 첨부를 다시 붙이고, 그 줄이 직원 사본·공용 칸으로 다시 내려가게 시각을 올림 */}
+      if(c){const nf=keepFiles(o,c,x)+keepLogs(col,o,c);if(nf)o.__at=nowISO();/* 낡은 화면 저장: 원본에만 있던 첨부를 다시 붙이고, 그 줄이 직원 사본·공용 칸으로 다시 내려가게 시각을 올림 */}
       if(c){const cc=clean(c);WORK_DROP.forEach(k=>{if(cc[k]!==undefined)o[k]=cc[k]});if(amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c.amtLock)o.amtLock=c.amtLock}
       if(col==="customers"){const p=PRIVC[id]||{};if((x.tel||x.addr)&&((x.tel||p.tel||"")!==(p.tel||"")||(x.addr||p.addr||"")!==(p.addr||"")))await db.collection("cpriv").doc(id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
       // 옛 값 기록 (지우지 않음)
@@ -1831,7 +1845,8 @@ async function put(col,id,data){
   return putRaw(col,id,data)}
 async function putRaw(col,id,data){
   if(db&&isoMe(col)&&WORK_COLS.includes(col)&&isGone(col,id)){toast("대표가 지운 항목이라 저장하지 않았어요 · 되살리기는 대표 화면 휴지통에서");throw new Error("gone")}
-  if(db&&isoMe(col)){const st=nowISO(),cur=(S[col]||[]).find(r=>r.id===id),w0=(WORKD[col]||{})[id],bs=!cur?"":(w0&&w0.__by!==me.id&&wkT(w0)>=wkT(cur))?wkT(w0):(cur.__by===me.id&&cur.__base!==undefined?String(cur.__base||""):wkT(cur));/* __base = 저장할 때 내 화면이 알고 있던, 남(대표 화면·다른 직원)이 쓴 마지막 모습의 시각. 내가 연달아 저장해 아직 대표 화면이 안 받은 동안에는 처음 본 시각을 그대로 가져가고, 대표 화면이 받아 공용 칸에 다시 내려 주면 그 시각으로 바뀜 (대표 화면이 낡은 저장인지 가려 첨부를 지킴) */await db.collection("mine/"+me.id+"/"+col).doc(id).set(Object.assign({},data,{__by:me.id,__at:st,__base:bs}));if(WORK_COLS.includes(col))try{await workPut(col,id,data,st,bs)}catch(e){}return}
+  if(db&&isoMe(col)){const st=nowISO(),cur=(S[col]||[]).find(r=>r.id===id),w0=(WORKD[col]||{})[id],bs=!cur?"":(w0&&w0.__by!==me.id&&wkT(w0)>=wkT(cur))?wkT(w0):(cur.__by===me.id&&cur.__base!==undefined?String(cur.__base||""):wkT(cur));/* __base = 저장할 때 내 화면이 알고 있던, 남(대표 화면·다른 직원)이 쓴 마지막 모습의 시각. 내가 연달아 저장해 아직 대표 화면이 안 받은 동안에는 처음 본 시각을 그대로 가져가고, 대표 화면이 받아 공용 칸에 다시 내려 주면 그 시각으로 바뀜 (대표 화면이 낡은 저장인지 가려 첨부를 지킴) *//* 기록 칸: 내 화면이 낡았을 수 있으니 쓰기 직전에 공용 칸의 지금 줄을 한 번 읽어, 거기에만 있는 기록 줄을 합쳐서 저장 */if(WORK_COLS.includes(col)&&keepsCol(col)){try{const g=await db.doc(WKP(col)+"/"+id).get();if(g&&g.exists){const d2=Object.assign({},data);if(keepLogs(col,d2,g.data()))data=d2}}catch(e){}}
+    await db.collection("mine/"+me.id+"/"+col).doc(id).set(Object.assign({},data,{__by:me.id,__at:st,__base:bs}));if(WORK_COLS.includes(col))try{await workPut(col,id,data,st,bs)}catch(e){}return}
   if(db&&mode==="shared"&&me.admin&&ISO.includes(col))data=Object.assign({},data,{__at:nowISO()});
   if(db&&col==="activity"&&mode==="shared"&&!me.admin)return;
   if(db){await db.collection(col).doc(id).set(data)}

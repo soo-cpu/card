@@ -341,6 +341,29 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
     await P.close()}
    const C=await open('cja',9000);await C.evaluate(()=>{location.hash='#as'});await wait(1000);ok(tag+'채진아(전체 담당): 사후 관리 화면·프로젝트 목록이 보임 (비용 칸은 기존 권한대로 보임)',(await C.locator('#acBoard [data-acpick]').count())>=3&&/비용/.test(await C.locator('#view th').evaluateAll(a=>a.map(x=>x.textContent).join('|'))));await C.close();
    await A.close();await ctx.close()}
+  // 검토 반려(2026-11-13) 재현: 낡은 창 저장이 연락 기록(acLog)·점검 연락 표시(acChk)를 지우면 안 됨
+  // 정진혁 화면은 구독이 멈춘 상태(바뀐 문서만 부르기 + 다른 창 소식 끊음 + 다시 읽기 없음) → 이봄이가 연락 기록·점검 연락함 → 대표 화면이 원본 반영 → 정진혁이 낡은 화면에서 주소만 고쳐 저장
+  {const BCW=`(()=>{const _BC=window.BroadcastChannel;window.BroadcastChannel=class{constructor(n){this.b=new _BC(n);this.b.onmessage=e=>{if(!window.__mute&&this.onmessage)this.onmessage(e)}}postMessage(m){this.b.postMessage(m)}close(){this.b.close()}}})();if(window.__MOCKUSER.id==='u_jjh'){window.__MOCKEXACT=true;window.__SUBPOLL=1e9}`;
+   const {ctx,open,seed}=await mk({viewport:{width:1280,height:900}},SEED,STUB+BCW);const dbAll=()=>seed.evaluate(()=>JSON.parse(localStorage.getItem('mockdb')));
+   const A=await open('admin',14000);const B=await open('bom',9000);const J2=await open('jjh',10000);await J2.evaluate(()=>{window.__mute=true});
+   await J2.evaluate(()=>{location.hash='#projects'});await wait(400);await J2.evaluate(()=>window.__hfT.open('projects','pS'));await wait(1200);
+   await B.evaluate(()=>{location.hash='#as'});await wait(800);await B.locator('#acList [data-acpick="P-2609-901"]').click();await wait(600);
+   await B.locator('#acl_text').fill('이봄이가 적은 방문 기록');await B.locator('#acBoard [data-acladd]').click();await wait(1500);await B.locator('#acChkT [data-acchk="m1"]').click();
+   let d=null;for(let i=0;i<20;i++){await wait(1000);d=await dbAll();if((d['projects/pS'].acLog||[]).length===2&&(d['projects/pS'].acChk||{}).m1)break}
+   const j2n=await J2.evaluate(()=>((window.__hfT.S().projects.find(p=>p.id==='pS')||{}).acLog||[]).length);
+   ok('21 낡은 창 준비: 이봄이의 연락 기록 2줄·점검 연락함이 원본에 있고, 정진혁의 멈춘 화면은 아직 모름(0줄)',(d['projects/pS'].acLog||[]).length===2&&!!(d['projects/pS'].acChk||{}).m1&&j2n===0,j2n);
+   await J2.evaluate(()=>{const el=document.querySelector('#sheetForm [data-k="addr"]');el.value='낡은 화면 저장';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))});
+   await J2.locator('#saveSheet').click();await wait(2000);d=await dbAll();const m=d['mine/u_jjh/projects/pS']||{},w=d['work/all/projects/pS']||{};
+   ok('21 낡은 창 저장 직후: 정진혁 사본·공용 칸에 연락 기록 2줄·점검 연락함이 그대로 (주소는 바뀜)',(m.acLog||[]).length===2&&!!(m.acChk||{}).m1&&(w.acLog||[]).length===2&&!!(w.acChk||{}).m1&&w.addr==='낡은 화면 저장',JSON.stringify({mine:[(m.acLog||[]).length,!!(m.acChk||{}).m1],work:[(w.acLog||[]).length,!!(w.acChk||{}).m1,w.addr]}));
+   for(let i=0;i<20;i++){await wait(1000);d=await dbAll();if(d['projects/pS'].addr==='낡은 화면 저장')break}await wait(4000);d=await dbAll();const p=d['projects/pS'],w2=d['work/all/projects/pS']||{};
+   ok('21 대표 화면이 맞춘 뒤 원본·공용 칸: 주소는 정진혁 것 · 연락 기록 2줄·점검 연락함은 지워지지 않음',p.addr==='낡은 화면 저장'&&(p.acLog||[]).length===2&&(p.acLog||[]).some(e=>e.text==='이봄이가 적은 방문 기록')&&!!(p.acChk||{}).m1&&(w2.acLog||[]).length===2&&!!(w2.acChk||{}).m1,JSON.stringify({addr:p.addr,acLog:(p.acLog||[]).map(e=>e.byName+':'+e.text),acChk:Object.keys(p.acChk||{}),work:(w2.acLog||[]).length}));
+   const bn=await B.evaluate(()=>((window.__hfT.S().projects.find(p=>p.id==='pS')||{}).acLog||[]).length);ok('21 이봄이 화면에도 연락 기록이 그대로 남아 있음',bn===2,bn);
+   // 대표가 그 프로젝트를 고친 뒤(이봄이 화면이 받은 뒤) 이봄이가 연락 기록을 더함 → 둘 다 남음
+   await A.evaluate(async()=>{const s=Object.assign({},window.__hfT.S().projects.find(x=>x.id==='pS'));delete s.id;s.memo='대표가 고침';await window.__hfT.put('projects','pS',s)});
+   for(let i=0;i<20;i++){await wait(1000);if(await B.evaluate(()=>(window.__hfT.S().projects.find(p=>p.id==='pS')||{}).memo==='대표가 고침'))break}
+   await B.locator('#acl_text').fill('둘째 기록');await B.locator('#acBoard [data-acladd]').click();for(let i=0;i<20;i++){await wait(1000);d=await dbAll();if((d['projects/pS'].acLog||[]).length===3&&d['projects/pS'].memo==='대표가 고침')break}
+   ok('21 대표 수정 뒤 직원이 연락 기록을 더해도 둘 다 남음 (기록 3줄 · 대표 메모)',(d['projects/pS'].acLog||[]).length===3&&d['projects/pS'].memo==='대표가 고침',JSON.stringify([(d['projects/pS'].acLog||[]).length,d['projects/pS'].memo]));
+   await ctx.close()}
   const i21=HTML.indexOf('// ===== 사후 관리: 프로젝트별 하자 접수'),b21=HTML.slice(i21,HTML.indexOf('document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-newas]")'));
   ok('21 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0 · 새 저장 칸 없음(기존 projects·as 문서에만)',i21>0&&b21.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(|collection\(/.test(b21),b21.length+'자');
  }
