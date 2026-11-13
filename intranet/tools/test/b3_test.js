@@ -145,6 +145,91 @@ const MONEY=/12,345,678|98,765|원가|마진|성과금/;
   const i20=HTML.indexOf('// ===== 20번: 업무 보고에서'),b20=HTML.slice(i20,HTML.indexOf('async function phAct(',i20));
   ok('20 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기 0 · 새 저장 칸 없음',i20>0&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(|collection\(/.test(b20),b20.length+'자');
  }
+ // ================= 3 =================
+ if(on('3')){
+  const F=(rgb)=>({patternType:"solid",fgColor:{rgb}});const S_=(v,fill)=>Object.assign({t:"s",v,w:v},fill?{s:F(fill)}:{s:{patternType:"none"}});const Z=fill=>({t:"z",s:F(fill)});
+  // 실제 교문초 예정공정표와 같은 모양 (날짜 줄 '11/2' · 주말 회색 칸 · 파란 막대 · 요일 줄 · 아래 안내 글)
+  const mkWs=(bars,extra)=>{const ws={};const ds=[];for(let i=0;i<19;i++){const d=new Date(Date.UTC(2026,10,2+i));ds.push((d.getUTCMonth()+1)+'/'+d.getUTCDate())}
+   const col=i=>String.fromCharCode(67+i);ws.A1=S_('예 정 공 정 표');ws.A2=S_('공 사 명 : 시험 현장');ws.M2=S_('공사기간 : 2026.11.02 ~ 2026.11.20 (19일간)');ws.A3=S_('공  종','D9E1F2');
+   ds.forEach((t,i)=>{const we=[5,6,12,13].includes(i);ws[col(i)+'3']=S_(t,we?'EDEDED':'D9E1F2');ws[col(i)+'4']=S_('월화수목금토일'[i%7],we?'EDEDED':'D9E1F2')});ws.V3=S_('비 고','D9E1F2');
+   bars.forEach(([name,on],k)=>{const r=5+k;ws['A'+r]={t:'n',v:k+1,w:String(k+1)};ws['B'+r]=S_(name);[5,6,12,13].forEach(i=>{ws[col(i)+r]=Z('EDEDED')});on.forEach(i=>{ws[col(i)+r]=Z('4472C4')})});
+   ws.A20=S_('※ 상기 공정표는 현장 여건에 따라 변동될 수 있습니다.');Object.assign(ws,extra||{});ws['!ref']='A1:V22';return ws};
+  const BARS=[["계약 및 공사 준비",[0,1,2,3]],["철거공사 (안전매트 70㎡)",[5]],["매트 시공",[6,7]],["도장공사",[8]],["타일",[2,3,4,7,8]],["준공검사",[16]]];
+  const WB1={SheetNames:["예정공정표"],Sheets:{"예정공정표":mkWs(BARS)}};
+  const WB2={SheetNames:["표지","공정"],Sheets:{"표지":{A1:S_('표지'),'!ref':'A1:A1'},"공정":(()=>{const ws={A1:S_('2026년 12월 공정표'),B2:S_('공정')};for(let i=0;i<12;i++){const d=((28+i-1)%31)+1;ws[String.fromCharCode(67+i)+'2']={t:'n',v:d,w:String(d)}}
+    ws.B3=S_('철거');ws.C3=S_('■');ws.D3=S_('■');ws.B4=S_('목공');['F','G','H','I'].forEach(c=>ws[c+'4']=S_('●'));ws.B5=S_('도배');ws.L5=S_('■');ws.M5=S_('■');ws['!ref']='A1:N6';return ws})()}};
+  const WB3={SheetNames:["S"],Sheets:{"S":(()=>{const ws={A1:S_('공정'),A2:S_('설비'),A3:S_('전기')};for(let i=0;i<8;i++){ws[String.fromCharCode(66+i)+'1']={t:'n',v:46328+i,z:'m/d',w:'11/'+(2+i)}}ws.B2=Z('FFC000');ws.C2=Z('FFC000');ws.E3=Z('C6EFCE');ws.F3=Z('C6EFCE');ws['!ref']='A1:I3';return ws})()}};
+  const XJSON=wb=>Buffer.from(JSON.stringify(wb),'utf8');
+  const XST=`window.XLSX={read:u=>JSON.parse(new TextDecoder().decode(u)),utils:{sheet_to_csv:()=>''}};`;
+  {const {ctx,open}=await mk({viewport:{width:1280,height:900}},SEED,STUB+XST);const A=await open('admin',10000);
+   const r1=await A.evaluate(w=>window.__hfT.gjXl(w,''),WB1),s1=r1&&r1.items.map(x=>x.proc+':'+x.start.slice(5)+'~'+x.end.slice(5)).join(', ');
+   ok('3 엑셀 읽기(교문초 양식): 날짜 줄 11/2~11/20 · 주말 회색은 막대 아님 · 주말을 건너 이어진 막대는 한 일정 · 요일 줄·안내 글은 공정 아님',s1==='계약 및 공사 준비:11-02~11-05, 철거공사 (안전매트 70㎡):11-07~11-07, 매트 시공:11-08~11-09, 도장공사:11-10~11-10, 타일:11-04~11-10, 준공검사:11-18~11-18'&&r1.items[0].start==='2026-11-02',s1);
+   const r2=await A.evaluate(w=>window.__hfT.gjXl(w,''),WB2),s2=r2&&r2.items.map(x=>x.proc+':'+x.start+'~'+x.end).join(', ');
+   ok('3 엑셀 읽기(날짜 숫자만 · ■● 표시 · 연말 넘어감): 시트 글자의 2026년 12월로 정하고 1일로 돌아가면 다음 달(2027-01)',s2==='철거:2026-12-28~2026-12-29, 목공:2026-12-31~2027-01-03, 도배:2027-01-06~2027-01-07'&&r2.sheet==='공정',s2);
+   const r3=await A.evaluate(w=>window.__hfT.gjXl(w,'2026-11-01'),WB3),s3=r3&&r3.items.map(x=>x.proc+':'+x.start+'~'+x.end).join(', ');
+   ok('3 엑셀 읽기(엑셀 날짜 칸 · 노랑·연초록 같은 밝은 막대색)',s3==='설비:2026-11-02~2026-11-03, 전기:2026-11-05~2026-11-06',s3);
+   const r4=await A.evaluate(()=>window.__hfT.gjXl({SheetNames:["a"],Sheets:{a:{A1:{t:'s',v:'견적서',w:'견적서'},A2:{t:'s',v:'철거',w:'철거'},B2:{t:'n',v:1000000,w:'1,000,000'},'!ref':'A1:B2'}}},''));
+   ok('3 공정표가 아닌 엑셀(견적서)은 아무것도 안 읽음',r4===null,JSON.stringify(r4));
+   await ctx.close()}
+  if(process.env.GJ_XLSX&&process.env.XLSX_JS){const {ctx,open}=await mk({viewport:{width:1280,height:900}},SEED,STUB);const A=await open('admin',10000);
+   const b64=fs.readFileSync(process.env.GJ_XLSX).toString('base64');
+   const r=await A.evaluate(async b=>{const X=await (async()=>{for(let i=0;i<30&&!window.XLSX;i++){try{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);await new Promise(r=>{s.onload=r;s.onerror=r})}catch(e){}}return window.XLSX})();const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));return window.__hfT.gjXl(X.read(u,{type:'array',cellStyles:true}),'')},b64);
+   const s=r&&r.items.map(x=>x.proc.split(' ')[0]+':'+x.start.slice(5)+'~'+x.end.slice(5)).join(', ');
+   ok('3 실제 공정표 엑셀(교문초 예정공정표 ver-2, 드라이브 읽기만): 공정 10개 · 날짜 원본 막대와 같음',r&&r.items.length===10&&s==='계약:11-02~11-05, 철거공사:11-07~11-07, 경량벽체:11-08~11-08, 매트:11-08~11-09, 도장공사:11-10~11-10, 앵글:11-11~11-11, 전기공사:11-12~11-12, 보안공사:11-13~11-13, 공사:11-16~11-16, 준공검사:11-18~11-18',s);
+   await ctx.close()}
+  // ---- 첨부 → 확인 창 → 등록 → 다시 첨부(같음·바뀜·사람이 고침·없어짐) ----
+  const SEED3=Object.assign({},SEED,{"projects/p3":Object.assign({},SEED["projects/p1"],{no:"P-2611-903",title:"정진혁 현장"}),"projects/p4":Object.assign({},SEED["projects/p2"],{no:"P-2611-904",title:"이봄이 현장"})});
+  for(const [vn,opt] of VPS){
+   const {ctx,open,dbv}=await mk(opt,SEED3,STUB+XST);const A=await open('admin',12000);
+   for(const who of WHO){const P=who==='admin'?A:await open(who,9000);const tag='3 '+vn+' '+USERS[who].name+': ';const pid={admin:'p1',cja:'p2',jjh:'p3',bom:'p4'}[who];
+    if(await P.locator('.okask').count())console.log('  (남은 확인 창: '+(await P.locator('.okask').innerText()).slice(0,80)+')');
+    const cal0=Object.keys(await dbv()).filter(k=>k.startsWith('cal/')).length;
+    await openS(P,'projects',pid);await tab(P,'cust');
+    await P.evaluate(b=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));const el=document.querySelector('#fileIn');const dt=new DataTransfer();dt.items.add(new File([u],'시험 예정공정표 v1.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));el.files=dt.files;el.dispatchEvent(new Event('change',{bubbles:true}))},XJSON(WB1).toString('base64'));
+    for(let i=0;i<15&&!(await P.locator('#gjVeil').count());i++)await wait(500);
+    let g=await P.evaluate(()=>window.__hfT.gj());const d0=await dbv();
+    ok(tag+'공정표 엑셀을 첨부하면 화면 안 확인 창(공정 | 시작 | 끝) · 아직 캘린더에 안 들어감',(await P.locator('#gjVeil.veil .sheet #gjT').count())===1&&g&&g.rows.length===6&&Object.keys(d0).filter(k=>k.startsWith('cal/')).length===cal0,JSON.stringify(g&&g.rows.map(r=>r.proc)));
+    // 고치기: 도장공사 끝 → 11-11, 타일 줄 빼기
+    await P.locator('#gjT [data-gjc="end"][data-gji="3"]').fill('2026-11-11');await P.locator('#gjT [data-gjc="end"][data-gji="3"]').dispatchEvent('change');await wait(300);
+    await P.locator('#gjT [data-gju="4"]').uncheck();await wait(300);
+    ok(tag+'확인 창 가로 넘침 없음',await P.evaluate(()=>{const s=document.querySelector('#gjVeil .sheet');return document.documentElement.scrollWidth<=window.innerWidth+2&&s.getBoundingClientRect().right<=window.innerWidth+1}));
+    await P.locator('#gjVeil [data-gjsave]').click();let d;for(let i=0;i<15;i++){await wait(600);d=await dbv();if((d['projects/'+pid]||{}).sched||(d['work/all/projects/'+pid]||{}).sched)break}await wait(1500);d=await dbv();
+    const ev=Object.entries(d).filter(([k,v])=>k.startsWith('cal/')&&v.gjPid===pid&&!v.gjOff).map(([k,v])=>v);const pr=(who==='admin'?d['projects/'+pid]:d['work/all/projects/'+pid])||{};
+    ok(tag+'‘캘린더에 등록’ → 공용 캘린더 5건(뺀 줄 없음 · 고친 날짜) + 프로젝트 공정(sched) + 옛 공정 기록',ev.length===5&&ev.some(e=>e.title==='도장공사'&&e.start==='2026-11-10'&&e.end==='2026-11-11')&&!ev.some(e=>e.title==='타일')&&ev.every(e=>e.kind==='공정표'&&e.gjSig)&&(pr.sched||[]).length===5&&(pr.schedHist||[]).length===1,JSON.stringify([ev.length,(pr.sched||[]).length,(pr.schedHist||[]).length]));
+    if(who==='admin'||who==='jjh'){
+     // 같은 파일 다시 → 모두 '같음' → 쓰지 않음
+     const at0=ev.map(e=>e.updatedAt).sort().join();await P.evaluate(()=>{});
+     await P.evaluate(([pid])=>{},[pid]);
+     await P.evaluate(b=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));const el=document.querySelector('#fileIn');const dt=new DataTransfer();dt.items.add(new File([u],'시험 예정공정표 v1.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));el.files=dt.files;el.dispatchEvent(new Event('change',{bubbles:true}))},XJSON(WB1).toString('base64'));
+     for(let i=0;i<15&&!(await P.locator('#gjVeil').count());i++)await wait(500);
+     await P.locator('#gjT [data-gjc="end"][data-gji="3"]').fill('2026-11-11');await P.locator('#gjT [data-gjc="end"][data-gji="3"]').dispatchEvent('change');await wait(300);await P.locator('#gjT [data-gju="4"]').uncheck();await wait(300);
+     const st=await P.locator('#gjT tbody').innerText();
+     await P.locator('#gjVeil [data-gjsave]').click();await wait(2500);d=await dbv();const ev2=Object.entries(d).filter(([k,v])=>k.startsWith('cal/')&&v.gjPid===pid&&!v.gjOff).map(([k,v])=>v);
+     ok(tag+'같은 공정표를 다시 첨부·등록: 확인 창에 ‘같음’ · 두 번 들어가지 않고 다시 쓰지도 않음',/같음/.test(st)&&ev2.length===5&&ev2.map(e=>e.updatedAt).sort().join()===at0,st.replace(/\s+/g,' ').slice(0,120));
+     // 사람이 캘린더에서 고침 (철거 → 11-06) · 새 공정표: 매트 시공 날짜 바뀜, 준공검사 빠짐, 철거 날짜도 바뀜(11-08)
+     const eid=Object.entries(d).find(([k,v])=>k.startsWith('cal/')&&v.gjPid===pid&&/철거/.test(v.title))[0];
+     await P.evaluate(async([eid])=>{const g=await window.__hfT.once?null:null;},[eid]);
+     await A.evaluate(async k=>{const db=await window.claude.use('db');const g=await db.doc(k).get();const o=g.data();o.start='2026-11-06';o.end='2026-11-06';o.updatedAt=new Date().toISOString();o.updatedBy='u_cja';await db.doc(k).set(o)},eid);await wait(2500);
+     const WBv2={SheetNames:["예정공정표"],Sheets:{"예정공정표":mkWs([["계약 및 공사 준비",[0,1,2,3]],["철거공사 (안전매트 70㎡)",[6]],["매트 시공",[8,9]],["도장공사",[8,9]]])}};
+     await P.evaluate(b=>{const u=Uint8Array.from(atob(b),c=>c.charCodeAt(0));const el=document.querySelector('#fileIn');const dt=new DataTransfer();dt.items.add(new File([u],'시험 예정공정표 v2.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));el.files=dt.files;el.dispatchEvent(new Event('change',{bubbles:true}))},XJSON(WBv2).toString('base64'));
+     for(let i=0;i<15&&!(await P.locator('#gjVeil').count());i++)await wait(500);const st2=(await P.locator('#gjVeil').innerText()).replace(/\s+/g,' ');
+     ok(tag+'고친 공정표: 확인 창에 같음·바뀜·사람이 고침 · 빠진 공정은 ‘지우지 않고 숨김’ 안내',/같음/.test(st2)&&/바뀜/.test(st2)&&/사람이 고침/.test(st2)&&/지우지 않고 캘린더에서 숨겨요/.test(st2),st2.slice(0,300));
+     await P.locator('#gjVeil [data-gjsave]').click();for(let i=0;i<10&&!(await P.locator('.okask').count());i++)await wait(300);
+     const ask=await P.locator('.okask').innerText().catch(()=>'');ok(tag+'사람이 고친 일정이 있으면 물어봄 (화면 안 확인 창)',/사람이 고친 일정/.test(ask),ask.slice(0,120));
+     await P.locator('.okask [data-ok="0"]').click();await wait(3000);d=await dbv();
+     const all=Object.entries(d).filter(([k,v])=>k.startsWith('cal/')&&v.gjPid===pid).map(([k,v])=>Object.assign({k},v));const live=all.filter(e=>!e.gjOff);
+     const cr=all.find(e=>e.k===eid),mt=live.find(e=>e.title==='매트 시공'),jg=all.find(e=>e.title==='준공검사');
+     ok(tag+'‘아니요’ → 사람이 고친 철거 일정은 그대로(11-06) · 매트 시공은 새 날짜(11-10~11-11) · 같은 공정은 문서 하나(두 번 등록 없음)',cr&&cr.start==='2026-11-06'&&!cr.gjOff&&mt&&mt.start==='2026-11-10'&&mt.end==='2026-11-11'&&live.filter(e=>e.title==='매트 시공').length===1&&live.filter(e=>e.title==='도장공사').length===1,JSON.stringify(live.map(e=>e.title+':'+e.start+'~'+e.end)));
+     ok(tag+'빠진 공정(준공검사)은 지우지 않고 숨김(gjOff) · 캘린더 일정 문서 수는 줄지 않음',jg&&jg.gjOff===true&&all.length>=5,JSON.stringify(all.map(e=>e.title+(e.gjOff?'(숨김)':''))));
+     const pr2=(who==='admin'?d['projects/'+pid]:d['work/all/projects/'+pid])||{};ok(tag+'프로젝트 공정은 새 공정표로 · 바꾸기 전 공정은 schedHist 에 남음',(pr2.sched||[]).length===4&&(pr2.schedHist||[]).length>=2&&(pr2.schedHist||[]).some(h=>(h.old||[]).length===5),JSON.stringify([(pr2.sched||[]).length,(pr2.schedHist||[]).map(h=>(h.old||[]).length)]));
+     await close(P);await go(P,'#calendar');await wait(800);const ct=await P.locator('#view').innerText();const cal=await P.evaluate(p=>{const L=window.__hfT.cal?window.__hfT.cal():[];return L.filter(e=>e.gjPid===p).map(e=>e.title+':'+e.start)},pid);
+     ok(tag+'캘린더: 이 현장의 숨긴 준공검사는 안 보이고(다른 현장 것만) 현장 공정은 보임 · 같은 공정 두 번 없음',!cal.some(x=>/준공검사/.test(x))&&/매트 시공/.test(ct)&&cal.length===4&&new Set(cal.map(x=>x.split(':')[0])).size===4,cal.join(', '));
+    }
+    await close(P);if(who!=='admin')await P.close()}
+   await ctx.close()}
+  const i3=HTML.indexOf('// 공정표 → 공용 캘린더 (2026-11-05 지시 · 2026-11-13 3번'),b3=HTML.slice(i3,HTML.indexOf('// ===== 현장 사진·파일 (대표 지시 2026-11-13 2번)'));
+  ok('3 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0 (빠진 일정은 숨김) · 새 저장 칸 없음(cal·projects 만)',i3>0&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(/.test(b3)&&(b3.match(/collection\("([^"]+)"\)/g)||[]).every(x=>/"cal"/.test(x)),b3.length+'자');
+ }
  // @@B3_MORE@@
  console.log('\n== 묶음 3 시험: '+R.filter(x=>x).length+' / '+R.length+' 통과 · 페이지 오류 '+errs.length+' · 브라우저 창(alert 등) '+dialogs.length);errs.slice(0,10).forEach(e=>console.log('  오류: '+e));dialogs.slice(0,5).forEach(e=>console.log('  창: '+e));
  await b.close();process.exit(R.every(x=>x)&&!errs.length?0:1)})();
