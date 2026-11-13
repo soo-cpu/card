@@ -1478,6 +1478,7 @@ async function privSync(){if(PV)return;if(syncBusy){syncAgain=true;return}if(!pr
     await fboxSync();
     await catReqSync();
     await hrEditSync();
+    try{await drvSiteSync()}catch(e){}
     if(S.config.length)exportSelf(true);
     // 4-0) 인사 사본 (다음 지시 v0, 대표 결정 2026-11-02): 재무·인사 담당 = 전 직원 인사카드(주민번호 포함) / 직원 본인 = 내 인사 정보
     for(const s of S.staff.filter(x=>x.uid&&x.state!=="퇴사")){
@@ -2096,7 +2097,19 @@ function fbFormHTML(r){r=r||{};const yr=String(r.year||todayStr().slice(0,4));re
 const DRV_CATS=["결재·기안","세무·회계","급여·4대보험","인사","계약","관공서·입찰","회사 기본 서류"];
 let DRVF=null,DRVS=null,drvOn={},DFQ="",DFOPEN="",DSQ="",DSOPEN="";
 function drvLoad(kind){if(drvOn[kind]||!db||mode!=="shared"||!me.id)return;drvOn[kind]=1;const path=me.admin?"acct/_drv/"+kind:"acct/"+me.id+"/drv"+kind;
-  try{db.collection(path).onSnapshot(s=>{const items=[];let at="";s.docs.forEach(d=>{const x=d.data()||{};(x.items||[]).forEach(i=>items.push(i));if(x.at>at)at=x.at});if(kind==="fin")DRVF={items,at};else DRVS={items,at};const r=route();if((kind==="fin"&&(r==="fbox"||r==="cflow"))||(kind==="site"&&r==="sitedocs"))render()},()=>{const z={items:[],at:"",err:1};if(kind==="fin")DRVF=DRVF||z;else DRVS=DRVS||z;if(route()==="sitedocs")render()})}catch(e){}}
+  try{db.collection(path).onSnapshot(s=>{const items=[];let at="";const docs={};s.docs.forEach(d=>{const x=d.data()||{};docs[d.id]=x;(x.items||[]).forEach(i=>items.push(i));if(x.at>at)at=x.at});if(kind==="fin")DRVF={items,at};else{DRVS={items,at,docs};if(me.admin)queueSync()}const r=route();if((kind==="fin"&&(r==="fbox"||r==="cflow"))||(kind==="site"&&r==="sitedocs"))render()},()=>{const z={items:[],at:"",err:1};if(kind==="fin")DRVF=DRVF||z;else DRVS=DRVS||z;if(route()==="sitedocs")render()})}catch(e){}}
+// 현장 자료 (대표 지시 2026-11-13 7번): 직원 화면(정진혁·이봄이·채진아)에는 현장 폴더(「연도 / 월 / 연-월 현장명」)만.
+// 그 밖의 묶음(계약 및 실행내역·단가표·인트라넷 첨부·홈퍼니싱 견적서·홍보마케팅·포트폴리오 등)은 대표만 — 화면에서 거르고, 직원 사본(acct/<계정>/drvsite)에도 싣지 않음
+const drvSiteOpen=x=>!!x&&(/^\d{4}\s*년\s*\/\s*\d{1,2}\s*월\s*\//.test(String(x.path||""))||(/^P-\d{4}-\d{3}/.test(String(x.pno||""))&&!String(x.path||"").trim()));
+const drvSiteMine=L=>me.admin?(L||[]):(L||[]).filter(drvSiteOpen);
+const drvSent={};
+// 대표 화면이 열리면 직원 사본을 '현장 폴더만'으로 다시 맞춤 (대표 목록 acct/_drv/site 는 그대로). 사본이 없는 직원(이봄이 등)에게도 만들어 줌
+async function drvSiteSync(){if(PV||!me.admin||mode!=="shared"||!db)return;try{drvLoad("site")}catch(e){}if(!DRVS||DRVS.err||!DRVS.docs||!Object.keys(DRVS.docs).length)return;
+  for(const s of S.staff.filter(x=>x.uid&&x.uid!==me.id&&x.state!=="퇴사"&&x.intra!=="사용 안 함")){const want={};Object.entries(DRVS.docs).forEach(([id,d])=>{want[id]=Object.assign({},d,{items:(d.items||[]).filter(drvSiteOpen)})});const sig=stableJs(want);if(drvSent[s.uid]===sig)continue;
+    let have={};try{const g=await db.collection("acct/"+s.uid+"/drvsite").get();g.docs.forEach(d=>{have[d.id]=d.data()||{}})}catch(e){continue}
+    Object.entries(have).forEach(([id,d])=>{if(!want[id])want[id]=Object.assign({},d,{items:(d.items||[]).filter(drvSiteOpen)})}); // 대표 목록에 없는 옛 조각: 지우지 않고 현장 폴더만 남김
+    for(const [id,o] of Object.entries(want)){if(have[id]&&stableJs(have[id])===stableJs(o))continue;try{await db.collection("acct/"+s.uid+"/drvsite").doc(id).set(o)}catch(e){}}
+    drvSent[s.uid]=sig}}
 const drvIcon=m=>/pdf/.test(m)?"PDF":/sheet|excel|xls/.test(m)?"엑셀":/image/.test(m)?"사진":/word|document/.test(m)?"문서":/hwp/.test(m)?"한글":"파일";
 function drvRow(x){return `<li style="display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed var(--line)"><span class="pill">${drvIcon(x.m||"")}</span><a href="${DRIVE(x.id)}" data-dpv="${esc(x.id)}" data-dpn="${esc(x.t)}" style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(x.t)}</a><small class="muted" style="white-space:nowrap">${esc(x.mod||"")}</small></li>`}
 function drvFinHTML(){try{drvLoad("fin")}catch(e){}if(!DRVF)return `<section class="card"><h2>공유 드라이브 「경영 회계 재무」 연결</h2><div class="empty">목록 불러오는 중… (목록이 없으면 대표·채진아 차장 계정만 볼 수 있거나 아직 연결 전이에요)</div></section>`;
@@ -2108,10 +2121,10 @@ function drvFinHTML(){try{drvLoad("fin")}catch(e){}if(!DRVF)return `<section cla
    <input id="dfQ" class="search" type="search" placeholder="드라이브 서류 검색 (예: 부가세, 근로계약서, 사업자등록증)" value="${esc(DFQ)}" autocomplete="off" style="width:100%;margin-bottom:10px">${body}
    ${q?"":`<h3 style="margin:14px 0 0">최근 올라온 서류 10개</h3><ul style="list-style:none;margin:0;padding:0">${recent.map(drvRow).join("")}</ul>`}</section>`}
 function drvWrapFbox(){const h=renderFbox();const i=h.indexOf("</div></div>");return i>0?h.slice(0,i+12)+drvFinHTML()+h.slice(i+12):drvFinHTML()+h}
-function renderSitedocs(){try{drvLoad("site")}catch(e){}const head=`<div class="head"><div><h1>현장 자료</h1><p>공유 드라이브의 현장 폴더를 프로젝트별로 묶어 보여 줘요 · 보기·미리 보기만 (고치거나 지울 수 없어요)</p></div></div>`;
+function renderSitedocs(){try{drvLoad("site")}catch(e){}const head=`<div class="head"><div><h1>현장 자료</h1><p>공유 드라이브의 현장 폴더를 프로젝트별로 묶어 보여 줘요 · 보기·미리 보기만 (고치거나 지울 수 없어요)${me.admin?" · 직원 화면에는 현장 폴더만 보여요 (계약·실행내역·단가표·인트라넷 첨부·견적서 양식·홍보 묶음은 대표만)":""}</p></div></div>`;
   if(!DRVS)return head+`<div class="empty">목록 불러오는 중…</div>`;
   if(DRVS.err||!(DRVS.items||[]).length)return head+`<div class="empty">${DRVS.err?"현장 자료 목록을 읽지 못했어요. 새로고침해 주세요. 계속 안 되면 대표에게 알려 주세요.":"아직 이 계정에 현장 자료 목록이 없어요. 매일 아침 6시 43분 자동 작업이 채워요."}</div>`;
-  const A=DRVS.items,q=DSQ.trim().toLowerCase();const G={};A.forEach(x=>{const k=x.pno||x.proj||"기타";(G[k]=G[k]||[]).push(x)});
+  const A=drvSiteMine(DRVS.items),q=DSQ.trim().toLowerCase();if(!A.length)return head+`<div class="empty">아직 볼 수 있는 현장 폴더가 없어요.</div>`;const G={};A.forEach(x=>{const k=x.pno||x.proj||"기타";(G[k]=G[k]||[]).push(x)});
   const keys=Object.keys(G).sort((a,b)=>String(b).localeCompare(String(a)));
   const label=k=>{const p=pjOf(k);return p?k+" · "+(p.title||p.custName||""):k};
   return head+`<input id="dsQ" class="search" type="search" placeholder="현장·파일 이름 검색" value="${esc(DSQ)}" autocomplete="off" style="width:100%">
@@ -5417,7 +5430,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   try{workListen()}catch(e){}
   if(!me.admin){try{ordListen()}catch(e){}}else{setTimeout(()=>{try{ordMdCheck()}catch(e){}},8000);setInterval(()=>{try{ordMdCheck()}catch(e){}},31*6e4)}
   db.collection("cgrant").onSnapshot(s=>{GRANTS=s.docs.map(x=>Object.assign({id:x.id},x.data()));render();queueSync()},()=>{});
-  if(window.__MOCKUSER)window.__hfT={busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()},pc:id=>pcGet(id),pcXlPick:id=>pcXlPick(S.projects.find(x=>x.id===id)),nav:()=>NAV.map(e=>e.k),navBack:()=>navBack(),navDirty:()=>navDirty(),navRet:()=>navRet&&navRet.from}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
+  if(window.__MOCKUSER)window.__hfT={busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()},pc:id=>pcGet(id),pcXlPick:id=>pcXlPick(S.projects.find(x=>x.id===id)),nav:()=>NAV.map(e=>e.k),navBack:()=>navBack(),navDirty:()=>navDirty(),navRet:()=>navRet&&navRet.from,drvs:()=>DRVS&&DRVS.items,myhr:()=>MYHR,subs:()=>Object.assign({},SUBSTAT),workAt:()=>WORK_AT}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
   if(me.admin)db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
   render();
 })();
