@@ -234,7 +234,7 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
    ok(tag+'홈 타일의 공사 중 현장 수 = 4 (화면에 쓰는 같은 목록 · 계약 3 + 시공 1)',tile===4&&(!tileTxt||/4/.test(tileTxt)),tile+' :: '+tileTxt.slice(0,120));
    // 프로젝트 단계 표시: 단계 값은 ‘계약’ 그대로, 흐름은 ‘현장 관리’
    await A.evaluate(()=>{location.hash='#projects'});await wait(600);await A.evaluate(()=>window.__hfT.open('projects','pA'));await wait(1200);
-   const fl=await A.evaluate(()=>{const v=document.querySelector('#veil');const cur=v.querySelector('[aria-current="step"],.flow .on,.pflow .on,[data-flowcur]');return [(v.innerText||'').replace(/\s+/g,' ').slice(0,600),cur?cur.textContent:'']});
+   const fl=await A.evaluate(()=>{const v=document.querySelector('#veil');const cur=v.querySelector('[aria-current="step"],.flow .on,.pflow .on,[data-flowcur]');return [(v.innerText||'').replace(/\s+/g,' ').slice(0,2400),cur?cur.textContent:'']/* v0.99-30: 창 위에 탭 줄·전화번호 안내가 늘어 넉넉히 읽음 */});
    ok(tag+'프로젝트 창: 현장이 공사 중이면 지금 단계가 ‘현장 관리’ · ‘현장 열기 · 공사 중’',/현장 열기 · 공사 중/.test(fl[0]),fl[1]+' :: '+fl[0].slice(0,260));
    const stg=await A.evaluate(()=>window.__hfT.S().projects.find(p=>p.id==='pA').stage);ok(tag+'프로젝트에 저장된 단계 값은 그대로 ‘계약’ (화면에서만 현장 관리로 읽음)',stg==='계약',stg);
    await A.evaluate(()=>window.__hfT.closeSheet());
