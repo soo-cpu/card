@@ -1108,7 +1108,7 @@ function svgLine(pts,{w=640,h=180,fmt=v=>v,color="#1F4E79"}={}){if(pts.length<2)
 function svgBars(rows,keys,{w=640,h=170,colors=["#1F4E79","#C62828","#FFC000"],labels=[]}={}){if(!rows.length)return '<p class="muted">자료가 모자라요</p>';const vals=rows.flatMap(r=>keys.map(k=>num(r[k]))),mx=Math.max(1,...vals.map(Math.abs)),mn=Math.min(0,...vals);const bw=(w-50)/rows.length,Y=v=>h-24-(v-mn)*(h-40)/((mx-mn)||1);
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img"><line x1="40" x2="${w-10}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>${rows.map((r,i)=>keys.map((k,j)=>{const v=num(r[k]),x=40+i*bw+j*(bw*0.8/keys.length)+bw*0.1,y0=Y(0),y=Y(v);return `<rect x="${x.toFixed(1)}" y="${Math.min(y,y0).toFixed(1)}" width="${Math.max(1,bw*0.8/keys.length-1).toFixed(1)}" height="${Math.abs(y0-y).toFixed(1)}" fill="${colors[j]}"><title>${esc(r.label)} ${esc(labels[j]||k)} ${num(v).toLocaleString("ko-KR")}</title></rect>`}).join("")+((rows.length<=14||i%Math.ceil(rows.length/10)===0)?`<text x="${(40+i*bw+bw/2).toFixed(1)}" y="${h-6}" font-size="10" fill="var(--sub)" text-anchor="middle">${esc(r.label)}</text>`:"")).join("")}</svg>${labels.length?`<div class="chips" style="font-size:12px">${labels.map((l,j)=>`<span><span style="display:inline-block;width:10px;height:10px;background:${colors[j]};border-radius:2px"></span> ${esc(l)}</span>`).join(" ")}</div>`:""}`}
 const eok=v=>v==null||v===""?"—":(Math.round(num(v)/1e6)/100).toLocaleString("ko-KR")+"억";
-function renderFdash(){const S2=cfSeries(),F=finData(),T=todayStr(),M=T.slice(0,7),Y=T.slice(0,4);const last=S2[S2.length-1],prev=S2[S2.length-2];
+function renderFdash(){if(!me.admin)return `<div class="empty">대표 전용 메뉴예요</div>`;const S2=cfSeries(),F=finData(),T=todayStr(),M=T.slice(0,7),Y=T.slice(0,4);const last=S2[S2.length-1],prev=S2[S2.length-2];
   const mon=S2.filter(r=>r.d.startsWith(M)),mi=mon.reduce((t,r)=>t+r.in,0),mo=mon.reduce((t,r)=>t+r.out,0);const pl=cfPlan(),rcv30=pl.rcv.reduce((t,x)=>t+x.amt,0);
   const recvSum=(me.admin||canMoney())?(arNow()?arTotal(arNow()):recvList().reduce((t,r)=>t+r.left,0)):null;const yIn=S2.filter(r=>r.d.startsWith(Y)).reduce((t,r)=>t+r.in,0);
   const fy=F.fs.years||{},ys=Object.keys(fy).sort();const gp=goalPriv(),bep=num((gp||{}).bep)||num((F.fs||{}).bep);
@@ -1188,7 +1188,7 @@ function renderCflow(){if(cfDoc)return cfDocView();try{if(canFbox())fbListen();d
   const list=all.filter(e=>cfIo==="전체"||cfIo==="입출금"||e.io===cfIo),N=10,show=cfMore||cfIo==="입출금"||cfIo==="전체"?list:list.slice(0,N);
   const cnt=k=>k==="전체"||k==="입출금"?all.length:all.filter(e=>e.io===k).length;
   const pend=e=>e.merged===false||(!me.admin&&!e.from&&FINI[me.id]&&FINI[me.id][e.id]&&!FINI[me.id][e.id].merged);
-  return `<div class="head"><div><h1>캐시플로우</h1><p>엑셀 원본(그날 시트) 보기 · 매일 19시 자동 반영 · 이전 기록은 ‘홈퍼니싱 자금 관리’ 자금일보 사본 (원본 그대로, 비공개)</p></div><div class="tools"><a class="btn" href="${TOOL_CASH}" target="_blank" rel="noopener">자금 관리 원본 ↗</a></div></div>
+  return `<div class="head"><div><h1>캐시플로우</h1><p>엑셀 원본(그날 시트) 보기 · 매일 19시 자동 반영 · 이전 기록은 ‘홈퍼니싱 자금 관리’ 자금일보 사본 (원본 그대로, 비공개)</p></div>${me.admin?`<div class="tools"><a class="btn" href="${TOOL_CASH}" target="_blank" rel="noopener">자금 관리 원본 ↗</a></div>`:""}</div>
   ${low?`<div class="banner" style="background:var(--bad-bg);color:var(--bad)">잔액이 최저선 ${won(floor)} 아래로 내려갈 예상이에요 (${esc(low)})</div>`:""}
   ${cfSumHTML()}
   ${cfDocsHTML()}
@@ -2993,7 +2993,7 @@ async function resolveNames(){
 
 // ===== 화면 =====
 const onlyMine=()=>mode==="shared"&&!me.admin&&((myStaff()||{}).scope==="담당 건만"||isTeam(myStaff()));
-function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(["fdash","fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks")return h;if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
+function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(h==="fdash"&&me.admin)return h;/* 경영 대시보드는 대표만 (대표 지시 2026-11-13 5번) */if(["fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks"&&me.admin)return h;/* 빈칸 목록은 대표만 (5·11번) */if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
 function renderNav(){
   const r=route();
   const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||apVis().filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
@@ -3004,10 +3004,10 @@ function renderNav(){
     if(k==="projects")h+=`<a href="#consult" ${r==="consult"?'aria-current="page"':""}><span>상담 진행 (고객용)</span></a>`;
     if(k==="quotes")h+=`<a href="#imagegen" ${r==="imagegen"?'aria-current="page"':""}><span>이미지 생성</span></a>`;
     if(k==="staff")h+=`<a href="#forms" ${r==="forms"?'aria-current="page"':""}><span>서식 자료실</span></a>${mode==="shared"&&!me.admin?`<a href="#myhr" ${r==="myhr"?'aria-current="page"':""}><span>내 인사 정보</span></a>`:""}`});
-  {const bn=!me.admin&&BLK&&BLK.rows?BLK.rows.length:0;h+=`<div class="grp">자료 채우기</div><a href="#blanks" ${r==="blanks"?'aria-current="page"':""}><span>빈칸 목록</span>${bn?`<span class="cnt">${bn}</span>`:""}</a>`}
+  if(me.admin)h+=`<div class="grp">자료 채우기</div><a href="#blanks" ${r==="blanks"?'aria-current="page"':""}><span>빈칸 목록</span></a>`; // 빈칸 목록은 대표만 (5·11번)
   if(mode==="shared")h+=`<a href="#sitedocs" ${r==="sitedocs"?'aria-current="page"':""}><span>현장 자료 (드라이브)</span></a>`;
   if(canFbox()){h+=`<div class="grp">경리·인사</div><a href="#fbox" ${r==="fbox"?'aria-current="page"':""}><span>경리·인사 자료함</span></a>`}
-  if(canFin()){h+=`<div class="grp">재무·경영 (경영관리)</div><a href="#fdash" ${r==="fdash"?'aria-current="page"':""}><span>경영 대시보드</span></a><a href="#fstate" ${r==="fstate"?'aria-current="page"':""}><span>홈퍼니싱 재무제표</span></a><a href="#cflow" ${r==="cflow"?'aria-current="page"':""}><span>캐시플로우</span></a>${me.admin?`<a href="#bonus" ${r==="bonus"?'aria-current="page"':""}><span>성과금</span></a>`:""}${me.admin?`<a href="#amtchk" ${r==="amtchk"?'aria-current="page"':""}><span>금액 변동 확인</span>${(()=>{try{const n=(S.approvals||[]).filter(a=>["결재 대기","결재 진행"].includes(a.status||"결재 대기")&&amtNeed(a)).length;return n?`<span class="cnt">${n}</span>`:""}catch(e){return ""}})()}</a>`:""}`}
+  if(canFin()){h+=`<div class="grp">재무·경영 (경영관리)</div>${me.admin?`<a href="#fdash" ${r==="fdash"?'aria-current="page"':""}><span>경영 대시보드</span></a>`:""}<a href="#fstate" ${r==="fstate"?'aria-current="page"':""}><span>홈퍼니싱 재무제표</span></a><a href="#cflow" ${r==="cflow"?'aria-current="page"':""}><span>캐시플로우</span></a>${me.admin?`<a href="#bonus" ${r==="bonus"?'aria-current="page"':""}><span>성과금</span></a>`:""}${me.admin?`<a href="#amtchk" ${r==="amtchk"?'aria-current="page"':""}><span>금액 변동 확인</span>${(()=>{try{const n=(S.approvals||[]).filter(a=>["결재 대기","결재 진행"].includes(a.status||"결재 대기")&&amtNeed(a)).length;return n?`<span class="cnt">${n}</span>`:""}catch(e){return ""}})()}</a>`:""}`}
   if(me.admin||canMoney()){h+=`<div class="grp">${me.admin?"대표 전용":"돈 관리"}</div>`;if(me.admin){const dn=dcUnseen();h+=`<a href="#drvchg" ${r==="drvchg"?'aria-current="page"':""}><span>자료 변경 소식</span>${dn?`<span class="cnt" style="background:#FFC000;color:#203864">${dn}</span>`:""}</a><a href="#mysign" ${r==="mysign"?'aria-current="page"':""}><span>내 사인 등록</span></a><a href="#preview" ${r==="preview"?'aria-current="page"':""}><span>직원 화면 미리 보기</span></a>`}
     if(canFcost())h+=`<a href="#fcost" ${r==="fcost"?'aria-current="page"':""}><span>현장 원가 (주간)</span></a>`;
     h+=`<a href="#recv" ${r==="recv"?'aria-current="page"':""}><span>미수금</span></a>`;}
@@ -3298,14 +3298,13 @@ async function fillSync(){if(PV)return;if(fillBusy||!privReady.c||!privReady.p||
   try{const C=fillCalc(),pct={};Object.entries(C.per).forEach(([k,v])=>{pct[k]=fillPct(v)});
     const fc=cfg("fill"),wk=fillMon(),weeks=Object.assign({},fc.weeks||{});
     if(JSON.stringify(weeks[wk])!==JSON.stringify(pct)){weeks[wk]=pct;const ks=Object.keys(weeks).sort();ks.slice(0,Math.max(0,ks.length-26)).forEach(k=>delete weeks[k]);await put("config","fill",{weeks,at:nowISO()})}
-    for(const nm of FILL_WHO){const s=S.staff.find(x=>x.name===nm&&x.uid&&x.state!=="퇴사");if(!s)continue;const rows=C.rows.filter(r=>r.who===nm).map(r=>({col:r.col,id:r.id,t:r.t,miss:r.miss}));const js=JSON.stringify(rows);if(fillSent[nm]===js)continue;await db.collection("mine/"+s.uid+"/idx").doc("blanks").set({rows,at:nowISO()});fillSent[nm]=js}
+    // 직원 사본(mine/<계정>/idx/blanks)은 더 보내지 않음 (대표 지시 2026-11-13 5·11번: 빈칸 목록은 대표만). 이미 있는 사본은 지우지 않고 그대로 둠 — 직원 화면은 읽지 않음
   }catch(e){}finally{fillBusy=false}}
 // 이번 주 업무 보고의 목표(가장 최근 값)·실제 완료(합계)
 function fillWeekGoals(){const mon=fillMon(),T=todayStr(),o={};S.reports.filter(r=>r.d>=mon&&r.d<=T).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(r=>{const w=r.who||who(r.createdBy);const x=o[w]||(o[w]={fg:"",sg:"",fd:0,sd:0});if(String(r.fillGoal??"").trim())x.fg=num(r.fillGoal);if(String(r.scanGoal??"").trim())x.sg=num(r.scanGoal);x.fd+=num(r.fillDone);x.sd+=num(r.scanDone)});return o}
 const fillG=v=>v===""||v===undefined?"—":v;
 function fillCard(){
-  if(!me.admin){if(mode!=="shared")return "";blkListen();const L=(BLK&&BLK.rows)||[];if(!L.length)return "";const n=L.reduce((t,r)=>t+(r.miss||[]).length,0),g=fillWeekGoals()[(myStaff()||{}).name]||{};
-    return `<section class="card"><h2><span>내 빈칸 ${n}칸 (${L.length}건)</span><a class="btn sm" href="#blanks">빈칸 목록 보기</a></h2><p class="muted" style="margin:0">이번 주 목표 빈칸 ${fillG(g.fg)} · 스캔 ${fillG(g.sg)} / 실제 완료 빈칸 ${g.fd||0} · 스캔 ${g.sd||0} — 업무 보고에 적으면 여기 모여요</p></section>`}
+  if(!me.admin)return ""; // 빈칸 목록·채움률은 대표만 (5·11번) — 직원 화면은 카드도, 사본 읽기도 없음
   fillQueue();const C=fillCalc(),W=cfg("fill").weeks||{},wk=fillMon(),G=fillWeekGoals();
   const wks=Object.keys(W).filter(k=>k!==wk).sort().slice(-4);
   const tot=Object.values(C.per).reduce((a,v)=>({t:a.t+v.t,f:a.f+v.f}),{t:0,f:0});
@@ -3318,7 +3317,7 @@ function fillCard(){
   <div class="tablebox"><table><thead><tr><th>메뉴</th><th>채움률</th><th>빈칸</th>${wks.map(w=>`<th>${esc(w.slice(5))} 주</th>`).join("")}<th>지난주 대비</th></tr></thead><tbody>${mrow}</tbody></table></div>
   <div class="tablebox" style="margin-top:10px"><table><thead><tr><th>담당</th><th>남은 빈칸</th><th>이번 주 목표 (빈칸 / 스캔)</th><th>실제 완료 (빈칸 / 스캔)</th></tr></thead><tbody>${prow}</tbody></table></div>
   <p class="hint" style="margin:8px 0 0">메뉴마다 꼭 채울 칸 기준 · 담당 칸이 비었거나 다른 사람이면 메뉴 기본 담당 (고객·매뉴얼 이봄이 / 프로젝트·견적·현장·A/S 정진혁 / 인사 채진아) · 목표·완료는 업무 보고에서 모아요</p></section>`}
-function renderBlanks(){const adm=me.admin;let L;if(adm){L=fillCalc().rows;fillQueue()}else{blkListen();L=(BLK&&BLK.rows)||[]}
+function renderBlanks(){if(!me.admin)return `<div class="empty">대표 전용 메뉴예요</div>`;const adm=me.admin;let L;if(adm){L=fillCalc().rows;fillQueue()}else{blkListen();L=(BLK&&BLK.rows)||[]}
   const sel=adm?(FILL_WHO.includes(filter.blanks)?filter.blanks:FILL_WHO[0]):"",V=adm?L.filter(r=>r.who===sel):L,grp={};V.forEach(r=>(grp[r.col]=grp[r.col]||[]).push(r));
   const chips=adm?`<div class="chips">${FILL_WHO.map(n=>`<button class="chip" data-filter="${n}" aria-pressed="${n===sel}">${esc(n)} ${L.filter(r=>r.who===n).length}건</button>`).join("")}</div>`:"";
   const body=Object.keys(FILL_SPEC).filter(k=>grp[k]).map(k=>`<section class="card"><h2><span>${esc(MOD[k].nav)}</span><small class="muted">${grp[k].length}건</small></h2><div class="list">${grp[k].map(r=>`<div class="item" data-open="${k}" data-id="${esc(r.id)}"><span class="pill warn">${(r.miss||[]).length}칸</span><div class="t"><b>${esc(adm?r.title:r.t)}</b><small>빈칸: ${esc((r.miss||[]).join(" · "))}</small></div><span></span></div>`).join("")}</div></section>`).join("");
