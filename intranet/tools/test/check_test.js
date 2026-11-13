@@ -15,7 +15,7 @@ const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true}
 const CARDS=[["고객","customers","c1","code","C-2611-901"],["현장","sites","s1","pno","P-2611-901"],["견적","quotes","q1","pno","P-2611-901"],["사후관리","as","a1","pno","P-2611-901"]];
 const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===undefined?'':String(x).slice(0,240))};const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const M={};const mark=(card,colm,who,vn,v)=>{const k=card+'|'+colm;(M[k]=M[k]||{});(M[k][who]=M[k][who]||[]).push(v)};
-(async()=>{const b=await chromium.launch();const errs=[],dialogs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[],dialogs=[];
  for(const [vn,opt] of [['PC',{viewport:{width:1280,height:900}}],['Pixel 7',devices['Pixel 7']]]){
   const ctx=await b.newContext(opt);await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[SEED,RULES]);

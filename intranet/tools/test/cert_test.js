@@ -13,7 +13,7 @@ const HOOK=`window.__cert=[];window.__certImg=[];window.__dl=[];(()=>{const P=Ca
  HTMLCanvasElement.prototype.toDataURL=function(){const r=td.apply(this,arguments);if(this.width===1240&&this.height===1754)window.__certImg.push(r);return r}})();`;
 const DL=`;(()=>{const u0=window.claude.use;window.claude.use=async n=>n==='downloads'?{save:async o=>{window.__dl.push(o.filename)}}:u0(n)})();`;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?"통과":"실패",n,x===undefined?"":String(x).slice(0,320))};
-(async()=>{const b=await chromium.launch();const errs=[],shots=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[],shots=[];
  const CASES=[["1명",{ceos:"최윤수"},"주식회사 홈퍼니싱  대표이사  최윤수"],["2명 (설정 없음 = 기본값)",null,"주식회사 홈퍼니싱  대표이사  신혜현, 최윤수"],["2명 (옛 대표이사 칸만 저장돼 있음)",{name:"주식회사 홈퍼니싱",ceo:"최윤수",addr:"경기도 시험시 시험로 1",bizno:"1234567890"},"주식회사 홈퍼니싱  대표이사  신혜현, 최윤수"],["3명",{ceos:"신혜현, 최윤수, 남궁길동",addr:"경기도 시험시 시험로 1"},"주식회사 홈퍼니싱  대표이사  신혜현, 최윤수, 남궁길동"]];
  let ci=0;for(const [label,co,want] of CASES){ci++;
   const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());

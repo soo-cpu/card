@@ -35,7 +35,7 @@ const SEED={"staff/st_boss":{name:"최윤수",uid:"u_boss",level:"관리자",sta
 const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},bom:{id:"u_bom",name:"이봄이",email:"bom@test",isOwner:false},cja:{id:"u_cja",name:"채진아",email:"cja@test",isOwner:false}};
 const NAME={jjh:"정진혁",bom:"이봄이",cja:"채진아"},SID={jjh:"st_jjh",bom:"st_bom",cja:"st_cja"},PAY={jjh:"3,111,111",bom:"3,222,222",cja:"3,333,333"};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.push([v?"통과":"실패",n,x||""]);console.log(v?"통과":"실패",n,v?"":(x||""))};
-(async()=>{const b=await chromium.launch();const errs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[];
  async function world(seedX){const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[Object.assign({},SEED,seedX||{}),RULES]);
   const D=async()=>JSON.parse(await seed.evaluate(()=>localStorage.getItem('mockdb')));

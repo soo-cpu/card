@@ -27,7 +27,7 @@ const FAKEMCP=`window.__mcpCalls=[];window.__MOCKMCP={callTool:async(sv,tool,inp
  return wrap({})}};`;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.push([v?"통과":"실패",n,x||""]);console.log(v?"통과":"실패",n,x===undefined?"":String(x).slice(0,300))};
 const bytes=t=>{let n=0;for(const ch of t){const c=ch.codePointAt(0);n+=c===10?2:c<128?1:2}return n};
-(async()=>{const b=await chromium.launch();const errs=[],dialogs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[],dialogs=[];
  async function mkctx(opts){const ctx=await b.newContext(opts);await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r));localStorage.setItem('mockdrive','{}')},[SEED,RULES]);
   const D=async()=>JSON.parse(await seed.evaluate(()=>localStorage.getItem('mockdb')));const F=async()=>Object.values(JSON.parse(await seed.evaluate(()=>localStorage.getItem('mockdrive'))));

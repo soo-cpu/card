@@ -26,7 +26,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
 const STUB=`window.confirm=()=>false;`;
 // 가짜 구글 드라이브 (문자 요청 파일): 만든 파일을 window.__mcpFiles 에 남김
 const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{const J=o=>({content:[{type:"text",text:JSON.stringify(o)}]});if(tool==="create_file"){window.__mcpFiles.push({title:inp.title,text:inp.textContent});return J({id:"f"+window.__mcpFiles.length,title:inp.title})}if(tool==="search_files"){const m=/title = '([^']+)'/.exec(inp.query||"");return J({files:window.__mcpFiles.filter(f=>!m||f.title===m[1]).map((f,i)=>({id:"f"+i,title:f.title}))})}return {isError:true,content:[{text:"no"}]}}};`;
-(async()=>{const b=await chromium.launch();const errs=[],dialogs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[],dialogs=[];
  const mk=async(opt,seedObj,init)=>{const ctx=await b.newContext(opt);await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));
   await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[seedObj,RULES]);

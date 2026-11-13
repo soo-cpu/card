@@ -14,7 +14,7 @@ const SEED=Object.assign({},STAFF,{
  "customers/cN":cu("C-2611-951","새고객",{createdBy:"u_jjh"}),"work/all/customers/cN":Object.assign(cu("C-2611-951","새고객",{createdBy:"u_jjh"}),{tel:"010-5555-6666",addr:"구리 새집 1동",__by:"admin"}),
  // 대표 사본이 있는 고객 + 정진혁 사본(더 새것)에 전화번호가 빈 값으로 들어온 경우 (옛 버전 화면이 쓴 것)
  "customers/cO":cu("C-2611-952","옛고객"),"cpriv/cO":{tel:"010-7777-8888",addr:"서울 옛집",updatedAt:T0},"cshare/u_jjh/c/cO":{tel:"",addr:"서울 새 주소",updatedAt:"2026-11-12T00:00:00Z",by:"u_jjh"}});
-(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Seoul'});const errs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const ctx=await b.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Seoul'});const errs=[];
  await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
  const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[SEED,RULES]);
  const dbv=()=>seed.evaluate(()=>JSON.parse(localStorage.getItem('mockdb')));

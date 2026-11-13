@@ -24,7 +24,7 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
  if(tool==="get_file_metadata"){const f=T.find(x=>x.id===inp.fileId);return f?J({id:f.id,title:f.title,mimeType:f.mimeType}):{isError:true,content:[{text:"not found"}]}}
  if(tool==="download_file_content"){const f=T.find(x=>x.id===inp.fileId);return f&&f.b64?J({id:f.id,title:f.title,content:f.b64}):{isError:true,content:[{text:"no content"}]}}
  return {isError:true,content:[{text:"쓰기 도구는 시험에서 막음: "+tool}]}}}})();`;
-(async()=>{const b=await chromium.launch();const errs=[],dialogs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[],dialogs=[];
  const mk=async(opt,seedObj,init,routeX)=>{const ctx=await b.newContext(opt);await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));
   await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>routeX&&/xlsx/.test(r.request().url())?r.fulfill({contentType:'application/javascript',body:routeX}):r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[seedObj,RULES]);

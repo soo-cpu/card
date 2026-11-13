@@ -20,7 +20,7 @@ const NEW={customers:["cN",{code:"C-2611-950",name:"새고객 김시험",mgr:"�
  sites:["sN",{pno:"P-2611-901",name:"새 현장 시험",customer:"홍길동",mgr:"정진혁",status:"착공 전",logs:[]},"name","새 현장 시험 (수정)"]};
 const COLS=Object.keys(NEW);const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===undefined?'':String(x).slice(0,300))};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900}});
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const ctx=await b.newContext({viewport:{width:1280,height:900}});
  await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
  const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[SEED,RULES]);
  const errs=[],dialogs=[];

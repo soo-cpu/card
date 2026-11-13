@@ -18,7 +18,7 @@ const STUB=`window.confirm=()=>false;`;
 const MCPW=`window.__mcpLog=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{window.__mcpLog.push(tool+'|'+String(inp.title||'').slice(0,40)+'|'+String(inp.parentId||''));const id='D_'+Math.random().toString(36).slice(2,8);return {content:[{type:"text",text:JSON.stringify({id,title:inp.title})}]}}};`;
 const BCW=`(()=>{const _BC=window.BroadcastChannel;window.BroadcastChannel=class{constructor(n){this.b=new _BC(n);this.b.onmessage=e=>{if(!window.__mute&&this.onmessage)this.onmessage(e)}}postMessage(m){this.b.postMessage(m)}close(){this.b.close()}}})();`;
 const MONEY=/12,345,678|98,765|원가|마진|성과금/;
-(async()=>{const b=await chromium.launch();const errs=[],dialogs=[];
+(async()=>{const b=await chromium.launch();const __tzSeoul=b.newContext.bind(b);b.newContext=o=>__tzSeoul(Object.assign({timezoneId:'Asia/Seoul'},o||{})) /* 시험 시간대 서울 고정 (검토 권고 2026-11-13: 한국 새벽에 날짜가 하루 어긋남) */;const errs=[],dialogs=[];
  const mk=async(opt,seedObj,init)=>{const ctx=await b.newContext(opt);await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));
   const XJS=process.env.XLSX_JS?fs.readFileSync(process.env.XLSX_JS,'utf8'):null;
   await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>XJS&&/xlsx/.test(r.request().url())?r.fulfill({contentType:'application/javascript',body:XJS}):r.abort());
