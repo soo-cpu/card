@@ -199,6 +199,53 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
    ok(tag+'정진혁 상담 화면에 원가·마진·성과금 숫자 없음 · 권한 밖 쓰기 0',!MONEY.test(jt)&&!den.length,den.join(','));
    await ctx.close()}
  }
+ // ================= 15 =================
+ if(on('15')){
+  for(const [vn,opt] of VPS){
+   const {ctx,open,dbv}=await mk(opt,BASE,STUB);const A=await open('admin',12000);
+   const crumb=p=>p.evaluate(()=>{const c=document.querySelector('#veil .crumb');return c?c.innerText.replace(/\s+/g,' ').trim():''});
+   const back=async p=>{await p.locator('#veil .navbar [data-navback]').click();await wait(700)};
+   const tab=async(p,k)=>{await p.locator('#veil .pttabs [data-pttab="'+k+'"]').click();await wait(350)};
+   const cur=p=>p.evaluate(()=>{const s=document.querySelector('#veil .sheet');const b=document.querySelector('#veil .pttabs [aria-selected="true"]');return (s&&s.dataset.pt||'')+'|'+(b?b.innerText.trim():'')});
+   const vis=p=>p.evaluate(()=>{const v=e=>!!e&&!!e.offsetParent;const q=s=>document.querySelector(s);return {cust:v(q('#pjHub .hubc[data-pt="cust"]')),prog:v(q('#pjHub .hubc[data-pt="prog"]')),quote:v(q('#pjHub .hubc[data-pt="quote"]')),as:v(q('#pjHub .hubc[data-pt="as"]')),flow:v(q('.sheet .flowbar')),name:v(q('#sheetForm [data-k="custName"]')),stage:v(q('#sheetForm [data-k="stage"]')),wm:v(q('#sheetForm [data-k="warrantyMonths"]')),save:v(q('#saveSheet'))}});
+   const inApp=p=>/^http:\/\/hf\.test\//.test(p.url());
+   const wide=p=>p.evaluate(()=>{const s=document.querySelector('.sheet'),n=document.querySelector('.navbar');return document.documentElement.scrollWidth<=window.innerWidth+2&&!!s&&s.scrollWidth<=s.clientWidth+2&&!!n&&n.getBoundingClientRect().right<=window.innerWidth+1});
+   for(const who of ['admin','cja','jjh','bom']){const P=who==='admin'?A:await open(who,8000);const tag='15 '+vn+' '+USERS[who].name+': ';
+    await go(P,'#projects');await P.locator('tbody tr[data-open="projects"][data-id="p1"]').first().click();await wait(1000);
+    const tabs=await P.evaluate(()=>{const t=document.querySelector('#veil .navbar .pttabs');if(!t)return null;const nb=document.querySelector('#veil .navbar'),s=document.querySelector('#veil .sheet');return {l:[...t.querySelectorAll('button')].map(b=>b.innerText.trim()).join(','),sticky:getComputedStyle(nb).position,top:nb.getBoundingClientRect().top-s.getBoundingClientRect().top}});let v=await vis(P);
+    ok(tag+'프로젝트 창 맨 위 고정 줄(← 뒤로·위치 표시와 한 줄 묶음)에 탭: 전체·고객 정보·진행 상황·견적·사후 관리 · 처음은 ‘전체’(카드 4개 다 보임)',!!tabs&&tabs.l==='전체,고객 정보,진행 상황,견적,사후 관리'&&tabs.sticky==='sticky'&&tabs.top<5&&(await cur(P))==='all|전체'&&v.cust&&v.prog&&v.quote&&v.as&&v.flow&&v.name,JSON.stringify(tabs));
+    await tab(P,'cust');v=await vis(P);const c1=await crumb(P);
+    ok(tag+'‘고객 정보’ 탭: 고객 카드·기본 정보 칸만 · 다른 카드·단계 흐름은 가려짐 · 위치 표시 끝에 ‘고객 정보’ · 저장 버튼은 그대로',(await cur(P))==='cust|고객 정보'&&v.cust&&v.name&&!v.prog&&!v.quote&&!v.as&&!v.flow&&!v.stage&&v.save&&/고객 정보$/.test(c1),JSON.stringify(v)+' '+c1);
+    await tab(P,'prog');v=await vis(P);ok(tag+'‘진행 상황’ 탭: 현장 진행 카드·단계 흐름·단계 칸',v.prog&&v.flow&&v.stage&&!v.cust&&!v.quote&&!v.as&&!v.name,JSON.stringify(v));
+    await tab(P,'quote');v=await vis(P);const qt=await P.locator('.sheet').innerText();ok(tag+'‘견적’ 탭: 견적 카드(견적서 작성 열기)만',v.quote&&!v.cust&&!v.prog&&!v.as&&!v.flow&&/견적서 작성 열기|견적 1차 만들기/.test(qt),JSON.stringify(v));
+    if(who==='jjh'||who==='bom')ok(tag+'견적 탭에 원가·마진·성과금 숫자 없음 (권한 그대로)',!MONEY.test(qt)&&!/마진율|성과금/.test(qt));
+    await tab(P,'as');v=await vis(P);ok(tag+'‘사후 관리’ 탭: 사후관리 카드·하자보수 칸',v.as&&v.wm&&!v.cust&&!v.prog&&!v.quote&&!v.name,JSON.stringify(v));
+    ok(tag+'가로 넘침 없음 (탭 줄 포함)',await wide(P));
+    // 뒤로: 전체 → 고객 정보 → 진행 상황 → 견적 → 사후 관리 로 왔음 → 뒤로 = 견적, 진행 상황, 고객 정보, 그다음 목록
+    const seq=[];for(let i=0;i<3;i++){await back(P);seq.push((await cur(P))+'@'+(await sh(P)))}await back(P);const end=await sh(P);
+    ok(tag+'‘← 뒤로’는 프로젝트를 나가지 않고 바로 전 탭으로 (견적 → 진행 상황 → 고객 정보), 더 없으면 그때 목록',seq.join(' > ')==='quote|견적@projects|p1 > prog|진행 상황@projects|p1 > cust|고객 정보@projects|p1'&&end===''&&(await P.evaluate(()=>location.hash))==='#projects',seq.join(' > ')+' > '+end);
+    // 브라우저·휴대폰 뒤로 가기도 같은 동작
+    await P.locator('tbody tr[data-open="projects"][data-id="p1"]').first().click();await wait(900);await tab(P,'prog');await tab(P,'quote');await tab(P,'as');
+    await P.goBack().catch(()=>{});await wait(800);const g1=(await cur(P))+'@'+(await sh(P)),u1=inApp(P);await P.goBack().catch(()=>{});await wait(800);const g2=(await cur(P))+'@'+(await sh(P));await P.goBack().catch(()=>{});await wait(800);const g3=await sh(P),u3=inApp(P);
+    ok(tag+'브라우저·휴대폰 뒤로 가기: 사후 관리 → 견적 → 진행 상황 → 목록 (인트라넷 안)',g1==='quote|견적@projects|p1'&&g2==='prog|진행 상황@projects|p1'&&g3===''&&u1&&u3,[g1,g2,g3].join(' > '));
+    // 고치던 내용: 탭을 오가도 그대로 · 탭 이동은 묻지 않음 · 프로젝트를 나갈 때만 확인
+    await P.locator('tbody tr[data-open="projects"][data-id="p1"]').first().click();await wait(900);await tab(P,'cust');await P.locator('#sheetForm [data-k="memo"]').fill('탭 오가며 고치는 중');await tab(P,'quote');const ask0=await P.locator('#navAsk').count();await tab(P,'as');await back(P);await back(P);
+    const kept=await val(P,'memo'),at=await cur(P);ok(tag+'고치던 칸은 탭을 오가도·뒤로 가도 그대로 · 탭 이동 때는 확인 창 없음',kept==='탭 오가며 고치는 중'&&ask0===0&&at==='cust|고객 정보'&&(await P.locator('#navAsk').count())===0,kept+' '+at);
+    await back(P);const ask1=await P.locator('#navAsk').count();if(ask1)await P.locator('#navAsk [data-nav="stay"]').click();await wait(400);const still=await sh(P);
+    await back(P);if(await P.locator('#navAsk').count())await P.locator('#navAsk [data-nav="drop"]').click();await wait(700);
+    ok(tag+'더 돌아갈 탭이 없을 때 뒤로 → ‘저장하지 않은 내용이 있어요’ 확인(계속 수정이면 그대로 · 저장 안 함이면 목록)',ask1===1&&still==='projects|p1'&&(await sh(P))==='',ask1+' '+still);
+    // 다른 창(견적)에 다녀와도 보던 탭 그대로
+    await P.locator('tbody tr[data-open="projects"][data-id="p1"]').first().click();await wait(900);await tab(P,'cust');await tab(P,'quote');await P.locator('#pjHub .hubi[data-open="quotes"]').first().click();await wait(1200);const inQ=await sh(P);
+    await back(P);const rb=(await cur(P))+'@'+(await sh(P));await back(P);const rb2=(await cur(P))+'@'+(await sh(P));await back(P);
+    ok(tag+'견적 탭 → 견적 상세 → 뒤로: 프로젝트의 견적 탭 → 뒤로: 고객 정보 탭 → 뒤로: 목록',inQ==='quotes|q1'&&rb==='quote|견적@projects|p1'&&rb2==='cust|고객 정보@projects|p1'&&(await sh(P))==='',[inQ,rb,rb2].join(' > '));
+    // 가려진 탭의 칸 때문에 저장이 막히면 그 탭을 열어 줌
+    await P.locator('tbody tr[data-open="projects"][data-id="p1"]').first().click();await wait(900);await tab(P,'as');await P.evaluate(()=>{const e=document.querySelector('#sheetForm [data-k="custName"]');e.value=''});await P.locator('#saveSheet').click();await wait(700);
+    ok(tag+'사후 관리 탭에서 저장했는데 고객명이 비어 있으면 → 고객 정보 탭이 열려 그 칸이 보임',(await cur(P))==='cust|고객 정보'&&(await vis(P)).name,await cur(P));
+    await P.evaluate(()=>window.__hfT.closeSheet());await wait(300);
+    if(who!=='admin'){const den=await P.evaluate(()=>window.__mockDenied.filter(x=>!/^(activity|access|knock)/.test(x)));ok(tag+'권한 밖 쓰기 0',!den.length,den.join(','));await P.close()}}
+   const D=await dbv();ok('15 '+vn+' 탭·뒤로 가기만으로는 프로젝트 원본이 바뀌지 않음',D['projects/p1'].updatedAt===T0&&!D['projects/p1'].memo);
+   await ctx.close()}
+ }
  //__MORE__
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
