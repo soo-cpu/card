@@ -79,8 +79,9 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
    ok(t17+'정진혁이 만든 프로젝트가 정진혁 목록에 바로 (고객 이름·현장명·번호)',!!jp&&l1.includes(jp.no)&&/박새롬/.test(l1)&&/아름마을LG/.test(l1),l1.replace(/\s+/g,' ').slice(0,200));
    await wait(3000);await go(B,'#projects');await go(C,'#projects');await go(A,'#projects');const lb=await B.locator('#view').innerText(),lc=await C.locator('#view').innerText();
    ok(t17+'대표 화면을 기다리지 않고 이봄이·채진아 목록에도 바로 (공용 칸)',!!jp&&lb.includes(jp.no)&&/박새롬/.test(lb)&&lc.includes(jp.no)&&/박새롬/.test(lc),lb.replace(/\s+/g,' ').slice(0,160));
+   {const has=x=>/구리 인창 아름마을LG 202동 708호/.test(x)&&/24평/.test(x)&&/요청: 화이트 톤/.test(x)&&/010-5555-6666/.test(x)&&/욕실 2곳/.test(x);ok(t17+'목록에서 바로 기본 정보가 보임: 주소·평형·공사 내용·요청·고객 전화번호 (정진혁·이봄이·채진아)',has(l1.replace(/\s+/g,' '))&&has(lb.replace(/\s+/g,' '))&&has(lc.replace(/\s+/g,' ')),lb.replace(/\s+/g,' ').slice(lb.replace(/\s+/g,' ').indexOf('아름마을LG')-10,lb.replace(/\s+/g,' ').indexOf('아름마을LG')+140));ok(t17+'목록 가로 넘침 없음 (정진혁·이봄이)',await J.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2)&&await B.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2))}
    for(let i=0;i<20;i++){D=await dbv();if(jp&&D['projects/'+jp.no])break;await wait(1000)}
-   const la=await A.locator('#view').innerText();const acu=jc&&D['cpriv/'+jc.id];
+   await wait(1500);   const la=await A.locator('#view').innerText();const acu=jc&&D['cpriv/'+jc.id];
    ok(t17+'대표 목록·원본에도 반영 (원본 projects 문서 · 고객 전화번호는 cpriv 에)',!!jp&&!!D['projects/'+jp.no]&&la.includes(jp.no)&&/박새롬/.test(la)&&!!acu&&acu.tel==='010-5555-6666'&&D['customers/'+jc.id].tel==='',JSON.stringify(acu));
    if(jp){for(const [P,nm] of [[B,'이봄이'],[A,'최윤수'],[J,'정진혁'],[C,'채진아']]){await openS(P,'projects',jp.no);const v=await val(P,'custTel'),hub=await P.locator('#pjHub').innerText().catch(()=>''),fv=await P.evaluate(()=>['addr','route','req','custName'].map(k=>(document.querySelector('#sheetForm [data-k="'+k+'"]')||{}).value).join('|'));
      ok(t17+nm+': 그 프로젝트를 열면 기본 정보(고객 이름·전화번호·주소·유입 경로·요청)가 그대로 · 고객 정보 카드에도 번호',v==='010-5555-6666'&&/010-5555-6666/.test(hub)&&/박새롬/.test(hub)&&fv==='구리 인창 아름마을LG 202동 708호|전화|화이트 톤|박새롬',v+' '+fv);await close(P)}}
@@ -147,6 +148,16 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
    const pp=(await S(A,'projects')).find(p=>p.custName==='직접손님');ok('14 사람이 직접 적은 현장명은 덮지 않음',!!pp&&pp.title==='직접 적은 이름',pp&&pp.title);
    await ctx.close()}
  }
+ // 17: 실제 저장소처럼 '바뀐 문서를 보는 구독만 부르는' 상태에서도 바로 보이는지 (직원 → 직원·대표, 대표 → 직원)
+ if(on('17')){const {ctx,open,dbv}=await mk(VPS[0][1],BASE,STUB+'window.__MOCKEXACT=true;');const A=await open('admin',12000);const J=await open('jjh',8000);const B=await open('bom',8000);
+  await openS(J,'projects');await fill(J,'custName','실시간손님');await fill(J,'custTel','01088889999');await fill(J,'addr','구리 수택 한성아파트 3동 101호');await fill(J,'py','32');await J.locator('#sheetForm [data-k="route"]').selectOption('소개');await save(J,2500);
+  const seenIn=async(P,name,max)=>{const t0=Date.now();for(;;){if((await P.evaluate(n=>window.__hfT.S().projects.some(p=>p.custName===n),name)))return Date.now()-t0;if(Date.now()-t0>max)return -1;await wait(500)}};
+  const tb=await seenIn(B,'실시간손님',8000),ta=await seenIn(A,'실시간손님',25000);await go(B,'#projects');const lb=(await B.locator('#view').innerText()).replace(/\s+/g,' ');
+  ok('17 (바뀐 문서만 부르는 저장소) 정진혁이 문의 접수로 만든 프로젝트 → 이봄이 화면 8초 안 · 대표 화면 25초 안에 목록에',tb>=0&&ta>=0&&/실시간손님/.test(lb)&&/한성아파트/.test(lb)&&/32평/.test(lb)&&/010-8888-9999/.test(lb),'이봄이 '+tb+'ms · 대표 '+ta+'ms');
+  await openS(A,'projects');await fill(A,'custName','대표손님');await fill(A,'custTel','01077770000');await fill(A,'addr','구리 교문 대우아파트 5동 505호');await A.locator('#sheetForm [data-k="route"]').selectOption('전화');await save(A,2500);
+  const tj=await seenIn(J,'대표손님',25000);await go(J,'#projects');const lj=(await J.locator('#view').innerText()).replace(/\s+/g,' ');
+  ok('17 (바뀐 문서만 부르는 저장소) 대표가 만든 프로젝트 → 정진혁 화면 25초 안에 목록에 (주소·전화번호 포함)',tj>=0&&/대표손님/.test(lj)&&/대우아파트/.test(lj)&&/010-7777-0000/.test(lj),'정진혁 '+tj+'ms');
+  await ctx.close()}
  // ================= 16 =================
  if(on('16')){
   for(const [vn,opt] of VPS){const tag='16 '+vn+' ';
