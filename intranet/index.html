@@ -3692,9 +3692,9 @@ const hubMon=q=>{try{return amtLocked(q)&&!canMoney()?"금액 미확정":(num(q.
 function hubSite(s){const L=(s.logs||[]).filter(l=>l&&l.d).sort((a,b)=>String(b.d).localeCompare(String(a.d)))[0];return {pg:Math.max(0,Math.min(100,num(s.progress))),proc:s.proc||"",last:L?(String(L.d).slice(5,10)+" "+(L.proc?L.proc+" · ":"")+String(L.text||"").slice(0,40)):""}}
 function hubParts(p){const byD=(a,b)=>String(b.d||b.createdAt||"").localeCompare(String(a.d||a.createdAt||""));
   return {cu:S.customers.filter(c=>(c.code&&p.custCode&&c.code===p.custCode)||(c.linkedPno&&c.linkedPno===p.no)),si:S.sites.filter(x=>p.no&&x.pno===p.no),qu:S.quotes.filter(x=>p.no&&x.pno===p.no).sort(byD),as:(S.as||[]).filter(x=>p.no&&x.pno===p.no).sort(byD)}}
-const hubItem=(col,id,html)=>`<button type="button" class="hubi" data-open="${col}" data-id="${esc(id)}">${html}</button>`;
+const hubItem=(col,id,html,x)=>`<button type="button" class="hubi" data-open="${col}" data-id="${esc(id)}"${x||""}>${html}</button>`;
 function hubSiteHTML(s0){const s=hubV("sites",s0),g=hubSite(s0);return hubItem("sites",s0.id,`<b>${esc(s.name||"현장")}</b> <span class="pill">${esc(s.status||"")}</span><small>공정 ${esc(g.proc||"—")} · 진행률 ${g.pg}%</small><div class="hubbar" role="img" aria-label="진행률 ${g.pg}%"><i style="width:${g.pg}%"></i></div><small>마지막 일지: ${esc(g.last||"아직 없음")}</small>`)}
-function hubQuoteHTML(q0){const q=hubV("quotes",q0),m=q.__masked?"":hubMon(q0);return hubItem("quotes",q0.id,`<b>${esc(q.qno||q.ver||"견적")}</b> <span class="pill">${esc(q.status||"")}</span><small>${esc(q.d||"")}${m?" · "+esc(m):""}</small>`)}
+function hubQuoteHTML(q0){const q=hubV("quotes",q0),m=q.__masked?"":hubMon(q0);return hubItem("quotes",q0.id,`<b>${esc(q.qno||q.ver||"견적")}</b> <span class="pill">${esc(q.status||"")}</span><small>${esc(q.d||"")}${m?" · "+esc(m):""}</small>`,' data-qfmt="1"')}
 function hubAsHTML(a){return hubItem("as",a.id,`<b>${esc(String(a.content||a.site||"A/S").slice(0,30))}</b> <span class="pill ${a.status==="완료"?"ok":"warn"}">${esc(a.status||"접수")}</span><small>접수 ${esc(a.d||"")}${a.done?" · 처리 "+esc(a.done):""}${a.mgr?" · 담당 "+esc(a.mgr):""}</small>`)}
 function hubWarr(p){const T=todayStr();if(p.warrantyEnd)return `<small>하자보수 ${esc(p.warrantyEnd)}까지 <span class="pill ${p.warrantyEnd<T?"":"ok"}">${p.warrantyEnd<T?"기간 끝":"기간 중"}</span></small>`;if(p.end&&["준공","사후관리","종료"].includes(p.stage)){try{return `<small>준공 ${esc(p.end)} · 1개월 점검 ${esc(addMon(p.end,1))} · 1년 점검 ${esc(addMon(p.end,12))}</small>`}catch(e){}}return ""}
 function hubHTML(p){if(!p||!p.no)return "";const H=hubParts(p),pv=hubV("projects",p),more=(n,k)=>n>4?`<small>외 ${n-4}건 · <a href="#${k}">${k==="quotes"?"견적 관리":"사후 관리"}에서 전체 보기</a></small>`:"";
@@ -3702,7 +3702,7 @@ function hubHTML(p){if(!p||!p.no)return "";const H=hubParts(p),pv=hubV("projects
   const si=H.si.length?H.si.map(hubSiteHTML).join(""):`<small>아직 현장이 없어요 · 계약 단계로 넘기면 만들어져요</small>`;
   const qu=H.qu.length?H.qu.slice(0,4).map(hubQuoteHTML).join("")+more(H.qu.length,"quotes"):`<small>아직 견적이 없어요</small>`;
   const as=(H.as.length?H.as.slice(0,4).map(hubAsHTML).join("")+more(H.as.length,"as"):`<small>접수된 A/S가 없어요</small>`)+hubWarr(p);
-  return `<section class="hub" id="pjHub" aria-label="이 프로젝트에 연결된 것"><div class="hubc"><h4>고객 정보 <span class="pill">${H.cu.length}</span></h4>${cu}</div><div class="hubc"><h4>현장 진행 상황 <span class="pill">${H.si.length}</span></h4>${si}</div><div class="hubc"><h4>견적 <span class="pill">${H.qu.length}</span></h4>${qu}</div><div class="hubc"><h4>사후관리 (점검·A/S) <span class="pill">${H.as.length}</span></h4>${as}</div></section>`}
+  return `<section class="hub" id="pjHub" aria-label="이 프로젝트에 연결된 것"><div class="hubc"><h4>고객 정보 <span class="pill">${H.cu.length}</span></h4>${cu}</div><div class="hubc"><h4>현장 진행 상황 <span class="pill">${H.si.length}</span></h4>${si}</div><div class="hubc"><h4>견적 <span class="pill">${H.qu.length}</span></h4><button type="button" class="btn sm pri" data-pqenter="${esc(p.no)}" style="width:100%;min-height:40px;margin:2px 0 4px">${H.qu.length?"견적서 작성 열기":"+ 견적 1차 만들기"}</button><small>홈퍼니싱 견적서_ver1 양식 (공종별) · 단가 미정 → 단가 첨부</small>${qu}</div><div class="hubc"><h4>사후관리 (점검·A/S) <span class="pill">${H.as.length}</span></h4>${as}</div></section>`}
 // 고객 카드·검색 결과: 이 고객의 모든 것 (프로젝트가 여러 개면 프로젝트별로)
 function custHubHTML(c,head){if(!c)return "";const P=S.projects.filter(p=>canSeeRow("projects",p)&&((c.code&&p.custCode===c.code)||(c.linkedPno&&p.no===c.linkedPno))).sort((a,b)=>String(b.no||"").localeCompare(String(a.no||"")));const nos=new Set(P.map(p=>p.no));
   const lq=c.code?S.quotes.filter(q=>q.code===c.code&&!nos.has(q.pno)):[],ls=c.code?S.sites.filter(x=>x.code===c.code&&!nos.has(x.pno)):[];const cv=hubV("customers",c);
@@ -3736,10 +3736,23 @@ function flowNext(to){if(!sheet||sheet.col!=="projects")return;const el=document
   const v=to==="종료"?"종료":to==="미계약 종료"?"미계약 종료":(FLOW.find(f=>f[0]===to)||[0,[to]])[1].slice(-1)[0];if(el)el.value=v;const pno=sheet.data&&sheet.data.no;if(to==="사후관리"){const e2=document.querySelector('#sheetForm [data-k="end"]');if(e2&&!e2.value)e2.value=todayStr()}const pr=saveSheet();Promise.resolve(pr).then(()=>setTimeout(()=>{if(v==="견적"&&pno)pjQuoteOpen(pno);else if(!["종료","미계약 종료"].includes(v))pjReopen(pno)},400))}
 // 이전 단계로 (2026-11-05 v2): 잘못 넘긴 단계를 되돌림 · 견적 단계 누르면/넘어가면 그 프로젝트 견적서(상세 견적) 바로 열기, 견적이 없으면 빈 견적 1차를 만들어 열기
 async function flowBack(to){if(!sheet||sheet.col!=="projects")return;if(!await okAsk("‘"+to+"’ 단계로 되돌릴까요?"))return;const el=document.querySelector('#sheetForm [data-k="stage"]');const v=(FLOW.find(f=>f[0]===to)||[0,[to]])[1].slice(-1)[0];try{knock("열람",{what:"이전 단계로",target:((sheet.data&&sheet.data.no)||"")+" → "+v})}catch(e){}if(el)el.value=v;const no=(sheet.data||{}).no;Promise.resolve(saveSheet()).then(()=>setTimeout(()=>pjReopen(no),400))}
-async function pjQuoteOpen(no){if(!no)return;const qs=S.quotes.filter(q=>q.pno===no).sort((a,b)=>String(b.createdAt||b.d||"").localeCompare(String(a.createdAt||a.d||"")));
-  if(qs.length){qOpenTab="v15";sheet=null;openSheet("quotes",qs[0].id);return}
+async function pjQuoteOpen(no,tab){if(!no)return;const qs=S.quotes.filter(q=>q.pno===no).sort((a,b)=>String(b.createdAt||b.d||"").localeCompare(String(a.createdAt||a.d||"")));
+  if(qs.length){qOpenTab=tab||"v15";sheet=null;openSheet("quotes",qs[0].id);return}
   const d={status:"신규 상담",d:todayStr(),staff:(myStaff()||{}).name||"",items:[],amount:0};try{fillFromProject(d,no,"quotes")}catch(e){}d.pno=no;d.qno=nextQno(no);d.ver=String(d.qno).slice(no.length+1);d.createdAt=nowISO();d.createdBy=me.id;d.updatedAt=nowISO();d.updatedBy=me.id;
-  const nid=newId("qu");try{await put("quotes",nid,d);if(!S.quotes.some(q=>q.id===nid))S.quotes.unshift(Object.assign({id:nid},d));logAct("quotes","견적 시작 (프로젝트에서)",d.qno);qOpenTab="v15";sheet=null;openSheet("quotes",nid);toast(d.qno+" 견적을 만들었어요 · 왼쪽에서 항목을 고르면 오른쪽에 금액이 바로 나와요")}catch(e){toast("견적을 만들지 못했어요")}}
+  const nid=newId("qu");try{await put("quotes",nid,d);if(!S.quotes.some(q=>q.id===nid))S.quotes.unshift(Object.assign({id:nid},d));logAct("quotes","견적 시작 (프로젝트에서)",d.qno);qOpenTab=tab||"v15";sheet=null;openSheet("quotes",nid);toast(d.qno+" 견적을 만들었어요 · "+(tab==="detail"?"공종을 펼쳐 수량을 넣으면 금액이 자동이에요":"왼쪽에서 항목을 고르면 오른쪽에 금액이 바로 나와요"))}catch(e){toast("견적을 만들지 못했어요")}}
+// 견적 들어가는 길 하나 (다음 지시 2026-11-13 v1 · 2번): 프로젝트의 견적 카드 → 견적서_ver1 양식(공종별 상세 견적) 탭으로 열고, 없으면 1차를 만들어 엶. 상세 자동견적(2·3번)이 생기면 이 함수에서 같은 화면으로 잇기
+const Q_ENTER_TAB="detail";
+async function quoteEnter(no){if(!no)return;if(sheet&&!(await navLeave()))return;await pjQuoteOpen(no,Q_ENTER_TAB)}
+document.addEventListener("click",e=>{const t=e.target&&e.target.closest&&e.target.closest("[data-pqenter]");if(!t)return;e.preventDefault();quoteEnter(t.dataset.pqenter)});
+// 견적 단계 표시: ① 항목·수량 → ② 단가 미정(0원이거나 단가표에 없는 항목) → ③ 단가 첨부. 지금 견적 줄에서 바로 셈 (저장소에 따로 쓰지 않음)
+function qStepInfo(){const E=(sheet&&sheet.qe)||[],L=E.filter(l=>String(l.name||"").trim()&&l.k!=="v15_disc"),np=L.filter(l=>!num(l.price)||l.src==="v18");return {n:L.length,np:np.length,step:!L.length?0:np.length?1:2}}
+function qStepHTML(){if(!sheet||sheet.col!=="quotes"||!sheet.id||!sheet.qe)return "";const s=qStepInfo(),st=i=>`style="display:inline-flex;gap:4px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid ${s.step===i?"#1F4E79":"var(--line)"};background:${s.step===i?"#D1E3F3":"transparent"};font-weight:${s.step===i?700:400};font-size:13px"`;
+  return `<div class="card" id="qStep" data-step="${s.step}" style="padding:8px 12px;margin:0" aria-label="견적 단계"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><b style="color:#1F4E79">견적 단계</b><span class="hint">홈퍼니싱 견적서_ver1 양식 (공종별)</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px"><span ${st(0)}>① 항목·수량 넣기${s.n?" · "+s.n+"개":""}</span><span aria-hidden="true">→</span><span ${st(1)}>② 단가 미정${s.np?` <span class="pill bad">${s.np}개</span>`:(s.n?" 0개":"")}</span><span aria-hidden="true">→</span><span ${st(2)}>③ 단가 첨부${s.step===2?' <span class="pill ok">끝</span>':""}</span></div>
+  <div class="chips" style="margin-top:6px"><button type="button" class="btn sm pri" data-qtab="detail">공종별 견적서 열기</button>${canPrice()?`<button type="button" class="btn sm ok" data-redprice="1">단가 정하기 (단가표)</button>`:""}<button type="button" class="btn sm" data-qtab="print">견적서 출력</button></div>
+  <span class="hint">단가가 0원이거나 단가표에 없는 항목이 ‘단가 미정’이에요. ‘공종별 견적서’에서 단가 칸에 넣으면(이 견적에만) ③ 단가 첨부로 넘어가요.</span></div>`}
+let qStepT=0;function qStepUpd(){clearTimeout(qStepT);qStepT=setTimeout(()=>{const b=document.getElementById("qStep");if(!b||!sheet||sheet.col!=="quotes")return;const s=qStepInfo(),sig=s.step+"|"+s.n+"|"+s.np;if(b.dataset.sig===sig)return;const w=document.createElement("div");w.innerHTML=qStepHTML();const n=w.firstElementChild;if(!n)return;n.dataset.sig=sig;b.replaceWith(n)},60)}
+["input","change","click"].forEach(ev=>document.addEventListener(ev,()=>{if(sheet&&sheet.col==="quotes")qStepUpd()}));
 document.addEventListener("click",e=>{const t=e.target&&e.target.closest&&e.target.closest("[data-pback],[data-pqopen]");if(!t)return;if(t.dataset.pback){flowBack(t.dataset.pback);return}if(t.dataset.pqopen)pjQuoteOpen(t.dataset.pqopen)});
 // 프로젝트 ↔ 현장·견적·고객 검색 연결 (2026-11-05 대표 요청): 현장·견적·고객 관리에서 검색하면 그 말이 들어간 프로젝트도 찾아서, 그 고객의 현장·견적·고객 카드를 바로 열거나 새로 시작
 function xlinkHTML(k){if(!query||!["sites","quotes","customers"].includes(k))return "";const q=String(query).toLowerCase(),cuOf=p=>S.customers.find(c=>c.code&&c.code===p.custCode);
@@ -4571,7 +4584,7 @@ function drawSheet(){
     ${navBarHTML()}<h3><span>${esc(title)}</span><button class="btn sm" id="closeSheet">닫기</button></h3>
     ${m&&m.sec?`<div class="secnote">${esc(m.sec)}</div>`:""}
     ${col==="projects"&&id?pcTopHTML(id)+hubHTML(d)+flowHTML(d)+renderHTML(d,id):""}${col==="customers"&&id?custHubHTML(Object.assign({},d,{id})):""}${apBox}${col==="sites"&&id?decHTML(Object.assign({id},d)):""}${col==="quotes"&&!locked?qcBoxHTML():""}${col==="quotes"?qPlansHTML(d):""}
-    ${col==="quotes"&&id?qTabsHTML():""}<form class="form${col==="quotes"&&id?" qt qt-"+(sheet.qtab||"edit"):""}" id="sheetForm" ${locked?"inert":""}>${col==="reports"&&!locked?rpCustHTML():""}${fieldsOf(col).map(f=>fieldHTML(f,d)).join("")}${hrBlock}${col==="quotes"&&canCost()?`<div class="f wide">${qHfHTML(d)}</div>`:""}</form>
+    ${col==="quotes"&&id?qStepHTML()+qTabsHTML():""}<form class="form${col==="quotes"&&id?" qt qt-"+(sheet.qtab||"edit"):""}" id="sheetForm" ${locked?"inert":""}>${col==="reports"&&!locked?rpCustHTML():""}${fieldsOf(col).map(f=>fieldHTML(f,d)).join("")}${hrBlock}${col==="quotes"&&canCost()?`<div class="f wide">${qHfHTML(d)}</div>`:""}</form>
     <div class="actions">
       <div>${id&&(me.admin||(!locked&&mode!=="shared"))?(sheet.confirmDel?`<span class="muted">${db&&TRASH_COLS.includes(sheet.col)?"휴지통으로 옮길까요? 30일 안에 되살릴 수 있고, 누가·언제 지웠는지 기록돼요":"정말 지울까요?"}</span> <button class="btn bad sm" id="delYes">지우기</button> <button class="btn sm" id="delNo">취소</button>`:`<button class="btn bad sm" id="delAsk">삭제</button>`):(id&&!me.admin&&mode==="shared"&&db?delReqBtn(sheet.col,id):"")}</div>
       <div class="r">${locked?`<span class="muted">${col==="approvals"?"결재가 시작된 서류는 고칠 수 없어요":"보기 전용"}</span>`:`<button class="btn" id="cancelSheet">취소</button><button class="btn pri" id="saveSheet">${id?"저장":(col==="approvals"?"결재 올리기":"등록")}</button>`}</div>
@@ -5072,7 +5085,7 @@ document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-open],[data-new]");if(!t)return;
   if(t.dataset.new){openSheet(t.dataset.new);return}
   if(t.dataset.newkind){openSheet("approvals",null,t.dataset.newkind);return}
-  if(t.dataset.open){if(sheet&&!(await navLeave()))return;openSheet(t.dataset.open,t.dataset.id);return}
+  if(t.dataset.open){if(sheet&&!(await navLeave()))return;if(t.dataset.qfmt)qOpenTab=Q_ENTER_TAB;openSheet(t.dataset.open,t.dataset.id);return}
   if(t.dataset.filter!==undefined){filter[route()]=t.dataset.filter;render();return}
   if(t.id==="fbBtn"){openFeedback();return}
   if(t.dataset.fbx){exportFeedback();return}
