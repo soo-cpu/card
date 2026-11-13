@@ -109,6 +109,11 @@ details.plan summary{cursor:pointer;font-weight:700}
 .veil{position:fixed;inset:0;background:rgba(10,18,32,.45);display:grid;place-items:center;z-index:20;padding:16px}
 .sheet{background:var(--panel);color:var(--ink);border-radius:14px;width:min(820px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:20px;display:grid;gap:14px;border:1px solid var(--line)}
 .sheet h3{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.navbar{position:sticky;top:-20px;z-index:6;margin:-20px -20px 0;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;min-width:0}
+.navbar>.btn{flex:0 0 auto;min-height:36px;font-weight:700}
+.crumb{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:center;min-width:0;font-size:13px;color:#555}.crumb i{font-style:normal;color:#999}.crumb b{color:#1F4E79;overflow-wrap:anywhere}.crumb span{overflow-wrap:anywhere}
+.crumb button{border:0;background:transparent;font:inherit;color:#1F4E79;text-decoration:underline;cursor:pointer;padding:4px 0;min-height:28px;overflow-wrap:anywhere;text-align:left}
+#navRetBar{position:sticky;top:0;z-index:5;padding:8px 12px;background:#D1E3F3;border-bottom:1px solid #1F4E79;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#navRetBar:empty{display:none}
 .sheet h4{margin:6px 0 0;font-size:14px;color:var(--accent);grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px}
 .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
 .f{display:grid;gap:4px;min-width:0;align-content:start}
@@ -298,7 +303,7 @@ body.cs-cust .fbbtn{display:none}@media print{#askFab,#askVeil{display:none!impo
     <div class="mtools" id="mtools"><button type="button" class="mtb" id="navMore" aria-expanded="false">메뉴 더보기</button><button type="button" class="mtb" id="pcvBtn" aria-pressed="false">전체 보기</button><button type="button" class="mtb" id="zoomReset" hidden>원래 크기</button></div>
     <div class="who" id="who"></div>
   </aside>
-  <main class="main"><div class="wrap" id="view"></div></main>
+  <main class="main"><div id="navRetBar"></div><div class="wrap" id="view"></div></main>
 </div>
 <div id="layer"></div>
 <button class="fbbtn" id="fbBtn" type="button">불편해요 / 고쳐주세요</button>
@@ -4501,12 +4506,13 @@ function openSheet(col,id,preset){
   if(col==="reports"&&id&&d.acctBy){const a=(ACCT[d.acctBy]||[]).find(x=>x.id===id);if(a){d.pays=a.pays||[];d.ins=a.ins||[];d.cashNote=a.cashNote||""}}
   const rows={};allRowFields(col).forEach(f=>{const src=HR_FIELDS.includes(f)?hr:d;rows[f[0]]=(src[f[0]]||[]).map(x=>Object.assign({},x))});
   sheet={col,id:id||null,data:d,hr,files:(d.files||[]).slice(),rows,steps:(d.steps||[]).slice(),confirmDel:false,busy:false};
+  navPush(col,id||null);
   if(col==="quotes"&&id){sheet.qtab=qOpenTab||"v15";qOpenTab="";if(!(amtLocked(d)&&!me.admin&&!isAcct(myStaff())))sheet.qe=JSON.parse(JSON.stringify(d.items||[]));if(!sheet.qe&&(sheet.qtab==="detail"||sheet.qtab==="v15"))sheet.qtab="edit"}
   drawSheet();
 }
 function sheetLocked(){const {col,id,data:d}=sheet;if(col==="notices"&&!canNotice())return true;if(col==="reports"&&id&&d.createdBy&&d.createdBy!==me.id&&!me.admin)return true;if(col==="approvals"&&id&&d.status&&d.status!=="결재 대기"&&!(d.status==="반려"&&d.createdBy===me.id))return true;if(col==="staff"&&mode==="shared"&&!me.admin&&!isCoBoss(myStaff()))return true;if(col==="manuals"&&id&&d.state==="확정"&&!me.admin)return true;return false}
 function drawSheet(){
-  if(!sheet){$("#layer").innerHTML="";return}
+  if(!sheet){$("#layer").innerHTML="";navSoon();return}
   const {col,id,data:d}=sheet;const m=MOD[col];
   const title=col==="notices"?(id?"공지":"공지 쓰기"):(id?(m.title+" · "+(d.title||d.name||d.code||d.site||"상세")):m.add);
   const locked=sheetLocked();
@@ -4562,7 +4568,7 @@ function drawSheet(){
   if(col==="staff"&&id&&!me.admin&&isAcct(myStaff())&&PAYC[id]&&!isHrMgr(myStaff())){const h=PAYC[id];hrBlock+=`<h4>급여 정보 (경리용 · 주민번호는 대표만)</h4><div class="f wide"><div>월 급여 ${won(h.monthly)} · 연봉 ${won(h.salary)}</div><div>${esc(h.bank||"")} ${esc(h.account||"")} ${h.holder?"(예금주 "+esc(h.holder)+")":""}</div><span class="hint">대표가 인사 관리에서 고치면 자동으로 바뀌어요. 다른 직원에게 보여 주거나 보내지 마세요.</span></div>`}
   if(col==="staff"&&id){const u=leaveUsed(d.name),L=legalLeave(d.joined),a=num(d.annual)||L||0;hrBlock=`<div class="f wide"><span class="hint">연차 사용 (승인된 휴가신청서 기준): ${u}일${a?` / ${a}일 · 남은 ${a-u}일`:""}${L!==null?` · 취업규칙 제38조 기준 올해 연차 ${L}일 (입사일로 자동 계산, ‘올해 연차’ 칸에 적으면 그 값이 우선)`:""}</span></div>`+hrBlock}
   $("#layer").innerHTML=`<div class="veil" id="veil"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-    <h3><span>${esc(title)}</span><button class="btn sm" id="closeSheet">닫기</button></h3>
+    ${navBarHTML()}<h3><span>${esc(title)}</span><button class="btn sm" id="closeSheet">닫기</button></h3>
     ${m&&m.sec?`<div class="secnote">${esc(m.sec)}</div>`:""}
     ${col==="projects"&&id?pcTopHTML(id)+hubHTML(d)+flowHTML(d)+renderHTML(d,id):""}${col==="customers"&&id?custHubHTML(Object.assign({},d,{id})):""}${apBox}${col==="sites"&&id?decHTML(Object.assign({id},d)):""}${col==="quotes"&&!locked?qcBoxHTML():""}${col==="quotes"?qPlansHTML(d):""}
     ${col==="quotes"&&id?qTabsHTML():""}<form class="form${col==="quotes"&&id?" qt qt-"+(sheet.qtab||"edit"):""}" id="sheetForm" ${locked?"inert":""}>${col==="reports"&&!locked?rpCustHTML():""}${fieldsOf(col).map(f=>fieldHTML(f,d)).join("")}${hrBlock}${col==="quotes"&&canCost()?`<div class="f wide">${qHfHTML(d)}</div>`:""}</form>
@@ -4570,7 +4576,7 @@ function drawSheet(){
       <div>${id&&(me.admin||(!locked&&mode!=="shared"))?(sheet.confirmDel?`<span class="muted">${db&&TRASH_COLS.includes(sheet.col)?"휴지통으로 옮길까요? 30일 안에 되살릴 수 있고, 누가·언제 지웠는지 기록돼요":"정말 지울까요?"}</span> <button class="btn bad sm" id="delYes">지우기</button> <button class="btn sm" id="delNo">취소</button>`:`<button class="btn bad sm" id="delAsk">삭제</button>`):(id&&!me.admin&&mode==="shared"&&db?delReqBtn(sheet.col,id):"")}</div>
       <div class="r">${locked?`<span class="muted">${col==="approvals"?"결재가 시작된 서류는 고칠 수 없어요":"보기 전용"}</span>`:`<button class="btn" id="cancelSheet">취소</button><button class="btn pri" id="saveSheet">${id?"저장":(col==="approvals"?"결재 올리기":"등록")}</button>`}</div>
     </div></div></div>`;
-  drawFiles();Object.keys(sheet.rows).forEach(drawRows);
+  drawFiles();Object.keys(sheet.rows).forEach(drawRows);navTrack();
 }
 let fileBlockLogged=false;
 function drawFiles(){
@@ -4676,7 +4682,7 @@ async function saveSheet(){
     logAct(col,id?"수정":(col==="approvals"?"결재 요청":"등록"),row.title||row.name||row.code||row.site||"");
     saveNote(true,qpend?"견적 정보 저장 완료 — 고른 항목(금액)은 아직이에요. 견적 화면 오른쪽 ‘…차로 저장’을 눌러 주세요 (작성 내용은 임시 저장돼 있어요)":id?"저장 완료":(col==="approvals"?"결재를 올렸어요":"등록 완료"));
     let reopened=false;if(sheet.after){const a=sheet.after;sheet=null;await a(row,docId,privC);reopened=!!sheet}
-    if(!reopened){sheet=null;drawSheet();}
+    navSavedAt=Date.now();if(navHolding){navHoldOk=reopened?"moved":true;if(sheet&&!reopened)sheet.busy=false}else if(!reopened){navDone()}
   }catch(e){sheet.busy=false;saveNote(false,e&&e.code==="not_granted"?"이 링크는 보기 권한이라 저장할 수 없어요. 대표에게 권한을 요청해 주세요":"저장하지 못했어요")}
 }
 async function decide(result){
@@ -5066,7 +5072,7 @@ document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-open],[data-new]");if(!t)return;
   if(t.dataset.new){openSheet(t.dataset.new);return}
   if(t.dataset.newkind){openSheet("approvals",null,t.dataset.newkind);return}
-  if(t.dataset.open){openSheet(t.dataset.open,t.dataset.id);return}
+  if(t.dataset.open){if(sheet&&!(await navLeave()))return;openSheet(t.dataset.open,t.dataset.id);return}
   if(t.dataset.filter!==undefined){filter[route()]=t.dataset.filter;render();return}
   if(t.id==="fbBtn"){openFeedback();return}
   if(t.dataset.fbx){exportFeedback();return}
@@ -5075,7 +5081,7 @@ document.addEventListener("click",async e=>{
   if(t.id==="fbxDown"&&fbx){download(fbx.name,fbx.md).then(ok=>{if(ok){bumpVer("hf-fbx-ver");toast("파일을 받았어요 · 드라이브 인트라넷 폴더에 올려 주세요")}});return}
   if(t.dataset.backup){exportAll();return}
   if(t.dataset.chkall){chkAll=!chkAll;render();return}
-  if(t.id==="closeSheet"&&!sheet){$("#layer").innerHTML="";return}
+  if(t.id==="closeSheet"&&!sheet){$("#layer").innerHTML="";if(NAV.length)navOpenTop();return}
   if(t.dataset.fc&&me.admin){fcOpen=fcOpen===t.dataset.fc?"":t.dataset.fc;render();return}
   if(t.dataset.fcadd&&me.admin){const d=fcCur(fcOpen);(d[t.dataset.fcadd]=d[t.dataset.fcadd]||[]).push(t.dataset.fcadd==="adds"?{billed:"청구 안 함"}:{});PRIVP[fcOpen]=JSON.parse(JSON.stringify(d));render();return}
   if(t.dataset.fcrm&&me.admin){const d=fcCur(fcOpen);(d[t.dataset.fcrm]||[]).splice(+t.dataset.i,1);PRIVP[fcOpen]=JSON.parse(JSON.stringify(d));render();return}
@@ -5093,7 +5099,8 @@ document.addEventListener("click",async e=>{
     (async()=>{try{if(ok)await db.collection("cgrant").doc(r.uid+"__"+r.code).set({uid:r.uid,name:r.name,code:r.code,label:r.label,until,revoked:false,at:nowISO(),by:me.id});const g=await db.doc("creq/"+r.uid).get();const dd=g&&g.exists?g.data():{name:r.name,reqs:[]};dd.reqs=(dd.reqs||[]).map(x=>x.id===r.id?Object.assign({},x,{status:ok?"승인":"거절",decidedAt:nowISO()}):x);await db.collection("creq").doc(r.uid).set(dd);knock(ok?"열람 승인":"열람 거절",{target:r.code,what:r.name});toast(ok?"승인했어요":"거절했어요")}catch(e){toast("저장하지 못했어요")}})();return}
   if(t.dataset.crrev&&me.admin){const g=GRANTS.find(x=>x.id===t.dataset.crrev);if(!g)return;const o=Object.assign({},g);delete o.id;o.revoked=true;o.revokedAt=nowISO();db.collection("cgrant").doc(g.id).set(o).then(()=>{knock("열람 회수",{target:g.code,what:g.name});toast("회수했어요")}).catch(()=>toast("저장하지 못했어요"));return}
   if(!sheet)return;
-  if(t.id==="closeSheet"||t.id==="cancelSheet"){sheet=null;drawSheet();return}
+  if(t.id==="closeSheet"){if(await navLeave())navCloseAll();return}
+  if(t.id==="cancelSheet"){navBack();return}
   if(t.id==="saveSheet"){saveSheet();return}
   if(t.dataset.decide){decide(t.dataset.decide);return}
   if(t.dataset.pnew){const no=sheet.data.no;const col=t.dataset.pnew;sheet=null;openSheet(col,null,col==="approvals"?undefined:no);if(col==="approvals"){sheet.data.pno=no;const p=pjOf(no);if(p)sheet.data.ref=p.title;drawSheet()}return}
@@ -5148,9 +5155,106 @@ document.addEventListener("change",e=>{
   if(sheet&&sheet.col==="reports"&&el.dataset.k==="rk"){const c=collect();Object.assign(sheet.data,c.out);drawSheet()}
 });
 document.addEventListener("submit",e=>e.preventDefault());
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheet){sheet=null;drawSheet()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheet&&!navOverlay()){navBack()}});
 window.addEventListener("hashchange",()=>{if(CS)CS.ct=false;query="";render();window.scrollTo(0,0)});
 ["wheel","touchmove"].forEach(ev=>window.addEventListener(ev,e=>{if(CS&&CS.ct&&!(e.target.closest&&e.target.closest(".ct-panel"))){CS.ct=false;render()}},{passive:true}));
+
+// ===== 뒤로 가기 · 위치 표시 (다음 지시 2026-11-13 v1 · 1번, v0.99-27) =====
+// 상세 창(시트)을 들어온 순서대로 쌓아 두고(NAV) '← 뒤로'·취소·Esc·브라우저/휴대폰 뒤로 가기가 모두 한 단계 전으로 돌아감.
+// 고치던 내용이 있으면 화면 안 확인 창(저장 / 저장 안 함 / 계속 수정). 브라우저 기록에는 '지킴 칸' 하나만 넣어 인트라넷 밖으로 튕기지 않게 함. 저장소에는 아무것도 쓰지 않음.
+const NAV=[];let navRet=null,navGid=0,navCurG=0,navCurHash=location.hash||"#home",navSkip=0,navSkipAt=0,navTimer=0,navBusy=false,navSavedAt=0,navLast=null,navHolding=null,navHoldOk=false,navExitAt=0;
+const navKey=(c,i)=>c+"|"+(i||"");
+const navHashNow=()=>location.hash||"#home";
+function navPush(col,id){clearTimeout(navTimer);const k=navKey(col,id);
+  if(!NAV.length&&navLast&&navSavedAt&&Date.now()-navSavedAt<1000&&Date.now()-navLast.at<1000)navLast.stack.forEach(e=>NAV.push(e)); /* 저장 직후 이어서 열리는 창(단계 넘기기 → 견적 등)은 들어온 길을 이어 줌 */
+  navLast=null;const i=NAV.findIndex(e=>e.k===k);
+  if(i>=0)NAV.length=i+1;else{while(NAV.length&&!NAV[NAV.length-1].id)NAV.pop(); /* 저장 안 된 새 글은 돌아올 곳이 못 됨 */NAV.push({k,col,id:id||null,hash:navHashNow()})}
+  navRet=null;try{navRetBar()}catch(e){}navGuard()}
+function navName(e,prev){const r0=e.id?(S[e.col]||[]).find(x=>x.id===e.id):null,m=MOD[e.col]||{};
+  if(!r0)return e.col==="notices"?"공지 쓰기":(m.add||m.title||"새로 쓰기");
+  let r=r0;try{if(["customers","projects","quotes","sites"].includes(e.col))r=hubV(e.col,r0)}catch(x){}
+  if(e.col==="projects"){const a=String(r.custName||"").trim(),b=String(r.title||r.no||"").trim();return a&&a!==prev?a:(b||a||"프로젝트")}
+  if(e.col==="customers")return String(r.name||r.code||"고객");
+  if(e.col==="quotes")return "견적"+(r.ver?" "+r.ver:"");
+  if(e.col==="sites")return "현장"+(r.name&&r.name!==prev?" "+String(r.name).slice(0,16):"");
+  if(e.col==="as")return "사후관리";if(e.col==="approvals")return "결재"+(r.title?" "+String(r.title).slice(0,14):"");
+  if(e.col==="reports")return "업무 보고 "+String(r.d||"");if(e.col==="staff")return String(r.name||"직원");
+  return String(r.title||m.title||e.col).slice(0,20)}
+function navCrumb(){const L=NAV.length?NAV:(sheet?[{k:"",col:sheet.col,id:sheet.id}]:[]),P=[];if(!L.length)return P;const m=MOD[L[0].col];
+  P.push({t:L[0].col==="notices"?"공지":((m&&m.nav)||"홈"),i:-1});let prev="";L.forEach((e,i)=>{const t=navName(e,prev);prev=t;P.push({t,i})});
+  if(sheet&&sheet.col==="projects"&&sheet.pcOpen)P.push({t:"원가 관리"});return P}
+function navBarHTML(){const P=navCrumb();return `<div class="navbar"><button type="button" class="btn sm" data-navback="1" aria-label="뒤로 가기">← 뒤로</button><nav class="crumb" aria-label="지금 위치">${P.map((x,i)=>i===P.length-1?`<b aria-current="page">${esc(x.t)}</b>`:(x.i===undefined?`<span>${esc(x.t)}</span>`:`<button type="button" data-navto="${x.i}">${esc(x.t)}</button>`)).join('<i aria-hidden="true">›</i>')}</nav></div>`}
+// 지금 창의 탭·원가 창·스크롤 위치를 기억 (돌아왔을 때 같은 자리)
+function navTrack(){const e=NAV[NAV.length-1];if(!e||!sheet||e.k!==navKey(sheet.col,sheet.id))return;e.qtab=sheet.qtab||"";e.pcOpen=!!sheet.pcOpen;e.pcTab=sheet.pcTab||""}
+// 고친 내용이 있는지: 처음 손대기 직전 모습과 지금 모습을 비교 (손대지 않았으면 묻지 않음)
+function navSnap(){try{const c=collect();return JSON.stringify([c.out,c.hr,sheet.qe||null,(sheet.files||[]).map(f=>f.id)])}catch(e){return ""}}
+function navDirty(){try{if(!sheet||sheet.__nav0===undefined||!document.getElementById("saveSheet")||!document.getElementById("sheetForm"))return false;return navSnap()!==sheet.__nav0}catch(e){return false}}
+["focusin","pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,e=>{if(!sheet||!e.target||!e.target.closest)return;const s=e.target.closest("#veil .sheet");if(!s)return;
+  if(sheet.__nav0===undefined&&document.getElementById("sheetForm"))sheet.__nav0=navSnap();
+  if(ev==="pointerdown"){const t=NAV[NAV.length-1];if(t&&t.k===navKey(sheet.col,sheet.id))t.scroll=s.scrollTop}},true));
+document.addEventListener("click",()=>{setTimeout(()=>{try{navTrack()}catch(e){}},0)},true);
+function navAsk(){return new Promise(res=>{const w=document.createElement("div");w.className="okask";w.id="navAsk";w.setAttribute("role","dialog");w.setAttribute("aria-label","저장 확인");w.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px";
+  w.innerHTML=`<div style="background:var(--panel,#fff);color:var(--ink,#111);border-radius:12px;padding:18px;max-width:420px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.25)"><p style="margin:0 0 14px;font-size:15px">저장하지 않은 내용이 있어요. 저장할까요?</p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button class="btn" data-ok="0" data-nav="stay">계속 수정</button><button class="btn" data-nav="drop">저장 안 함</button><button class="btn pri" data-nav="save">저장</button></div></div>`;
+  w.addEventListener("click",e=>{e.stopPropagation();const b=e.target.closest("[data-nav]");if(!b&&e.target!==w)return;w.remove();res(b?b.dataset.nav:"stay")});document.body.appendChild(w);const f=w.querySelector('[data-nav="save"]');f&&f.focus()})}
+// 지금 창을 떠나도 되는지 (true = 떠나도 됨). 고친 내용이 있으면 물어보고, '저장'이면 저장이 끝난 뒤 true
+async function navLeave(){if(!sheet||!navDirty())return true;const a=await navAsk();if(a==="stay")return false;if(a==="drop")return true;
+  const sh=sheet;navHolding=sh;navHoldOk=false;try{await saveSheet()}catch(e){}navHolding=null;if(navHoldOk===true){if(sheet===sh)sh.__nav0=undefined;return true}return false}
+function navOpenTop(){while(NAV.length){const e=NAV[NAV.length-1];if(e.id&&(S[e.col]||[]).some(x=>x.id===e.id))break;NAV.pop()}
+  const e=NAV[NAV.length-1];if(!e){sheet=null;drawSheet();return false}
+  if(e.hash&&navHashNow()!==e.hash)location.hash=e.hash;
+  if(e.col==="quotes"&&e.qtab)qOpenTab=e.qtab;sheet=null;openSheet(e.col,e.id);
+  if(!sheet||sheet.col!==e.col||sheet.id!==e.id)return false;
+  if(e.pcOpen){sheet.pcOpen=true;if(e.pcTab)sheet.pcTab=e.pcTab;drawSheet()}
+  const sc=e.scroll||0;if(sc)setTimeout(()=>{const s=document.querySelector("#veil .sheet");if(s)s.scrollTop=sc},0);return true}
+function navCloseAll(){NAV.length=0;sheet=null;drawSheet()}
+function navDone(){if(sheet&&NAV.length>1){NAV.pop();navOpenTop()}else{sheet=null;drawSheet()}} /* 저장 끝: 들어온 곳이 있으면 그리로, 없으면 닫기 */
+async function navBack(){if(navBusy)return;navBusy=true;try{
+    if(!sheet){if(NAV.length){$("#layer").innerHTML="";navOpenTop()}return}
+    if(sheet.col==="projects"&&sheet.pcOpen){sheet.pcOpen=false;pcRedraw();return} /* 원가 관리 창은 프로젝트 안의 한 단계 */
+    if(!(await navLeave()))return;
+    if(NAV.length>1){NAV.pop();navOpenTop()}else navCloseAll()}finally{navBusy=false}}
+document.addEventListener("click",async e=>{const t=e.target&&e.target.closest&&e.target.closest("[data-navback],[data-navto],[data-navret]");if(!t)return;e.preventDefault();
+  if(t.dataset.navret){const r=navRet;if(!r)return;navRet=null;navRetBar();NAV.length=0;r.stack.forEach(x=>NAV.push(x));navOpenTop();return}
+  if(t.dataset.navback){navBack();return}
+  const i=+t.dataset.navto;if(!sheet)return;
+  if(i<0){if(await navLeave())navCloseAll();return}
+  if(i>=NAV.length-1){if(sheet.pcOpen){sheet.pcOpen=false;pcRedraw()}return}
+  if(await navLeave()){NAV.length=i+1;navOpenTop()}});
+// 시트 말고 떠 있는 다른 창 (확인 창·문자·휴지통 등) — 뒤로 가기를 누르면 맨 위 창부터 닫음
+function navOverlay(){const L=[...document.querySelectorAll(".okask,.veil")].filter(x=>!(sheet&&x.id==="veil")&&x.id!=="autolock"&&x.id!=="connVeil");return L.length?L[L.length-1]:null}
+function navDismiss(el){const no=el.querySelector('[data-ok="0"]');if(no){no.click();return}
+  const b=[...el.querySelectorAll("button")].find(x=>/^(닫기|취소|아니요|아니오|✕|×)$/.test((x.textContent||"").trim()));if(b){b.click();return}
+  if(el.id==="veil"&&!sheet){$("#layer").innerHTML="";if(NAV.length)navOpenTop();return}
+  if(el.classList.contains("veil"))el.remove()}
+function navUserBack(){const ov=navOverlay();if(ov){navDismiss(ov);return}if(sheet||NAV.length)navBack()}
+// 브라우저 기록: 창이 떠 있는 동안 '지킴 칸' 하나를 맨 위에 둠 → 뒤로 가기가 인트라넷을 떠나는 대신 popstate 로 들어옴
+function navGuard(){try{const s=history.state;if(s&&s.hfG){navCurG=s.hfG;return}navCurG=++navGid+Date.now()%100000*1000;history.pushState({hfG:navCurG},"");navCurHash=navHashNow()}catch(e){}}
+function navUnguard(){try{const s=history.state;if(s&&s.hfG){navSkip++;navSkipAt=Date.now();history.back()}}catch(e){}}
+function navSoon(){clearTimeout(navTimer);navTimer=setTimeout(navSettle,30)}
+function navSettle(){if(sheet||navOverlay()){navGuard();return}
+  if(NAV.length){const top=NAV[NAV.length-1];navLast={at:Date.now(),stack:NAV.slice()};
+    if(top.id&&top.hash&&navHashNow()!==top.hash)navRet={from:navHashNow(),gid:navCurG,stack:NAV.slice()}; /* 창을 닫으면서 다른 메뉴로 넘어감(상담 진행 모드 등) → 돌아올 길을 기억 */
+    NAV.length=0;try{navRetBar()}catch(e){}}
+  navUnguard()}
+function navRetBar(){const b=document.getElementById("navRetBar");if(!b)return;if(!navRet||navHashNow()!==navRet.from){b.innerHTML="";return}
+  const P=[];let prev="";navRet.stack.forEach(e=>{const t=navName(e,prev);prev=t;P.push(t)});const m=MOD[navRet.stack[0].col];
+  b.innerHTML=`<button type="button" class="btn sm pri" data-navret="1">← 뒤로</button><span class="crumb"><span>${esc((m&&m.nav)||"")}</span>${P.map(t=>`<i aria-hidden="true">›</i><span>${esc(t)}</span>`).join("")}<i aria-hidden="true">›</i><b>지금 화면</b></span>`}
+try{new MutationObserver(navSoon).observe(document.body,{childList:true});const ly=document.getElementById("layer");if(ly)new MutationObserver(navSoon).observe(ly,{childList:true})}catch(e){}
+window.addEventListener("popstate",e=>{const st=e.state||null;
+  if(navSkip>0&&Date.now()-navSkipAt<1500){navSkip--;if(sheet||navOverlay())navGuard();return}navSkip=0;
+  const open=!!sheet||!!navOverlay();
+  if(st&&st.hfFloor){ /* 맨 처음 칸까지 뒤로 옴: 인트라넷을 떠나기 전에 한 번 붙잡음 */
+    if(open||navHashNow()!=="#home"||Date.now()-navExitAt>5000){try{history.pushState({hfTop:1},"")}catch(x){}
+      if(open){navUserBack();navSoon()}else if(navHashNow()!=="#home")location.hash="#home";else{navExitAt=Date.now();toast("한 번 더 누르면 인트라넷에서 나가요")}}
+    else{try{history.back()}catch(x){}}
+    return}
+  if(open){if(st&&st.hfG){navCurG=st.hfG;navCurHash=navHashNow();return}
+    if(navHashNow()!==navCurHash){navCurHash=navHashNow();navGuard();return} /* 창이 뜬 채 메뉴(주소)가 바뀐 것 → 지킴 칸만 다시 */
+    navGuard();navUserBack();return} /* 지킴 칸에서 뒤로 나감 = 뒤로 가기를 누름 */
+  if(st&&st.hfG){if(navRet&&navRet.gid===st.hfG){const r=navRet;navRet=null;NAV.length=0;r.stack.forEach(x=>NAV.push(x));navCurG=st.hfG;navOpenTop();try{navRetBar()}catch(x){}}
+    else{navSkip++;navSkipAt=Date.now();try{history.back()}catch(x){}}}});
+window.addEventListener("hashchange",()=>{navCurHash=navHashNow();if(navRet&&navHashNow()!==navRet.from)navRet=null;try{navRetBar()}catch(e){}});
+try{if(!(history.state&&(history.state.hfTop||history.state.hfG||history.state.hfFloor))){history.replaceState({hfFloor:1},"");history.pushState({hfTop:1},"")}}catch(e){}
 
 // ===== 연결 상태 · 연습 모드 원인 (다음 지시 2026-11-06 v4) =====
 const PRAC_TXT={link:["링크 아님","claude.ai 인트라넷 링크가 아닌 곳(드라이브에 보관된 html 파일·다른 앱 미리 보기)에서 열렸어요. 대표가 보낸 claude.ai/artifact/… 링크로 다시 여세요."],login:["로그인 안 됨","claude.ai에 로그인되어 있지 않아요. 크롬에서 claude.ai에 회사 계정으로 로그인한 뒤 인트라넷 링크를 다시 여세요."],slow:["연결 늦음","공용 저장소가 제때 답하지 않았어요(세 번 다시 시도함). 아래 ‘다시 연결’을 누르세요. 계속되면 인터넷을 바꿔 보거나 대표에게 알려 주세요."],perm:["저장소 연결 거절","로그인은 됐지만 이 계정이 공용 저장소를 쓸 수 없어요. 공유가 ‘뷰어’로 돼 있거나 다른 계정일 수 있어요. 대표에게 ‘편집자’ 초대를 요청하세요."]};
@@ -5218,7 +5322,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   try{workListen()}catch(e){}
   if(!me.admin){try{ordListen()}catch(e){}}else{setTimeout(()=>{try{ordMdCheck()}catch(e){}},8000);setInterval(()=>{try{ordMdCheck()}catch(e){}},31*6e4)}
   db.collection("cgrant").onSnapshot(s=>{GRANTS=s.docs.map(x=>Object.assign({id:x.id},x.data()));render();queueSync()},()=>{});
-  if(window.__MOCKUSER)window.__hfT={busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()}}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
+  if(window.__MOCKUSER)window.__hfT={busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()},nav:()=>NAV.map(e=>e.k),navBack:()=>navBack(),navDirty:()=>navDirty(),navRet:()=>navRet&&navRet.from}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
   if(me.admin)db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
   render();
 })();
