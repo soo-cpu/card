@@ -912,7 +912,7 @@ async function isoSync(){if(PV||!S.staff.length)return;const T=r=>String(r.__at|
       // 직원이 고친 것·새로 만든 것 → 원본 (자기 담당이거나 새 줄만 · 지운 것·합친 것은 다시 올리지 않음)
       for(const x of mine.filter(r=>r.__by===u)){const c=S[col].find(r=>r.id===x.id);if(GONE_NOW.has(col+"__"+x.id)||(!c&&G.has(col+"__"+x.id)))continue;if(c&&T(c)>=T(x))continue;
         if(x.__deleted){await db.collection("mine/"+u+"/"+col).doc(x.id).delete();continue}
-        if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;delete o.__base;o.__at=x.__at;if(c){STAFF_HIDE.forEach(k=>{if(c[k]!==undefined)o[k]=c[k];else delete o[k]});keepFiles(o,c,x)}if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
+        if(c&&!ownedFor(s,col,c))continue;const o=clean(x);delete o.__by;delete o.__base;o.__at=x.__at;if(c){STAFF_HIDE.forEach(k=>{if(c[k]!==undefined)o[k]=c[k];else delete o[k]});if(keepFiles(o,c,x))o.__at=nowISO()}if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);if(c&&amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c&&c.amtLock)o.amtLock=c.amtLock;
         if(col==="customers"){const p=PRIVC[x.id]||{};if((x.tel||x.addr)&&String(x.__at)>String(p.updatedAt||""))await db.collection("cpriv").doc(x.id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
         await db.collection(col).doc(x.id).set(o)}
       // 원본 → 직원: 담당분은 전체, 나머지는 가린 목록 1개
@@ -949,7 +949,7 @@ const stableJs=v=>JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&!Array.isArray
 const wkT=r=>String((r&&(r.__at||r.updatedAt))||"");
 // 낡은 화면에서 저장해도 첨부가 빠지지 않게 (2026-11-13 9·10번: 대표가 붙인 PDF가 30분 뒤 직원 저장으로 사라졌던 것):
 // 직원이 저장할 때 보고 있던 줄의 시각(__base)이 원본보다 옛것이거나 없으면, 원본에만 있는 첨부를 그대로 둠. 최신을 보고 뺀 것만 빠짐
-function keepFiles(o,c,x){if(!c||!Array.isArray(c.files)||!c.files.length)return;if(x&&x.__base&&String(x.__base)>=wkT(c))return;const have=new Set((o.files||[]).map(f=>f&&f.id));const add=c.files.filter(f=>f&&f.id&&!have.has(f.id));if(add.length)o.files=(Array.isArray(o.files)?o.files:[]).concat(add)}
+function keepFiles(o,c,x){if(!c||!Array.isArray(c.files)||!c.files.length)return 0;if(x&&x.__base&&String(x.__base)>=wkT(c))return 0;const have=new Set((o.files||[]).map(f=>f&&f.id));const add=c.files.filter(f=>f&&f.id&&!have.has(f.id));if(add.length)o.files=(Array.isArray(o.files)?o.files:[]).concat(add);return add.length}
 function workRow(col,r){const o=clean(r);WORK_DROP.forEach(k=>delete o[k]);
   if(col==="customers"){const p=PRIVC[r.id]||{};o.tel=p.tel||"";o.addr=p.addr||""}
   if(amtLocked(r))AMT_KEYS.forEach(k=>{if(o[k]!==undefined)o[k]=k==="pays"?[]:""});
@@ -959,9 +959,9 @@ function workListen(){if(!db||mode!=="shared")return;WORK_COLS.forEach(col=>{if(
   if(!workReady.gone){workReady.gone=1;try{db.collection(GONEP).onSnapshot(s=>{Object.keys(WGONE).forEach(k=>delete WGONE[k]);s.docs.forEach(d=>{WGONE[d.id]=d.data()});wgoneReady=true;if(me.admin){queueSync();return}if(!PV)WORK_COLS.forEach(col=>{try{window.__wkMerge&&window.__wkMerge(col)}catch(e){}});render()},()=>{})}catch(e){}}
   if(!me.admin&&!workReady.meta){workReady.meta=1;try{db.doc("work/sync").onSnapshot(x=>{WORK_AT=(x&&x.exists&&x.data().at)||"";render()},()=>{})}catch(e){}}}
 // 직원 저장 → 공용 칸 (전화·주소는 지운 값으로 덮지 않음: 빈 칸이면 지금 값 유지)
-async function workPut(col,id,data,stamp){if(!db||!WORK_COLS.includes(col))return;const o=Object.assign({},data);WORK_DROP.forEach(k=>delete o[k]);delete o.id;
+async function workPut(col,id,data,stamp,base){if(!db||!WORK_COLS.includes(col))return;const o=Object.assign({},data);WORK_DROP.forEach(k=>delete o[k]);delete o.id;delete o.__base;if(base!==undefined)o.__base=base||"";
   if(col==="customers"){const w=(WORKD.customers||{})[id]||{},p=PRIVC[id]||{};o.tel=data.tel||p.tel||w.tel||"";o.addr=data.addr||p.addr||w.addr||""}
-  o.__by=me.id;o.__at=stamp||nowISO();await db.collection(WKP(col)).doc(id).set(o);(WORKD[col]=WORKD[col]||{})[id]=o}
+  if(base===undefined){const w0=(WORKD[col]||{})[id];if(w0)o.__base=wkT(w0)}o.__by=me.id;o.__at=stamp||nowISO();await db.collection(WKP(col)).doc(id).set(o);(WORKD[col]=WORKD[col]||{})[id]=o}
 async function workTel(id,cpv){if(!db||me.admin||mode!=="shared")return;try{const w=(WORKD.customers||{})[id]||(S.customers.find(r=>r.id===id)?clean(S.customers.find(r=>r.id===id)):null);if(!w)return;const o=Object.assign({},w,{tel:cpv.tel||w.tel||"",addr:cpv.addr||w.addr||""});delete o.id;await workPut("customers",id,o)}catch(e){}}
 async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.length)return;/* 직원 명단을 읽기 전에는 맞추지 않음: 직원이 쓴 줄을 '모르는 사람 것'으로 보고 덮거나 빼던 길 */const G=await goneSet();let up=0,down=0,gone=0;
   // 0) 삭제 표시 맞추기: 휴지통·지운 목록에 있고 원본에 없는 것 → 표시 / 원본에 다시 있거나(되살림) 목록에 없는 표시 → 지움
@@ -980,7 +980,8 @@ async function workSync(){if(PV||!me.admin||mode!=="shared"||!db||!S.staff.lengt
     for(const [id,x] of Object.entries(W)){if(!x.__by||x.__by==="admin")continue;const c=S[col].find(r=>r.id===id);
       if(GONE_NOW.has(col+"__"+id)||(!c&&G.has(col+"__"+id)))continue;if(c&&wkT(c)>=wkT(x))continue;
       const s=S.staff.find(z=>z.uid===x.__by&&z.state!=="퇴사"&&z.intra!=="사용 안 함");if(!s)continue;if(c&&!ownedFor(s,col,c))continue;
-      const o=Object.assign({},x);delete o.__by;delete o.id;if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);
+      const o=Object.assign({},x);delete o.__by;delete o.__base;delete o.id;if(col==="customers"&&c&&(c.smsLog||o.smsLog))o.smsLog=smsMerge(c.smsLog,o.smsLog);
+      if(c){const nf=keepFiles(o,c,x);if(nf)o.__at=nowISO();/* 낡은 화면 저장: 원본에만 있던 첨부를 다시 붙이고, 그 줄이 직원 사본·공용 칸으로 다시 내려가게 시각을 올림 */}
       if(c){const cc=clean(c);WORK_DROP.forEach(k=>{if(cc[k]!==undefined)o[k]=cc[k]});if(amtLocked(c)&&!isAcct(s))AMT_KEYS.forEach(k=>{if(c[k]!==undefined)o[k]=c[k]});if(c.amtLock)o.amtLock=c.amtLock}
       if(col==="customers"){const p=PRIVC[id]||{};if((x.tel||x.addr)&&((x.tel||p.tel||"")!==(p.tel||"")||(x.addr||p.addr||"")!==(p.addr||"")))await db.collection("cpriv").doc(id).set({tel:x.tel||p.tel||"",addr:x.addr||p.addr||"",updatedAt:x.__at});o.tel="";o.addr=""}
       // 옛 값 기록 (지우지 않음)
@@ -1696,7 +1697,7 @@ async function put(col,id,data){
   return putRaw(col,id,data)}
 async function putRaw(col,id,data){
   if(db&&isoMe(col)&&WORK_COLS.includes(col)&&isGone(col,id)){toast("대표가 지운 항목이라 저장하지 않았어요 · 되살리기는 대표 화면 휴지통에서");throw new Error("gone")}
-  if(db&&isoMe(col)){const st=nowISO();await db.collection("mine/"+me.id+"/"+col).doc(id).set(Object.assign({},data,{__by:me.id,__at:st}));if(WORK_COLS.includes(col))try{await workPut(col,id,data,st)}catch(e){}return}
+  if(db&&isoMe(col)){const st=nowISO(),cur=(S[col]||[]).find(r=>r.id===id),bs=cur?wkT(cur):"";/* __base = 저장할 때 내 화면이 알고 있던 그 줄의 시각 (대표 화면이 낡은 저장인지 가려 첨부를 지킴) */await db.collection("mine/"+me.id+"/"+col).doc(id).set(Object.assign({},data,{__by:me.id,__at:st,__base:bs}));if(WORK_COLS.includes(col))try{await workPut(col,id,data,st,bs)}catch(e){}return}
   if(db&&mode==="shared"&&me.admin&&ISO.includes(col))data=Object.assign({},data,{__at:nowISO()});
   if(db&&col==="activity"&&mode==="shared"&&!me.admin)return;
   if(db){await db.collection(col).doc(id).set(data)}
@@ -3322,6 +3323,24 @@ async function fillSync(){if(PV)return;if(fillBusy||!privReady.c||!privReady.p||
 // 이번 주 업무 보고의 목표(가장 최근 값)·실제 완료(합계)
 function fillWeekGoals(){const mon=fillMon(),T=todayStr(),o={};S.reports.filter(r=>r.d>=mon&&r.d<=T).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(r=>{const w=r.who||who(r.createdBy);const x=o[w]||(o[w]={fg:"",sg:"",fd:0,sd:0});if(String(r.fillGoal??"").trim())x.fg=num(r.fillGoal);if(String(r.scanGoal??"").trim())x.sg=num(r.scanGoal);x.fd+=num(r.fillDone);x.sd+=num(r.scanDone)});return o}
 const fillG=v=>v===""||v===undefined?"—":v;
+// 직원 저장으로 빠진 첨부 (대표 지시 2026-11-13 9번): 옛 화면에서 저장해 원본의 첨부가 사라진 것을 '옛 값 기록'(acct/_work/log)에서 찾아 대표가 확인하고 다시 붙임. 지우는 것은 없음
+let FLOST=null,flBusy=false;
+async function flScan(){if(!me.admin||!db||PV||mode!=="shared"||flBusy)return;flBusy=true;render();const out=[];
+  try{const g=await db.collection("acct/_work/log").get();g.docs.forEach(d=>{const x=d.data()||{};if(!WORK_COLS.includes(x.col)||!/"files"/.test(String(x.prev||"")))return;let pv=null;try{pv=JSON.parse(x.prev)}catch(e){return}
+    const row=(S[x.col]||[]).find(r=>r.id===x.id);if(!row||!Array.isArray(pv.files))return;const have=new Set((row.files||[]).map(f=>f&&f.id));
+    pv.files.forEach(f=>{if(f&&f.id&&!have.has(f.id)&&!out.some(o=>o.col===x.col&&o.id===x.id&&o.f.id===f.id))out.push({col:x.col,id:x.id,title:x.title||"",by:x.byName||"",at:x.applied||x.at||"",f})})})}catch(e){toast("기록을 읽지 못했어요")}
+  FLOST=out;flBusy=false;render()}
+function flCard(){if(!me.admin||mode!=="shared"||PV)return "";
+  if(FLOST===null)return `<section class="card"><h2><span>직원 저장으로 빠진 첨부</span><small class="muted">옛 화면에서 저장해 사라진 첨부를 기록에서 찾아요</small></h2><button type="button" class="btn sm" data-flscan="1" ${flBusy?"disabled":""}>${flBusy?"찾는 중…":"빠진 첨부 찾기"}</button></section>`;
+  if(!FLOST.length)return `<section class="card"><h2>직원 저장으로 빠진 첨부</h2><p class="muted" style="margin:0">빠진 첨부가 없어요</p></section>`;
+  return `<section class="card" style="border-color:#FFC000"><h2><span>직원 저장으로 빠진 첨부 ${FLOST.length}개</span><button type="button" class="btn sm pri" data-flback="1">모두 원래 자리에 다시 붙이기</button></h2><div class="list">${FLOST.map(o=>`<div class="item" data-open="${esc(o.col)}" data-id="${esc(o.id)}"><span class="pill warn">${esc((MOD[o.col]||{}).nav||o.col)}</span><div class="t"><b>${esc(o.f.name||"파일")}</b><small>${esc(o.title)} · ${esc(o.by)} 저장 때 빠짐 · ${esc(kstHM(o.at))}</small></div><span></span></div>`).join("")}</div><p class="hint" style="margin:6px 0 0">파일 자체는 그대로 있어요. 다시 붙이면 그 프로젝트·현장 첨부 목록에 돌아와요 (지우는 것은 없어요)</p></section>`}
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-flscan],[data-flback]");if(!t||!me.admin||PV)return;e.preventDefault();e.stopPropagation();
+  if(t.dataset.flscan){flScan();return}if(!FLOST||!FLOST.length)return;
+  if(!await okAsk("빠진 첨부 "+FLOST.length+"개를 원래 자리에 다시 붙일까요? (지우는 것은 없어요)"))return;const G={};FLOST.forEach(o=>{(G[o.col+"|"+o.id]=G[o.col+"|"+o.id]||[]).push(o)});let n=0;
+  for(const L of Object.values(G)){const {col,id}=L[0],row=(S[col]||[]).find(r=>r.id===id);if(!row)continue;const have=new Set((row.files||[]).map(f=>f&&f.id)),add=L.map(o=>o.f).filter(f=>!have.has(f.id));if(!add.length)continue;
+    const o=Object.assign({},row,{files:(row.files||[]).concat(add),updatedAt:nowISO(),updatedBy:me.id});delete o.id;["__leak","__leakCost","__masked"].forEach(k=>delete o[k]);if(col==="customers"){o.tel="";o.addr=""}if(col==="projects")o.estCost="";
+    try{await put(col,id,o);n+=add.length}catch(er){}}
+  toast("첨부 "+n+"개를 다시 붙였어요");FLOST=null;render()});
 function fillCard(){
   if(!me.admin)return ""; // 빈칸 목록·채움률은 대표만 (5·11번) — 직원 화면은 카드도, 사본 읽기도 없음
   fillQueue();const C=fillCalc(),W=cfg("fill").weeks||{},wk=fillMon(),G=fillWeekGoals();
@@ -3378,7 +3397,7 @@ function renderHome(){
     <a class="tile" href="#sites"><span>공사 중 현장</span><strong>${live.length}</strong><small>전체 현장 ${S.sites.length}곳</small></a>
     <a class="tile" href="#customers"><span>진행 중 고객</span><strong>${cust.length}</strong><small>${canMoney()?"미수금 "+won(unpaid):"전체 고객 "+S.customers.length+"명"}</small></a>
     <a class="tile" href="#as"><span>A/S 처리 전</span><strong>${asOpen.length}</strong><small>접수·처리 중</small></a>
-  </div>${fillCard()}${finCards()}${ctPendCard()}${ctLogCard()}${replyCard}${missCard}${v15StaffCard()}${chkCard}${weekCard}${fbCard}${attCard()}<div style="display:none">
+  </div>${fillCard()}${flCard()}${finCards()}${ctPendCard()}${ctLogCard()}${replyCard}${missCard}${v15StaffCard()}${chkCard}${weekCard}${fbCard}${attCard()}<div style="display:none">
   </div>
   <div class="grid2">
     <section class="card"><h2>공지사항</h2>
@@ -4619,6 +4638,7 @@ function openSheet(col,id,preset){
   if(col==="reports"&&id&&d.acctBy){const a=(ACCT[d.acctBy]||[]).find(x=>x.id===id);if(a){d.pays=a.pays||[];d.ins=a.ins||[];d.cashNote=a.cashNote||""}}
   const rows={};allRowFields(col).forEach(f=>{const src=HR_FIELDS.includes(f)?hr:d;rows[f[0]]=(src[f[0]]||[]).map(x=>Object.assign({},x))});
   sheet={col,id:id||null,data:d,hr,files:(d.files||[]).slice(),rows,steps:(d.steps||[]).slice(),confirmDel:false,busy:false};
+  try{sheet.d0=id?JSON.parse(JSON.stringify(d)):null}catch(e){sheet.d0=null} // 창을 연 때 모습 (낡은 창 저장 막기 · staleKeep)
   navPush(col,id||null);
   if(col==="quotes"&&id){sheet.qtab=qOpenTab||"v15";qOpenTab="";if(!(amtLocked(d)&&!me.admin&&!isAcct(myStaff())))sheet.qe=JSON.parse(JSON.stringify(d.items||[]));if(!sheet.qe&&(sheet.qtab==="detail"||sheet.qtab==="v15"))sheet.qtab="edit"}
   drawSheet();
@@ -4713,6 +4733,11 @@ function collect(){
   if(sheet.col==="staff")out.uid=sheet.data.uid||"";
   return {out,hr};
 }
+// 낡은 창 저장 막기 (대표 지시 2026-11-13 9·10번): 창을 연 뒤 다른 사람이 바꾼 칸은, 내가 그 칸을 손대지 않았으면 최신 값을 둠. 첨부는 서로 합침(다른 사람이 그 사이 붙인 파일이 빠지지 않게)
+const svN=v=>v==null?"":typeof v==="object"?stableJs(v):String(v).trim();
+function staleKeep(row,d,d0,base){let n=0;Object.keys(d).forEach(k=>{
+  if(k==="files"){const o0=new Set((d0.files||[]).map(f=>f&&f.id)),mine=Array.isArray(d.files)?d.files:[],add=(base.files||[]).filter(f=>f&&f.id&&!o0.has(f.id)&&!mine.some(m=>m&&m.id===f.id));if(add.length){row.files=mine.concat(add);n++}return}
+  if(base[k]===undefined)return;if(svN(d[k])===svN(d0[k])&&svN(base[k])!==svN(d0[k])){row[k]=base[k];n++}});return n}
 const REQUIRED={reports:["d"],projects:["custName"],approvals:["title"],manuals:["title"],notices:["title"],customers:["name"],quotes:[],sites:["name"],as:["content"],staff:["name"],feedback:["body"]};
 function dupWarn(ex,row){const old=document.getElementById("dupVeil");if(old)old.remove();const v=document.createElement("div");v.className="veil";v.id="dupVeil";v.style.zIndex=40;
   v.innerHTML=`<div class="sheet" role="dialog" aria-label="이미 있는 프로젝트" style="max-width:520px"><h3>이미 있는 프로젝트예요</h3><p class="hint" style="margin:0">같은 고객·같은 주소(${esc(row.addr||"")})로 이미 등록된 프로젝트가 있어요. 새로 만들지 말고 기존 카드에 이어서 써 주세요.</p><div class="list">${ex.slice(0,5).map(p=>`<div class="item" style="cursor:default"><span class="pill info">${esc(flowOf(p.stage,p))}</span><div class="t"><b>${esc(p.no||"")} · ${esc(p.title||"")}</b><small>${esc(p.custName||"")} · ${esc(p.addr||"")}</small></div><button type="button" class="btn sm pri" data-dupopen="${esc(p.id)}">기존 프로젝트 열기</button></div>`).join("")}</div><div class="actions"><button type="button" class="btn sm" data-dupclose="1">닫기</button><button type="button" class="btn sm bad" data-dupforce="1">그래도 새로 만들기</button></div></div>`;document.body.appendChild(v)}
@@ -4746,6 +4771,7 @@ async function saveSheet(){
   if(col==="approvals"&&KIND_GROUP[d.kind]!=="hr"&&!d.pno){toast("결재는 프로젝트 번호가 꼭 필요해요 (본사 공통 비용은 ‘본사’)");return}
   const base=id?S[col].find(x=>x.id===id)||{}:{};
   const row=Object.assign({},base,d,{updatedAt:nowISO(),updatedBy:me.id});delete row.id;
+  if(id&&sheet.d0&&mode==="shared"){try{const n=staleKeep(row,d,sheet.d0,base);if(n)toast("창을 연 뒤 다른 사람이 바꾼 칸 "+n+"개는 최신 값을 그대로 뒀어요")}catch(e){}}
   if(col==="customers"&&!id)row.code=nextCustCode();
   if(col==="quotes"&&id){const ch=["amount","ver","status","work","preset"].some(k=>String(base[k]??"")!==String(row[k]??""));if(ch)row.qHist=(base.qHist||[]).concat([{at:nowISO(),by:me.id,name:(myStaff()||{}).name||me.name||"",amount:base.amount??"",ver:base.ver||"",status:base.status||"",work:base.work||""}]).slice(-30)}
   if(col==="customers"&&row.cResult){row.steps=[...new Set((row.steps||[]).concat([11]))].sort((a,b)=>a-b);if(row.cResult==="계약"){row.cLost="";if(row.status==="미계약")row.status="진행중"}else{row.cDate="";row.cNext="";row.status="미계약"}}
