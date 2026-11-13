@@ -10,10 +10,17 @@ const T0="2026-11-01T00:00:00Z";
 const gap=(direct,ind,total)=>[["갑지"],["견적서 / ESTIMATE"],["NO","명 칭","자 재 비","노 무 비","총액","비고"],["","직 접 공 사 비"]].concat(direct.map(([n,m,l],i)=>[i+1,n,m,l,m+l,""])).concat([["소계","",direct.reduce((t,d)=>t+d[1],0),direct.reduce((t,d)=>t+d[2],0),direct.reduce((t,d)=>t+d[1]+d[2],0)],["","간 접 공 사 비"]]).concat(ind.map(([n,a],i)=>[i+1,n,"",5,"%",a])).concat([["","소 계","","","",ind.reduce((t,d)=>t+d[1],0)],["","총 합 계","","부가세포함","",total]]);
 const XL1=gap([["철거공사",100000,900000],["목공사",2000000,1000000],["타일공사",1500000,500000]],[["공사진행비",300000]],6200000); // 항목 합 6,300,000 · 총 합계 6,200,000 → 할인·절사 -100,000
 const XL2=gap([["철거공사",200000,1000000],["타일공사",1500000,500000],["도배공사",300000,500000]],[["공사진행비",200000]],4200000); // 목공사 빠짐 · 도배공사 새로 · 철거 금액 바뀜
+// 이름이 겹치는 견적서 (검토 반려 2026-11-13): 목공사 두 줄 · ‘철거공사’와 ‘철거’ · 음수 줄 — 줄마다 따로 보여야 하고 보이는 줄 합 = 합계
+const XD=gap([["철거공사",100000,900000],["목공사",2000000,1000000],["목공사",500000,500000],["철거",0,300000],["서비스 할인",-200000,0]],[["공사진행비",300000]],5400000);
+const XD2=gap([["목공사",2500000,1000000],["철거",0,300000],["목공사",700000,500000],["철거공사",200000,900000]],[["공사진행비",300000]],6400000); // 순서·금액 바뀜 · 서비스 할인 빠짐
 const xf=(id,name,rows)=>{const b=Buffer.from(JSON.stringify({SheetNames:["갑지"],Sheets:{"갑지":rows}}),'utf8');return {["xfile/"+id]:{name,type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",size:b.length,n:1,by:"u_boss",at:T0},["xfile/"+id+"_0"]:{data:b.toString('base64'),i:0,of:id}}};
 const STAFF={"staff/st-chae":{name:"채진아",uid:"u_cja",level:"전체 담당",state:"재직",pos:"차장",finOk:"허락"},"staff/st-choi":{name:"최윤수",uid:"u_boss",state:"재직",pos:"대표이사"},"staff/st-jung":{name:"정진혁",uid:"u_jjh",level:"실무 팀",state:"재직",pos:"실장"},"staff/st-lee":{name:"이봄이",uid:"u_bom",level:"실무 팀",state:"재직",pos:"실장"},
  "members/u_jjh":{active:true,staffId:"st-jung",name:"정진혁"},"members/u_bom":{active:true,staffId:"st-lee",name:"이봄이"},"members/u_cja":{active:true,staffId:"st-chae",name:"채진아"}};
-const SEED=Object.assign({},STAFF,xf("e1","시험 계약 견적서.xlsx",XL1),xf("e2","시험 계약 견적서 (변경).xlsx",XL2),{
+const XT="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const SEED=Object.assign({},STAFF,xf("e1","시험 계약 견적서.xlsx",XL1),xf("e2","시험 계약 견적서 (변경).xlsx",XL2),xf("d1","겹침 계약 견적서.xlsx",XD),xf("d2","겹침 계약 견적서 (변경).xlsx",XD2),{
+ "projects/p3":{no:"P-2611-903",title:"이름 겹침 현장",custName:"홍길동",custCode:"C-2611-901",stage:"계약",mgr:"정진혁",contractAmt:5400000,cat:"주거",inq:"2026-11-03",files:[{id:"xf_d1",name:"겹침 계약 견적서.xlsx",type:XT,size:900}],updatedAt:T0},
+ "projects/p4":{no:"P-2611-904",title:"실행 원가 확정 현장",custName:"홍길동",custCode:"C-2611-901",stage:"계약",mgr:"정진혁",contractAmt:6200000,cat:"주거",inq:"2026-11-04",files:[{id:"xf_e1",name:"시험 계약 견적서.xlsx",type:XT,size:900}],updatedAt:T0},
+ "ppriv/p4":{pc:{lines:[{proc:"철거공사",est:"",act:"",st:"예상",hist:[]}],lock:{by:"u_boss",name:"최윤수",at:T0},updatedAt:T0,by:"u_boss"},updatedAt:T0},
  "customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",createdAt:T0,updatedAt:T0},
  "projects/p1":{no:"P-2611-901",title:"시험 현장 전체",custName:"홍길동",custCode:"C-2611-901",stage:"계약",mgr:"정진혁",contractAmt:6200000,cat:"주거",inq:"2026-11-01",work:"전체",files:[{id:"xf_e1",name:"시험 계약 견적서.xlsx",type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",size:900}],updatedAt:T0},
  "projects/p2":{no:"P-2611-902",title:"견적서 없는 현장",custName:"홍길동",custCode:"C-2611-901",stage:"계약",mgr:"정진혁",contractAmt:3000000,cat:"주거",inq:"2026-11-02",files:[],updatedAt:T0}});
@@ -80,6 +87,30 @@ const N=s=>Number(String(s).replace(/[^0-9-]/g,''))||0;
   // 견적서가 없는 프로젝트: 안내만
   await A.evaluate(()=>window.__hfT.closeSheet());await wait(300);await openPc(A,'p2','post');const nb=(await A.locator('#pcXlBox').innerText()).replace(/\s+/g,' ');
   ok(tag+'견적서를 첨부하지 않은 프로젝트: “계약 견적서가 아직 첨부되지 않았어요” 안내 · 기타 항목은 직접 추가 가능',/아직 첨부되지 않았어요/.test(nb)&&(await A.locator('#veil [data-pcpadd]').count())>=1&&!(await pc(A,'p2')||{}).xl,nb.slice(0,120));
+  // 이름이 겹치는 견적서: 줄마다 따로 · 보이는 줄 합 = 합계 · 줄마다 입력 · 다시 맞추기에서도 안 섞임
+  await A.evaluate(()=>window.__hfT.closeSheet());await wait(300);await openPc(A,'p3','post');
+  const items=async()=>{const T=await rows(A),k=T.findIndex(r=>/^기타 항목/.test(r[0]));return T.slice(0,k<0?T.length:k)};const inV=c=>N((String(c).match(/\[([^\]]*)\]/)||[0,''])[1]);
+  let cd=await pc(A,'p3'),I=await items(),FD=await foot(A);
+  ok(tag+'이름 겹침: 견적서 6줄이 표에도 6줄 (철거공사·목공사·목공사·철거·서비스 할인·공사진행비) · 줄마다 입력 칸',(cd.lines||[]).length===6&&I.length===6&&I.map(r=>r[0]).join(',')==='철거공사,목공사,목공사,철거,서비스 할인,공사진행비'&&(await A.locator('#pcPostT [data-pcpi]').count())===6,I.map(r=>r[0]+' '+r[1]).join(' / '));
+  ok(tag+'이름 겹침: 보이는 줄의 계약 금액 합 = 합계 줄 = 견적서 총 합계 5,400,000 (음수 줄 -200,000 포함)',I.reduce((t,r)=>t+N(r[1]),0)===5400000&&/5,400,000/.test(FD[0])&&/-200,000/.test(I[4][1])&&!cd.xl.adj,I.reduce((t,r)=>t+N(r[1]),0)+' // '+FD[0]);
+  await setPi(A,1,2000000);await setPi(A,2,700000);await setPi(A,3,100000);await setPi(A,0,600000);cd=await pc(A,'p3');I=await items();FD=await foot(A);const its=(cd.post||[]).filter(r=>r.it);
+  ok(tag+'이름 겹침: 줄마다 따로 저장 (목공사 2,000,000 / 목공사 700,000 / 철거 100,000 / 철거공사 600,000 · 줄 번호 4개가 서로 다름)',its.length===4&&new Set(its.map(r=>r.lid)).size===4&&[inV(I[0][2]),inV(I[1][2]),inV(I[2][2]),inV(I[3][2])].join(',')==='600000,2000000,700000,100000',JSON.stringify(its.map(r=>[r.proc,r.amt]))+' '+I.slice(0,4).map(r=>r[2]).join(' | '));
+  ok(tag+'이름 겹침: 줄마다 차액·마진율 (둘째 목공사 1,000,000−700,000 = 300,000 · 30% / 철거 300,000−100,000 = 200,000) · 보이는 실행 원가 합 3,400,000 = 합계 줄',I[2][3]==='300,000'&&I[2][4]==='30%'&&I[3][3]==='200,000'&&I[1][3]==='1,000,000'&&I.reduce((t,r)=>t+inV(r[2]),0)===3400000&&/3,400,000/.test(FD[0]),I.slice(0,4).map(r=>r.join(' | ')).join(' // ')+' // '+FD[0]);
+  await A.locator('#veil [data-pctab="cmp"]').click();await wait(600);const CM=await A.evaluate(()=>{const t=[...document.querySelectorAll('.pcbox table')].find(x=>x.querySelector('tfoot'));return {b:[...t.querySelectorAll('tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim())),f:[...t.querySelectorAll('tfoot tr')].map(tr=>tr.innerText.replace(/\s+/g,' ').trim())}});
+  const cr=n=>CM.b.find(r=>r[0].replace(/ 초과$/,'')===n)||[];
+  ok(tag+'비교표(③)도 같은 숫자: 목공사 견적 4,000,000·사후 2,700,000 / 철거공사 1,000,000·600,000 / 철거 300,000·100,000 / 합계 5,400,000·3,400,000',N(cr('목공사')[1])===4000000&&N(cr('목공사')[3])===2700000&&N(cr('철거공사')[1])===1000000&&N(cr('철거공사')[3])===600000&&N(cr('철거')[1])===300000&&N(cr('철거')[3])===100000&&CM.b.reduce((t,r)=>t+N(r[1]),0)===5400000&&CM.b.reduce((t,r)=>t+N(r[3]),0)===3400000&&/5,400,000/.test(CM.f[0])&&/3,400,000/.test(CM.f[0]),CM.b.map(r=>r[0]+' '+r[1]+' '+r[3]).join(' / ')+' // '+CM.f[0]);
+  // 겹친 상태에서 견적서가 바뀜 → 다시 맞추기
+  await A.evaluate(()=>window.__hfT.closeSheet());await wait(300);
+  await A.evaluate(async()=>{const p=Object.assign({},window.__hfT.S().projects.find(x=>x.id==='p3'));delete p.id;p.files=p.files.concat([{id:'xf_d2',name:'겹침 계약 견적서 (변경).xlsx',type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',size:900}]);await window.__hfT.put('projects','p3',p)});await wait(1500);
+  await openPc(A,'p3',false);await wait(1200);const qd=await A.locator('.okask').count();if(qd){await A.locator('.okask [data-ok="1"]').last().click();await wait(2500)}await A.locator('#veil [data-pctab="post"]').click();await wait(600);
+  cd=await pc(A,'p3');I=await items();FD=await foot(A);const po3=(cd.post||[]).filter(r=>r.it).map(r=>r.amt).sort((a,b)=>a-b).join(',');
+  ok(tag+'겹친 채 다시 맞추기: 새 순서(목공사 3,500,000 · 철거 300,000 · 목공사 1,200,000 · 철거공사 1,100,000 · 공사진행비) + 빠진 ‘서비스 할인’은 옛 줄로 남음',qd===1&&cd.xl.fid==='xf_d2'&&cd.lines.slice(0,5).map(l=>l.proc+' '+l.sale).join(' / ')==='목공사 3500000 / 철거 300000 / 목공사 1200000 / 철거공사 1100000 / 공사진행비 300000'&&cd.lines.some(l=>l.proc==='서비스 할인'&&l.old===1&&l.saleOld===-200000),cd.lines.map(l=>l.proc+' '+l.sale+(l.old?' (옛 '+l.saleOld+')':'')).join(' / '));
+  ok(tag+'겹친 채 다시 맞추기: 입력한 실행 원가가 제 줄에 그대로 (첫 목공사 2,000,000 · 철거 100,000 · 둘째 목공사 700,000 · 철거공사 600,000) · 사라지거나 섞인 값 없음',po3==='100000,600000,700000,2000000'&&[inV(I[0][2]),inV(I[1][2]),inV(I[2][2]),inV(I[3][2])].join(',')==='2000000,100000,700000,600000',po3+' // '+I.slice(0,4).map(r=>r[0]+' '+r[2]).join(' | '));
+  ok(tag+'겹친 채 다시 맞추기: 보이는 줄 합 = 합계 (계약 6,400,000 · 실행 원가 3,400,000)',I.reduce((t,r)=>t+N(r[1].replace(/\(옛[^)]*\)/,'')),0)===6400000&&I.reduce((t,r)=>t+inV(r[2]),0)===3400000&&/6,400,000/.test(FD[0])&&/3,400,000/.test(FD[0]),I.map(r=>r[0]+' '+r[1]).join(' / ')+' // '+FD[0]);
+  // 실행 원가 확정(잠금) 상태: 자동으로 바꾸지 않고 물어봄
+  await A.evaluate(()=>window.__hfT.closeSheet());await wait(300);await openPc(A,'p4',false);await wait(1200);const ql=(await A.locator('.okask').count())?(await A.locator('.okask').last().innerText()).replace(/\s+/g,' '):'';const c4=await pc(A,'p4');
+  ok(tag+'실행 원가 확정(잠금) 프로젝트: 견적서를 자동으로 넣지 않고 물어봄 (그대로 두면 줄 안 바뀜)',/확정\(잠금\)/.test(ql)&&!c4.xl&&c4.lines.length===1&&!!c4.lock,ql.slice(0,120));
+  if(ql){await A.locator('.okask [data-ok="0"]').last().click();await wait(500)}ok(tag+'‘그대로 두기’ 뒤에도 잠금·줄 그대로',!(await pc(A,'p4')).xl&&(await pc(A,'p4')).lines.length===1);
   await A.close();await ctx.close()}
  // ===== 2부: 진짜 엑셀 =====
  if(process.env.XLSX_JS&&process.env.EST_XLSX){const lib=fs.readFileSync(process.env.XLSX_JS,'utf8'),buf=fs.readFileSync(process.env.EST_XLSX),b64=buf.toString('base64'),CH=180000,n=Math.ceil(b64.length/CH),nm=process.env.EST_NAME||'계약 견적서 (최종).xlsx';
