@@ -103,6 +103,48 @@ const MONEY=/12,345,678|98,765|원가|마진|성과금/;
   const i2=HTML.indexOf('// ===== 현장 사진·파일 (대표 지시 2026-11-13 2번)'),b2=HTML.slice(i2,HTML.indexOf('\n',HTML.indexOf('phUpload(z.dataset.phpid,fs.map(pasteName)')));
   ok('2 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0 · 새 저장 칸 없음',i2>0&&b2.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(|collection\(/.test(b2),b2.length+'자');
  }
+ // ================= 20 =================
+ if(on('20')){
+  const SEED20=Object.assign({},SEED,{"reports/rOld":{d:"2026-11-05",who:"정진혁",rk:"현장 관리",ppno:"P-2611-901",files:[{id:"as_old1",name:"예전 보고 사진.jpg",type:"image/jpeg",size:1000}],createdBy:"u_jjh",createdAt:"2026-11-05T09:00:00Z",updatedAt:"2026-11-05T09:00:00Z"},
+   "projects/p1":Object.assign({},SEED["projects/p1"],{photos:[{id:"ph_seed1",fid:"as_site1",name:"현장 일지 사진.png",type:"image/png",d:"2026-11-08",at:"2026-11-08T03:00:00Z",by:"u_bom",byName:"이봄이",from:"현장 관리"}]})});
+  for(const [vn,opt] of VPS){
+   const {ctx,open,dbv}=await mk(opt,SEED20,STUB);const A=await open('admin',12000);
+   // 대표: 예전 업무 보고 사진은 계산해서 보이고, 직원도 보게 잇기 버튼
+   await openS(A,'projects','p1');await tab(A,'prog');let t=await A.locator('#phBox').innerText();
+   ok('20 '+vn+' 대표: 예전 업무 보고 사진도 현장 사진 한 곳에 (업무 보고 · 정진혁 · 11-05) + ‘직원도 보게 잇기’ 버튼',/2026-11-05 정진혁/.test(t.replace(/\s+/g,' '))&&/업무 보고/.test(t)&&(await A.locator('#phBox [data-phlink]').count())===1,t.replace(/\s+/g,' ').slice(0,200));
+   await close(A);
+   for(const who of WHO){const P=who==='admin'?A:await open(who,9000);const tag='20 '+vn+' '+USERS[who].name+': ';
+    const up0=await P.evaluate(()=>(window.__mockUploads||[]).length);
+    await openS(P,'reports',null);await P.evaluate(()=>{const el=document.querySelector('#sheetForm [data-k="ppno"]');el.value='P-2611-901';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))});
+    await putFiles(P,'#fileIn',[who+' 보고 사진']);await wait(1500);await P.locator('#saveSheet').click();let d,ref;
+    for(let i=0;i<20;i++){await wait(800);d=await dbv();ref=phOf(d['work/all/projects/p1']).find(e=>e.from==='업무 보고'&&e.name===who+' 보고 사진.png');if(ref)break}
+    const ups=await P.evaluate(n=>(window.__mockUploads||[]).slice(n),up0);
+    const rep=Object.entries(d).find(([k,v])=>/^(mine\/u_[a-z]+\/)?reports\//.test(k)&&(v.files||[]).some(f=>f.name===who+' 보고 사진.png'));
+    ok(tag+'업무 보고에서 프로젝트를 골라 올린 사진 → 그 프로젝트 현장 사진에 참조로 (같은 파일 id · 보고 id · 올린 사람)',!!ref&&!!rep&&ref.fid===(rep[1].files||[])[0].id&&ref.ref==='reports/'+rep[0].split('/').pop()&&ref.byName===USERS[who].name,JSON.stringify(ref));
+    ok(tag+'파일은 한 번만 저장 (올리기 1번)',ups.length===1,JSON.stringify(ups.map(u=>u.name)));
+    if(who!=='admin')await P.close()}
+   // 다른 직원 화면: 남의 업무 보고는 못 보지만 사진은 프로젝트 현장 사진에 보임 · 날짜순
+   const J=await open('jjh',9000);await openS(J,'projects','p1');await tab(J,'prog');await wait(800);
+   const its=await J.evaluate(()=>[...document.querySelectorAll('#phBox .phit')].map(x=>x.innerText.replace(/\s+/g,' ')));
+   const rpN=await J.evaluate(()=>window.__hfT.S().reports.filter(r=>r.createdBy!=='u_jjh').length);
+   ok('20 '+vn+' 정진혁 화면: 남의 업무 보고는 안 보이지만(0건) 이봄이·채진아·대표가 보고에 올린 사진은 현장 사진에 보임 + 현장 일지 사진',rpN===0&&['이봄이','채진아','최윤수'].every(n=>its.some(t=>t.includes(n)&&/업무 보고/.test(t)))&&its.some(t=>/현장 관리/.test(t)&&t.includes('이봄이')),its.join(' // ').slice(0,300));
+   const ds=its.map(t=>(t.match(/\d{4}-\d\d-\d\d/)||[''])[0]);ok('20 '+vn+' 날짜순(새것 먼저)',ds.every((x,i)=>!i||ds[i-1]>=x)&&ds.includes('2026-11-08'),ds.join(','));
+   ok('20 '+vn+' 정진혁 화면: 대표가 잇기 전 예전 보고 사진(다른 직원 것 아님·본인 것)은 본인 보고라 보임 / 잇기 버튼은 없음',(await J.locator('#phBox [data-phlink]').count())===0);
+   const B=await open('bom',9000);await openS(B,'projects','p1');await tab(B,'prog');let bt=await B.locator('#phBox').innerText();
+   ok('20 '+vn+' 이봄이 화면: 잇기 전에는 정진혁의 예전 보고 사진(11-05)이 안 보임',!/2026-11-05/.test(bt));
+   await openS(A,'projects','p1');await tab(A,'prog');await A.locator('#phBox [data-phlink]').click();let d;for(let i=0;i<20;i++){await wait(800);d=await dbv();if(phOf(d['work/all/projects/p1']).some(e=>e.fid==='as_old1'))break}
+   const old=phOf(d['projects/p1']).find(e=>e.fid==='as_old1');
+   ok('20 '+vn+' 대표 잇기 → 예전 보고 사진이 참조로 덧붙음 (업무 보고 원본은 그대로)',!!old&&old.ref==='reports/rOld'&&old.from==='업무 보고'&&(d['reports/rOld'].files||[]).length===1,JSON.stringify(old));
+   for(let i=0;i<15;i++){await wait(800);bt=await B.locator('#phBox').innerText().catch(()=>'');if(/2026-11-05/.test(bt))break}
+   ok('20 '+vn+' 그 뒤 이봄이 화면에도 예전 보고 사진(11-05 · 정진혁 · 업무 보고)',/2026-11-05/.test(bt)&&/업무 보고/.test(bt));
+   ok('20 '+vn+' 직원 화면 현장 사진에 돈 정보 없음',!MONEY.test(bt));
+   // 같은 보고를 다시 저장해도 두 번 붙지 않음
+   const n1=phOf(d['projects/p1']).length;await openS(A,'reports','rOld');await A.locator('#saveSheet').click();await wait(3000);d=await dbv();
+   ok('20 '+vn+' 같은 보고를 다시 저장해도 사진 참조가 겹치지 않음',phOf(d['projects/p1']).length===n1&&phOf(d['projects/p1']).filter(e=>e.fid==='as_old1').length===1,phOf(d['projects/p1']).length+' / '+n1);
+   await ctx.close()}
+  const i20=HTML.indexOf('// ===== 20번: 업무 보고에서'),b20=HTML.slice(i20,HTML.indexOf('async function phAct(',i20));
+  ok('20 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기 0 · 새 저장 칸 없음',i20>0&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(|collection\(/.test(b20),b20.length+'자');
+ }
  // @@B3_MORE@@
  console.log('\n== 묶음 3 시험: '+R.filter(x=>x).length+' / '+R.length+' 통과 · 페이지 오류 '+errs.length+' · 브라우저 창(alert 등) '+dialogs.length);errs.slice(0,10).forEach(e=>console.log('  오류: '+e));dialogs.slice(0,5).forEach(e=>console.log('  창: '+e));
  await b.close();process.exit(R.every(x=>x)&&!errs.length?0:1)})();
