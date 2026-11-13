@@ -689,9 +689,14 @@ function holdCard(){if(!me.admin||mode!=="shared")return "";return `<section cla
 const PCS={},PCU={},pcuSubs={};
 const pcGet=pid=>me.admin?((PRIVP[pid]||{}).pc||null):(PCS[pid]&&!PCS[pid].revoked?PCS[pid]:null);
 const pcLocked=pid=>{const c=pcGet(pid);return !!(c&&c.lock)};
-const pcCan=p=>!!p&&(me.admin||isHrMgr(myStaff())||(canCost()&&!!myStaff()&&p.mgr===myStaff().name));
+// 현장 원가 (대표 지시 2026-11-13 1b): 왼쪽 메뉴 ‘현장 원가 (주간)’·그 화면·홈 원가 카드는 대표·채진아(전체 담당)만 — canFcost() 한 곳
+const canFcost=()=>me.admin||(mode==="shared"&&isCoBoss(myStaff()));
+// 프로젝트 안 ‘원가 관리(견적·실행·사후)’ 표를 그 프로젝트 담당 직원에게도 보여 줄지 (대표 결정 2026-11-13: 대표·채진아·담당 직원 — 다시 묻는 중).
+// ★ 이 한 줄을 false 로 바꾸면 ‘대표·채진아만’ 이 됨 (pcCan·pcEdit 둘 다 이 값만 봄)
+const PC_MGR_OK=true;
+const pcCan=p=>!!p&&(me.admin||isHrMgr(myStaff())||(PC_MGR_OK&&canCost()&&!!myStaff()&&p.mgr===myStaff().name));
 // 2026-11-04 대표 요청: 프로젝트 담당자도 실행원가·사후원가 입력 (자기 담당 프로젝트만, 확정 해제는 대표만)
-const pcEdit=p=>!!p&&(me.admin||isHrMgr(myStaff())||(canCost()&&!!myStaff()&&!!p.mgr&&p.mgr===myStaff().name));
+const pcEdit=p=>!!p&&(me.admin||isHrMgr(myStaff())||(PC_MGR_OK&&canCost()&&!!myStaff()&&!!p.mgr&&p.mgr===myStaff().name));
 const PC_OPEN=["계약","시공","준공","사후관리","종료"];
 const pcPostSum=c=>(c&&c.post||[]).reduce((t,r)=>t+num(r.amt),0);
 function pcContract(p){const q=S.quotes.filter(x=>x.pno===p.no&&x.status==="계약").sort((a,b)=>String(b.d||b.createdAt||"").localeCompare(String(a.d||a.createdAt||"")))[0];if(q)return {amt:num(q.amount),src:"계약 견적 "+(q.qno||"")};if(num(p.contractAmt))return {amt:num(p.contractAmt),src:"프로젝트 계약 금액"};const lq=S.quotes.filter(x=>x.pno===p.no&&num(x.amount)).sort((a,b)=>String(b.d||b.createdAt||"").localeCompare(String(a.d||a.createdAt||"")))[0];return lq?{amt:num(lq.amount),src:"최근 견적 "+(lq.qno||"")+" (계약 전 · 견적 금액)"}:{amt:0,src:"계약 금액 없음 · 견적을 넣으면 자동으로 보여요"}}
@@ -2988,7 +2993,7 @@ async function resolveNames(){
 
 // ===== 화면 =====
 const onlyMine=()=>mode==="shared"&&!me.admin&&((myStaff()||{}).scope==="담당 건만"||isTeam(myStaff()));
-function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&(me.admin||isCoBoss(myStaff())))return h;if(h==="recv"&&canMoney())return h;if(["fdash","fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks")return h;if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
+function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(["fdash","fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks")return h;if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
 function renderNav(){
   const r=route();
   const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||apVis().filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
@@ -3004,7 +3009,7 @@ function renderNav(){
   if(canFbox()){h+=`<div class="grp">경리·인사</div><a href="#fbox" ${r==="fbox"?'aria-current="page"':""}><span>경리·인사 자료함</span></a>`}
   if(canFin()){h+=`<div class="grp">재무·경영 (경영관리)</div><a href="#fdash" ${r==="fdash"?'aria-current="page"':""}><span>경영 대시보드</span></a><a href="#fstate" ${r==="fstate"?'aria-current="page"':""}><span>홈퍼니싱 재무제표</span></a><a href="#cflow" ${r==="cflow"?'aria-current="page"':""}><span>캐시플로우</span></a>${me.admin?`<a href="#bonus" ${r==="bonus"?'aria-current="page"':""}><span>성과금</span></a>`:""}${me.admin?`<a href="#amtchk" ${r==="amtchk"?'aria-current="page"':""}><span>금액 변동 확인</span>${(()=>{try{const n=(S.approvals||[]).filter(a=>["결재 대기","결재 진행"].includes(a.status||"결재 대기")&&amtNeed(a)).length;return n?`<span class="cnt">${n}</span>`:""}catch(e){return ""}})()}</a>`:""}`}
   if(me.admin||canMoney()){h+=`<div class="grp">${me.admin?"대표 전용":"돈 관리"}</div>`;if(me.admin){const dn=dcUnseen();h+=`<a href="#drvchg" ${r==="drvchg"?'aria-current="page"':""}><span>자료 변경 소식</span>${dn?`<span class="cnt" style="background:#FFC000;color:#203864">${dn}</span>`:""}</a><a href="#mysign" ${r==="mysign"?'aria-current="page"':""}><span>내 사인 등록</span></a><a href="#preview" ${r==="preview"?'aria-current="page"':""}><span>직원 화면 미리 보기</span></a>`}
-    if(me.admin||isCoBoss(myStaff()))h+=`<a href="#fcost" ${r==="fcost"?'aria-current="page"':""}><span>현장 원가 (주간)</span></a>`;
+    if(canFcost())h+=`<a href="#fcost" ${r==="fcost"?'aria-current="page"':""}><span>현장 원가 (주간)</span></a>`;
     h+=`<a href="#recv" ${r==="recv"?'aria-current="page"':""}><span>미수금</span></a>`;}
   if(!me.admin&&canSignPage())h+=`<a href="#mysign" ${r==="mysign"?'aria-current="page"':""}><span>내 사인 등록</span></a>`;
   const nv=$("#nav");if(nv)nv.innerHTML=h;
@@ -3416,7 +3421,7 @@ function fcRow(p){const pv=PRIVP[p.id]||{},sup=supplyOf(p),bud=num(pv.estCost||p
   return {p,pv,sup,bud,sp,remain:Math.max(bud-sp.total,0),rate,prog,use,addsUn,final:pv.finalMargin!==undefined&&pv.finalMargin!==""?num(pv.finalMargin):null}}
 const fcList=()=>S.projects.filter(p=>["계약","시공","준공","사후관리"].includes(p.stage)&&num(p.contractAmt)).map(fcRow);
 const fcLvl=r=>r.rate===null?"":r.rate<20?"bad":r.rate<28?"warn":"ok";
-function renderFcost(){const L=fcList().sort((a,b)=>(a.rate??99)-(b.rate??99));
+function renderFcost(){if(!canFcost())return `<div class="empty">대표·채진아 차장만 보는 메뉴예요</div>`;const L=fcList().sort((a,b)=>(a.rate??99)-(b.rate??99));
   return `<div class="head"><div><h1>현장 원가 (주간)</h1><p>대표 전용 · 계약 공급가 대비 실행 예산·쓴 돈·예상 최종 마진. 28% 밑 노랑, 20% 밑 빨강</p></div></div>
   <section class="card"><p class="hint">쓴 돈 = 결재(과거 품의 포함) + 결재 번호 없는 경리 결제 + 업무 보고 투입 인원 × 1일 인건비(${won(finSet().laborDay)||"설정 안 함"}) + 직접 추가. 현장명을 누르면 실행 예산·직접 추가·추가 공사·최종 마진을 입력해요.</p>
   <div class="tablebox"><table><thead><tr><th>현장</th><th class="num">공급가</th><th class="num">실행 예산</th><th class="num">쓴 돈</th><th class="num">남은 예상 원가</th><th class="num">예상 최종 마진</th><th>진행률 / 원가 사용률</th><th>추가 공사 미청구</th></tr></thead><tbody>
