@@ -250,6 +250,83 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
   const i19=HTML.indexOf('// ===== 현장 상태 자동'),b19=HTML.slice(i19,HTML.indexOf('function render(){try{siteAutoFix()'));
   ok('19 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0',i19>0&&b19.length>800&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(/.test(b19),b19.length+'자');
  }
+ // ================= 21 =================
+ if(on('21')){
+  const D=n=>new Date(Date.now()+9*36e5+n*864e5).toISOString().slice(0,10);
+  const proj=(id,no,title,o)=>({["projects/"+id]:Object.assign({no,title,custName:"홍길동",custCode:"C-2611-901",stage:"사후관리",mgr:"정진혁",contractAmt:33000000,cat:"주거",inq:"2026-01-01",start:"2026-02-01",warrantyMonths:12,files:[],updatedAt:T0},o)});
+  const SEED=Object.assign({},STAFF,{"config/sms":{who:"team"},
+   "customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:Array.from({length:20},(x,i)=>i+1),stage:"4-완료사후",inq:"2026-01-01",createdAt:T0,updatedAt:T0,smsLog:[{id:"sm1",at:D(-3)+"T02:00:00Z",by:"u_boss",tpl:"점검 안내",msg:"안녕하세요 홈퍼니싱입니다. 1개월 점검 안내드립니다.",to:"01012345678",test:false,status:"발송됨"}]},
+   "customers/c2":{code:"C-2611-902",name:"김상담",tel:"",addr:"",mgr:"이봄이",status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",createdAt:T0,updatedAt:T0}},
+   proj("pS","P-2609-901","사후 현장 가",{end:D(-40),warrantyEnd:""}),proj("pT","P-2609-902","준공 현장 나",{stage:"준공",mgr:"이봄이",end:D(-5)}),proj("pU","P-2401-903","옛 종료 현장",{stage:"종료",end:"2024-03-01",warrantyEnd:"2025-03-01"}),proj("pV","P-2611-904","계약 현장",{stage:"계약",end:""}),
+   {"as/a1":{pno:"P-2609-901",site:"사후 현장 가",code:"C-2611-901",d:D(-6),mgr:"정진혁",status:"접수",plan:D(-1),content:"욕실 실리콘 들뜸",asCost:54321,asCharge:"",cost:"회사",files:[{id:"f1",name:"a.jpg"},{id:"f2",name:"b.jpg"}],createdAt:T0,updatedAt:T0},
+    "as/a2":{pno:"P-2609-901",site:"사후 현장 가",code:"C-2611-901",d:D(-20),mgr:"정진혁",status:"완료",plan:D(-18),done:D(-17),content:"현관 도어락 교체",asCost:"",files:[],createdAt:T0,updatedAt:T0},
+    "as/a3":{pno:"P-2401-903",site:"옛 종료 현장",code:"C-2611-901",d:"2024-06-01",mgr:"",status:"완료",done:"2024-06-05",content:"옛 하자",files:[],createdAt:T0,updatedAt:T0}});
+  for(const [vn,opt] of [['PC',{viewport:{width:1280,height:900}}],['Pixel 7',devices['Pixel 7']]]){const tag='21 '+vn+' ';
+   const {ctx,open,seed}=await mk(opt,SEED,STUB);const A=await open('admin',12000);const dbg=k=>seed.evaluate(k=>JSON.parse(localStorage.getItem('mockdb'))[k],k);
+   // 원인 고침: 고객 관리 화면의 ‘4단계 · 완료·사후’를 누르면 사후 관리 화면
+   await A.evaluate(()=>{location.hash='#customers'});await wait(1200);
+   ok(tag+'고객 관리: 단계 줄 4칸이 누를 수 있는 단추 (예전에는 글자만 있어 눌러도 안 바뀜)',(await A.locator('#custFlow [data-cstg]').count())===4&&/사후 관리/.test(await A.locator('#custFlow [data-cstg="4-완료사후"]').innerText()));
+   await A.locator('#custFlow [data-cstg="1-상담영업"]').click();await wait(600);
+   ok(tag+'1단계를 누르면 그 단계 고객만 (김상담만 보임)',/김상담/.test(await A.locator('#view').innerText())&&!/홍길동/.test((await A.locator('#view').innerText()).replace(/프로젝트.*?홍길동/g,''))&&(await A.locator('#custFlow [data-cstg="1-상담영업"]').getAttribute('class'))==='on');
+   await A.locator('#custFlow [data-cstg="4-완료사후"]').click();await wait(1000);
+   ok(tag+'‘4단계 · 완료·사후 → 사후 관리’를 누르면 사후 관리 화면이 열림',(await A.evaluate(()=>location.hash))==='#as'&&(await A.locator('#acBoard').count())===1&&/사후 관리/.test(await A.locator('#view h1').first().innerText()),await A.evaluate(()=>location.hash));
+   const li=await A.evaluate(()=>[...document.querySelectorAll('#acList [data-acpick]')].map(x=>x.dataset.acpick+' '+(x.innerText||'').replace(/\s+/g,' ')));
+   ok(tag+'프로젝트 목록: 준공·사후관리 프로젝트 + A/S가 있는 옛 프로젝트 (계약 단계는 없음) · 처리할 하자가 있는 프로젝트가 맨 위 · 하자기간 남은 날',li.length===3&&/^P-2609-901/.test(li[0])&&/처리할 하자 1건/.test(li[0])&&/하자기간 중 · \d+일 남음/.test(li[0])&&li.some(x=>/^P-2401-903/.test(x)&&/하자기간 끝/.test(x))&&!li.some(x=>/P-2611-904/.test(x)),li.join(' // '));
+   await A.locator('#acList [data-acpick="P-2609-901"]').click();await wait(700);
+   const wt=(await A.locator('#acWarr').innerText()).replace(/\s+/g,' ');const y=new Date(Date.parse(D(-40)+"T00:00:00Z"));const wEnd=new Date(Date.UTC(y.getUTCFullYear(),y.getUTCMonth()+12,y.getUTCDate())).toISOString().slice(0,10);
+   ok(tag+'프로젝트를 고르면: 하자 보수 기간(준공일 ~ 만료일 12개월)과 남은 날',wt.includes('준공 '+D(-40)+' ~ '+wEnd)&&/12개월/.test(wt)&&/\d+일 남음/.test(wt),wt);
+   const at=await A.evaluate(()=>[...document.querySelectorAll('#acAsT tbody tr')].map(tr=>[...tr.children].map(td=>(td.innerText||'').replace(/\s+/g,' ').trim())));const ah=(await A.locator('#acAsT thead').innerText()).replace(/\s+/g,' ');
+   ok(tag+'하자 접수 목록: 접수일 | 하자 내용 | 상태 | 담당 | 처리 예정일 | 완료일 | 사진 — 2건 · 예정일 지난 미완료는 ‘지남’ · 사진 2장',/접수일 하자 내용 상태 담당 처리 예정일 완료일 사진/.test(ah)&&at.length===2&&at[0][1]==='욕실 실리콘 들뜸'&&at[0][2]==='접수'&&at[0][3]==='정진혁'&&at[0][4].includes(D(-1))&&/지남/.test(at[0][4])&&at[0][6]==='2장'&&at[1][2]==='완료'&&at[1][5]===D(-17)&&!/지남/.test(at[1][4]),at.map(r=>r.join(' | ')).join(' // '));
+   const ct=await A.evaluate(()=>[...document.querySelectorAll('#acChkT tbody tr')].map(tr=>(tr.innerText||'').replace(/\s+/g,' ').trim()));
+   ok(tag+'점검 일정: 준공 1개월 점검(지남 → ‘점검 연락함’ 단추) · 준공 1년 점검(남은 날)',ct.length===2&&/준공 1개월 점검/.test(ct[0])&&/일 지남/.test(ct[0])&&/점검 연락함/.test(ct[0])&&/준공 1년 점검/.test(ct[1])&&/일 남음/.test(ct[1]),ct.join(' // '));
+   let lg=await A.evaluate(()=>[...document.querySelectorAll('#acLogL li')].map(li=>(li.innerText||'').replace(/\s+/g,' ').trim()));
+   ok(tag+'고객 연락 기록: 인트라넷에서 보낸 문자(고객 카드 문자 기록)가 같이 보임 · 전화번호는 안 나옴',lg.length===1&&/^문자/.test(lg[0])&&/1개월 점검 안내/.test(lg[0])&&/문자 발송 기록 \(발송됨\)/.test(lg[0])&&!/0101234|010-1234/.test(await A.locator('#acBoard').innerText()),lg.join(' // '));
+   ok(tag+'사후 관리 화면(프로젝트별 칸)에 금액 없음 (A/S 비용·계약 금액)',!/54,321|33,000,000/.test(await A.locator('#acBoard').innerText()));
+   ok(tag+'가로 넘침 없음',await A.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
+   if(process.env.SHOTDIR)await A.screenshot({path:process.env.SHOTDIR+'/21_'+(vn==='PC'?'pc':'phone')+'.png',fullPage:true});
+   // 연락 기록 추가
+   await A.locator('#acl_kind').selectOption('방문');await A.locator('#acl_text').fill('토요일 오전 방문해 실리콘 다시 시공하기로 함');await A.locator('#acBoard [data-acladd]').click();await wait(1500);
+   lg=await A.evaluate(()=>[...document.querySelectorAll('#acLogL li')].map(li=>(li.innerText||'').replace(/\s+/g,' ').trim()));let pS=await dbg('projects/pS');
+   ok(tag+'연락 기록(방문)을 적고 ‘기록’ → 목록 맨 위에 · 프로젝트 문서의 acLog 에 덧붙임(누가·언제) · 다른 칸(현장명·단계·계약 금액·담당)은 그대로',lg.length===2&&/^방문/.test(lg[0])&&/실리콘 다시 시공/.test(lg[0])&&/최윤수/.test(lg[0])&&pS.acLog.length===1&&pS.acLog[0].kind==='방문'&&pS.acLog[0].byName==='최윤수'&&!!pS.acLog[0].at&&pS.title==='사후 현장 가'&&pS.stage==='사후관리'&&pS.contractAmt===33000000&&pS.mgr==='정진혁',lg.join(' // '));
+   await A.locator('#acl_text').fill('');await A.locator('#acBoard [data-acladd]').click();await wait(500);ok(tag+'내용이 비면 저장하지 않음',(await dbg('projects/pS')).acLog.length===1);
+   // 점검 연락함
+   await A.locator('#acChkT [data-acchk="m1"]').click();await wait(1500);pS=await dbg('projects/pS');const c2=await A.evaluate(()=>(document.querySelector('#acChkT tbody tr').innerText||'').replace(/\s+/g,' '));
+   ok(tag+'‘점검 연락함’ → 그 점검에 연락한 날·사람 표시 · 연락 기록에도 한 줄 · 단추는 사라짐',pS.acChk&&pS.acChk.m1&&pS.acChk.m1.byName==='최윤수'&&pS.acLog.length===2&&/1개월 점검 연락/.test(pS.acLog[1].text)&&/연락함/.test(c2)&&!/점검 연락함/.test(c2),c2);
+   // + 하자 접수 → A/S 접수 창 (프로젝트 번호 자동 · 처리 예정일 칸) → 저장 → 목록에
+   await A.locator('#acDetail [data-newas]').click();await wait(1000);const sv=await sh(A);
+   ok(tag+'‘+ 하자 접수’ → A/S 접수 창이 화면 안에서 열리고 프로젝트 번호·현장이 채워져 있음 · ‘처리 예정일’ 칸 있음',/^as\|/.test(sv)&&(await A.locator('#sheetForm [data-k="pno"]').inputValue().catch(()=>''))==='P-2609-901'&&(await A.locator('#sheetForm [data-k="plan"]').count())===1&&(await A.locator('#sheetForm [data-k="site"]').inputValue())==='사후 현장 가',sv);
+   await A.locator('#sheetForm [data-k="content"]').fill('베란다 창틀 누수');await A.locator('#sheetForm [data-k="plan"]').fill(D(3));await A.locator('#saveSheet').click();await wait(2500);
+   if(await sh(A))await A.evaluate(()=>window.__hfT.closeSheet());await A.evaluate(()=>{location.hash='#as'});await wait(800);
+   const at2=await A.evaluate(()=>[...document.querySelectorAll('#acAsT tbody tr')].map(tr=>(tr.innerText||'').replace(/\s+/g,' ').trim()));
+   ok(tag+'저장하면 그 프로젝트 하자 접수 목록에 (3건 · 처리 예정일 표시) · 고른 프로젝트가 그대로',at2.length===3&&at2.some(r=>/베란다 창틀 누수/.test(r)&&r.includes(D(3))),at2.join(' // '));
+   // 프로젝트 통합 화면 → 사후 관리 화면
+   await A.evaluate(()=>{location.hash='#projects'});await wait(600);await A.evaluate(()=>window.__hfT.open('projects','pT'));await wait(1200);
+   ok(tag+'프로젝트 창의 사후관리 카드에 ‘사후 관리 화면 열기’',(await A.locator('#pjHub [data-acgo="P-2609-902"]').count())===1);
+   await A.locator('#pjHub [data-acgo="P-2609-902"]').click();await wait(1200);
+   ok(tag+'누르면 사후 관리 화면에서 그 프로젝트가 골라진 채로 열림',(await A.evaluate(()=>location.hash))==='#as'&&!(await sh(A))&&/P-2609-902 · 준공 현장 나/.test(await A.locator('#acDetail').innerText()));
+   // 실무 팀: 쓰되 돈 정보는 안 보임
+   await wait(6000);
+   for(const [who,nm,mine] of [['jjh','정진혁','P-2609-901'],['bom','이봄이','P-2609-902']]){const P=await open(who,10000);await P.evaluate(()=>{location.hash='#customers'});await wait(1000);
+    const hasFlow=await P.locator('#custFlow [data-cstg="4-완료사후"]').count();if(hasFlow){await P.locator('#custFlow [data-cstg="4-완료사후"]').click();await wait(1000)}else{await P.evaluate(()=>{location.hash='#as'});await wait(1000)}
+    const pl=await P.evaluate(()=>[...document.querySelectorAll('#acList [data-acpick]')].map(x=>x.dataset.acpick));
+    ok(tag+nm+'(실무 팀): 고객 관리 → 완료·사후 → 사후 관리 화면이 열리고 프로젝트가 보임',(await P.evaluate(()=>location.hash))==='#as'&&pl.includes(mine),pl.join(','));
+    await P.locator('#acList [data-acpick="'+mine+'"]').click();await wait(700);
+    await P.locator('#acl_text').fill(nm+' 전화 확인');await P.locator('#acBoard [data-acladd]').click();await wait(2000);
+    const l2=await P.evaluate(()=>[...document.querySelectorAll('#acLogL li')].map(li=>(li.innerText||'').replace(/\s+/g,' ').trim()));
+    ok(tag+nm+': 연락 기록을 남길 수 있음 (거절된 쓰기 0)',l2.some(x=>x.includes(nm+' 전화 확인')&&x.includes(nm))&&(await P.evaluate(()=>window.__mockDenied.length))===0,l2.join(' // ')+' denied='+(await P.evaluate(()=>window.__mockDenied.join(','))));
+    const vt=await P.locator('#view').innerText();
+    ok(tag+nm+': 사후 관리 화면에 돈 정보 없음 (A/S 비용 칸·금액, 계약 금액)',!/54,321|33,000,000|A\/S 비용|비용 \(회사/.test(vt)&&(await P.locator('#view th').evaluateAll(a=>a.map(x=>x.textContent).join('|'))).indexOf('비용')<0,(await P.locator('#view th').evaluateAll(a=>a.map(x=>x.textContent).join('|'))));
+    if(who==='jjh'){await P.locator('#acAsT tr[data-id="a1"]').click();await wait(1000);const sv2=await sh(P);const hasCost=await P.locator('#sheetForm [data-k="asCost"],#sheetForm [data-k="asCharge"]').count();
+     ok(tag+'정진혁: 하자 접수 줄을 누르면 A/S 창이 열리고 비용 칸은 없음 · 처리 예정일은 고칠 수 있음',sv2==='as|a1'&&hasCost===0&&(await P.locator('#sheetForm [data-k="plan"]').count())===1&&!/54,321/.test(await P.locator('#veil').innerText()),sv2+' cost='+hasCost);
+     await P.locator('#sheetForm [data-k="plan"]').fill(D(2));await P.locator('#sheetForm [data-k="status"]').selectOption('일정 잡힘');await P.locator('#saveSheet').click();await wait(3000);
+     const mineAs=await seed.evaluate(()=>{const Dd=JSON.parse(localStorage.getItem('mockdb'));const ks=Object.keys(Dd).filter(k=>/(^|\/)as\/a1$/.test(k));return ks.map(k=>k+':'+Dd[k].status+':'+Dd[k].plan+':'+Dd[k].asCost)});
+     ok(tag+'정진혁이 저장해도 안 보이던 A/S 비용 값은 지워지지 않음 · 상태·처리 예정일은 바뀜',mineAs.length>0&&mineAs.every(x=>/:54321$/.test(x))&&mineAs.some(x=>x.includes(':일정 잡힘:'+D(2)+':')),mineAs.join(' // '))}
+    await P.close()}
+   const C=await open('cja',9000);await C.evaluate(()=>{location.hash='#as'});await wait(1000);ok(tag+'채진아(전체 담당): 사후 관리 화면·프로젝트 목록이 보임 (비용 칸은 기존 권한대로 보임)',(await C.locator('#acBoard [data-acpick]').count())>=3&&/비용/.test(await C.locator('#view th').evaluateAll(a=>a.map(x=>x.textContent).join('|'))));await C.close();
+   await A.close();await ctx.close()}
+  const i21=HTML.indexOf('// ===== 사후 관리: 프로젝트별 하자 접수'),b21=HTML.slice(i21,HTML.indexOf('document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-newas]")'));
+  ok('21 코드: alert/confirm/prompt/window.open/iframe 0 · 지우기(.delete) 0 · 새 저장 칸 없음(기존 projects·as 문서에만)',i21>0&&b21.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|\.delete\(|collection\(/.test(b21),b21.length+'자');
+ }
  //__MORE__
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
