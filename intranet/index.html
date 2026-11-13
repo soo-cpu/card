@@ -4122,8 +4122,11 @@ let gatePassed=false,rosterLocked=false;
 // 고침: 상태가 ‘착공 전’(또는 빈칸)이고 착공일 ≤ 오늘 < 준공(예정)일 이면 ‘공사 중’으로 읽음. 착공일·준공일이 현장 카드에 없으면 프로젝트의 착공일·준공(예정)일을 봄.
 // ‘보류’·‘준공’처럼 사람이 정한 값은 건드리지 않음. 대표 화면이 열려 있을 때 저장값도 바꾸고, 옛 값은 그 현장의 statusLog 에 남김.
 const SITE_AUTO={};
-function siteAutoOf(s){if(!s||(s.status||"착공 전")!=="착공 전")return null;const p=s.pno?pjOf(s.pno):null,T=todayStr(),start=s.start||(p&&p.start)||"",end=s.end||(p&&(p.end||p.endPlan))||"";if(!/^\d{4}-\d{2}-\d{2}/.test(start)||start>T)return null;if(end&&T>=end)return null;return {start,end}}
-function siteAutoFix(){(S.sites||[]).forEach(s=>{const a=siteAutoOf(s);if(!a)return;const from=s.status||"";s.status="공사 중";s.statusLog=(s.statusLog||[]).concat([{from,to:"공사 중",at:nowISO(),by:"자동",why:"착공일 "+a.start+" 지남"+(a.end?" · 준공(예정) "+a.end:"")}]).slice(-20);SITE_AUTO[s.id]=1})}
+// 검토 반려 고침(2026-11-13): 연결된 프로젝트 단계가 계약·시공일 때만 (준공·사후관리·종료·미계약 종료·상담 등과 프로젝트 없는 현장은 건드리지 않음) · 자동 변경은 현장마다 한 번만(기록에 자동 변경이 있으면 사람이 ‘착공 전’으로 되돌려도 다시 안 바꿈)
+// 손으로 ‘공사 중’으로 바꿀 때의 ‘예상원가 확정 먼저’ 잠금과는 따로: 자동 변경은 대표 지시대로 잠금과 상관없이 바꾸고, 이유에 ‘원가 확정 전’을 남김
+const SITE_AUTO_STAGES=["계약","시공"];
+function siteAutoOf(s){if(!s||(s.status||"착공 전")!=="착공 전")return null;if((s.statusLog||[]).some(l=>l&&l.by==="자동"))return null;const p=s.pno?pjOf(s.pno):null;if(!p||!SITE_AUTO_STAGES.includes(p.stage))return null;const T=todayStr(),start=s.start||p.start||"",end=s.end||p.end||p.endPlan||"";if(!/^\d{4}-\d{2}-\d{2}/.test(start)||start>T)return null;if(end&&T>=end)return null;let nolock=false;try{nolock=!pcLocked(p.id)}catch(e){}return {start,end,nolock}}
+function siteAutoFix(){(S.sites||[]).forEach(s=>{const a=siteAutoOf(s);if(!a)return;const from=s.status||"";s.status="공사 중";s.statusLog=(s.statusLog||[]).concat([{from,to:"공사 중",at:nowISO(),by:"자동",why:"착공일 "+a.start+" 지남 자동"+(a.nolock?"(원가 확정 전)":"")+(a.end?" · 준공(예정) "+a.end:"")}]).slice(-20);SITE_AUTO[s.id]=1})}
 async function siteAutoSave(){if(PV||!me.admin||mode!=="shared"||!db)return;let n=0;for(const id of Object.keys(SITE_AUTO)){const s=S.sites.find(x=>x.id===id);delete SITE_AUTO[id];if(!s||s.status!=="공사 중")continue;const r=Object.assign({},s,{updatedAt:nowISO()});delete r.id;try{await put("sites",id,r);n++;logAct("sites","상태 자동 (착공 전 → 공사 중)",s.name||s.pno||"")}catch(e){SITE_AUTO[id]=1}}
   if(n)toast("착공일이 지난 현장 "+n+"곳을 ‘공사 중’으로 바꿨어요 (옛 값은 기록에 남김)")}
 function render(){try{siteAutoFix()}catch(e){}
