@@ -28,7 +28,7 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
  const mk=async(opt,seedObj,init,routeX)=>{const ctx=await b.newContext(opt);await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));
   await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>routeX&&/xlsx/.test(r.request().url())?r.fulfill({contentType:'application/javascript',body:routeX}):r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[seedObj,RULES]);
-  const open=async(who,ms)=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push(who+': '+e.message));p.on('dialog',d=>{dialogs.push(who+' '+d.type());d.dismiss()});await p.addInitScript(`window.__SUBPOLL=2500;window.__MOCKUSER=${JSON.stringify(USERS[who])};`+init+MOCK);await p.goto('http://hf.test/');await wait(ms||7000);for(let i=0;i<40&&!(await p.evaluate(()=>!!window.__hfT));i++)await wait(500);if(!(await p.evaluate(()=>!!window.__hfT)))console.log('  (화면이 안 뜸: '+who+') '+(await p.locator('body').innerText()).replace(/\s+/g,' ').slice(0,200));return p};
+  const open=async(who,ms)=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push(who+': '+e.message));if(process.env.DEBUG)p.on('console',m=>{if(/error|warn/.test(m.type()))console.log('  ['+who+' '+m.type()+'] '+m.text().slice(0,300))});p.on('dialog',d=>{dialogs.push(who+' '+d.type());d.dismiss()});await p.addInitScript(`window.__SUBPOLL=2500;window.__MOCKUSER=${JSON.stringify(USERS[who])};`+init+MOCK);await p.goto('http://hf.test/');await wait(ms||7000);for(let i=0;i<40&&!(await p.evaluate(()=>!!window.__hfT));i++)await wait(500);if(!(await p.evaluate(()=>!!window.__hfT)))console.log('  (화면이 안 뜸: '+who+') '+(await p.locator('body').innerText()).replace(/\s+/g,' ').slice(0,200));return p};
   return {ctx,open,seed}};
  const sh=p=>p.evaluate(()=>{const s=window.__hfT.sheet();return s?s.col+'|'+s.id:''});
  const pc=(p,id)=>p.evaluate(i=>window.__hfT.pc(i),id);
@@ -140,6 +140,63 @@ const mcpInit=tree=>`window.__mcpLog=[];window.__MOCKMCP=(()=>{const T=${JSON.st
     ok('1a 실제 '+vn+': 가로 넘침 없음',await noOver(A));await A.close();await ctx.close()}}
   const i0=HTML.indexOf('// ===== 드라이브 현장 폴더에서 견적서 가져오기'),blk=HTML.slice(i0,HTML.indexOf('document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pcven'));
   ok('1a 코드: alert/confirm/prompt/window.open/iframe 0 · 드라이브 쓰기 도구(create_file·update_file·trash·copy·share) 0 · 프로젝트 문서·공용 칸에 쓰지 않음',i0>0&&blk.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe/.test(blk)&&!/create_file|update_file|trash_file|copy_file|share_file/.test(blk)&&!/workPut|[^a-zA-Z]put\(|collection\("work/.test(blk),blk.length+'자');
+ }
+ // ================= 6 =================
+ if(on('6')){
+  const days=[];for(let y=2025,m=8;!(y===2026&&m===12);m===12?(y++,m=1):m++){const k=y+'-'+String(m).padStart(2,'0');days.push([k+'-05',1000000,400000,5000000]);if(k!=='2026-11')days.push([k+'-20',0,300000,4700000])}
+  // 2026-10 만 다르게: 수입 500,000 · 지출 900,000 → 마이너스
+  days.forEach(r=>{if(r[0]==='2026-10-05'){r[1]=500000;r[2]=600000}});
+  const E=(id,o)=>({["fincf/"+id]:Object.assign({d:"2026-10-05",io:"출금",amt:0,cat:"",who:"",memo:"",pno:"",plan:false,at:T0,by:"excel",src:"엑셀"},o)});
+  const SEED=Object.assign({},STAFF,{"fin/cfhist":{days,copiedAt:T0},"fin/cfnew":{days:[["2026-11-12",200000,50000,5150000]],at:T0},"fin/cfset":{floor:""},"customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",createdAt:T0,updatedAt:T0}},
+   E("e1",{amt:200000,cat:"고정비",who:"농협카드"}),E("e2",{amt:100000,who:"[한국전력]",memo:"사무실 전기요금"}),E("e3",{amt:999000,cat:"고정비",who:"예정처",plan:true,d:"2026-10-20"}),E("e4",{amt:777000,cat:"고정비",io:"입금",who:"입금처"}),
+   E("e5",{amt:300000,who:"홍길동",memo:"10월 급여"}),E("e6",{amt:50000,who:"[국민651->신한485]"}),E("e7",{amt:40000,who:"한국전력",d:"2026-09-05"}),E("e8",{amt:60000,cat:"자재",who:"두성",d:"2026-09-05"}));
+  for(const [vn,opt] of [['PC',{viewport:{width:1280,height:900}}],['Pixel 7',devices['Pixel 7']]]){const tag='6 '+vn+' ';
+   const {ctx,open,seed}=await mk(opt,SEED,STUB);const A=await open('admin',12000);
+   await A.evaluate(()=>{location.hash='#cflow'});await wait(1500);
+   ok(tag+'대표: 캐시플로우에 ‘일별 보기 / 월별 보기’ · 처음은 일별(지금 화면 그대로)',(await A.locator('#cfViewBar [data-cfview]').count())===2&&(await A.locator('#cfViewBar [data-cfview="day"]').getAttribute('aria-pressed'))==='true'&&(await A.locator('#cfMonth').count())===0&&(await A.locator('#cfv_d').count())===1);
+   await A.locator('#cfViewBar [data-cfview="month"]').click();await wait(800);
+   const tb=()=>A.evaluate(()=>[...document.querySelectorAll('#cfMonthT tbody tr.cfm-row')].map(tr=>{const c=[...tr.children].map(td=>(td.textContent||'').replace(/\s+/g,' ').trim());c[0]=tr.querySelector('.cfm-ml').textContent;c[5]=tr.querySelector('.cfm-c6').textContent;return c}));
+   let M=await tb();const head=(await A.locator('#cfMonthT thead').textContent()).replace(/\s+/g,' ').replace(/(월|수입|지출|고정비|마진)(?=\S)/g,'$1 ');
+   ok(tag+'월별 표: 월 | 수입 | 지출 | 고정비 | 마진 | 플러스/마이너스 · 최근 12개월(2026-11 → 2025-12)',/월 수입 지출 고정비 마진 플러스 \/ 마이너스/.test(head)&&M.length===12&&/2026년 11월/.test(M[0][0])&&/2025년 12월/.test(M[11][0]),head+' / '+M.length+' '+(M[0]||[])[0]+' ~ '+(M[11]||[])[0]);
+   const oct=M.find(r=>/2026년 10월/.test(r[0]))||[],nov=M[0]||[],sep=M.find(r=>/2026년 9월/.test(r[0]))||[],aug=M.find(r=>/2026년 8월/.test(r[0]))||[];
+   ok(tag+'10월: 자금일보 그대로 더함 — 수입 500,000 · 지출 900,000 · 마진 −400,000 · ‘마이너스’',oct[1]==='500,000'&&oct[2]==='900,000'&&oct[4]==='−400,000'&&/마이너스/.test(oct[5]),oct.join(' | '));
+   ok(tag+'11월: 사본(05일) + 자동 반영분(12일)을 같이 더함 — 수입 1,200,000 · 지출 450,000 · 마진 +750,000 · ‘플러스’',nov[1]==='1,200,000'&&nov[2]==='450,000'&&nov[4]==='+750,000'&&/플러스/.test(nov[5]),nov.join(' | '));
+   ok(tag+'고정비(처음 기준 = 항목 ‘고정비’만): 10월 200,000 (지급 예정 줄·입금 줄·구분 없는 줄은 안 더함) · 9월 0 · 출금 줄이 없는 8월은 ‘—’',oct[3]==='200,000'&&sep[3]==='0'&&aug[3]==='—',oct[3]+' / '+sep[3]+' / '+aug[3]);
+   const col=await A.evaluate(()=>{const r=document.querySelector('#cfMonthT tr.cfm-row[data-cfm="2026-10"]');const b=r.children[4].querySelector('b'),i=r.querySelector('.cfm-c6 .cfm-bar i');const r2=document.querySelector('#cfMonthT tbody tr.cfm-row');return [getComputedStyle(b).color,getComputedStyle(i).backgroundColor,getComputedStyle(r2.querySelector('.cfm-c6 .cfm-bar i')).backgroundColor,i.style.width]});
+   ok(tag+'마이너스 달은 빨간색(글자·막대), 플러스 달 막대는 남색',col[0]==='rgb(198, 40, 40)'&&col[1]==='rgb(198, 40, 40)'&&col[2]==='rgb(31, 78, 121)',col.join(' '));
+   const ft=(await A.locator('#cfMonthT tfoot').textContent()).replace(/\s+/g,' ');if(vn==='Pixel 7'){const vis=await A.evaluate(()=>{const r=document.querySelector('#cfMonthT tbody tr.cfm-row'),bx=document.querySelector('#cfMonth .tablebox').getBoundingClientRect(),m=r.children[4].getBoundingClientRect(),p=r.querySelector('.cfm-mb .pill').getBoundingClientRect();return [m.right<=bx.right+1&&m.right<=window.innerWidth,p.width>0&&p.right<=window.innerWidth,getComputedStyle(r.querySelector('.cfm-c6')).display]});
+    ok(tag+'휴대폰: 옆으로 밀지 않아도 마진 칸까지 보이고, 플러스/마이너스 표시·막대는 달 칸 안에',vis[0]&&vis[1]&&vis[2]==='none',vis.join(' '))}
+   ok(tag+'합계 줄 (12개월)',/합계\s*\(12개월\)/.test(ft)&&/11,700,000/.test(ft),ft);
+   ok(tag+'월별 화면 가로 넘침 없음 (표는 표 상자 안에서만 밀림)',await A.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
+   if(process.env.SHOTDIR)await A.screenshot({path:process.env.SHOTDIR+'/6_month_'+(vn==='PC'?'pc':'phone')+'.png',fullPage:true});
+   // 기간 고르기
+   await A.locator('#cfYearSel').selectOption('2025');await wait(600);M=await tb();ok(tag+'연도 선택 2025 → 2025년 달만 (8~12월 5개)',M.length===5&&M.every(r=>/2025년/.test(r[0])),M.map(r=>r[0]).join(','));
+   await A.locator('#cfYearSel').selectOption('2026');await wait(600);M=await tb();ok(tag+'연도 선택 2026 → 1~11월 11개',M.length===11&&/2026년 11월/.test(M[0][0])&&/2026년 1월/.test(M[10][0]),M.length);
+   // 달을 누르면 그 달 일별 → 날짜를 누르면 일별 보기의 그날
+   await A.locator('#cfMonthT tr.cfm-row[data-cfm="2026-10"]').click();await wait(600);const dd=await A.evaluate(()=>[...document.querySelectorAll('#cfMonthT tr.cfm-days tbody tr')].map(tr=>(tr.innerText||'').replace(/\s+/g,' ').trim()));
+   ok(tag+'달을 누르면 그 달 일별(날짜·입금·출금·잔액)이 펼쳐짐',dd.length===2&&/10-20 0 300,000 4,700,000/.test(dd[0])&&/10-05 500,000 600,000 5,000,000/.test(dd[1]),dd.join(' // '));
+   await A.locator('#cfMonthT [data-cfgo="2026-10-05"]').click();await wait(800);
+   ok(tag+'날짜를 누르면 일별 보기의 그날 내역으로',(await A.locator('#cfMonth').count())===0&&(await A.locator('#cfv_d').inputValue())==='2026-10-05'&&/한국전력/.test(await A.locator('#view').innerText()));
+   // 고정비 구분 기준: 대표가 거래처를 골라 저장 → 고정비에 더해짐 · 옛 기준 기록
+   await A.locator('#cfViewBar [data-cfview="month"]').click();await wait(600);await A.locator('#cfFixBox summary').click();await wait(300);
+   const fw=await A.evaluate(()=>[...document.querySelectorAll('#cfFixBox [data-cffw]')].map(x=>x.dataset.cffw));const fc=await A.evaluate(()=>[...document.querySelectorAll('#cfFixBox [data-cffc]')].map(x=>x.dataset.cffc+(x.checked?'*':'')));
+   ok(tag+'고정비 구분 기준(대표): 항목 체크(고정비만 켜짐) + 거래처 체크 목록 — 계좌 이체 줄·급여 줄은 목록에 없음 · [한국전력]과 한국전력은 한 곳으로',fc.includes('고정비*')&&fc.filter(c=>/\*/.test(c)).length===1&&fw.includes('한국전력')&&fw.filter(w=>/한국전력/.test(w)).length===1&&!fw.some(w=>/->|홍길동|예정처|입금처/.test(w)),fc.join(',')+' / '+fw.join(','));
+   await A.locator('#cfFixBox [data-cffw="한국전력"]').check();await A.locator('#cfFixBox [data-cffixsave]').click();await wait(1500);M=await tb();
+   const st=await seed.evaluate(()=>JSON.parse(localStorage.getItem('mockdb'))['fin/cfset']);
+   ok(tag+'한국전력을 고정비로 고르고 저장 → 2026년 10월 300,000 · 9월 40,000 · 옛 기준은 기록(fixedHist)에 · 다른 설정(최저선)은 그대로',(M.find(r=>/2026년 10월/.test(r[0]))||[])[3]==='300,000'&&(M.find(r=>/2026년 9월/.test(r[0]))||[])[3]==='40,000'&&st.fixedWho.join()==='한국전력'&&st.fixedCats.join()==='고정비'&&st.fixedHist.length===1&&st.fixedHist[0].cats.join()==='고정비'&&st.floor==="",JSON.stringify(st).slice(0,240));
+   // 채진아: 같은 숫자 · 기준은 보기만 / 정진혁·이봄이: 캐시플로우 자체가 없음
+   let cp=0;for(let i=0;i<60;i++){cp=await seed.evaluate(()=>{const x=JSON.parse(localStorage.getItem('mockdb'))['acct/u_cja/fin/all'];return x&&x.cfset&&(x.cfset.fixedWho||[]).length?1:0});if(cp)break;await wait(1000);if(i===59)console.log('  (채진아 재무 사본이 60초 안에 안 생김) busy='+(await A.evaluate(()=>window.__hfT.busy())))}
+   const C=await open('cja',9000);await C.evaluate(()=>{location.hash='#cflow'});await wait(1500);await C.locator('#cfViewBar [data-cfview="month"]').click();await wait(800);
+   const MC=await C.evaluate(()=>[...document.querySelectorAll('#cfMonthT tbody tr.cfm-row')].map(tr=>{const c=[...tr.children].map(td=>(td.textContent||'').replace(/\s+/g,' ').trim());c[0]=tr.querySelector('.cfm-ml').textContent;return c}));const oc=MC.find(r=>/2026년 10월/.test(r[0]))||[];
+   ok(tag+'채진아(전체 담당): 월별 보기가 보이고 대표와 같은 숫자(직원 사본) · 사본 시각 표시',MC.length===12&&oc[1]==='500,000'&&oc[2]==='900,000'&&oc[3]==='300,000'&&oc[4]==='−400,000'&&/사본/.test(await C.locator('#cfMonth h2').innerText()),oc.join(' | ')+' :: '+(await C.locator('#view').innerText()).replace(/\s+/g,' ').slice(0,200)+' :: '+JSON.stringify(await seed.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb'));const x=D['acct/u_cja/fin/all'];return x?Object.keys(x)+' '+(x.hist||[]).length:Object.keys(D).filter(k=>/u_cja/.test(k))})));
+   ok(tag+'채진아: 고정비 구분 기준은 보기만 (체크·저장 버튼 없음)',(await C.locator('#cfFixBox input,#cfFixBox [data-cffixsave]').count())===0&&/대표 화면에서 바꿀 수 있어요/.test(await C.locator('#cfFixBox').textContent())&&/거래처: 한국전력/.test(await C.locator('#cfFixBox').textContent())&&(await C.evaluate(()=>window.__mockDenied.length))===0);
+   for(const who of ['jjh','bom']){const P=await open(who,8000);await P.evaluate(()=>{location.hash='#cflow'});await wait(1200);const tx=await P.locator('body').innerText();
+    ok(tag+(who==='jjh'?'정진혁':'이봄이')+'(실무 팀): 캐시플로우·월별 보기·금액 없음 (주소를 직접 쳐도)',(await P.locator('#cfMonth,#cfViewBar,#cfMonthT,[data-cfview]').count())===0&&!/월별 보기|캐시플로우|900,000|4,700,000/.test(tx),tx.replace(/\s+/g,' ').slice(0,80));await P.close()}
+   const lk=await seed.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb')||'{}');return Object.keys(D).filter(k=>/^(acct\/u_jjh|acct\/u_bom|work|mine)\//.test(k)&&/fixedWho|cfhist|"hist"|4700000/.test(JSON.stringify(D[k])))});
+   ok(tag+'정진혁·이봄이 사본·공용 칸에 자금일보·고정비 기준 없음',lk.length===0,lk.join(','));
+   await C.close();await A.close();await ctx.close()}
+  const i6=HTML.indexOf('// ===== 캐시플로우 월별 보기'),b6=HTML.slice(i6,HTML.indexOf('document.addEventListener("click",e=>{const t=e.target.closest("[data-cfio],[data-cfday]'));
+  ok('6 코드: alert/confirm/prompt/window.open/iframe 0 · 새 저장 칸 없음(설정은 기존 fin/cfset 에만)',i6>0&&b6.length>2000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe/.test(b6)&&!/collection\(|\.doc\(/.test(b6)&&/finPut\("cfset"/.test(b6),b6.length+'자');
  }
  //__MORE__
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
