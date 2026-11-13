@@ -271,7 +271,7 @@ body.cs-cust .fbbtn{display:none}@media print{#askFab,#askVeil{display:none!impo
 .navbar.haspt{flex-wrap:wrap}.pttabs{flex:1 0 100%;display:flex;gap:6px;overflow-x:auto;min-width:0;padding:2px 0 0;-webkit-overflow-scrolling:touch;scrollbar-width:none}.pttabs::-webkit-scrollbar{display:none}
 .pttabs button{flex:0 0 auto;min-height:38px;padding:6px 12px;border:1px solid var(--line,#D9D9D9);border-radius:999px;background:var(--panel,#fff);color:var(--ink,#111);font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
 .pttabs button[aria-selected="true"]{background:#1F4E79;border-color:#1F4E79;color:#fff;font-weight:700}
-.ptsec{display:contents}
+.ptsec{display:contents}.sheet>.ptsec>*,.sheet .form>.ptsec>*{min-width:0}
 .sheet[data-pt="cust"] .ptsec:not([data-pt="cust"]),.sheet[data-pt="prog"] .ptsec:not([data-pt="prog"]),.sheet[data-pt="quote"] .ptsec:not([data-pt="quote"]),.sheet[data-pt="as"] .ptsec:not([data-pt="as"]){display:none}
 .sheet[data-pt="cust"] #pjHub .hubc:not([data-pt="cust"]),.sheet[data-pt="prog"] #pjHub .hubc:not([data-pt="prog"]),.sheet[data-pt="quote"] #pjHub .hubc:not([data-pt="quote"]),.sheet[data-pt="as"] #pjHub .hubc:not([data-pt="as"]){display:none}
 .sheet[data-pt]:not([data-pt="all"]) #pjHub{grid-template-columns:minmax(0,1fr)}

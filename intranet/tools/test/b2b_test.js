@@ -214,13 +214,13 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
     await go(P,'#projects');await P.locator('tbody tr[data-open="projects"][data-id="p1"]').first().click();await wait(1000);
     const tabs=await P.evaluate(()=>{const t=document.querySelector('#veil .navbar .pttabs');if(!t)return null;const nb=document.querySelector('#veil .navbar'),s=document.querySelector('#veil .sheet');return {l:[...t.querySelectorAll('button')].map(b=>b.innerText.trim()).join(','),sticky:getComputedStyle(nb).position,top:nb.getBoundingClientRect().top-s.getBoundingClientRect().top}});let v=await vis(P);
     ok(tag+'프로젝트 창 맨 위 고정 줄(← 뒤로·위치 표시와 한 줄 묶음)에 탭: 전체·고객 정보·진행 상황·견적·사후 관리 · 처음은 ‘전체’(카드 4개 다 보임)',!!tabs&&tabs.l==='전체,고객 정보,진행 상황,견적,사후 관리'&&tabs.sticky==='sticky'&&tabs.top<5&&(await cur(P))==='all|전체'&&v.cust&&v.prog&&v.quote&&v.as&&v.flow&&v.name,JSON.stringify(tabs));
-    await tab(P,'cust');v=await vis(P);const c1=await crumb(P);
+    const w0=await wide(P);await tab(P,'cust');v=await vis(P);const c1=await crumb(P);
     ok(tag+'‘고객 정보’ 탭: 고객 카드·기본 정보 칸만 · 다른 카드·단계 흐름은 가려짐 · 위치 표시 끝에 ‘고객 정보’ · 저장 버튼은 그대로',(await cur(P))==='cust|고객 정보'&&v.cust&&v.name&&!v.prog&&!v.quote&&!v.as&&!v.flow&&!v.stage&&v.save&&/고객 정보$/.test(c1),JSON.stringify(v)+' '+c1);
-    await tab(P,'prog');v=await vis(P);ok(tag+'‘진행 상황’ 탭: 현장 진행 카드·단계 흐름·단계 칸',v.prog&&v.flow&&v.stage&&!v.cust&&!v.quote&&!v.as&&!v.name,JSON.stringify(v));
-    await tab(P,'quote');v=await vis(P);const qt=await P.locator('.sheet').innerText();ok(tag+'‘견적’ 탭: 견적 카드(견적서 작성 열기)만',v.quote&&!v.cust&&!v.prog&&!v.as&&!v.flow&&/견적서 작성 열기|견적 1차 만들기/.test(qt),JSON.stringify(v));
+    const w1=await wide(P);await tab(P,'prog');const w2=await wide(P);v=await vis(P);ok(tag+'‘진행 상황’ 탭: 현장 진행 카드·단계 흐름·단계 칸',v.prog&&v.flow&&v.stage&&!v.cust&&!v.quote&&!v.as&&!v.name,JSON.stringify(v));
+    await tab(P,'quote');const w3=await wide(P);v=await vis(P);const qt=await P.locator('.sheet').innerText();ok(tag+'‘견적’ 탭: 견적 카드(견적서 작성 열기)만',v.quote&&!v.cust&&!v.prog&&!v.as&&!v.flow&&/견적서 작성 열기|견적 1차 만들기/.test(qt),JSON.stringify(v));
     if(who==='jjh'||who==='bom')ok(tag+'견적 탭에 원가·마진·성과금 숫자 없음 (권한 그대로)',!MONEY.test(qt)&&!/마진율|성과금/.test(qt));
     await tab(P,'as');v=await vis(P);ok(tag+'‘사후 관리’ 탭: 사후관리 카드·하자보수 칸',v.as&&v.wm&&!v.cust&&!v.prog&&!v.quote&&!v.name,JSON.stringify(v));
-    ok(tag+'가로 넘침 없음 (탭 줄 포함)',await wide(P));
+    {const w4=await wide(P);ok(tag+'가로 넘침 없음 (탭 줄 포함 · 전체·고객 정보·진행 상황·견적·사후 관리 탭 모두)',w0&&w1&&w2&&w3&&w4,[w0,w1,w2,w3,w4].join(','))}
     // 뒤로: 전체 → 고객 정보 → 진행 상황 → 견적 → 사후 관리 로 왔음 → 뒤로 = 견적, 진행 상황, 고객 정보, 그다음 목록
     const seq=[];for(let i=0;i<3;i++){await back(P);seq.push((await cur(P))+'@'+(await sh(P)))}await back(P);const end=await sh(P);
     ok(tag+'‘← 뒤로’는 프로젝트를 나가지 않고 바로 전 탭으로 (견적 → 진행 상황 → 고객 정보), 더 없으면 그때 목록',seq.join(' > ')==='quote|견적@projects|p1 > prog|진행 상황@projects|p1 > cust|고객 정보@projects|p1'&&end===''&&(await P.evaluate(()=>location.hash))==='#projects',seq.join(' > ')+' > '+end);
