@@ -26,6 +26,8 @@
  *   contents[].parts[] 에 text + inline_data{mime_type,data} · generationConfig.responseModalities ['TEXT','IMAGE'] ·
  *   imageConfig.aspectRatio '4:3', 400이면 비율 빼고 다시 · 응답 candidates[0].content.parts[].inlineData).
  *   [확인 필요] 공식 문서(ai.google.dev)는 작업 세션 네트워크에서 열리지 않아 직접 확인 못 함. 입력 이미지 장수·크기 한도도 확인 필요
+ *   (2026-11-14 웹 검색 · 2차 자료(Firebase AI Logic·LiteLLM 등): generateContent + responseModalities TEXT/IMAGE +
+ *    generationConfig.imageConfig.aspectRatio '4:3' 형식은 같음 · 새 모델 이름 gemini-3.1-flash-image-preview 등은 sianModel_ 자동 목록이 고름)
  *   (여기서는 보수적으로 4장 · 장당 4MB · 합계 12MB).
  */
 var ISIAN_MAX_IMG = 4;
