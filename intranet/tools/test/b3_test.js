@@ -291,6 +291,7 @@ const MONEY=/12,345,678|98,765|원가|마진|성과금/;
    await putFiles(A,'#fileIn',['현장 공정표']);for(let i=0;i<20&&!(await A.locator('#gjVeil').count());i++)await wait(500);
    const g=await A.evaluate(()=>window.__hfT.gj());const ai2=await A.evaluate(n=>window.__aiLog.slice(n),n1);
    ok('4 '+vn+' 사진 공정표(이름에 공정표)는 AI 로 읽어 같은 확인 창 (철거 11-02~11-03 · 목공 11-05) · 아직 캘린더에 안 넣음',g&&g.rows.map(r=>r.proc+':'+r.start.slice(5)+'~'+r.end.slice(5)).join(',')==='철거:11-02~11-03,목공:11-05~11-05'&&ai2.length===1&&/공정표/.test(ai2[0].prompt)&&/AI가 읽은 결과/.test(g.note),JSON.stringify(g&&g.rows));
+   { const pr=(ai2[0]||{}).prompt||'';ok('4 '+vn+' 공정표 AI 요청 글에 고객 이름·현장 이름(고객 이름이 들어갈 수 있음)·전화·금액 없음 · 현장 번호만 (v0.99-33)',!!pr&&!/홍길동/.test(pr)&&!pr.includes('사진 현장')&&!/12,?345,?678/.test(pr)&&!/01[016789]-?\d{3,4}-?\d{4}/.test(pr)&&pr.includes('P-2611-901'),pr.slice(0,160)) }
    await A.locator('#gjVeil [data-gjclose]').click();await close(A);
    await ctx.close()}
   // AI 없는 화면(연습 모드·권한 없음): 사진은 저장 · 직접 입력 안내

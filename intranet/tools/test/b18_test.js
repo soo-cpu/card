@@ -104,6 +104,9 @@ const MONEY=/12,345,678|원가|마진|성과금/;
   await go(A,'#preview');await A.locator('[data-pvgo="st-jung"]').click();await wait(3000);await openS(A,'projects','p1');await gemOpen(A);
   const pvt=await A.evaluate(()=>{const b=document.querySelector('[data-gembox]');return b?{t:b.innerText,open:!!b.querySelector('[data-rdopen]'),dis:!!b.querySelector('[data-rdgo="gprep"][disabled]')}:null});
   ok(vn+' 직원 화면 미리 보기: ‘미리 보기에서는 시안을 요청할 수 없어요’ · ② 없음 · ① 막힘',pvt&&/미리 보기에서는 시안을 요청할 수 없어요/.test(pvt.t)&&!pvt.open&&pvt.dis,JSON.stringify(pvt&&{open:pvt.open,dis:pvt.dis}));
+  // 미리 보기에서 사진 올리기를 막을 때 화면 오류(preview)가 남지 않음 (v0.99-33)
+  const e0=errs.length;await A.evaluate(()=>{const i=document.querySelector('input[data-phin]');if(!i)return;const dt=new DataTransfer();dt.items.add(new File([new Uint8Array([137,80,78,71])],'현장.png',{type:'image/png'}));i.files=dt.files;i.dispatchEvent(new Event('change',{bubbles:true}))});await wait(1500);
+  const hasIn=await A.evaluate(()=>!!document.querySelector('input[data-phin]'));ok(vn+' 미리 보기: 사진 올리기는 막히고 화면 오류 없음',hasIn&&errs.length===e0,errs.slice(e0).join(' | '));
   await A.close();await ctx.close()}
  ok('브라우저 확인·알림 창 안 뜸',dialogs.length===0,dialogs.join(','));
  ok('화면 오류 없음',errs.length===0,errs.slice(0,5).join(' | '));
