@@ -138,7 +138,7 @@ const bytes=t=>{let n=0;for(const ch of t){const c=ch.codePointAt(0);n+=c===10?2
  // 재방문 문구: 수신거부 번호가 들어가면 경고 없음
  await go(A2,'#customers');await A2.locator('#view tbody [data-sel]').first().check();await wait(200);await A2.locator('[data-smssel]').click();await wait(400);
  await A2.locator('#smsTpl').selectOption('재방문 안내');await wait(200);await A2.locator('[data-smsact="preview"]').click();await wait(400);
- const adT=await A2.locator('#smsVeil').innerText();ok('재방문 안내: 수신거부 번호가 설정에 있으면 글 끝에 ‘무료수신거부 080-123-4567’, 경고 없음',/무료수신거부 080-123-4567/.test(adT)&&!/수신거부 번호를 설정에/.test(adT)&&/\(광고\)\[아르띠꼬 스튜디오\]/.test(adT));
+ const adT=await A2.locator('#smsVeil').innerText()+'\n'+await A2.evaluate(()=>[...document.querySelectorAll('#smsVeil textarea')].map(t=>t.value).join('\n')) /* v0.99-34: 한 명이면 미리보기 글이 고칠 수 있는 칸 */;ok('재방문 안내: 수신거부 번호가 설정에 있으면 글 끝에 ‘무료수신거부 080-123-4567’, 경고 없음',/무료수신거부 080-123-4567/.test(adT)&&!/수신거부 번호를 설정에/.test(adT)&&/\(광고\)\[아르띠꼬 스튜디오\]/.test(adT));
  await A2.locator('#smsVeil [data-smsact="back"]').click();await wait(200);await A2.locator('#smsTpl').selectOption('사후관리 안내');await wait(200);
  ok('6 대표가 고친 문구가 문자 창에 나옴',/사후 점검 안내드립니다/.test(await A2.locator('#smsText').inputValue()));
  await A2.locator('#smsVeil [data-smsact="close"]').first().click();await wait(200);

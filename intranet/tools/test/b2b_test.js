@@ -254,16 +254,17 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
    const {ctx,open,dbv}=await mk(opt,Object.assign({},BASE,{"config/company":{brand:"아르띠꼬 스튜디오",name:"주식회사 홈퍼니싱",tel:"031-000-0000"}}),STUB+MCP);const A=await open('admin',12000);const J=await open('jjh',8000);const B=await open('bom',8000);const C=await open('cja',8000);const J2=await open('jjh',8000);
    const smsFrom=async P=>{await openS(P,'projects','p1');await P.locator('#pjHub [data-smscode]').click();await wait(900)};
    const pick=async(P,n)=>{await P.locator('#smsTpl').selectOption(n);await wait(300);return P.locator('#smsText').inputValue()};
-   const prev=async P=>{await P.locator('#smsVeil [data-smsact="preview"]').click();await wait(400);const t=await P.evaluate(()=>(document.querySelector('#smsPrev pre')||{}).textContent||'');await P.locator('#smsVeil [data-smsact="back"]').click();await wait(300);return t};
+   const prev=async P=>{await P.locator('#smsVeil [data-smsact="preview"]').click();await wait(400);const t=await P.evaluate(()=>{const f=document.getElementById('smsFinal');return f?f.value:((document.querySelector('#smsPrev pre')||{}).textContent||'')});await P.locator('#smsVeil [data-smsact="back"]').click();await wait(300);return t};
    const closeSms=async P=>{await P.evaluate(()=>{const b=document.querySelector('#smsVeil [data-smsact="close"]');b&&b.click()});await wait(200);await close(P)};
    for(const [P,nm,who] of [[A,'최윤수','admin'],[C,'채진아','cja'],[J,'정진혁','jjh'],[B,'이봄이','bom']]){
     await smsFrom(P);const st=await P.evaluate(()=>({opts:[...document.querySelectorAll('#smsTpl option')].map(o=>o.value),sel:document.getElementById('smsTpl').value,card:(document.getElementById('smsMyCard')||{}).value,src:(document.getElementById('smsSrc')||{}).innerText,to:document.getElementById('smsTo').innerText}));
-    ok(tag+nm+': 문구 고르기에 단계별 문구 7개(상담 후 1·2차, 견적 후 1·2차, 계약 직전, 계약 유도 1·2차) + 기존 문구 · 견적이 있는 프로젝트에서 열면 ‘견적 후 1차’가 골라져 있음 · 받는 사람 = 그 고객 번호',NAMES.every(n=>st.opts.includes(n))&&['상담 후 안내','사후관리 안내','재방문 안내','직접 쓰기'].every(n=>st.opts.includes(n))&&st.sel==='견적 후 1차'&&/홍길동 010-1234-5678/.test(st.to)&&st.src==='회사 기본 문구',JSON.stringify(st).slice(0,300));
+    ok(tag+nm+': 문구 고르기에 단계별 문구 7개(상담 후 1·2차, 견적 후 1·2차, 계약 직전, 계약 유도 1·2차) + 기존 문구 · 견적이 있는 프로젝트에서 열면 ‘견적 후 1차’가 골라져 있음 · 받는 사람 = 그 고객 번호',NAMES.every(n=>st.opts.includes(n))&&['상담 후 안내','사후관리 안내','재방문 안내','직접 쓰기'].every(n=>st.opts.includes(n))&&st.sel==='견적 후 1차'&&/홍길동 010-1234-5678/.test(st.to)&&st.src==='회사 문구' /* v0.99-34: 6종은 회사 문구 */,JSON.stringify(st).slice(0,300));
     const raws=[],outs=[];for(const n of NAMES){raws.push(await pick(P,n));outs.push(await prev(P))}
-    const allOk=outs.every((m,i)=>/홍길동 고객님/.test(m)&&m.includes('담당 '+nm+' 드림')&&/아르띠꼬 스튜디오/.test(m)&&!/[{}]/.test(m)&&!/\d+\s*(원|%)|할인|특가|무료|최저|이벤트/.test(m)&&m.length<200&&/\{명함\}\s*$/.test(raws[i]))&&[1,2,3,4,5].every(i=>/시험 현장 욕실/.test(outs[i]));
+    /* v0.99-34 (다음 지시 2026-11-14 v4): 6종(계약 직전 빼고)은 새 문구 · 명함 연락처가 없으면 {담당자연락처} 자리만 남음(발송 막힘) · 계약 직전은 예전 그대로 */
+    const allOk=outs.every((m,i)=>i===4?(/홍길동 고객님/.test(m)&&m.includes('담당 '+nm+' 드림')&&/아르띠꼬 스튜디오/.test(m)&&!/[{}]/.test(m)&&/\{명함\}\s*$/.test(raws[i])):(/홍길동님/.test(m)&&m.includes(nm)&&/홈퍼니싱 아르띠꼬스튜디오/.test(m)&&!/[{}]/.test(m.replace('{담당자연락처}',''))))&&outs.every(m=>!/\d+\s*(원|%)|할인|특가|최저|이벤트/.test(m)&&m.length<200)&&[0,1,2,3,4,5,6].every(i=>/시험 현장 욕실/.test(outs[i]));
     ok(tag+nm+': 7개 문구 미리보기 — 고객 이름·보내는 직원 이름·현장명이 들어가고 자리 표시가 남지 않음 · 금액·할인 약속 없음 · 짧음(200자 안)',allOk,outs.map(m=>m.length).join(',')+' :: '+outs[2].replace(/\n/g,'⏎'));
-    if(who==='admin')ok(tag+'최윤수 대표: 명함 링크 기본값이 들어 있고 문구 끝 새 줄에 붙음',st.card===BOSS&&outs.every(m=>m.endsWith('\n'+BOSS)),outs[0].slice(-60).replace(/\n/g,'⏎'));
-    else ok(tag+nm+': 명함 링크를 아직 안 넣었으면 링크 없이 (빈 줄·{명함} 글자도 없음)',st.card===''&&outs.every(m=>!/https?:/.test(m)&&/드림$/.test(m)),outs[0].slice(-30));
+    if(who==='admin')ok(tag+'최윤수 대표: 명함 링크 기본값이 들어 있고 문구 끝 새 줄에 붙음',st.card===BOSS&&outs[4].endsWith('\n'+BOSS),outs[0].slice(-60).replace(/\n/g,'⏎'));
+    else ok(tag+nm+': 명함 링크를 아직 안 넣었으면 링크 없이 (빈 줄·{명함} 글자도 없음)',st.card===''&&outs.every(m=>!/https?:/.test(m))&&/드림$/.test(outs[4]),outs[0].slice(-30));
     const old=await pick(P,'상담 후 안내');ok(tag+nm+': 기존 문구(상담 후 안내)는 그대로 (명함 자리 없음)',/상담해 주셔서 감사합니다/.test(old)&&!/명함/.test(old));
     ok(tag+nm+': 문자 창 가로 넘침 없음',await P.evaluate(()=>{const s=document.querySelector('#smsVeil .sheet');return document.documentElement.scrollWidth<=window.innerWidth+2&&s.scrollWidth<=s.clientWidth+2}));
     await closeSms(P)}
@@ -271,22 +272,23 @@ const MCP=`window.__mcpFiles=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
    await smsFrom(J2);/* 둘째 창(낡은 창 시험용)이 지금 값을 읽어 둠 */
    await smsFrom(J);await J.locator('#smsMyCard').fill('abc');await J.locator('#smsVeil [data-smsact="mycard"]').click();await wait(600);let D=await dbv();const bad=!D['acct/u_jjh/sms/my'];
    await J.locator('#smsMyCard').fill('https://example.com/card/jjh');await J.locator('#smsVeil [data-smsact="mycard"]').click();await wait(1200);D=await dbv();
-   await pick(J,'견적 후 1차');const m1=await prev(J);const pill=await J.evaluate(()=>{const p=document.getElementById('smsBytes');return [p.dataset.b,p.dataset.t,p.innerText].join('|')});
+   await pick(J,'계약 직전');const m1=await prev(J);const pill=await J.evaluate(()=>{const p=document.getElementById('smsBytes');return [p.dataset.b,p.dataset.t,p.innerText].join('|')});
    ok(tag+'정진혁: ‘내 모바일 명함 링크’ 저장(주소 모양이 아니면 저장 안 됨) → 문구 끝에 내 링크가 붙어 미리보기에 보임 · 본인 칸(acct/u_jjh/sms/my)에만 저장',bad&&(D['acct/u_jjh/sms/my']||{}).card==='https://example.com/card/jjh'&&m1.endsWith('\nhttps://example.com/card/jjh')&&!Object.keys(D).some(k=>/sms\/my$/.test(k)&&k!=='acct/u_jjh/sms/my'),m1.slice(-50).replace(/\n/g,'⏎'));
    ok(tag+'길이 표시가 링크를 포함한 글 기준: '+bytes(m1)+'바이트 → 90바이트를 넘어 LMS 안내',pill.startsWith(bytes(m1)+'|LMS|')&&/LMS/.test(pill)&&bytes(m1)>90,pill);
-   await smsFrom(B);await pick(B,'견적 후 1차');const mb=await prev(B);ok(tag+'이봄이 문자에는 정진혁 링크가 붙지 않음 (각자 것)',!/example\.com/.test(mb)&&!/https?:/.test(mb));await closeSms(B);
+   await smsFrom(B);await pick(B,'계약 직전');const mb=await prev(B);ok(tag+'이봄이 문자에는 정진혁 링크가 붙지 않음 (각자 것)',!/example\.com/.test(mb)&&!/https?:/.test(mb));await closeSms(B);
    // 내 문구로 저장 · 기본으로 되돌리기
-   const def=await pick(J,'견적 후 1차');await J.locator('#smsText').fill('{고객명} 고객님, 정진혁입니다. {현장명} 견적 보내 드렸습니다. 편하실 때 연락 주세요.\n{명함}');await J.locator('#smsVeil [data-smsact="mysave"]').click();await wait(1200);
+   const def=await pick(J,'사후관리 안내');await J.locator('#smsText').fill('{고객명} 고객님, 정진혁입니다. {현장명} 견적 보내 드렸습니다. 편하실 때 연락 주세요.\n{명함}');await J.locator('#smsVeil [data-smsact="mysave"]').click();await wait(1200);
    const src1=await J.evaluate(()=>document.getElementById('smsSrc').innerText+'|'+!!document.querySelector('#smsVeil [data-smsact="myreset"]'));await closeSms(J);
-   await smsFrom(J);const mine=await pick(J,'견적 후 1차');await smsFrom(B);const bdef=await pick(B,'견적 후 1차');await closeSms(B);D=await dbv();
-   ok(tag+'정진혁: 문구를 고쳐 ‘내 문구로 저장’ → 다시 열어도 내 문구(표시 ‘내 문구’) · 이봄이는 회사 기본 문구 그대로 · 회사 설정(config/sms)은 안 바뀜',src1==='내 문구|true'&&/정진혁입니다/.test(mine)&&bdef===def&&!/정진혁입니다/.test(bdef)&&!((D['config/sms']||{}).tpls)&&(D['acct/u_jjh/sms/my'].tpls||{}).q1===mine,mine.slice(0,40));
+   await smsFrom(J);const mine=await pick(J,'사후관리 안내');await smsFrom(B);const bdef=await pick(B,'사후관리 안내');await closeSms(B);D=await dbv();
+   ok(tag+'정진혁: 문구를 고쳐 ‘내 문구로 저장’ → 다시 열어도 내 문구(표시 ‘내 문구’) · 이봄이는 회사 기본 문구 그대로 · 회사 설정(config/sms)은 안 바뀜',src1==='내 문구|true'&&/정진혁입니다/.test(mine)&&bdef===def&&!/정진혁입니다/.test(bdef)&&!((D['config/sms']||{}).tpls)&&(D['acct/u_jjh/sms/my'].tpls||{}).after===mine,mine.slice(0,40));
    // 낡은 창: 둘째 창(예전에 읽어 둔 값)에서 다른 문구를 저장해도 첫 창에서 저장한 문구·링크가 지워지지 않음
    await pick(J2,'계약 직전');await J2.locator('#smsText').fill('{고객명} 고객님, 계약 전 확인 연락드립니다. {담당자} 드림');await J2.locator('#smsVeil [data-smsact="mysave"]').click();await wait(1500);D=await dbv();const my=D['acct/u_jjh/sms/my']||{};
-   ok(tag+'낡은 창 저장: 같은 계정의 다른 창(옛 값을 읽어 둔 창)에서 ‘계약 직전’ 내 문구를 저장해도 앞서 저장한 ‘견적 후 1차’ 내 문구·명함 링크가 그대로',!!(my.tpls||{}).pre&&(my.tpls||{}).q1===mine&&my.card==='https://example.com/card/jjh'&&(my.hist||[]).length>=3,JSON.stringify([Object.keys(my.tpls||{}),my.card,(my.hist||[]).length]));
+   ok(tag+'낡은 창 저장: 같은 계정의 다른 창(옛 값을 읽어 둔 창)에서 ‘계약 직전’ 내 문구를 저장해도 앞서 저장한 ‘견적 후 1차’ 내 문구·명함 링크가 그대로',!!(my.tpls||{}).pre&&(my.tpls||{}).after===mine&&my.card==='https://example.com/card/jjh'&&(my.hist||[]).length>=3,JSON.stringify([Object.keys(my.tpls||{}),my.card,(my.hist||[]).length]));
    await closeSms(J2);
    await J.locator('#smsVeil [data-smsact="myreset"]').click();await wait(1200);const back1=await J.locator('#smsText').inputValue();D=await dbv();const my2=D['acct/u_jjh/sms/my'];
-   ok(tag+'정진혁: ‘기본으로 되돌리기’ → 회사 기본 문구로 · 내 옛 문구는 기록(hist)에 남음 · 다른 내 문구(계약 직전)는 그대로',back1===def&&!my2.tpls.q1&&!!my2.tpls.pre&&my2.hist.some(h=>h.key==='q1'&&h.reset&&/정진혁입니다/.test(h.from)),JSON.stringify(Object.keys(my2.tpls)));
+   ok(tag+'정진혁: ‘기본으로 되돌리기’ → 회사 기본 문구로 · 내 옛 문구는 기록(hist)에 남음 · 다른 내 문구(계약 직전)는 그대로',back1===def&&!my2.tpls.after&&!!my2.tpls.pre&&my2.hist.some(h=>h.key==='after'&&h.reset&&/정진혁입니다/.test(h.from)),JSON.stringify(Object.keys(my2.tpls)));
    // 시험 발송: 요청 파일·고객 카드 기록에 링크 포함 글
+   await pick(J,'계약 직전');await J.locator('#smsText').fill('{고객명} 고객님, 안내드립니다. 담당 {담당자} 드림\n{명함}');await wait(200); /* v0.99-34: {명함} 자리는 계약 직전에만 남아 있고, 그 칸은 J2 가 내 문구로 바꿔 둠 → 이번 글에 직접 넣음 */
    await J.locator('#smsVeil [data-smsact="preview"]').click();await wait(400);const isTest=await J.evaluate(()=>(document.getElementById('smsMode')||{}).dataset.test);await J.locator('#smsVeil [data-smsact="send"]').click();await wait(3000);
    const files=await J.evaluate(()=>window.__mcpFiles.map(f=>f.text));const req=files.length?JSON.parse(files[0]):{};const lg=((await S(J,'customers')).find(c=>c.id==='c1').smsLog||[]).slice(-1)[0]||{};
    ok(tag+'정진혁: (시험 발송) 요청 파일과 고객 카드 문자 기록의 글에 내 명함 링크가 들어 있음 · 받는 번호 = 고객 번호 · 보낸 사람 기록',isTest==='1'&&files.length===1&&req.test===true&&req.items[0].to==='01012345678'&&req.items[0].msg.endsWith('\nhttps://example.com/card/jjh')&&lg.msg===req.items[0].msg&&lg.by==='정진혁'&&req.by==='정진혁',JSON.stringify(req).slice(0,200));
