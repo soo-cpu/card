@@ -17,7 +17,7 @@ const SEED=Object.assign({},STAFF,{"catalog/current":CAT,"catalog/detail2026":DE
  "config/company":{name:"주식회사 홈퍼니싱",ceo:"최윤수",bizno:"1234567890",addr:"경기도 구리시",tel:"031-000-0000",fax:"031-000-0001",biztype:"건설",bizitem:"실내건축",brand:"아르띠꼬 스튜디오",email:"test@test"},
  "customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",py:32,status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",createdAt:T0,updatedAt:T0},
  "projects/p1":{no:"P-2611-901",title:"시험 현장 아파트",custName:"홍길동",custCode:"C-2611-901",stage:"계약",mgr:"정진혁",cat:"주거",py:32,inq:"2026-11-01",work:"전체 리모델링",updatedAt:T0},
- "ppriv/p1":{pc:PC,updatedAt:T0},"acct/u_jjh/pcost/p1":PC,"acct/u_cja/pcost/p1":PC,
+ "ppriv/p1":{pc:PC,updatedAt:T0},"acct/u_jjh/ctlog/cl1":{status:"대기",uid:"u_jjh",name:"정진혁",item:"전체 · 실크 벽지",k:"U0738",from:500000,to:450000,base:500000,q:10,unit:"롤",sale:659000,at:T0,pno:"P-2611-901"},"fin/cfsheet-2026-11":{days:{"2026-11-10":{ar:{rows:[{mon:"11월",name:"시험 미수 현장",tot:55000000,left:22000000,cost:31234500,pj:"정진혁",memo:""}]}}}},"acct/u_jjh/pcost/p1":PC,"acct/u_cja/pcost/p1":PC,
  "quotes/q1":{qno:"P-2611-901-1차",ver:"1차",pno:"P-2611-901",code:"C-2611-901",name:"홍길동",staff:"정진혁",status:"본견적 진행",d:"2026-11-03",amount:"",items:[],memo:"내부메모-비밀-원가조정",createdAt:T0,updatedAt:T0},
  "quotes/q2":{qno:"P-2611-901-2차",ver:"2차",pno:"P-2611-901",code:"C-2611-901",name:"홍길동",staff:"정진혁",status:"본견적 진행",d:"2026-11-04",amount:110000,items:[{space:"거실",name:"손으로 넣은 아트월",q:1,unit:"식",price:100000,edited:true},{k:"U0738",space:"전체",name:"손으로 넣은 실크 벽지",q:3,unit:"롤",price:70000,edited:true}],memo:"",createdAt:"2026-11-04T00:00:00Z",updatedAt:T0}});
 const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},bom:{id:"u_bom",name:"이봄이",email:"bom@test",isOwner:false},cja:{id:"u_cja",name:"채진아",email:"cja@test",isOwner:false}};
@@ -53,6 +53,9 @@ const COSTNUM=[["1,234,500",HF(1234500)]]; // 원가 숫자와 그 코드
  ok('등급별 직접공사비: 기본 < 중급 < 고급',B.s[0]<B.s[1]&&B.s[1]<B.s[2],B.s.join(' < '));
  ok('평형 구간: 40평 = 공사 마감 45평 이하 · 방등 4 / 24평 = 욕실 1칸 · 방문 4 · 필름 리폼 없음(중급)',!!B.py40.U0121&&B.py40.U0790.q===4&&B.py24.U0430.q===1&&!B.py24.U0419&&B.py24.U0241.q===4);
  ok('창호: 등급 대신 전체 → 창 본체 단가 미정 + 사다리차·사춤 · 확장 거실+방1 → 확장 설비 + 분합창 철거 2 + 행위허가 단가 미정',B.win.qa_np_win&&B.win.qa_np_win.price===0&&!!B.win.U0131&&!!B.win.U0141&&!!B.win.U0151&&B.win.U0155.q===1&&B.win.U0135.q===2&&!!B.win.qa_np_permit&&!B.mid.qa_np_win);
+ok('5-4 규칙: 현관장 철거 3 · 콘센트 신설 3 + 스위치 증설 2 · 감지기 차동식 4·정온식 1·가스 1 (단가표에 없음 → 단가 미정)',M.U0010.q===3&&M.U0160.q===3&&M.U0168.q===2&&M.U0168.price===93750&&M.qa_np_det1.q===4&&M.qa_np_det2.q===1&&M.qa_np_det3.q===1&&M.qa_np_det1.price===0,[M.U0010.q,M.U0160.q,M.U0168&&M.U0168.q].join(','));
+ const VT=await A.evaluate(()=>[window.__hfT.vat10(12345),window.__hfT.withVat(12345),window.__hfT.vat10(49047531),window.__hfT.withVat(49047531)]);
+ ok('부가세 함수 하나: 부가세 = round(공급가×0.1) · 포함 = 공급가 + 부가세',VT.join(',')==='1235,13580,4904753,53952284',VT.join(','));
  ok('공정별 등급 따로: 도배만 고급 · 바닥만 기본',!!B.mix.U0741&&!!B.mix.U0749&&!B.mix.U0758);
  // ── 4. 화면: 자동 채우기 → 고치기 → 저장 (대표) ──
  await openQ(A,'q1');ok('상세 견적(공종별) 위에 자동 채우기 칸 (평형 32 · 욕실 2칸 기본값)',(await A.locator('#qaBox').count())===1&&(await A.locator('#qaBox [data-qa="py"]').inputValue())==='32'&&(await A.locator('#qaBox [data-qa="bath"]').inputValue())==='2');
@@ -70,7 +73,7 @@ const COSTNUM=[["1,234,500",HF(1234500)]]; // 원가 숫자와 그 코드
  const net=E.reduce((t,l)=>t+Math.round(l.price*l.q),0);
  await A.locator('#veil .qtb[data-qt="detail"] [data-qesave]').first().click();await wait(1800);let d=await D();const q1=d['quotes/q1'];
  const KEYS=new Set(['k','proc','space','name','unit','q','price','qa','np','ind','indMan','qaEd','edited','amt']);
- ok('저장 = 기존 견적 저장 그대로 (q1 품목·합계 = 공급가 × 1.1)',q1&&q1.items.length===E.length&&q1.amount===Math.round(net*1.1),q1&&q1.amount+' / '+Math.round(net*1.1));
+ ok('저장 = 기존 견적 저장 그대로 (q1 품목·합계 = 공급가 × 1.1)',q1&&q1.items.length===E.length&&q1.amount===net+Math.round(net*0.1),q1&&q1.amount+' / '+(net+Math.round(net*0.1)));
  ok('저장된 품목에 원가·마진 칸 없음 (품목·수량·단위·단가만)',q1.items.every(l=>Object.keys(l).every(k=>KEYS.has(k))),[...new Set(q1.items.flatMap(l=>Object.keys(l)))].join(','));
  ok('새 저장 칸 없음 (quotes 문서 하나만 바뀜 · 자동 채우기 입력값은 저장 안 함)',!('qa' in q1)&&!Object.keys(d).some(k=>/qa|autoq/i.test(k.split('/')[0])));
  // ── 5. 덮어쓰기 확인 창 (손으로 넣은 줄이 있는 견적) ──
@@ -82,6 +85,17 @@ const COSTNUM=[["1,234,500",HF(1234500)]]; // 원가 숫자와 그 코드
  ok('확인 → 손으로 넣은 아트월은 남고 자동 줄이 들어옴 (실크는 자동 값 65,900)',E.some(l=>l.name==='손으로 넣은 아트월')&&E.filter(l=>l.k==='U0738').length===1&&E.find(l=>l.k==='U0738').price===65900&&E.length>60);
  await A.locator('#qaBox [data-qafill]').click();t=await okask(A,false);ok('다시 채울 때도 확인 (이전 자동 줄 바꿈 안내)',/이전에 자동으로 채운 줄/.test(t),t);
  await A.locator('#veil .qtb[data-qt="detail"] [data-qecancel]').first().click();await wait(600);ok('되돌리기 → 저장된 2줄',(await qe(A)).length===2);
+ // ── 5b. 견적 화면 HF 버튼 칸 (qHfHTML) ──
+ await A.evaluate(()=>window.__hfT.closeSheet());await wait(300);await openQ(A,'q1','edit');await A.locator('#veil [data-qhf]').first().click();await wait(700);
+ let hx=(await A.locator('#veil .qhfbox').count())?await A.locator('#veil .qhfbox').innerText():'';const hc=41150*20+1234500*2;
+ ok('견적 화면 HF 칸: 원가·마진 기본 HF-RO 코드 (원가 합 숫자 없음)',hx.includes(HF(hc))&&!hx.includes(hc.toLocaleString('ko-KR'))&&!hx.includes('823,000'),HF(hc));
+ await A.locator('#veil .qhfbox [data-costplain]').click();await wait(700);hx=await A.locator('#veil .qhfbox').innerText();ok('HF 칸 ‘숫자로 보기’ → 원가 숫자',hx.includes(hc.toLocaleString('ko-KR')));
+ await A.locator('#veil .qhfbox [data-qhf]').first().click();await wait(500);
+ // 공사진행비 줄을 ‘견적 작성·수정’ 탭에서 손으로 고치면 indMan → 다른 수량을 바꿔도 그대로
+ {E=await qe(A);const i5i=E.findIndex(l=>l.ind==='p5');const inp=A.locator('#veil [data-qe="price|'+i5i+'"]');
+  if(await inp.count()){await inp.fill('777000');await inp.dispatchEvent('change');await wait(800);await A.locator('#veil [data-qtab="detail"]').first().click();await wait(600);const ix2=(await qe(A)).findIndex(l=>l.k==='U0738');await A.locator('#qaRes [data-qaq="'+ix2+'"]').fill('30');await A.locator('#qaRes [data-qaq="'+ix2+'"]').dispatchEvent('change');await wait(800);E=await qe(A);const p5=E.find(l=>l.ind==='p5');
+   ok('공사진행비를 ‘견적 작성·수정’ 탭에서 손으로 고치면 ‘손으로 고침’ → 수량을 바꿔도 자동 값으로 안 덮어씀',p5.indMan===true&&p5.price===777000,JSON.stringify(p5))}else ok('견적 작성·수정 탭 공사진행비 칸 찾기',false,i5i)
+  await A.locator('#veil .qtb[data-qt="detail"] [data-qecancel]').first().click();await wait(500)}
  // ── 6. 원가 칸 HF-RO (대표 견적 원가 탭) ──
  await A.evaluate(()=>window.__hfT.closeSheet());await wait(300);await openQ(A,'q1','cost');let ct=await A.locator('#veil .qtb[data-qt="cost"]').innerText();
  const c738=41150*20;ok('견적 원가 탭: 원가 금액이 기본 HF-RO 코드 (숫자 없음)',ct.includes(HF(c738))&&!ct.includes(c738.toLocaleString('ko-KR')),HF(c738));
@@ -101,7 +115,8 @@ const COSTNUM=[["1,234,500",HF(1234500)]]; // 원가 숫자와 그 코드
  for(const who of ['admin','jjh','cja']){const P=who==='admin'?A:await open(who);const tag=USERS[who].name+': ';
   const o=await openPc(P,'p1');let tx=o?await P.locator('#veil .pcbox').innerText():'';
   const sec=o?await P.evaluate(()=>{const i=document.querySelector('#veil .pcbox input[data-pcv^="est|"]');return i?getComputedStyle(i).webkitTextSecurity||'':'none'}):'';
-  ok(tag+'원가 관리 표: 실행 원가 1,234,500 → HOMEFSS 코드 (숫자 없음, 입력 칸도 가림)',o&&tx.includes('HOMEFSS')&&!tx.includes('1,234,500')&&(sec==='disc'||sec==='none'),sec);
+  ok(tag+'원가 관리 표: 실행 원가 1,234,500 → HOMEFSS 코드 (숫자 없음, 입력 칸도 가림)',o&&tx.includes('HOMEFSS')&&!tx.includes('1,234,500')&&sec==='disc',sec);
+  if(o){const fs2=await P.evaluate(()=>{const i=document.querySelector('#veil .pcbox input[data-pcv^="est|"]');i.focus();const a=getComputedStyle(i).webkitTextSecurity;i.blur();return [a,getComputedStyle(i).webkitTextSecurity]});ok(tag+'가린 입력 칸: 누르면(포커스) 숫자가 보이고 벗어나면 다시 가림',fs2[0]==='none'&&fs2[1]==='disc',fs2.join(','))}
   await P.locator('#veil [data-costplain]').first().click();await wait(900);tx=await P.locator('#veil .pcbox').innerText();
   ok(tag+'‘숫자로 보기’ → 1,234,500',tx.includes('1,234,500'));
   await P.evaluate(()=>window.__hfT.closeSheet());await wait(300);
@@ -111,9 +126,22 @@ const COSTNUM=[["1,234,500",HF(1234500)]]; // 원가 숫자와 그 코드
  {const P=await open('bom');await P.evaluate(()=>{location.hash='#projects'});await wait(400);await P.evaluate(()=>window.__hfT.open('projects','p1'));await wait(1200);const tx=await P.evaluate(()=>(document.querySelector('#veil')||{}).innerText||'');
   ok('이봄이(담당 아님): 원가 관리 버튼·표·원가 숫자·코드 없음 (권한 그대로)',(await P.locator('#veil [data-pctop]').count())===0&&(await P.locator('.pcbox').count())===0&&!tx.includes('1,234,500')&&!tx.includes('HOMEFSS'));await P.close()}
  // ── 9. 공용 칸·직원 사본에 원가 없음 ──
- // (acct/*/ccost = 기존 품목 원가표 사본 · 인사카드 costOk 설정으로 직원에게 가는 기존 방식이라 이 시험에서 제외)
- d=await D();const leak=Object.keys(d).filter(k=>!/^(ppriv\/|ccost\/|acct\/u_(jjh|cja)\/pcost\/|acct\/u_\w+\/ccost\/|knock\/|activity\/)/.test(k)).filter(k=>{const s=JSON.stringify(d[k]);return s.includes('1234500')||s.includes('HOMEFSS')||s.includes(String(c738))||/"(est|cost|mcost)":/.test(s)});
+ // (fin = 재무 자료(미수 시험 줄 · 기존 재무 권한) · acct/*/ccost = 기존 품목 원가표 사본 · 인사카드 costOk 설정으로 직원에게 가는 기존 방식이라 이 시험에서 제외)
+ d=await D();const leak=Object.keys(d).filter(k=>!/^(ppriv\/|ccost\/|acct\/u_(jjh|cja)\/pcost\/|acct\/u_\w+\/ccost\/|fin\/|acct\/u_\w+\/fin\/|knock\/|activity\/)/.test(k)).filter(k=>{const s=JSON.stringify(d[k]);return s.includes('1234500')||s.includes('HOMEFSS')||s.includes(String(c738))||/"(est|cost|mcost)":/.test(s)});
  ok('공용 칸(work)·견적·프로젝트 문서에 원가 숫자·코드 없음',!leak.length,leak.join(','));
+ // ── 9b. 창 밖 원가 화면: 대표 홈 ‘원가 수정 대기’ · 미수 ‘실행가’ (숫자로 보기는 화면 전체 한 번) ──
+ {await A.evaluate(()=>window.__hfT.closeSheet());await A.evaluate(()=>{location.hash='#home'});await wait(1500);let ht=(await A.locator('#ctpend').count())?await A.locator('#ctpend').innerText():'';
+  ok('대표 홈 원가 수정 대기: 500,000 → 450,000 이 코드(FSSSSS → EFSSSS) · 판매가 659,000 은 그대로',ht.includes('FSSSSS')&&ht.includes('EFSSSS')&&!ht.includes('450,000')&&ht.includes('659,000'),ht.replace(/s+/g,' ').slice(0,160));
+  await A.locator('#ctpend [data-costplain]').first().click();await wait(800);ht=await A.locator('#ctpend').innerText();ok('원가 수정 대기 ‘숫자로 보기’ → 450,000',ht.includes('450,000'));
+  await A.locator('#ctpend [data-costplain]').first().click();await wait(600);
+  await A.evaluate(()=>{location.hash='#recv'});await wait(1500);let rt=await A.evaluate(()=>(document.querySelector('#view')||{}).innerText||'');
+  ok('미수 화면: 실행가(원가) 31,234,500 → 코드 · 계약금 55,000,000·미수액 22,000,000 은 숫자 그대로',rt.includes(HF(31234500))&&!rt.includes('31,234,500')&&rt.includes('55,000,000')&&rt.includes('22,000,000'),rt.replace(/s+/g,' ').slice(0,200));
+  await A.locator('#view [data-costplain]').first().click();await wait(800);rt=await A.evaluate(()=>document.querySelector('#view').innerText);ok('미수 ‘숫자로 보기’ → 31,234,500',rt.includes('31,234,500'));
+  await A.locator('#view [data-costplain]').first().click();await wait(500)}
+ // ── 9c. 글자 가림을 못 하는 브라우저(Firefox 등) 흉내: type=password 로 대신 ──
+ {const P=await (async()=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push('notextsec: '+e.message));await p.addInitScript('window.__NOTEXTSEC=true;window.__SUBPOLL=2500;window.__MOCKUSER='+JSON.stringify(USERS.admin)+';'+MOCK);await p.goto('http://hf.test/');await wait(9000);return p})();
+  const o=await openPc(P,'p1');const ty=o?await P.evaluate(async()=>{const i=document.querySelector('#veil .pcbox input[data-pcv^="est|"]');const a=i.type;i.focus();await new Promise(r=>setTimeout(r,100));const b=i.type;i.blur();await new Promise(r=>setTimeout(r,100));return [window.__hfT.cmaskNative(),a,b,i.type]}):[];
+  ok('가림 미지원 브라우저: 원가 입력 칸 type=password · 누르면 text · 벗어나면 다시 password',ty.join(',')==='false,password,text,password',ty.join(','));await P.close()}
  // ── 10. 대표 '직원 화면 미리 보기' (정진혁) ──
  {await A.evaluate(()=>{location.hash='#preview'});await wait(1200);const g=A.locator('[data-pvgo]').filter({hasText:''});const ids=await A.locator('[data-pvgo]').evaluateAll(els=>els.map(e=>[e.dataset.pvgo,(e.closest('.item')||e).innerText]));const id=(ids.find(x=>/정진혁/.test(x[1]))||[])[0];
   if(id){const w0=(await D());await A.locator('[data-pvgo="'+id+'"]').click();await wait(2500);await openQ(A,'q1');const tx=await A.evaluate(()=>(document.querySelector('#veil')||{}).innerText||'');
