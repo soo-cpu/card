@@ -36,9 +36,10 @@ const N=s=>Number(String(s).replace(/[^0-9-]/g,''))||0;
   return {ctx,open,seed}};
  const sh=p=>p.evaluate(()=>{const s=window.__hfT.sheet();return s?s.col+'|'+s.id:''});
  const pc=(p,id)=>p.evaluate(i=>window.__hfT.pc(i),id);
- const openPc=async(p,id,tab)=>{await p.evaluate(()=>{location.hash='#projects'});await wait(500);await p.evaluate(i=>window.__hfT.open('projects',i),id);await wait(1000);if(!(await p.locator('#veil [data-pctop]').count()))return false;await p.locator('#veil [data-pctop]').first().click();await wait(tab===false?600:2500);if(tab){await p.locator('#veil [data-pctab="'+tab+'"]').click();await wait(700)}return true};
- const rows=p=>p.evaluate(()=>[...document.querySelectorAll('#pcPostT tbody tr')].map(tr=>[...tr.children].map(td=>{const i=td.querySelector('input');return (td.innerText||'').replace(/\s+/g,' ').trim()+(i?' ['+i.value+']':'')})));
- const foot=p=>p.evaluate(()=>[...document.querySelectorAll('#pcPostT tfoot tr')].map(tr=>(tr.innerText||'').replace(/\s+/g,' ').trim()));
+ const plainCost=async p=>{if(await p.locator('.okask').count())return;if(await p.locator('#veil .pcbox [data-costplain][aria-pressed="false"]').count()){await p.locator('#veil .pcbox [data-costplain]').first().click();await wait(500)}}; /* v0.99-37: 원가는 기본 HF-RO 코드 → 숫자로 보기 눌러 숫자 확인 */
+ const openPc=async(p,id,tab)=>{await p.evaluate(()=>{location.hash='#projects'});await wait(500);await p.evaluate(i=>window.__hfT.open('projects',i),id);await wait(1000);if(!(await p.locator('#veil [data-pctop]').count()))return false;await p.locator('#veil [data-pctop]').first().click();await wait(tab===false?600:2500);if(tab){await p.locator('#veil [data-pctab="'+tab+'"]').click();await wait(700)}await plainCost(p);return true};
+ const rows=async p=>{await plainCost(p);return p.evaluate(()=>[...document.querySelectorAll('#pcPostT tbody tr')].map(tr=>[...tr.children].map(td=>{const i=td.querySelector('input');return (td.innerText||'').replace(/\s+/g,' ').trim()+(i?' ['+i.value+']':'')})))};
+ const foot=async p=>{await plainCost(p);return p.evaluate(()=>[...document.querySelectorAll('#pcPostT tfoot tr')].map(tr=>(tr.innerText||'').replace(/\s+/g,' ').trim()))};
  const setPi=async(p,i,v)=>{const el=p.locator('#pcPostT [data-pcpi="'+i+'"]');await el.fill(String(v));await el.dispatchEvent('change');await wait(900)};
  // ===== 1부 =====
  for(const [vn,opt] of [['PC',{viewport:{width:1280,height:900}}],['Pixel 7',devices['Pixel 7']]]){
