@@ -1,7 +1,9 @@
-// AI 견적 초안 시험 (다음 지시 2026-11-16 v0, v0.99-35): node intranet/tools/test/ai_est_test.js [index.html]
+// AI 견적 초안 시험 (다음 지시 2026-11-16 v0, v0.99-35 · v0.99-38 버튼 숨김 확인 추가): node intranet/tools/test/ai_est_test.js [index.html]
 // 대표·채진아·정진혁·이봄이 × PC·Pixel 7 · 가짜 드라이브(요청 파일 → 가짜 PC 중계가 결과 파일) · 실제 AI·API 키 없음 · 실제 접근 규칙 흉내(mock.js)
 const {chromium,devices}=require('playwright');const fs=require('fs');
-const HTML=fs.readFileSync(process.argv[2]||'/home/user/card/intranet/index.html','utf8');const MOCK=fs.readFileSync(__dirname+'/mock.js','utf8');const OUT=process.env.OUT||'/tmp';
+const HTML0=fs.readFileSync(process.argv[2]||'/home/user/card/intranet/index.html','utf8');
+// v0.99-38 (다음 지시 2026-11-17 v0): 버튼은 AI_EST_ON=false 로 숨김 · 코드는 그대로 → ① 실제 파일로 '숨김' 확인 ② 시험용 사본에서만 true 로 켜서 기존 흐름(코드가 아직 맞는지) 확인
+const FLAG_OFF='const AI_EST_ON=false;';const HTML=HTML0.replace(FLAG_OFF,'const AI_EST_ON=true;');const MOCK=fs.readFileSync(__dirname+'/mock.js','utf8');const OUT=process.env.OUT||'/tmp';
 const RULES=[["hr","owner","owner"],["catalog","view","owner"],["acct","owner","owner"],["acct/{self}","interact","interact"],["config","view","owner"],["knock","owner","owner"],["knock/{self}","interact","interact"],["access","owner","owner"],["access/{self}","interact","interact"],["devok","interact","owner"],["members","owner","owner"],["members/{self}","interact","owner"],["creq","owner","owner"],["creq/{self}","interact","interact"],["cgrant","interact","owner"],["cpriv","owner","owner"],["ppriv","owner","owner"],["cshare","owner","owner"],["cshare/{self}","interact","interact"],["ccost","owner","owner"],["fin","owner","owner"],["fincf","owner","owner"],["customers","owner","owner"],["projects","owner","owner"],["quotes","owner","owner"],["sites","owner","owner"],["reports","owner","owner"],["activity","owner","owner"],["mine","owner","owner"],["mine/{self}","interact","interact"],["seal","owner","owner"],["certs","owner","owner"],["work","interact","interact"]].map(([path,read,write])=>({path,read,write}));
 const AIE_DIR="1aLGQELLoaM5OMPWKZ0cOUkG90H4Lmq3T";const T0="2026-11-01T00:00:00Z";
 const cu=(code,name,mgr,x)=>Object.assign({code,name,mgr,status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",tel:"",addr:"",createdAt:T0,updatedAt:T0,__at:T0},x||{});
@@ -26,6 +28,26 @@ const FAKEMCP=`window.__mcpCalls=[];window.__MOCKMCP={callTool:async(sv,tool,inp
 const ROWS=[{group:"도배",item:"실크 도배",spec:"",unit:"평",qty:80,unit_price:30000,amount:2400000,note:""},{group:"바닥",item:"강마루",spec:"동화 진",unit:"평",qty:32,unit_price:150000,amount:4800000,note:"걸레받이 포함"},{group:"욕실",item:"욕실 리모델링",spec:"",unit:"개",qty:2,unit_price:2100000,amount:4200000,note:"<b>굵게</b>"}];
 const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.push([v?"통과":"실패",n]);console.log(v?"통과":"실패",n,x===undefined?"":String(x).replace(/\s+/g," ").slice(0,300))};
 (async()=>{const b=await chromium.launch();const errs=[];
+ // ① 숨김 확인 (실제 파일 그대로)
+ ok('숨김: 깃발 const AI_EST_ON=false; 가 꼭 한 번',HTML0.split(FLAG_OFF).length===2);
+ ok('숨김: AI 견적 코드는 남아 있음 (aieBtnHTML·aieOpen·aieDraw·aieWatch·AIE_DIR·요청 파일 ai_req_)',['function aieBtnHTML(','function aieOpen(','aieDraw','aieWatch','AIE_DIR=','ai_req_','data-aieopen'].every(x=>HTML0.includes(x)));
+ ok('숨김: 버튼 함수·창 열기 함수가 깃발을 먼저 봄',/function aieBtnHTML\(qid,bar\)\{if\(!AI_EST_ON\)return "";/.test(HTML0)&&/function aieOpen\(qid\)\{if\(!AI_EST_ON\)return;/.test(HTML0));
+ {const ctx=await b.newContext({timezoneId:'Asia/Seoul',viewport:{width:1280,height:900}});await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML0}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
+  const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r));localStorage.setItem('mockdrive','{}')},[SEED,RULES]);
+  const open0=async who=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push('숨김 '+who+': '+e.message));p.on('dialog',d=>d.dismiss());await p.addInitScript(`window.__MOCKUSER=${JSON.stringify(USERS[who])};`+FAKEMCP+MOCK);await p.goto('http://hf.test/');await wait(7000);return p};
+  const A0=await open0('admin');await wait(9000);const L0=[[A0,'최윤수']];for(const [w,n] of [['cja','채진아'],['jjh','정진혁'],['bom','이봄이']])L0.push([await open0(w),n]);await wait(2500);
+  for(const [P,nm] of L0){const t='숨김 '+nm+': ';await P.evaluate(x=>{location.hash=x},'#quotes');await wait(900);
+   ok(t+'견적 관리 화면에 AI 견적 초안 버튼 없음',(await P.locator('[data-aieopen]').count())===0&&!/AI 견적 초안/.test(await P.locator('#view').innerText()));
+   const qid=await P.evaluate(()=>{const q=window.__hfT.S().quotes.find(x=>x.qno==='P-2611-901-1차');return q&&q.id});
+   await P.evaluate(i=>window.__hfT.openQ(i,"edit"),qid);await wait(900);
+   ok(t+'견적 작성 칸에 AI 견적 초안 줄 없음 · 견적 칸은 그대로 열림',(await P.locator('#aieBar').count())===0&&(await P.locator('[data-aieopen]').count())===0&&!!(await P.evaluate(()=>window.__hfT.sheet())));
+   await P.evaluate(()=>window.__hfT.closeSheet());await wait(300);
+   const n0=Object.keys(JSON.parse(await seed.evaluate(()=>localStorage.getItem('mockdrive')))).length;await P.evaluate(()=>window.__hfT.aieOpen(""));await wait(500);
+   ok(t+'창 열기 함수를 직접 불러도 창 안 열림 · 요청 파일 안 만듦',(await P.locator('#aieVeil').count())===0&&Object.keys(JSON.parse(await seed.evaluate(()=>localStorage.getItem('mockdrive')))).length===n0);
+   if(nm==='최윤수')await P.screenshot({path:OUT+'/ai_est_hidden_pc.png'})}
+  await ctx.close()}
+ if(process.env.HIDDEN_ONLY){ok('화면 오류 0',!errs.length,errs.join(' | '));await b.close();const f=R.filter(x=>x[0]==="실패").length;console.log(`\n합계 ${R.length} · 통과 ${R.length-f} · 실패 ${f}`);process.exit(f?1:0)}
+ // ② 시험용 사본(AI_EST_ON=true)으로 기존 흐름 확인 — 다시 켤 때 그대로 쓰이는지
  const VPS=[['PC',{viewport:{width:1280,height:900}}],['Pixel 7',Object.assign({},devices['Pixel 7'])]];
  for(const [vn,vopt] of VPS){const tag=vn+' ';
   const ctx=await b.newContext(Object.assign({timezoneId:'Asia/Seoul'},vopt));await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
