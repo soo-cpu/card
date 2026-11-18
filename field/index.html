@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 현장소통 2026-11-06 v0 · 고객 현장 소통 페이지 (시험판) -->
+<!-- 현장소통 2026-11-18 v1 · 고객 공유 페이지 (확인 번호·결제 일정·공정표·시공 전·중·후 사진·드라이브 사진 불러오기) · 이전 2026-11-06 v0 -->
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
@@ -139,6 +139,30 @@ footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;z-index:70;max-width:90vw;text-align:center}
 .gate{min-height:70vh;display:grid;place-items:center;text-align:center;color:var(--sub);font-size:14px}
 .loading{padding:60px 0;text-align:center;color:var(--sub)}
+/* 고객 공유 (2026-11-18 v1): 확인 번호 · 결제 일정 · 공정표 · 시공 전·중·후 사진 */
+.pin{max-width:360px;margin:40px auto 0;text-align:center}
+.pin input{font-size:28px;letter-spacing:.5em;text-align:center;padding:12px 8px 12px 20px}
+.pays{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.pays td,.pays th{padding:9px 6px;border-top:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+.pays th{font-size:12px;color:var(--sub);font-weight:600;border-top:0}
+.pays .n{text-align:right;white-space:nowrap}
+.pays tfoot td{font-weight:700;border-top:2px solid var(--ink)}
+.pst{font-size:12px;padding:2px 8px;border-radius:6px;white-space:nowrap;font-weight:600}
+.pst.ok{background:#e6f0e8;color:var(--ok)}.pst.due{background:var(--soft);color:var(--pt2)}.pst.late{background:var(--impbg);color:var(--imp)}
+.sched{display:grid;gap:6px;font-size:14px}
+.sched .r{display:grid;grid-template-columns:5.5em 1fr auto;gap:8px;align-items:center}
+.sched .r b{font-weight:600}
+.sched .r small{color:var(--sub);font-variant-numeric:tabular-nums}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gal button{padding:0;border:0;background:var(--soft);border-radius:8px;overflow:hidden;aspect-ratio:1;cursor:zoom-in;position:relative}
+.gal img{width:100%;height:100%;object-fit:cover;display:block}
+.gal button.ld::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--soft),#f8f3ea,var(--soft))}
+.prow{display:grid;grid-template-columns:1.1fr 1.3fr 1.2fr auto;gap:6px;align-items:center;margin-top:6px}
+.prow input{padding:8px;font-size:15px}
+.prow label{display:flex;gap:4px;align-items:center;font-size:13px;white-space:nowrap}
+.srow{display:grid;grid-template-columns:4.5em 1fr 1fr;gap:6px;align-items:center;margin-top:6px;font-size:14px}
+.srow input{padding:7px;font-size:14px}
+@media(max-width:420px){.prow{grid-template-columns:1fr 1fr}.gal{grid-template-columns:repeat(2,1fr)}}
 /* PDF 만들기용 (화면 밖) */
 #pdfroot{position:fixed;left:-12000px;top:0;width:718px;background:#fff}
 .pd{width:718px;color:#2a2420;font-family:var(--sans);font-size:12.5px;line-height:1.6;background:#fff}
@@ -187,6 +211,9 @@ const DEF_STAGES = ["철거","설비","전기","목공","타일","도장","마�
 const WD = "일월화수목금토";
 let PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {}
 let NAME = ""; try { NAME = localStorage.getItem("field_name") || ""; } catch (e) {}
+let PIN = ""; try { PIN = sessionStorage.getItem("field_pin_" + CODE) || ""; } catch (e) {}
+const PHASES = ["시공 전", "시공 중", "시공 후"];
+const won = n => (Math.round(Number(n) || 0)).toLocaleString("ko-KR") + "원";
 let D = null; // {site, posts, comments}
 const PHOTO = {}; // id -> dataURL
 if (!API) $("#pv").hidden = false;
@@ -194,7 +221,7 @@ if (!API) $("#pv").hidden = false;
 function today() { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 10); }
 function nowStr() { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 19).replace("T", " "); }
 function fmtDay(s) { const d = new Date(s + "T00:00:00"); if (isNaN(d)) return s; return (d.getMonth() + 1) + "월 " + d.getDate() + "일 (" + WD[d.getDay()] + ")"; }
-function fmtDate(s) { return s ? s.replace(/-/g, ".") : ""; }
+function fmtDate(s) { return s ? esc(String(s).replace(/-/g, ".")) : ""; }
 function toast(m, ms) { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms || 2200); }
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); toast("복사했어요. 카톡에 붙여 넣으세요"); return; } catch (e) {}
@@ -216,6 +243,8 @@ function kakaoText(site) {
 /* ============ 서버 연결 ============ */
 async function call(a, data) {
   data = Object.assign({ a }, data || {});
+  if (!ADMIN && PIN && data.pin == null) data.pin = PIN; // 고객 확인 번호 (전화 뒷번호 4자리)
+  if (ADMIN && PW && a === "photo" && data.pw == null) data.pw = PW; // 관리 화면은 확인 번호 없이 사진
   if (!API) return Local.call(a, data);
   let r;
   for (let i = 0; i < 2; i++) {
@@ -244,7 +273,8 @@ const Local = (() => {
   function uid(p) { return p + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
   function code24() { const a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", u = new Uint8Array(24); crypto.getRandomValues(u); return Array.from(u, b => a[b % 62]).join(""); }
   function site(code) { const s = load().sites.find(x => x.code === code && !x.hidden); if (!s) throw new Error("주소를 확인해 주세요"); return s; }
-  function pub(s) { const { code, name, manager, phone, address, start, end, stages, status } = s; return { code, name, manager, phone, address, start, end, stages, status }; }
+  function pub(s) { const { code, name, manager, phone, address, start, end, stages, status } = s; return { code, name, manager, phone, address, start, end, stages, status, payments: s.payments || [] }; }
+  function pinOk(s, d) { if (!s.pin || d.pw) return; if (!d.pin) throw new Error("PIN:"); if (String(d.pin) !== s.pin) throw new Error("PIN:번호가 맞지 않아요"); }
   function admin(d) { if (d.pw !== PWD) throw new Error("비밀번호가 맞지 않아요"); }
   function bundle(code, isAdmin, seen) {
     const b = load();
@@ -254,18 +284,19 @@ const Local = (() => {
     };
   }
   const A = {
-    site: d => { const s = site(d.s); return Object.assign({ site: pub(s) }, bundle(s.code, false)); },
-    photo: d => { const r = {}; (d.ids || []).forEach(id => { const u = localStorage.getItem(PKEY + id); if (u) r[id] = u; }); return { photos: r }; },
-    upload: d => { site(d.s); const id = uid("F"); putPhoto(id, d.data); return { fileId: id }; },
-    post: d => { const s = site(d.s); const t = nowStr(); load().posts.push({ id: uid("P"), code: s.code, date: today(), by: "c", author: d.author || "고객", stage: "", kind: d.kind || "의견", text: d.text || "", important: false, photos: d.photos || [], createdAt: t }); s.lastCustomerAt = t; save(); return {}; },
-    comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
+    site: d => { const s = site(d.s); pinOk(s, d); return Object.assign({ site: pub(s), pinOn: !!s.pin }, bundle(s.code, false)); },
+    photo: d => { pinOk(site(d.s), d); const r = {}; (d.ids || []).forEach(id => { const u = localStorage.getItem(PKEY + id); if (u) r[id] = u; }); return { photos: r }; },
+    upload: d => { pinOk(site(d.s), d); const id = uid("F"); putPhoto(id, d.data); return { fileId: id }; },
+    post: d => { const s = site(d.s); pinOk(s, d); const t = nowStr(); load().posts.push({ id: uid("P"), code: s.code, date: today(), by: "c", author: d.author || "고객", stage: "", kind: d.kind || "의견", text: d.text || "", important: false, photos: d.photos || [], createdAt: t }); s.lastCustomerAt = t; save(); return {}; },
+    comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); else pinOk(s, d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
     login: d => { admin(d); return {}; },
-    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
-    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: pub(s) }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
-    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr() }); save(); return { code }; },
+    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
+    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: Object.assign(pub(s), { pin: s.pin || "", proj: s.proj || "" }), pinOn: !!s.pin }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
+    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: d.payments || [], pin: d.pin || "", proj: d.proj || "" }); save(); return { code }; },
     updateSite: d => { admin(d); const s = site(d.s); Object.assign(s, d.fields || {}); save(); return {}; },
-    adminPost: d => { admin(d); const s = site(d.s); load().posts.push({ id: uid("P"), code: s.code, date: d.date || today(), by: "a", author: d.author || "홈퍼니싱", stage: d.stage || "", kind: "공정", text: d.text || "", important: !!d.important, photos: d.photos || [], createdAt: nowStr() }); save(); return {}; },
-    editPost: d => { admin(d); const p = load().posts.find(x => x.id === d.id); if (!p) throw new Error("글을 찾을 수 없어요"); ["important", "hidden", "text"].forEach(k => { if (d[k] != null) p[k] = d[k]; }); save(); return {}; },
+    adminPost: d => { admin(d); const s = site(d.s); load().posts.push({ id: uid("P"), code: s.code, date: d.date || today(), by: "a", author: d.author || "홈퍼니싱", stage: d.stage || "", kind: d.kind || "공정", text: d.text || "", important: !!d.important, photos: d.photos || [], createdAt: nowStr() }); save(); return {}; },
+    importFolder: d => { admin(d); throw new Error("미리보기에서는 드라이브 폴더를 못 열어요 — 서버(Code.gs v1) 연결 뒤에 돼요"); },
+    editPost: d => { admin(d); const p = load().posts.find(x => x.id === d.id); if (!p) throw new Error("글을 찾을 수 없어요"); ["important", "hidden", "text", "kind"].forEach(k => { if (d[k] != null) p[k] = d[k]; }); save(); return {}; },
     editComment: d => { admin(d); const c = load().comments.find(x => x.id === d.id); if (c && d.hidden != null) c.hidden = d.hidden; save(); return {}; },
     savePdf: d => { admin(d); const s = site(d.s); s.pdfN = (s.pdfN == null ? -1 : s.pdfN) + 1; save(); return { name: "현장기록 " + s.name + " " + today() + " v" + s.pdfN + ".pdf", local: true }; },
     folder: d => ({ url: "" })
@@ -391,6 +422,7 @@ async function openSite() {
   try { D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE }); }
   catch (e) {
     if (ADMIN && /비밀번호|잠겼/.test(e.message)) { logout(); return; }
+    if (!ADMIN && /^PIN:/.test(e.message)) { if (PIN) { PIN = ""; try { sessionStorage.removeItem("field_pin_" + CODE); } catch (x) {} } pinGate(e.message.slice(4)); return; }
     app.innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
   }
   renderSite();
@@ -420,6 +452,7 @@ function renderSite() {
     h += '</div>';
   }
   h += '</section>';
+  h += schedHtml(s) + payHtml(s) + galHtml(posts);
   if (imp.length) {
     h += '<section class="card imp"><h2>중요 사항 ' + imp.length + '건</h2><ul>' + imp.map(x => '<li data-go="' + x.id + '"><small>' + fmtDay(x.date) + (x.stage ? " · " + esc(x.stage) : "") + '</small><span>' + esc(x.text) + '</span></li>').join("") + '</ul></section>';
   }
@@ -438,11 +471,52 @@ function renderSite() {
   watchPhotos(app);
   if (ADMIN) adminBar();
 }
+/* ---- 고객 공유 (2026-11-18 v1) ---- */
+const DEF_PAYS = ["계약금", "중도금", "잔금"];
+let GTAB = "";
+function pinGate(msg) {
+  document.title = "현장 소통 · 홈퍼니싱";
+  $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>ártico studio · 현장 소통</span></div><section class="card pin"><div class="kicker">본인 확인</div><h2 style="margin-top:6px">휴대폰 번호 뒷자리 4자리</h2><div class="meta">계약하신 고객님 휴대폰 번호의 마지막 4자리를 넣어 주세요.</div><form id="pf"><input type="tel" id="pinIn" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="휴대폰 번호 뒷자리 4자리" style="margin-top:14px"><button class="btn pri big" style="margin-top:12px">들어가기</button><div class="status err" id="pinSt">' + esc(msg || "") + '</div></form><div class="meta" style="margin-top:14px">번호가 맞지 않으면 현장 담당자에게 문의해 주세요 · 1566-5904</div></section>' + footerHtml();
+  const inp = $("#pinIn"); inp.focus();
+  $("#pf").onsubmit = e => {
+    e.preventDefault(); const v = inp.value.replace(/[^0-9]/g, "");
+    if (v.length !== 4) { $("#pinSt").textContent = "숫자 4자리를 넣어 주세요"; return; }
+    PIN = v; try { sessionStorage.setItem("field_pin_" + CODE, v); } catch (x) {}
+    $("#app").innerHTML = '<div class="loading">확인 중…</div>'; openSite();
+  };
+}
+function schedHtml(s) {
+  const rows = (s.stages || []).filter(x => x.a || x.b);
+  if (!rows.length) return "";
+  return '<section class="card"><h2>공정표</h2><div class="sched">' + rows.map(x => '<div class="r"><b>' + esc(x.n) + '</b><small>' + fmtDate(x.a || "") + (x.b && x.b !== x.a ? " ~ " + fmtDate(x.b).slice(5) : "") + '</small><span class="stg s' + x.s + '" style="font-size:12px;padding:2px 9px">' + ST_TXT[x.s] + '</span></div>').join("") + '</div><div class="legend">날씨·자재 사정으로 바뀔 수 있어요. 바뀌면 담당자가 알려 드려요.</div></section>';
+}
+function payHtml(s) {
+  const ps = (s.payments || []).filter(x => x.amt || x.due);
+  if (!ps.length) return "";
+  const t = today(), tot = ps.reduce((a, x) => a + (Number(x.amt) || 0), 0), paid = ps.filter(x => x.paid).reduce((a, x) => a + (Number(x.amt) || 0), 0);
+  const st = x => x.paid ? '<span class="pst ok">받음' + (x.date ? " " + fmtDate(x.date).slice(5) : "") + '</span>' : (x.due && x.due < t ? '<span class="pst late">예정일 지남</span>' : '<span class="pst due">예정</span>');
+  return '<section class="card"><h2>결제 일정</h2><table class="pays"><thead><tr><th>구분</th><th>예정일</th><th class="n">금액</th><th>상태</th></tr></thead><tbody>'
+    + ps.map(x => '<tr><td>' + esc(x.n) + '</td><td>' + (x.due ? fmtDate(x.due).slice(x.due.slice(0, 4) === t.slice(0, 4) ? 5 : 2) : "-") + '</td><td class="n">' + (x.amt ? won(x.amt) : "-") + '</td><td>' + st(x) + '</td></tr>').join("")
+    + '</tbody><tfoot><tr><td colspan="2">합계</td><td class="n">' + won(tot) + '</td><td></td></tr></tfoot></table>'
+    + '<div class="legend">받은 금액 ' + won(paid) + ' · 남은 금액 ' + won(tot - paid) + ' · 계약서 기준이며, 추가 공사가 생기면 따로 알려 드려요.</div></section>';
+}
+function phaseOf(x) { return x.kind === "시공 전" || x.kind === "시공 후" ? x.kind : "시공 중"; }
+function galIds(ph) { return D.posts.filter(x => !x.hidden && x.by === "a" && (x.photos || []).length && phaseOf(x) === ph).sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt)).flatMap(x => x.photos); }
+function galHtml(posts) {
+  const cnt = {}; PHASES.forEach(p => cnt[p] = galIds(p).length);
+  if (!PHASES.some(p => cnt[p])) return "";
+  if (!GTAB || !cnt[GTAB]) GTAB = PHASES.find(p => cnt[p]);
+  const ids = galIds(GTAB);
+  return '<section class="card" id="gal"><h2>사진 모아 보기</h2><div class="chips">' + PHASES.map(p => '<button type="button" class="chip' + (p === GTAB ? " on" : "") + '" data-gtab="' + p + '"' + (cnt[p] ? "" : " disabled") + '>' + p + ' ' + cnt[p] + '</button>').join("") + '</div>'
+    + '<div class="gal">' + ids.slice(0, 60).map(id => '<button type="button" class="ld" data-gal="1" data-ph="' + GTAB + '" data-pid="' + esc(id) + '" aria-label="' + GTAB + ' 사진 크게 보기"></button>').join("") + '</div>'
+    + (ids.length > 60 ? '<div class="legend">앞 60장만 보여요. 나머지는 아래 날짜별 기록에 있어요.</div>' : '') + '</section>';
+}
 function postHtml(x) {
   const cs = D.comments.filter(c => c.postId === x.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const who = x.by === "c" ? (x.author || "고객") : (x.author || "홈퍼니싱");
   let h = '<article class="post ' + x.by + (x.important ? " isimp" : "") + (x.hidden ? " hid" : "") + '" id="p-' + x.id + '">';
   h += '<div class="ph"><span class="nm">' + esc(who) + '</span>';
+  if (x.by === "a" && PHASES.includes(x.kind)) h += '<span class="tag">' + esc(x.kind) + '</span>';
   if (x.by === "a" && x.stage) h += '<span class="tag">' + esc(x.stage) + '</span>';
   if (x.by === "c") h += '<span class="tag">고객 ' + esc(x.kind || "의견") + '</span>';
   if (x.important) h += '<span class="tag i">중요</span>';
@@ -462,7 +536,7 @@ function footerHtml() {
 function writeBox(box) {
   const s = D.site;
   if (ADMIN) {
-    box.innerHTML = '<h2>오늘 공정 올리기</h2><div class="row"><div><label class="f">날짜</label><input type="date" id="wDate" value="' + today() + '"></div><div><label class="f">공정</label><select id="wStage">' + s.stages.map(x => '<option>' + esc(x.n) + '</option>').join("") + '<option value="">기타·공지</option></select></div></div>'
+    box.innerHTML = '<h2>오늘 공정 올리기</h2><div class="row"><div><label class="f">날짜</label><input type="date" id="wDate" value="' + today() + '"></div><div><label class="f">공정</label><select id="wStage">' + s.stages.map(x => '<option>' + esc(x.n) + '</option>').join("") + '<option value="">기타·공지</option></select></div><div><label class="f">사진 구분</label><select id="wKindA"><option>시공 중</option><option>시공 전</option><option>시공 후</option><option value="공지">공지(사진 없음)</option></select></div></div>'
       + '<label class="f">작성자</label><input type="text" id="wAuthor" value="' + esc(s.manager || "홈퍼니싱") + '"><label class="f">내용</label><textarea id="wText" placeholder="오늘 한 일, 내일 할 일, 고객이 알아야 할 점"></textarea><label class="check"><input type="checkbox" id="wImp"> 중요 사항으로 표시 (맨 위 \'중요 사항\'에 모여요)</label><div id="wPick"></div><button class="btn pri big" id="wGo">올리기</button><div class="status" id="wSt"></div>';
   } else {
     box.innerHTML = '<h2>현장에 글 남기기</h2><div class="chips" id="wKind"><button type="button" class="chip on">질문</button><button type="button" class="chip">요청</button><button type="button" class="chip">의견</button></div>'
@@ -479,10 +553,10 @@ function writeBox(box) {
       if (!ADMIN) { NAME = author; try { localStorage.setItem("field_name", author); } catch (e) {} }
       const photos = await uploadAll(pk.files, st, ADMIN);
       st.textContent = "저장 중…";
-      if (ADMIN) await call("adminPost", { s: CODE, pw: PW, date: $("#wDate").value, stage: $("#wStage").value, author, text, important: $("#wImp").checked, photos });
+      if (ADMIN) await call("adminPost", { s: CODE, pw: PW, date: $("#wDate").value, stage: $("#wStage").value, kind: $("#wKindA").value, author, text, important: $("#wImp").checked, photos });
       else await call("post", { s: CODE, text, photos, author, kind: ($(".chip.on", box) || {}).textContent });
       pk.clear(); toast("올렸어요"); await refresh();
-    } catch (e) { st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
+    } catch (e) { if (!ADMIN && /^PIN:/.test(e.message)) return openSite(); st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
   };
 }
 async function refresh() { const y = scrollY; await openSite(); scrollTo(0, y); }
@@ -491,6 +565,8 @@ function bindSite() {
   app.onclick = async e => {
     const t = e.target.closest("button,li[data-go]"); if (!t) return;
     if (t.dataset.go) { const el = $("#p-" + t.dataset.go); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    if (t.dataset.gal != null) { const ids = galIds(t.dataset.ph).filter(id => PHOTO[id]); if (PHOTO[t.dataset.pid]) lightbox(ids, Math.max(0, ids.indexOf(t.dataset.pid))); return; }
+    if (t.dataset.gtab) { GTAB = t.dataset.gtab; const sec = $("#gal"); if (sec) { sec.outerHTML = galHtml(D.posts.slice()); watchPhotos($("#gal")); } return; }
     if (t.dataset.pid) { const post = D.posts.find(p => p.id === t.dataset.post); if (post && PHOTO[t.dataset.pid]) lightbox(post.photos.filter(id => PHOTO[id]), Math.max(0, post.photos.filter(id => PHOTO[id]).indexOf(t.dataset.pid))); return; }
     if (t.id === "pdfBtn") return makePdf();
     if (!ADMIN) return;
@@ -510,7 +586,7 @@ function bindSite() {
     try {
       await call("comment", Object.assign({ s: CODE, postId: f.dataset.post, text }, ADMIN ? { pw: PW, author: D.site.manager || "홈퍼니싱" } : { author: NAME || "고객" }));
       await refresh();
-    } catch (err) { toast(err.message); b.disabled = false; }
+    } catch (err) { if (!ADMIN && /^PIN:/.test(err.message)) return openSite(); toast(err.message); b.disabled = false; }
   };
 }
 function editText(p) {
@@ -534,39 +610,85 @@ function loginView(msg) {
 }
 function adminBar() {
   const s = D.site;
-  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><a class="btn sm" href="?admin">← 현장 목록</a><button class="btn sm pri" id="abCopy">고객 주소 복사</button><button class="btn sm" id="abView">고객 화면 보기</button><button class="btn sm" id="abEdit">현장 정보</button>' + (API ? '<button class="btn sm" id="abFolder">사진 폴더</button>' : '') + '</div>';
+  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><a class="btn sm" href="?admin">← 현장 목록</a><button class="btn sm pri" id="abCopy">고객 주소 복사</button><button class="btn sm" id="abView">고객 화면 보기</button><button class="btn sm" id="abEdit">현장 정보·결제·확인 번호</button><button class="btn sm" id="abImp">드라이브에서 사진 불러오기</button>' + (API ? '<button class="btn sm" id="abFolder">사진 폴더</button>' : '') + '</div>';
+  $("#abImp").onclick = () => importForm(s);
   $("#abCopy").onclick = () => shareModal(s);
   $("#abView").onclick = () => window.open(custUrl(s.code), "_blank");
   $("#abEdit").onclick = () => siteForm(s);
   if (API) $("#abFolder").onclick = async () => { try { const r = await call("folder", { s: CODE, pw: PW }); window.open(r.url, "_blank"); } catch (e) { toast(e.message); } };
 }
 function shareModal(s, fresh) {
-  const m = modal('<h2>' + (fresh ? "현장을 만들었어요" : "고객 주소") + '</h2><div class="meta">' + esc(s.name) + ' — 이 주소를 카톡으로 한 번 보내면 고객이 가입 없이 들어와요.</div><div class="urlbox">' + esc(custUrl(s.code)) + '</div><button class="btn pri big" id="shK">카톡용 안내문 복사</button><div class="row" style="margin-top:8px"><button class="btn" id="shU">주소만 복사</button><a class="btn" href="?admin&s=' + esc(s.code) + '">현장 열기</a></div><div class="meta" style="margin-top:10px">주소를 아는 사람은 누구나 볼 수 있어요. 고객에게만 보내 주세요.</div><button class="btn ghost big" data-close style="margin-top:6px">닫기</button>');
-  $("#shK", m).onclick = () => copy(kakaoText(s));
+  const pinOn = !!(s.pinOn != null ? s.pinOn : s.pin); // 서버가 알려 준 값 우선
+  const m = modal('<h2>' + (fresh ? "현장을 만들었어요" : "고객 주소") + '</h2><div class="meta">' + esc(s.name) + ' — 이 주소를 카톡으로 한 번 보내면 고객이 가입 없이 들어와요.</div><div class="meta" style="margin-top:6px">' + (pinOn ? "🔒 확인 번호(전화 뒷번호 4자리)를 넣어야 열려요. 번호는 안내문에 넣지 않았어요." : "⚠️ 확인 번호가 없어 주소만 알면 열려요. '현장 정보'에서 고객 전화 뒷번호 4자리를 넣어 주세요.") + '</div><div class="urlbox">' + esc(custUrl(s.code)) + '</div><button class="btn pri big" id="shK">카톡용 안내문 복사</button><div class="row" style="margin-top:8px"><button class="btn" id="shU">주소만 복사</button><a class="btn" href="?admin&s=' + esc(s.code) + '">현장 열기</a></div><div class="meta" style="margin-top:10px">주소를 아는 사람은 누구나 볼 수 있어요. 고객에게만 보내 주세요.</div><button class="btn ghost big" data-close style="margin-top:6px">닫기</button>');
+  $("#shK", m).onclick = () => copy(kakaoText(s) + (pinOn ? "\n(처음 열 때 고객님 휴대폰 번호 뒷자리 4자리를 넣어 주세요)" : ""));
   $("#shU", m).onclick = () => copy(custUrl(s.code));
 }
-function siteForm(s) {
-  const isNew = !s; s = s || { name: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })) };
+function siteForm(s, pre) {
+  const isNew = !s;
+  s = s || Object.assign({ name: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
   let stages = s.stages.map(x => Object.assign({}, x));
+  let pays = (s.payments && s.payments.length ? s.payments : DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" }))).map(x => Object.assign({}, x));
   const m = modal('<h2>' + (isNew ? "현장 추가" : "현장 정보") + '</h2>'
+    + (s.proj ? '<div class="meta">인트라넷 프로젝트 ' + esc(s.proj) + ' (고객 화면에는 안 보여요)</div>' : '')
     + '<label class="f">현장 이름 (고객 화면 맨 위)</label><input type="text" id="fN" value="' + esc(s.name) + '" placeholder="예: 반포 OO아파트 34평">'
     + '<div class="row"><div><label class="f">담당자</label><input type="text" id="fM" value="' + esc(s.manager) + '" placeholder="정진혁 실장"></div><div><label class="f">연락처</label><input type="tel" id="fP" value="' + esc(s.phone) + '" placeholder="010-0000-0000"></div></div>'
     + '<label class="f">주소 (고객 화면에 보임 — 동·호수는 빼는 걸 권해요)</label><input type="text" id="fA" value="' + esc(s.address) + '">'
     + '<div class="row"><div><label class="f">착공일</label><input type="date" id="fS" value="' + esc(s.start) + '"></div><div><label class="f">준공 예정일</label><input type="date" id="fE" value="' + esc(s.end) + '"></div></div>'
+    + '<label class="f">🔒 고객 확인 번호 — 고객 휴대폰 번호 뒷자리 4자리 (비우면 주소만으로 열림)</label><input type="tel" id="fPin" inputmode="numeric" maxlength="4" value="' + esc(s.pin || "") + '" placeholder="예: 1234" autocomplete="off">'
     + '<label class="f">공정 단계 (누르면 빼기)</label><div class="chips" id="fSt"></div><div class="row"><input type="text" id="fAdd" placeholder="단계 추가 (예: 샷시)"><button class="btn" id="fAddB" style="flex:none">추가</button></div>'
+    + '<label class="f">공정표 — 단계별 시작일·끝일 (비워도 됨, 고객 화면 \'공정표\'에 보임)</label><div id="fSch"></div>'
+    + '<label class="f">결제 일정 (고객 화면에 보임 · 계약 금액만, 원가·마진은 넣지 마세요)</label><div class="meta" style="display:grid;grid-template-columns:1.1fr 1.3fr 1.2fr auto;gap:6px"><span>구분</span><span>금액(원)</span><span>예정일</span><span>받음</span></div><div id="fPay"></div><button class="btn sm" id="fPayAdd" style="margin-top:6px">+ 결제 줄 추가</button>'
     + '<div class="status err" id="fErr"></div><div class="row" style="margin-top:10px"><button class="btn" data-close>취소</button><button class="btn pri" id="fGo">' + (isNew ? "만들기" : "저장") + '</button></div>');
   const draw = () => $("#fSt", m).innerHTML = stages.map((x, i) => '<button type="button" class="chip on" data-i="' + i + '">' + esc(x.n) + ' ×</button>').join("") || '<span class="meta">단계를 추가해 주세요</span>';
-  draw();
-  $("#fSt", m).onclick = e => { const i = e.target.dataset.i; if (i != null) { stages.splice(+i, 1); draw(); } };
-  $("#fAddB", m).onclick = () => { const v = $("#fAdd", m).value.trim(); if (v) { stages.push({ n: v, s: 0 }); $("#fAdd", m).value = ""; draw(); } };
+  const drawSch = () => $("#fSch", m).innerHTML = stages.map((x, i) => '<div class="srow"><b>' + esc(x.n) + '</b><input type="date" data-sa="' + i + '" value="' + esc(x.a || "") + '" aria-label="' + esc(x.n) + ' 시작일"><input type="date" data-sb="' + i + '" value="' + esc(x.b || "") + '" aria-label="' + esc(x.n) + ' 끝일"></div>').join("");
+  const drawPay = () => $("#fPay", m).innerHTML = pays.map((x, i) => '<div class="prow"><input type="text" data-pn="' + i + '" value="' + esc(x.n) + '" aria-label="구분"><input type="text" inputmode="numeric" data-pa="' + i + '" value="' + (x.amt ? Number(x.amt).toLocaleString("ko-KR") : "") + '" placeholder="0" aria-label="금액"><input type="date" data-pd="' + i + '" value="' + esc(x.due || "") + '" aria-label="예정일"><label><input type="checkbox" data-pp="' + i + '"' + (x.paid ? " checked" : "") + '>받음</label></div>').join("");
+  const sync = () => {
+    m.querySelectorAll("[data-sa]").forEach(el => stages[+el.dataset.sa] && (stages[+el.dataset.sa].a = el.value));
+    m.querySelectorAll("[data-sb]").forEach(el => stages[+el.dataset.sb] && (stages[+el.dataset.sb].b = el.value));
+    m.querySelectorAll("[data-pn]").forEach(el => pays[+el.dataset.pn].n = el.value.trim());
+    m.querySelectorAll("[data-pa]").forEach(el => pays[+el.dataset.pa].amt = Number(el.value.replace(/[^0-9]/g, "")) || 0);
+    m.querySelectorAll("[data-pd]").forEach(el => pays[+el.dataset.pd].due = el.value);
+    m.querySelectorAll("[data-pp]").forEach(el => { const x = pays[+el.dataset.pp]; if (el.checked && !x.paid) x.date = today(); x.paid = el.checked; });
+  };
+  draw(); drawSch(); drawPay();
+  $("#fSt", m).onclick = e => { const i = e.target.dataset.i; if (i != null) { sync(); stages.splice(+i, 1); draw(); drawSch(); } };
+  $("#fAddB", m).onclick = () => { const v = $("#fAdd", m).value.trim(); if (v) { sync(); stages.push({ n: v, s: 0 }); $("#fAdd", m).value = ""; draw(); drawSch(); } };
+  $("#fPayAdd", m).onclick = () => { sync(); pays.push({ n: "추가 결제", amt: 0, due: "", paid: false, date: "" }); drawPay(); };
+  $("#fPay", m).addEventListener("blur", e => { if (e.target.dataset.pa != null) { const n = Number(e.target.value.replace(/[^0-9]/g, "")); e.target.value = n ? n.toLocaleString("ko-KR") : ""; } }, true);
   $("#fGo", m).onclick = async () => {
-    const f = { name: $("#fN", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages };
+    sync();
+    const pin = $("#fPin", m).value.trim();
+    const f = { name: $("#fN", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages,
+      payments: pays.filter(x => x.n && (x.amt || x.due || x.paid)), pin };
     if (!f.name) { $("#fErr", m).textContent = "현장 이름을 적어 주세요"; return; }
+    if (pin && !/^\d{4}$/.test(pin)) { $("#fErr", m).textContent = "확인 번호는 숫자 4자리로 적어 주세요"; return; }
     $("#fGo", m).disabled = true;
     try {
-      if (isNew) { const r = await call("addSite", Object.assign({ pw: PW }, f)); m.remove(); shareModal(Object.assign({ code: r.code }, f), true); listView(); }
+      if (isNew) {
+        const r = await call("addSite", Object.assign({ pw: PW, proj: s.proj || "" }, f)); m.remove();
+        let on = false; try { const c = await call("adminSite", { s: r.code, pw: PW }); on = !!c.pinOn; } catch (x) {} // 서버가 실제로 번호를 저장했는지 (옛 서버면 false)
+        shareModal(Object.assign({ code: r.code }, f, { pin: "", pinOn: on }), true); listView();
+      }
       else { await call("updateSite", { s: CODE, pw: PW, fields: f }); m.remove(); toast("저장했어요"); refresh(); }
     } catch (e) { $("#fErr", m).textContent = e.message; $("#fGo", m).disabled = false; }
+  };
+}
+/* 드라이브 현장 폴더에서 사진 불러오기 (원본은 읽기만) */
+function importForm(s) {
+  const m = modal('<h2>드라이브에서 사진 불러오기</h2><div class="meta">현장 폴더 안의 사진 폴더(예: 시공 전) 주소를 붙여 넣으세요. 원본은 옮기거나 바꾸지 않고 읽기만 해요. 한 번에 30장까지, 이미 불러온 사진은 건너뛰어요.</div>'
+    + '<label class="f">드라이브 폴더 주소</label><input type="text" id="iF" placeholder="https://drive.google.com/drive/folders/…">'
+    + '<div class="row"><div><label class="f">구분</label><select id="iK"><option>시공 전</option><option selected>시공 중</option><option>시공 후</option></select></div><div><label class="f">날짜</label><input type="date" id="iD" value="' + today() + '"></div></div>'
+    + '<label class="f">공정 (선택)</label><select id="iS"><option value="">-</option>' + s.stages.map(x => '<option>' + esc(x.n) + '</option>').join("") + '</select>'
+    + '<label class="f">설명 (고객 화면에 보임 · 선택)</label><textarea id="iT" placeholder="예: 공사 전 현장 모습입니다."></textarea>'
+    + '<div class="status" id="iSt"></div><div class="row" style="margin-top:10px"><button class="btn" data-close>닫기</button><button class="btn pri" id="iGo">불러오기</button></div>');
+  $("#iGo", m).onclick = async () => {
+    const st = $("#iSt", m), b = $("#iGo", m); st.className = "status"; b.disabled = true; st.textContent = "드라이브 폴더 읽는 중… (사진이 많으면 30초쯤)";
+    try {
+      const r = await call("importFolder", { s: CODE, pw: PW, folder: $("#iF", m).value.trim(), kind: $("#iK", m).value, date: $("#iD", m).value, stage: $("#iS", m).value, text: $("#iT", m).value.trim(), author: s.manager || "홈퍼니싱" });
+      st.textContent = r.count ? (r.count + "장 불러왔어요" + (r.already ? " · 이미 있던 " + r.already + "장 건너뜀" : "") + (r.skipped ? " · 사진이 아닌 파일 " + r.skipped + "개 건너뜀" : "") + (r.more ? " · 남은 " + r.more + "장은 한 번 더 누르면 돼요" : "")) : ("새로 불러올 사진이 없어요" + (r.already ? " (이미 " + r.already + "장 있음)" : "") + (r.skipped ? " · 사진이 아닌 파일 " + r.skipped + "개" : ""));
+      if (r.count) refresh();
+    } catch (e) { st.className = "status err"; st.textContent = e.message; }
+    b.disabled = false;
   };
 }
 async function listView() {
@@ -588,6 +710,7 @@ async function listView() {
   });
   app.innerHTML = h + '</div>' + footerHtml();
   $("#addS").onclick = () => siteForm(null);
+  return true;
   app.onclick = e => { const c = e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
 }
 
@@ -653,7 +776,19 @@ function loadLib() {
 
 /* ============ 시작 ============ */
 function route() {
-  if (ADMIN) { if (!PW) return loginView(); return CODE ? openSite() : listView(); }
+  if (ADMIN) {
+    if (!PW) return loginView();
+    if (CODE) return openSite();
+    listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'에서 넘어온 값으로 '현장 추가' 창 채우기
+      if (!ok || !Q.has("new")) return;
+      try { history.replaceState(null, "", BASE + "?admin"); } catch (x) {}
+      const pre = {}; ["name", "manager", "phone", "address", "start", "end", "proj"].forEach(k => { const v = (Q.get(k) || "").trim(); if (v) pre[k] = v.slice(0, 100); });
+      if (pre.proj && !/^P-\d{4}-\d{3}$/.test(pre.proj)) delete pre.proj;
+      ["start", "end"].forEach(k => { if (pre[k] && !/^\d{4}-\d{2}-\d{2}$/.test(pre[k])) delete pre[k]; });
+      siteForm(null, pre);
+    });
+    return;
+  }
   if (!CODE) { $("#app").innerHTML = '<div class="gate"><div><div class="kicker">HOME FURNISHING</div><p>받으신 주소로 들어와 주세요.</p></div></div>'; return; }
   openSite();
 }
