@@ -221,7 +221,7 @@ if (!API) $("#pv").hidden = false;
 function today() { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 10); }
 function nowStr() { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 19).replace("T", " "); }
 function fmtDay(s) { const d = new Date(s + "T00:00:00"); if (isNaN(d)) return s; return (d.getMonth() + 1) + "월 " + d.getDate() + "일 (" + WD[d.getDay()] + ")"; }
-function fmtDate(s) { return s ? s.replace(/-/g, ".") : ""; }
+function fmtDate(s) { return s ? esc(String(s).replace(/-/g, ".")) : ""; }
 function toast(m, ms) { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms || 2200); }
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); toast("복사했어요. 카톡에 붙여 넣으세요"); return; } catch (e) {}
@@ -422,7 +422,7 @@ async function openSite() {
   try { D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE }); }
   catch (e) {
     if (ADMIN && /비밀번호|잠겼/.test(e.message)) { logout(); return; }
-    if (!ADMIN && /^PIN:/.test(e.message)) { pinGate(e.message.slice(4)); return; }
+    if (!ADMIN && /^PIN:/.test(e.message)) { if (PIN) { PIN = ""; try { sessionStorage.removeItem("field_pin_" + CODE); } catch (x) {} } pinGate(e.message.slice(4)); return; }
     app.innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
   }
   renderSite();
@@ -556,7 +556,7 @@ function writeBox(box) {
       if (ADMIN) await call("adminPost", { s: CODE, pw: PW, date: $("#wDate").value, stage: $("#wStage").value, kind: $("#wKindA").value, author, text, important: $("#wImp").checked, photos });
       else await call("post", { s: CODE, text, photos, author, kind: ($(".chip.on", box) || {}).textContent });
       pk.clear(); toast("올렸어요"); await refresh();
-    } catch (e) { st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
+    } catch (e) { if (!ADMIN && /^PIN:/.test(e.message)) return openSite(); st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
   };
 }
 async function refresh() { const y = scrollY; await openSite(); scrollTo(0, y); }
@@ -586,7 +586,7 @@ function bindSite() {
     try {
       await call("comment", Object.assign({ s: CODE, postId: f.dataset.post, text }, ADMIN ? { pw: PW, author: D.site.manager || "홈퍼니싱" } : { author: NAME || "고객" }));
       await refresh();
-    } catch (err) { toast(err.message); b.disabled = false; }
+    } catch (err) { if (!ADMIN && /^PIN:/.test(err.message)) return openSite(); toast(err.message); b.disabled = false; }
   };
 }
 function editText(p) {
@@ -618,7 +618,7 @@ function adminBar() {
   if (API) $("#abFolder").onclick = async () => { try { const r = await call("folder", { s: CODE, pw: PW }); window.open(r.url, "_blank"); } catch (e) { toast(e.message); } };
 }
 function shareModal(s, fresh) {
-  const pinOn = !!(s.pin || s.pinOn);
+  const pinOn = !!(s.pinOn != null ? s.pinOn : s.pin); // 서버가 알려 준 값 우선
   const m = modal('<h2>' + (fresh ? "현장을 만들었어요" : "고객 주소") + '</h2><div class="meta">' + esc(s.name) + ' — 이 주소를 카톡으로 한 번 보내면 고객이 가입 없이 들어와요.</div><div class="meta" style="margin-top:6px">' + (pinOn ? "🔒 확인 번호(전화 뒷번호 4자리)를 넣어야 열려요. 번호는 안내문에 넣지 않았어요." : "⚠️ 확인 번호가 없어 주소만 알면 열려요. '현장 정보'에서 고객 전화 뒷번호 4자리를 넣어 주세요.") + '</div><div class="urlbox">' + esc(custUrl(s.code)) + '</div><button class="btn pri big" id="shK">카톡용 안내문 복사</button><div class="row" style="margin-top:8px"><button class="btn" id="shU">주소만 복사</button><a class="btn" href="?admin&s=' + esc(s.code) + '">현장 열기</a></div><div class="meta" style="margin-top:10px">주소를 아는 사람은 누구나 볼 수 있어요. 고객에게만 보내 주세요.</div><button class="btn ghost big" data-close style="margin-top:6px">닫기</button>');
   $("#shK", m).onclick = () => copy(kakaoText(s) + (pinOn ? "\n(처음 열 때 고객님 휴대폰 번호 뒷자리 4자리를 넣어 주세요)" : ""));
   $("#shU", m).onclick = () => copy(custUrl(s.code));
@@ -664,7 +664,11 @@ function siteForm(s, pre) {
     if (pin && !/^\d{4}$/.test(pin)) { $("#fErr", m).textContent = "확인 번호는 숫자 4자리로 적어 주세요"; return; }
     $("#fGo", m).disabled = true;
     try {
-      if (isNew) { const r = await call("addSite", Object.assign({ pw: PW, proj: s.proj || "" }, f)); m.remove(); shareModal(Object.assign({ code: r.code }, f), true); listView(); }
+      if (isNew) {
+        const r = await call("addSite", Object.assign({ pw: PW, proj: s.proj || "" }, f)); m.remove();
+        let on = false; try { const c = await call("adminSite", { s: r.code, pw: PW }); on = !!c.pinOn; } catch (x) {} // 서버가 실제로 번호를 저장했는지 (옛 서버면 false)
+        shareModal(Object.assign({ code: r.code }, f, { pin: "", pinOn: on }), true); listView();
+      }
       else { await call("updateSite", { s: CODE, pw: PW, fields: f }); m.remove(); toast("저장했어요"); refresh(); }
     } catch (e) { $("#fErr", m).textContent = e.message; $("#fGo", m).disabled = false; }
   };
@@ -706,6 +710,7 @@ async function listView() {
   });
   app.innerHTML = h + '</div>' + footerHtml();
   $("#addS").onclick = () => siteForm(null);
+  return true;
   app.onclick = e => { const c = e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
 }
 
@@ -774,8 +779,9 @@ function route() {
   if (ADMIN) {
     if (!PW) return loginView();
     if (CODE) return openSite();
-    listView().then(() => { // 인트라넷 '고객 공유 페이지 만들기'에서 넘어온 값으로 '현장 추가' 창 채우기
-      if (!Q.has("new")) return;
+    listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'에서 넘어온 값으로 '현장 추가' 창 채우기
+      if (!ok || !Q.has("new")) return;
+      try { history.replaceState(null, "", BASE + "?admin"); } catch (x) {}
       const pre = {}; ["name", "manager", "phone", "address", "start", "end", "proj"].forEach(k => { const v = (Q.get(k) || "").trim(); if (v) pre[k] = v.slice(0, 100); });
       if (pre.proj && !/^P-\d{4}-\d{3}$/.test(pre.proj)) delete pre.proj;
       ["start", "end"].forEach(k => { if (pre[k] && !/^\d{4}-\d{2}-\d{2}$/.test(pre[k])) delete pre[k]; });
