@@ -35,7 +35,13 @@ def main(data_dir, out_html, pw_file):
     L = lambda n: json.load(open(os.path.join(data_dir, n), encoding="utf-8"))
     prices, rules, recipe, stats, users, meta = (L(n) for n in
         ("prices.json", "rules.json", "recipe.json", "stats.json", "users.json", "meta.json"))
-    proc_name = {p["key"]: p["name"] for p in recipe["procs"]}
+    if "indirect" in rules:  # 단가 추출 결과(rules.json) 그대로 받으면 간접비 값만 꺼냄
+        ind = rules["indirect"]
+        rules = {k: ind[k]["value"] for k in ("progressPct", "mgmtPerPy", "cleanPerPy")}
+    proc_name = {"demolition": "철거", "plumbing": "설비", "sash": "창호", "carpentry": "목공", "electric": "전기·조명",
+                 "tile": "타일", "bath": "욕실", "wallpaper": "도배", "floor": "바닥", "film": "필름", "paint": "도장",
+                 "furniture": "가구", "misc": "기타"}
+    proc_name.update({p["key"]: p["name"] for p in recipe["procs"]})
     sale = {
         "prices": {p["id"]: {k: p.get(k) for k in ("proc", "name", "spec", "unit", "price")} for p in prices},
         "rules": rules, "recipe": recipe, "stats": stats, "procName": proc_name,

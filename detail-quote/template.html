@@ -269,6 +269,12 @@ function make(){
   }
   render();
 }
+function costOf(l){
+  const k = l.id ? C.cost[l.id] : null;
+  if (k != null) return {v:k, est:false};
+  return {v: l.price*(1-EST), est:true};
+}
+let EST = 0.28;
 function totals(){
   const v = vars(), r = S.rules;
   const direct = LINES.reduce((a,l) => a + l.qty*l.price, 0);
@@ -276,13 +282,9 @@ function totals(){
   const mgmt = Math.round(v.py * r.mgmtPerPy);
   const supply = direct + prog + mgmt;
   const vat = Math.round(supply * 0.1);
-  let cost = null, costCover = 0;
-  if (C){
-    let c = 0, covered = 0;
-    LINES.forEach(l => { const k = C.cost[l.id]; if (k != null){ c += k*l.qty; covered += l.qty*l.price; } });
-    cost = c; costCover = direct ? covered/direct : 0;
-  }
-  return {direct, prog, mgmt, supply, vat, total: supply+vat, cost, costCover};
+  let cost = null, real = 0;
+  if (C){ cost = 0; LINES.forEach(l => { const k = costOf(l); cost += k.v*l.qty; if (!k.est) real += k.v*l.qty; }); }
+  return {direct, prog, mgmt, supply, vat, total: supply+vat, cost, real};
 }
 function render(){
   const T = totals(), v = vars();
@@ -291,12 +293,13 @@ function render(){
   $('psub').textContent = `공급 ${v.py}평 · 욕실 ${v.bath} · 방 ${v.room} · 작성 ${new Date().toLocaleDateString('ko-KR')} · 금액 단위 원`;
   let sum = `<div>공급가 (부가세 별도)<b>${won(T.supply)}</b></div><div>부가세 10%<b>${won(T.vat)}</b></div><div>합계 (부가세 포함)<b>${won(T.total)}</b></div><div>평당 (공급가)<b>${won(T.supply/v.py)}</b></div>`;
   if (C){
-    const known = T.direct * T.costCover;
-    const m = known ? (known - T.cost)/known : null;
-    sum += `<div class="costcol cost">원가 (자료 있는 항목)<b>${won(T.cost)}</b><span class="muted">직접공사비 중 ${Math.round(T.costCover*100)}%만 원가 자료 있음</span></div>
-            <div class="costcol cost">마진 (그 항목들)<b>${m==null?'자료 필요':won(known-T.cost)+' · '+(m*100).toFixed(1)+'%'}</b></div>`;
+    const m = T.direct ? (T.direct - T.cost)/T.direct : 0;
+    sum += `<div class="costcol cost">직접공사비 원가<b>${won(T.cost)}</b><span class="muted">실제 원가 자료 ${won(T.real)} · 나머지는 추정</span></div>
+            <div class="costcol cost">직접공사비 마진<b>${won(T.direct-T.cost)} · ${(m*100).toFixed(1)}%</b><span class="muted">간접비(진행비·관리비) ${won(T.prog+T.mgmt)} 별도</span></div>
+            <div class="costcol cost noprint">추정 마진율 (원가 자료 없는 품목)<b><input id="est" type="number" min="0" max="80" step="1" value="${Math.round(EST*100)}" style="width:80px"> %</b><span class="muted">기준 28% = 원가 ÷ 0.72 (회사 기준)</span></div>`;
   }
   $('sum').innerHTML = sum;
+  if (C) $('est').onchange = e => { EST = Math.min(0.8, Math.max(0, (+e.target.value||0)/100)); render(); };
   const cc = C ? '<th class="n costcol">원가</th><th class="n costcol">마진율</th>' : '';
   let h = `<tr><th>공정</th><th>품목</th><th>규격</th><th>단위</th><th class="n">수량</th><th class="n">단가</th><th class="n">금액</th>${cc}</tr>`;
   let row = 0, cur = null, sub = 0;
@@ -308,7 +311,7 @@ function render(){
     const fl = f ? `<span class="flag ${f.r<0?'dn':''}" title="실제 ${f.st.n}건 가운데 값 ${won(f.st.med)}원 (최저 ${won(f.st.min)} ~ 최고 ${won(f.st.max)})">실제와 ${f.r>0?'+':''}${Math.round(f.r*100)}%</span>` : '';
     const miss = l.missing ? ' <span class="miss intern">단가 자료 필요</span>' : '';
     let ccell = '';
-    if (C){ const k = C.cost[l.id]; ccell = k==null ? '<td class="n costcol nop">자료 없음</td><td class="costcol"></td>' : `<td class="n costcol cost">${won(k)}</td><td class="n costcol cost">${l.price?((1-k/l.price)*100).toFixed(0)+'%':''}</td>`; }
+    if (C){ const k = costOf(l); ccell = `<td class="n costcol cost">${won(k.v)}${k.est?' <span class="nop">추정</span>':''}</td><td class="n costcol cost">${l.price?((1-k.v/l.price)*100).toFixed(0)+'%':''}</td>`; }
     h += `<tr class="${(row++)%2?'even':''}"><td>${esc(l.pname)}</td><td>${esc(l.name)}${fl}${miss}${l.note?'<div class="nop intern">'+esc(l.note)+'</div>':''}</td><td>${esc(l.spec)}</td><td>${esc(l.unit)}</td>
       <td class="n"><input class="q noprint-in" data-i="${i}" type="number" step="0.1" value="${l.qty}"><span class="printonly">${l.qty}</span></td><td class="n">${won(l.price)}</td><td class="n">${won(amt)}</td>${ccell}</tr>`;
   });
