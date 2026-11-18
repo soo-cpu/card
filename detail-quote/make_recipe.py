@@ -57,10 +57,14 @@ def main(data):
                           "qty": "py", "price": per, "note": "간편견적 확정 단가 평당 " + format(per, ",") + "원"})
         for it in g.get(key, {}).get("items", []):
             ids = {k: it.get(k) or [] for k in ("basic", "mid", "high")}
+            if key == "carpentry" and it["item"] == "방문":
+                ids["basic"] = []  # 기본 등급은 방문 교체 대신 필름 리폼 (인트라넷 v0.99-37 결정과 같게)
             groups = {}
             for gr in ("basic", "mid", "high"):
                 groups.setdefault(tuple(ids[gr]), []).append(gr)
             for idl, grs in groups.items():
+                if not idl:
+                    continue
                 for pid in idl:
                     if pid not in prices:
                         continue
@@ -71,6 +75,17 @@ def main(data):
                     if when:
                         ln["when"] = when
                     lines.append(ln)
+        if key == "wallpaper":
+            # 도배 노무 수량은 간편견적 확정식(전용면적 ≈ 공급평×3.3058×0.76 를 15로 나눔)으로 바꿈
+            for ln in lines:
+                if ln.get("id") == "X09":
+                    ln["qty"] = "round(round(py*3.3058*0.76)/15*10)/10"
+                    ln["note"] = "도배 노무 (간편견적 수량식: 전용면적÷15)"
+            if "X10" in prices:  # 실제 견적 23곳에 들어간 샤시·문틀 퍼티 바탕작업
+                lines.append({"id": "X10", "qty": "1", "note": "바탕작업 퍼티 (샤시·문틀) — 실제 견적 대부분 포함"})
+        if key == "film" and "U0338" in prices:
+            # 기본 등급은 방문을 바꾸지 않고 필름 리폼 (상세견적 분석: 기본=필름 리폼, 중급 이상=방문 교체)
+            lines.append({"id": "U0338", "qty": "room", "grades": ["basic"], "note": "방문 필름 리폼 (문틀·문짝 세트)"})
         if key == "tile":
             for t in rules["easy"]["tileSub"]:
                 w = t["rule"].replace("28<=py<38", "py>=28?py<38:0")

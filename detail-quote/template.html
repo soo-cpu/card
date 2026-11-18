@@ -126,6 +126,10 @@ footer{color:var(--sub);font-size:12px;text-align:center;padding:20px}
  <section class="card hide" id="t-diff">
   <h2>기존 단가 vs 실제 견적 (2024년 이후)</h2>
   <p class="muted" id="diffnote"></p>
+  <h2 style="margin-top:12px">① 공정별 평당 금액 (자동견적 중급 vs 실제 견적)</h2>
+  <p class="muted" id="pnote"></p>
+  <div class="tablewrap"><table id="pt"></table></div>
+  <h2 style="margin-top:16px">② 품목별 단가 (기준 단가 vs 실제 견적 가운데 값)</h2>
   <div class="tablewrap"><table id="dt"></table></div>
  </section>
 
@@ -230,7 +234,7 @@ function start(role){
   $('srcnote').textContent = '단가 근거: ' + S.meta.priceSrc + ' · 실제 견적 비교: ' + S.meta.statSrc;
   $('py').addEventListener('change', autoRooms);
   ['btnMake'].forEach(id => $(id).onclick = make);
-  $('thr').onchange = () => { make(); diffTab(); };
+  $('thr').onchange = () => { make(); diffTab(); procTab(); };
   $('btnPrintC').onclick = () => { make(); document.body.classList.add('cust'); window.print(); document.body.classList.remove('cust'); };
   $('btnPrintI').onclick = () => { make(); window.print(); };
   $('btnCsv').onclick = csv;
@@ -238,7 +242,7 @@ function start(role){
     document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x===b));
     ['quote','diff','about'].forEach(t => $('t-'+t).classList.toggle('hide', t!==b.dataset.t));
   });
-  about(); make(); diffTab(); poke();
+  about(); make(); diffTab(); procTab(); poke();
 }
 function autoRooms(){ const py = +$('py').value||0; $('bath').value = py < 25 ? '1' : '2'; $('room').value = py < 18 ? '2' : py < 40 ? '3' : '4'; }
 function vars(){ const py = Math.max(1, +$('py').value||0); return {py, bath:+$('bath').value, room:+$('room').value}; }
@@ -335,6 +339,19 @@ function diffTab(){
   rows.forEach((x, i) => { h += `<tr class="${i%2?'even':''}"><td>${esc(S.procName[x.it.proc]||x.it.proc)}</td><td>${esc(x.it.name)} <span class="nop">${esc(x.it.spec||'')}</span></td><td>${esc(x.it.unit)}</td><td class="n">${won(x.it.price)}</td><td class="n">${won(x.st.med)}</td>
     <td class="n"><span class="flag ${x.r<0?'dn':''}">${x.r>0?'+':''}${Math.round(x.r*100)}%</span></td><td class="n">${x.st.n}</td><td class="nop">${won(x.st.min)} ~ ${won(x.st.max)}</td></tr>`; });
   $('dt').innerHTML = h;
+}
+function procTab(){
+  const ps = S.procStats || {}, thr = +$('thr').value, a = ps._all;
+  $('pnote').textContent = a ? `실제 전체 공사 ${a.n}곳을 같은 평형·중급으로 자동견적 해 본 결과, 직접공사비 합계는 실제의 ${Math.round(a.ratio*100)}% (가운데 값). 공정별 차이가 ±${Math.round(thr*100)}% 이상이면 표시합니다.` : '자료 없음';
+  let h = '<tr><th>공정</th><th class="n">실제 평당</th><th class="n">자동견적 평당</th><th class="n">자동/실제</th><th class="n">현장 수</th><th>읽는 법</th></tr>', i = 0;
+  for (const [k, v] of Object.entries(ps)) {
+    if (k === '_all' || !v.ratio) continue;
+    const r = v.ratio - 1, big = Math.abs(r) >= thr;
+    h += `<tr class="${(i++)%2?'even':''}"><td>${esc(S.procName[k]||k)}</td><td class="n">${won(v.realPerPy)}</td><td class="n">${won(v.estPerPy)}</td>
+      <td class="n">${big?`<span class="flag ${r<0?'dn':''}">${Math.round(v.ratio*100)}%</span>`:Math.round(v.ratio*100)+'%'}</td><td class="n">${v.n}</td>
+      <td class="nop">${big ? (r<0 ? '자동견적이 적게 나옴 → 기준 묶음에 빠진 품목이 있는지 확인' : '자동견적이 많이 나옴 → 기준 단가·수량이 실제보다 높은지 확인') : '비슷함'}</td></tr>`;
+  }
+  $('pt').innerHTML = h;
 }
 function about(){ $('about').innerHTML = S.aboutHtml; }
 function csv(){

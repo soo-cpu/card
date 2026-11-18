@@ -7,7 +7,7 @@
   DATA/recipe.json   {procs:[{key,name,def,lines:[{id|name+price, qty, grades?, when?, note?}]}]}
   DATA/stats.json    {id: {n, med, min, max}}
   DATA/users.json    [{name, role: "staff"|"cost"}]  (비밀번호는 빌드 때 새로 만듦)
-  DATA/meta.json     {priceSrc, statSrc, statSites, aboutHtml, version}
+  DATA/meta.json     {priceSrc, statSrc, statSites, aboutHtml, version, procStats?}
 사용: python3 build.py DATA OUT.html PASSWORDS.md
 """
 import base64, hashlib, json, os, secrets, sys, datetime
@@ -46,6 +46,7 @@ def main(data_dir, out_html, pw_file):
         "prices": {p["id"]: {k: p.get(k) for k in ("proc", "name", "spec", "unit", "price")} for p in prices},
         "rules": rules, "recipe": recipe, "stats": stats, "procName": proc_name,
         "meta": {k: meta[k] for k in ("priceSrc", "statSrc", "statSites")}, "aboutHtml": meta["aboutHtml"],
+        "procStats": meta.get("procStats", {}),
     }
     cost = {"cost": {p["id"]: p["cost"] for p in prices if p.get("cost") is not None}}
     dk_s, dk_c = AESGCM.generate_key(256), AESGCM.generate_key(256)
