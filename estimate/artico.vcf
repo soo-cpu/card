@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+N;CHARSET=UTF-8:;아르띠꼬 스튜디오;;;
+FN;CHARSET=UTF-8:아르띠꼬 스튜디오 (주식회사 홈퍼니싱)
+ORG;CHARSET=UTF-8:주식회사 홈퍼니싱;아르띠꼬 스튜디오
+TEL;TYPE=WORK,VOICE:1566-5904
+ADR;TYPE=WORK;CHARSET=UTF-8:;;동구릉로 129번길 2-1, 1층;구리시;경기도;11914;대한민국
+URL:https://soo-cpu.github.io/card/estimate/
+NOTE;CHARSET=UTF-8:인테리어 상담 1566-5904
+END:VCARD
