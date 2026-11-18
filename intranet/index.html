@@ -3514,7 +3514,7 @@ function daRecipe(a){const py=num(a.py),L=[],rooms=py>=40?4:3,add=(grp,k,q,src)=
     if(a.ceil==="평탄화+다운라이트")add("목공","U0274",1,"천장 · 평탄화");if(a.ceil==="우물천장·간접조명")add("목공","U0276",1,"천장 · 우물천장 간접조명");
     if(a.door==="문짝 교체")add("목공","U0237",doorN,"방문 문짝 교체 "+doorN+"개");if(a.door==="문틀까지 교체")add("목공",g===2?"U0242":"U0241",doorN,"방문 문틀까지 교체 "+doorN+"개 · "+daG(a,"목공"));
     if(a.jm==="초슬림")add("목공","U0248",1,"중문 · 초슬림");if(a.jm==="고급")add("목공","U0250",1,"중문 · 고급 파티션형")}
-  if(a.pr["필름도장"]){const g=gi("필름도장"),s="필름도장 · "+daG(a,"필름도장");add("필름도장",g===2?"U0316":"U0318",1.5,s+(g===2?" · 영림":" · 한샘")+" 1.5롤");add("필름도장","U0321",1,s+" · 현관 방화문");
+  if(a.pr["필름도장"]){const g=gi("필름도장"),s="필름도장 · "+daG(a,"필름도장");add("필름도장","U0318",1.5,s+" · 한샘 1.5롤 (실제 38곳 모두 한샘 솔리드 S → 세 등급 같은 제품 · 분석 v1 확인 필요 ③ 추천안)");add("필름도장","U0321",1,s+" · 현관 방화문");
     if(a.door==="그대로(필름)")add("필름도장","U0338",doorN,"방문 그대로 · 필름 리폼 "+doorN+"개");
     if(balc){const b=balc>=3?2:balc-1;add("필름도장",(g===2?["U0383","U0384","U0385"]:["U0380","U0381","U0382"])[b],balc,"발코니 "+balc+"실 · "+(g===2?"세라믹코트":"탄성코트"))}}
   if(a.pr["타일"]){const g=gi("타일"),s="타일 · "+daG(a,"타일");add("타일",g?"U0392":"U0391",1,s+(g?" · 현관 철거면":" · 현관 덧방"));add("타일",g?"U0396":"U0395",1,s+(g?" · 주방 벽 철거면":" · 주방 벽 덧방"));
@@ -3555,7 +3555,7 @@ async function daGen(){if(!sheet||!sheet.qe||!sheet.da)return;const a=sheet.da,p
   const iU=daInd(true);
   toast("자동 견적 줄 "+fresh.length+"개를 더했어요"+(nU?" · 수량 바꿈 "+nU+"개":"")+(dup.length&&!rep?" · 이미 있던 "+dup.length+"개는 그대로":"")+(iU?" · 간접비·할인 다시 계산":"")+" · 저장을 눌러야 견적에 남아요");qeRedraw()}
 function daInd(quiet){if(!sheet||!sheet.qe)return 0;const a=sheet.da||{},E=sheet.qe,py=num(a.py)||num((E.find(l=>l.ind==="관리비")||{}).q);let n=0;
-  const put=(kind,mk)=>{const x=E.find(l=>l.ind===kind||l.dc&&kind==="할인");const v=mk();if(!v)return;if(x){if(num(x.price)!==v.price||num(x.q)!==v.q){Object.assign(x,{q:v.q,price:v.price});n++}}else{E.push(v.l);n++}};
+  const put=(kind,mk)=>{const x=E.find(l=>l.ind===kind||l.dc&&kind==="할인");const v=mk();if(!v){if(x&&kind==="할인"){E.splice(E.indexOf(x),1);n++}return}if(x){if(num(x.price)!==v.price||num(x.q)!==v.q||(kind==="할인"&&x.name!==v.l.name)){Object.assign(x,{q:v.q,price:v.price});if(kind==="할인")x.name=v.l.name;n++}}else{E.push(v.l);n++}};/* v0.99-40 검토 권고: 할인 0이면 할인 줄을 빼고, 5%→10%처럼 바뀌면 이름도 같이 바꿈 (고객 PDF 합계 칸이 맞게) */
   const c=getCatQ(),ci=x=>c?c.cols.indexOf(x):-1,x04=c&&c.items.find(r=>r[ci("k")]==="X04"),kp=x04?num(x04[ci("price")]):0;
   put("관리비",()=>py?(x04?{q:py,price:kp,l:{k:"X04",space:x04[ci("space")],name:x04[ci("name")],unit:x04[ci("unit")],q:py,price:kp,edited:false,ind:"관리비",auto:"간접비 · 평형×22,000원"}}:{q:py,price:0,l:{space:"간접공사비",name:"기본시공관리비 (평형×22,000원) · 단가표에 없음",unit:"평",q:py,price:0,edited:true,ind:"관리비",chk:1,auto:"간접비 · 평형×22,000원"}}):null);
   const dir=qdSum(E).dir,pv=Math.round(dir*0.05);put("진행비",()=>({q:1,price:pv,l:{space:"간접공사비",name:"공사진행비 (직접공사비 × 5%)",unit:"식",q:1,price:pv,edited:true,ind:"진행비",auto:"간접비 · 직접공사비 "+dir.toLocaleString("ko-KR")+"원 × 5%"}}));
