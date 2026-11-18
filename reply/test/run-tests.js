@@ -60,11 +60,12 @@ t('보내기·전달·삭제 코드 없음', () => {
   }
 });
 t('기본은 시험 모드', () => assert.strictEqual(bot.CONFIG.DRY_RUN, true));
-t('승인 스위치 모두 꺼짐', () => assert.ok(Object.values(bot.CONFIG.APPROVED).every(v => v === false)));
+t('승인 스위치 10개 (형 승인 2026-11-18)', () => assert.strictEqual(Object.keys(bot.CONFIG.APPROVED).length, 10));
+t('서명에 대표 이름', () => assert.ok(bot.CONFIG.SIGNATURE.startsWith('대표 최윤수 드림')));
 t('문구에 금액(원) 없음', () => Object.values(bot.TEMPLATES).forEach(s => assert.ok(!/\d\s*(만\s*)?원/.test(s))));
 
 console.log('6) 설계 문서와 문구가 같음');
-const md = fs.readFileSync(path.join(dir, '답장 자동화 설계 2026-11-18 v0.md'), 'utf8');
+const md = fs.readFileSync(path.join(dir, '답장 자동화 설계 2026-11-18 v1.md'), 'utf8');
 for (const id of Object.keys(bot.TEMPLATES)) {
   t(id, () => {
     const m = md.match(new RegExp('### ' + id + ' [^\\n]*\\n[\\s\\S]*?```text\\n([\\s\\S]*?)\\n```'));

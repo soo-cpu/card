@@ -1,5 +1,5 @@
 /**
- * 답장 초안 봇 · 시험판 v0 (2026-11-18)
+ * 답장 초안 봇 · 시험판 v1 (2026-11-18) — 문구 10개 승인, 서명에 '대표 최윤수 드림'
  * 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오
  *
  * 하는 일: 받은편지함의 새 메일 중 정해진 유형(견적 문의·자료 요청·일정 확인)을 골라
@@ -10,15 +10,15 @@
  *       → 함수 `testRunOnce` 실행(권한 허용) → 결과 확인 → `installTrigger` 실행(10분마다 자동)
  * 끄기: `removeTrigger` 실행
  *
- * 처음에는 DRY_RUN = true (초안을 만들지 않고 라벨·기록만). 문구 승인 후 false + APPROVED 켜기.
+ * 처음 1주는 DRY_RUN = true (초안을 만들지 않고 라벨·기록만). 1주 뒤 false로 바꾸면 초안을 만든다.
  */
 
 // ───────────────────────── 설정 ─────────────────────────
 var CONFIG = {
   DRY_RUN: true,                // true: 분류만 하고 초안은 만들지 않음 (시험 단계)
-  APPROVED: {                   // 형 승인된 문구만 true. false인 유형은 초안을 만들지 않음
-    T01: false, T02: false, T03: false, T04: false, T05: false,
-    T06: false, T07: false, T08: false, T09: false, T10: false
+  APPROVED: {                   // 형 승인된 문구만 true. 2026-11-18 형이 10개 모두 승인
+    T01: true, T02: true, T03: true, T04: true, T05: true,
+    T06: true, T07: true, T08: true, T09: true, T10: true
   },
   SEARCH: 'in:inbox newer_than:2d -category:promotions -category:social -label:자동답장',
   MAX_PER_RUN: 10,              // 한 번에 최대 처리 메일 수 (폭주 방지)
@@ -34,6 +34,7 @@ var CONFIG = {
   ],
   LABEL_ROOT: '자동답장',
   SIGNATURE:
+    '대표 최윤수 드림\n' +
     '주식회사 홈퍼니싱 · 아르띠꼬 스튜디오\n' +
     '대표번호 1566-5904 | 전화 031-513-9560 | 팩스 031-513-9561\n' +
     '홈페이지 https://soo-cpu.github.io/card/site/'
