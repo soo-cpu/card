@@ -17,12 +17,12 @@ h1{font-size:21px;margin:0;color:var(--head)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px}
 label{font-weight:700;font-size:14px;display:grid;gap:4px}
 label small{font-weight:400;color:var(--sub)}
-input,textarea{font:inherit;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--panel);color:var(--ink);width:100%;box-sizing:border-box}
+input,textarea{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--panel);color:var(--ink);width:100%;box-sizing:border-box}
 input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--head);outline-offset:2px}
 #ph{font-size:20px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
-textarea{min-height:170px;resize:vertical;font-size:15px}
+textarea{min-height:170px;resize:vertical;font-size:16px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.big{display:block;text-align:center;text-decoration:none;font-weight:800;font-size:17px;border-radius:12px;padding:15px;background:var(--gold);color:#17202B;border:0;cursor:pointer;width:100%}
+.big{display:block;box-sizing:border-box;text-align:center;text-decoration:none;font-weight:800;font-size:17px;border-radius:12px;padding:15px;background:var(--gold);color:#17202B;border:0;cursor:pointer;width:100%}
 .big[aria-disabled="true"]{opacity:.45;pointer-events:none}
 button.sub{font:inherit;font-weight:700;border:1px solid var(--line);border-radius:10px;padding:11px;background:var(--panel);color:var(--ink);cursor:pointer}
 .msg{font-size:14px;min-height:1.4em;margin:0}
@@ -40,7 +40,7 @@ button.sub{font:inherit;font-weight:700;border:1px solid var(--line);border-radi
   <section class="card" aria-label="받는 사람">
     <label for="nm">고객 이름 <small>(문구 첫 줄에 들어가요, 비워도 돼요)</small><input id="nm" autocomplete="off" placeholder="예: 김민지"></label>
     <label for="who">보내는 담당자 <small>(그 사람 명함이 문자에 같이 가요. 고객이 명함에서 '연락처 저장'을 누르면 바로 저장돼요)</small>
-      <select id="who" style="font:inherit;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--panel);color:var(--ink)">
+      <select id="who" style="font:inherit;font-size:16px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--panel);color:var(--ink)">
         <option value="soo">최윤수 대표</option><option value="jung">정진혁 실장</option><option value="lee">이봄이 실장</option><option value="">명함 안 넣기</option>
       </select></label>
     <label for="ph">고객 휴대폰 번호<input id="ph" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></label>
