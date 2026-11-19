@@ -22,8 +22,8 @@ var CONFIG = {
   },
   SEARCH: 'in:inbox newer_than:2d -category:promotions -category:social -label:자동답장',
   MAX_PER_RUN: 10,              // 한 번에 최대 처리 메일 수 (폭주 방지)
-  MY_ADDRESSES: [               // 내 주소: 이 주소가 보낸 메일은 건너뜀
-    'soo@artico-studio.com', 'soo17115@gmail.com', 'soo17115@naver.com', 'woo17115@hanmail.net'
+  MY_ADDRESSES: [               // 회사 주소가 보낸 메일(내 답장)만 건너뜀
+    'soo@artico-studio.com'     // 2026-11-19 형 결정: 개인 Gmail·네이버·한메일로 온 메일도 회사 주소로 초안
   ],
   SKIP_SENDER_PATTERNS: [       // 자동 발송 메일 건너뜀
     'no-?reply', 'noreply', 'donotreply', 'mailer-daemon', 'postmaster', 'notification', 'newsletter',
@@ -37,6 +37,7 @@ var CONFIG = {
     '대표 최윤수 드림\n' +
     '주식회사 홈퍼니싱 · 아르띠꼬 스튜디오\n' +
     '대표번호 1566-5904 | 전화 031-513-9560 | 팩스 031-513-9561\n' +
+    '상담 시간 평일 9시~18시\n' +
     '홈페이지 https://soo-cpu.github.io/card/site/'
 };
 

@@ -39,7 +39,9 @@ const none = [
 for (const [s, b] of none) t(`없음 ← ${s}`, () => assert.strictEqual(bot.classify(s, b), null));
 
 console.log('3) 건너뛰기');
-t('내 주소', () => assert.ok(bot.skipReason('최윤수 <soo17115@naver.com>', '테스트', false)));
+t('회사 주소(내 답장)', () => assert.ok(bot.skipReason('최윤수 <soo@artico-studio.com>', '테스트', false)));
+t('네이버·한메일·개인 Gmail은 통과', () => ['soo17115@naver.com','woo17115@hanmail.net','soo17115@gmail.com'].forEach(a => assert.strictEqual(bot.skipReason('x <'+a+'>', '견적 문의', false), null)));
+t('상담 시간 서명', () => assert.ok(bot.CONFIG.SIGNATURE.includes('상담 시간 평일 9시~18시')));
 t('no-reply', () => assert.ok(bot.skipReason('Google <no-reply@accounts.google.com>', '보안 알림', false)));
 t('간편견적 알림', () => assert.ok(bot.skipReason('누군가 <a@b.com>', '[간편견적 신규상담] 홍길동 · 31평', false)));
 t('뉴스레터', () => assert.ok(bot.skipReason('가게 <shop@b.com>', '이번 주 소식', true)));
