@@ -59,6 +59,8 @@ def iter_files(targets):
         if os.path.isdir(t):
             for root, _, files in os.walk(t):
                 for f in sorted(files):
+                    if f in INTERNAL:
+                        continue
                     if f.endswith((".md", ".txt", ".csv")):
                         yield os.path.join(root, f)
         else:
@@ -93,6 +95,9 @@ def kw(cells):
     parts = re.split(r"[,·/\s]+", text)
     return {p for p in parts if len(p) >= 2 and p not in STOP}
 
+
+# 내부 자료라 공개 검사에서 빼는 파일 (폴더 단위 검사일 때만)
+INTERNAL = {"현장사진_목록.md", "99_검토 결과.md"}
 
 # 어느 주제에나 나오는 말은 비교에서 뺀다
 STOP = {
