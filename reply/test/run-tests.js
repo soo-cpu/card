@@ -75,4 +75,21 @@ for (const id of Object.keys(bot.TEMPLATES)) {
     assert.strictEqual(m[1], bot.TEMPLATES[id]);
   });
 }
+console.log('7) 자동 발송 규칙 (2026-11-19)');
+const d = require(path.join(dir, 'decide.js'));
+const M = o => Object.assign({ threadId: 't', messageId: 'm', from: '홍길동 <hong@naver.com>', subject: '견적 문의', body: '아파트 32평 리모델링 견적', lastFromMe: false, hasDraft: false, repliedToday: false }, o);
+t('문의 메일은 send', () => assert.strictEqual(d.decide(M({})).action, 'send'));
+t('맨 끝 안내 문구', () => assert.ok(d.decide(M({})).body.endsWith(d.FOOTER)));
+t('하루 1번만', () => assert.strictEqual(d.decide(M({ repliedToday: true })).action, 'skip'));
+t('자동응답 메일 금지', () => assert.strictEqual(d.decide(M({ subject: '[자동응답] 부재중입니다 견적' })).action, 'skip'));
+t('광고 금지', () => assert.strictEqual(d.decide(M({ subject: '(광고) 인테리어 견적 할인' })).action, 'skip'));
+t('no-reply 금지', () => assert.strictEqual(d.decide(M({ from: 'x <no-reply@shop.com>' })).action, 'skip'));
+t('뉴스레터 금지', () => assert.strictEqual(d.decide(M({ listUnsubscribe: true })).action, 'skip'));
+t('T04·T07은 보내지 않음', () => {
+  assert.strictEqual(d.decide(M({ subject: '견적서 문의', body: '견적서 언제 받을 수 있나요' })).action, 'manual');
+  assert.strictEqual(d.decide(M({ subject: '서류', body: '사업자등록증 보내주세요' })).action, 'manual');
+});
+t('보내는 문구 8개에 금액·할인·기간 약속 없음', () => Object.keys(bot.TEMPLATES).filter(k => !d.MANUAL_TYPES[k]).forEach(k => assert.ok(!d.PROMISE.test(d.finalBody(k, 'a@b.c')), k)));
+t('약속 감지기 작동', () => ['500만원', '10% 할인', '3주 만에 끝', '공사 기간은 4주'].forEach(x => assert.ok(d.PROMISE.test(x), x)));
+
 console.log(`\n모두 통과: ${pass}개`);
