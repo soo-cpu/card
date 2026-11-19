@@ -149,7 +149,7 @@ function admin_(req) {
   if (fails >= 10) throw new Error('비밀번호를 여러 번 틀려 15분 동안 잠겼어요');
   if (!req.pw || String(req.pw) !== String(setting_('관리 비밀번호'))) {
     cache.put('pwfail', String(fails + 1), 900);
-    throw new Error(/^T:/.test(String(req.pw || '')) ? '직원 입장권 시간이 끝났어요 (비밀번호가 맞지 않아요)' : '비밀번호가 맞지 않아요');
+    throw new Error(/^T:/.test(String(req.pw || '')) ? '직원 입장권 모양이 맞지 않아요 (비밀번호가 맞지 않아요)' : '비밀번호가 맞지 않아요');
   }
   return '관리';
 }

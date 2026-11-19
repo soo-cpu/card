@@ -43,7 +43,10 @@ delete S.st.cache.pwfail;
 const site = S.post({ a: 'addSite', pw: 'T:' + t2, name: '시험 현장', pin: '4321' });
 for (let i = 0; i < 5; i++) S.post({ a: 'site', s: site.code, pin: '1111' });
 ok('v3-13: 고객 확인 번호 5번 틀리면 잠금 (그대로)', site.ok && /여러 번/.test(S.post({ a: 'site', s: site.code, pin: '4321' }).error || ''));
-ok('v3-14: 고객 요청에 끝난 출입증을 붙여도 확인 번호 먼저 (관리 권한 아님)', /^PIN:/.test(S.post({ a: 'site', s: site.code, pw: 'T:' + t1 }).error || ''));
+const c14 = S.post({ a: 'comment', s: site.code, text: 'x', pw: 'T:' + t1 }), p14 = S.post({ a: 'photo', s: site.code, id: 'x', pw: 'T:' + t1 });
+ok('v3-14: 끝난 출입증을 붙인 댓글·사진 요청 → 입장권 안내로 거절, 틀린 횟수 0', c14.ok === false && /입장권 시간/.test(c14.error || '') && p14.ok === false && fails() === 0, (c14.error || '') + ' / ' + (p14.error || ''));
+const e15 = S.post({ a: 'login', pw: 'T:bogus' });
+ok('v3-14b: 모양이 다른 T: 값은 \'입장권 모양이 맞지 않아요\' (화면이 알아보는 \'비밀번호\' 포함), 횟수 1', /입장권 모양이 맞지 않아요/.test(e15.error || '') && /비밀번호/.test(e15.error || '') && fails() === 1, e15.error);
 
 // 6. 버전 표시
 const fs = require('fs'), path = require('path');
