@@ -5,6 +5,7 @@
 규칙
   1) 품목 원가: 원가 줄을 기준 단가 품목에 맞춤(compare.py 와 같은 방법). 맞은 값들의 가운데 값.
      - 원가가 부가세 포함이면 1.1로 나눈 값을 씀
+     - 원가율 100% 넘는 줄·입력 오류 의심 줄·단위가 안 맞는 줄은 뺌
      - 원가가 기준 판매 단가보다 높으면 그 품목은 쓰지 않고 '확인 필요'로 남김
   2) 공정 원가율: 주거 현장의 공정별 (원가 합 ÷ 판매 합)의 가운데 값. 품목 원가가 없는 줄에 판매 단가 × 원가율로 씀
   3) 둘 다 없으면 화면의 추정 마진율(기본 28%)
@@ -64,6 +65,10 @@ def main(data):
         except (TypeError, ValueError):
             continue
         if c <= 0 or r.get("proc") == "indirect":
+            continue
+        # 입력 오류 의심·단위 불일치·실제로 반영 안 된 원가는 빼고 셈
+        if r.get("outlier") or r.get("costApplied") is False or "입력오류" in str(r.get("flag") or "") \
+                or (r.get("costRate") or 0) > 1:
             continue
         p, sc = match(r, by_proc)
         if not p:
