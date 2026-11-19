@@ -1,12 +1,23 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
+ * 현장소통 Code.gs 2026-11-18 v1 (이전: '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
+ *
+ * v1에서 더한 것 (다음 지시 2026-11-13 v3 · 3번 고객 공유 페이지)
+ *  - 결제 일정(계약금·중도금·잔금): '현장' 탭 16번째 칸 '결제(JSON)'
+ *  - 고객 확인 번호(전화 뒷번호 4자리): '현장' 탭 17번째 칸. 비어 있으면 예전처럼 주소만으로 열림
+ *    고객 화면의 site·photo·upload·post·comment 요청 모두 이 번호를 확인 (틀리면 5번까지, 15분 잠금)
+ *  - 공정표: 공정(JSON) 단계마다 시작일(a)·끝일(b) 보관
+ *  - 드라이브 폴더에서 사진 불러오기(importFolder): 원본은 읽기만 (복사·이동·이름 변경 안 함)
+ *  - 인트라넷 프로젝트 번호(proj)는 '메모' 칸에만 (고객 화면에는 안 나감)
+ *  - 고객 화면에 나가는 것: 현장명·담당자·연락처·주소·공사 기간·공정·결제 일정·글·사진·댓글
+ *    (원가·마진·메모·프로젝트 번호·확인 번호는 절대 안 나감)
  */
 
 var TAB = {
-  sites:    ['현장', ['코드','현장명','담당자','연락처','주소','착공일','준공예정일','공정(JSON)','상태','폴더ID','만든 시각','관리자 확인 시각','고객 최근 글','숨김','메모']],
+  sites:    ['현장', ['코드','현장명','담당자','연락처','주소','착공일','준공예정일','공정(JSON)','상태','폴더ID','만든 시각','관리자 확인 시각','고객 최근 글','숨김','메모','결제(JSON)','고객 확인 번호']],
   posts:    ['글',   ['글ID','현장코드','날짜','작성(회사/고객)','이름','공정','종류','내용','중요','사진ID(JSON)','작성 시각','숨김','고친 시각']],
   comments: ['댓글', ['댓글ID','현장코드','글ID','작성(회사/고객)','이름','내용','작성 시각','숨김']],
   photos:   ['사진', ['파일ID','현장코드','올린 시각','작성(회사/고객)','파일 이름']],
@@ -21,10 +32,11 @@ var TEST_CODE = 'WI7ijOiMEPHIOf4vjkqEPmG2';
 var TEST_FOLDER_ID = '1lw72he2le5Y8tumh8wdacHqucWWiJhcs';
 var SAMPLE_URL = 'https://soo-cpu.github.io/card/field/sample/s';
 var ROOT_NAME = '현장소통 사진·기록';
+var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중' });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 1 });
 }
 
 function doPost(e) {
@@ -58,6 +70,14 @@ function sheet_(key) {
   }
   return sh;
 }
+/* v1: 예전 시트에 새 칸 머리글이 없으면 채운다 (기존 칸·행은 그대로) */
+function ensureCols_(key) {
+  var sh = sheet_(key), want = TAB[key][1];
+  var have = sh.getRange(1, 1, 1, want.length).getDisplayValues()[0];
+  for (var i = 0; i < want.length; i++) {
+    if (!have[i]) sh.getRange(1, i + 1).setValue(want[i]).setFontWeight('bold').setBackground('#F2F2F2');
+  }
+}
 function rows_(key) {
   var sh = sheet_(key), n = sh.getLastRow();
   if (n < 2) return [];
@@ -76,6 +96,7 @@ function today_() { return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-
 function id_(p) { return p + Utilities.getUuid().replace(/-/g, '').slice(0, 12); }
 function log_(act, code, who, detail) { try { append_('log', [now_(), act, code || '', who || '', String(detail || '').slice(0, 300)]); } catch (x) {} }
 function clean_(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').slice(0, n || 2000).trim(); }
+function day_(s) { s = clean_(s, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''; }
 
 function setting_(k) {
   var r = rows_('settings').filter(function (x) { return x[0] === k; })[0];
@@ -115,10 +136,40 @@ function site_(code) {
   if (!r || r[13] === 'Y') throw new Error('주소를 확인해 주세요');
   return r;
 }
+/* v1: 고객 확인 번호(전화 뒷번호 4자리). 번호가 없는 현장은 예전처럼 통과.
+   틀리면 'PIN:'으로 시작하는 오류 → 화면이 번호 입력 칸을 보여 줌 */
+function pinOk_(r, req) {
+  var pin = String(r[16] || '').trim();
+  if (!pin) return;
+  if (req.pin == null || req.pin === '') throw new Error('PIN:');
+  var ok = String(req.pin).trim() === pin;
+  // 틀린 횟수는 잠금 안에서 세어 동시에 많이 보내도 15분에 5번까지만 (검토 반영)
+  var cache = CacheService.getScriptCache(), k = 'pinf_' + r[0];
+  var lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    var fails = Number(cache.get(k) || 0);
+    if (fails >= 5) throw new Error('PIN:확인 번호를 여러 번 틀렸어요. 15분 뒤에 다시 해 주세요');
+    if (ok) return;
+    cache.put(k, String(fails + 1), 900);
+    throw new Error('PIN:번호가 맞지 않아요 (' + (fails + 1) + '/5)');
+  } finally { lock.releaseLock(); }
+}
+function stages_(json) {
+  var a = [];
+  try { a = JSON.parse(json || '[]'); } catch (x) {}
+  return (a || []).slice(0, 30).map(function (s) { return { n: clean_(s.n, 20), s: Number(s.s || 0) % 3, a: day_(s.a), b: day_(s.b) }; });
+}
+function pays_(json) {
+  var a = [];
+  try { a = typeof json === 'string' ? JSON.parse(json || '[]') : (json || []); } catch (x) {}
+  return (a || []).slice(0, 12).map(function (p) {
+    var amt = Math.round(Number(String(p.amt == null ? '' : p.amt).replace(/[^0-9.]/g, '')) || 0);
+    return { n: clean_(p.n, 20) || '결제', amt: amt, due: day_(p.due), paid: !!p.paid, date: day_(p.date) };
+  }).filter(function (p) { return p.n; });
+}
 function sitePublic_(r) {
-  var stages = [];
-  try { stages = JSON.parse(r[7] || '[]'); } catch (x) {}
-  return { code: r[0], name: r[1], manager: r[2], phone: r[3], address: r[4], start: r[5], end: r[6], stages: stages, status: r[8] };
+  // 고객에게 나가는 칸만. 메모(14)·확인 번호(16)·폴더ID(9)는 넣지 않는다.
+  return { code: r[0], name: r[1], manager: r[2], phone: r[3], address: r[4], start: r[5], end: r[6], stages: stages_(r[7]), status: r[8], payments: pays_(r[15]) };
 }
 function rate_(code, kind, max) {
   var c = CacheService.getScriptCache(), k = 'rt_' + kind + '_' + code, n = Number(c.get(k) || 0);
@@ -147,6 +198,22 @@ function monthFolder_(r) {
   var it = f.getFoldersByName(m);
   return it.hasNext() ? it.next() : f.createFolder(m);
 }
+/* v1: 큰 사진(1.5MB 넘음, 드라이브에서 불러온 원본 등)은 드라이브 미리 보기 크기(긴 변 1600)로 보냄 */
+function photoData_(id) {
+  var f = DriveApp.getFileById(id);
+  if (f.getSize() > 1.5 * 1024 * 1024) {
+    try {
+      var res = UrlFetchApp.fetch('https://drive.google.com/thumbnail?sz=w1600&id=' + encodeURIComponent(id), { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+      if (res.getResponseCode() === 200) {
+        var t = res.getBlob();
+        if (/^image\//.test(t.getContentType())) return 'data:' + t.getContentType() + ';base64,' + Utilities.base64Encode(t.getBytes());
+      }
+    } catch (x) {}
+  }
+  if (f.getSize() > 1.5 * 1024 * 1024) throw new Error('큰 사진 미리 보기 실패');   // 원본 통째로 보내면 한 묶음이 다 실패 → 이 사진만 건너뜀
+  var b = f.getBlob();
+  return 'data:' + b.getContentType() + ';base64,' + Utilities.base64Encode(b.getBytes());
+}
 
 /* ---------- 현장 내용 ---------- */
 function bundle_(code, isAdmin, seenAt) {
@@ -162,23 +229,29 @@ function bundle_(code, isAdmin, seenAt) {
   });
   return { posts: posts, comments: comments };
 }
+function adminExtra_(r) {
+  return { pin: String(r[16] || ''), proj: String(r[14] || '').match(/P-\d{4}-\d{3}/) ? String(r[14]).match(/P-\d{4}-\d{3}/)[0] : '' };
+}
 
 var ACTIONS = {
   /* 고객·관리 공통 */
   site: function (req) {
-    var r = site_(req.s), b = bundle_(r[0], false);
-    return { site: sitePublic_(r), posts: b.posts, comments: b.comments };
+    var r = site_(req.s);
+    pinOk_(r, req);
+    var b = bundle_(r[0], false);
+    return { site: sitePublic_(r), posts: b.posts, comments: b.comments, pinOn: !!String(r[16] || '').trim() };
   },
   photo: function (req) {
-    var r = site_(req.s), ids = (req.ids || []).slice(0, 6), mine = {};
+    var isAdmin = false;
+    if (req.pw) { admin_(req); isAdmin = true; }
+    var r = site_(req.s);
+    if (!isAdmin) pinOk_(r, req);
+    var ids = (req.ids || []).slice(0, 6), mine = {};
     rows_('photos').forEach(function (p) { if (p[1] === r[0]) mine[p[0]] = 1; });
     var res = {};
     ids.forEach(function (id) {
       if (!mine[id]) return;
-      try {
-        var b = DriveApp.getFileById(id).getBlob();
-        res[id] = 'data:' + b.getContentType() + ';base64,' + Utilities.base64Encode(b.getBytes());
-      } catch (x) {}
+      try { res[id] = photoData_(id); } catch (x) {}
     });
     return { photos: res };
   },
@@ -186,7 +259,7 @@ var ACTIONS = {
     var isAdmin = false;
     if (req.pw) { admin_(req); isAdmin = true; }
     var r = site_(req.s);
-    if (!isAdmin) rate_(r[0], 'up', 80);
+    if (!isAdmin) { pinOk_(r, req); rate_(r[0], 'up', 80); }
     var m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(req.data || '');
     if (!m) throw new Error('사진 형식 오류');
     var bytes = Utilities.base64Decode(m[2]);
@@ -200,7 +273,7 @@ var ACTIONS = {
     } finally { lock.releaseLock(); }
   },
   post: function (req) {
-    var r = site_(req.s); rate_(r[0], 'post', 40);
+    var r = site_(req.s); pinOk_(r, req); rate_(r[0], 'post', 40);
     var text = clean_(req.text, 2000), photos = (req.photos || []).slice(0, 20).map(String);
     if (!text && !photos.length) throw new Error('내용을 적어 주세요');
     var id = id_('P'), t = now_();
@@ -215,7 +288,7 @@ var ACTIONS = {
     var isAdmin = false;
     if (req.pw) { admin_(req); isAdmin = true; }
     var r = site_(req.s);
-    if (!isAdmin) rate_(r[0], 'cmt', 60);
+    if (!isAdmin) { pinOk_(r, req); rate_(r[0], 'cmt', 60); }
     var text = clean_(req.text, 1000);
     if (!text) throw new Error('내용을 적어 주세요');
     var id = id_('C'), t = now_();
@@ -238,6 +311,7 @@ var ACTIONS = {
                    cm.filter(function (c) { return c[1] === r[0] && c[3] === '고객' && c[6] > seen; }).length;
       s.postCount = posts.filter(function (p) { return p[1] === r[0] && p[11] !== 'Y'; }).length;
       s.createdAt = r[10];
+      var x = adminExtra_(r); s.pinOn = !!x.pin; s.proj = x.proj;
       return s;
     });
     return { sites: list };
@@ -246,28 +320,42 @@ var ACTIONS = {
     admin_(req);
     var r = site_(req.s), b = bundle_(r[0], true, r[11]);
     setCell_('sites', r._row, 11, now_());
-    return { site: sitePublic_(r), posts: b.posts, comments: b.comments };
+    var s = sitePublic_(r), x = adminExtra_(r); s.pin = x.pin; s.proj = x.proj;
+    return { site: s, posts: b.posts, comments: b.comments, pinOn: !!x.pin };
   },
   addSite: function (req) {
     admin_(req);
+    ensureCols_('sites');
     var name = clean_(req.name, 60);
     if (!name) throw new Error('현장 이름을 적어 주세요');
-    var code = newCode_(), stages = (req.stages || []).slice(0, 30).map(function (s) { return { n: clean_(s.n || s, 20), s: Number(s.s || 0) }; });
+    var pin = clean_(req.pin, 4);
+    if (pin && !/^\d{4}$/.test(pin)) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
+    var code = newCode_(), stages = stages_(JSON.stringify(req.stages || []));
+    var proj = (String(req.proj || '').match(/P-\d{4}-\d{3}/) || [''])[0];
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
-      append_('sites', [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), clean_(req.start, 10), clean_(req.end, 10),
-                        JSON.stringify(stages), '진행', '', now_(), now_(), '', '', '']);
+      append_('sites', [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), day_(req.start), day_(req.end),
+                        JSON.stringify(stages), '진행', '', now_(), now_(), '', '', proj ? ('인트라넷 ' + proj) : '', JSON.stringify(pays_(req.payments)), pin]);
     } finally { lock.releaseLock(); }
     var r = site_(code); siteFolder_(r);
-    log_('현장 추가', code, '관리', name);
+    log_('현장 추가', code, '관리', name + (proj ? ' · ' + proj : ''));
     return { code: code };
   },
   updateSite: function (req) {
     admin_(req);
+    ensureCols_('sites');
     var r = site_(req.s), f = req.fields || {};
-    var map = { name: 1, manager: 2, phone: 3, address: 4, start: 5, end: 6, status: 8 };
+    var map = { name: 1, manager: 2, phone: 3, address: 4, status: 8 };
     Object.keys(map).forEach(function (k) { if (f[k] != null) setCell_('sites', r._row, map[k], clean_(f[k], 100)); });
-    if (f.stages) setCell_('sites', r._row, 7, JSON.stringify(f.stages.slice(0, 30).map(function (s) { return { n: clean_(s.n, 20), s: Number(s.s || 0) }; })));
+    if (f.start != null) setCell_('sites', r._row, 5, day_(f.start));
+    if (f.end != null) setCell_('sites', r._row, 6, day_(f.end));
+    if (f.stages) setCell_('sites', r._row, 7, JSON.stringify(stages_(JSON.stringify(f.stages))));
+    if (f.payments) setCell_('sites', r._row, 15, JSON.stringify(pays_(f.payments)));
+    if (f.pin != null) {
+      var pin = clean_(f.pin, 4);
+      if (pin && !/^\d{4}$/.test(pin)) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
+      setCell_('sites', r._row, 16, pin);
+    }
     log_('현장 수정', r[0], '관리', Object.keys(f).join(','));
     return {};
   },
@@ -276,9 +364,42 @@ var ACTIONS = {
     var r = site_(req.s), text = clean_(req.text, 4000), photos = (req.photos || []).slice(0, 30).map(String);
     if (!text && !photos.length) throw new Error('내용을 적어 주세요');
     var id = id_('P');
-    append_('posts', [id, r[0], clean_(req.date, 10) || today_(), '회사', clean_(req.author, 20) || '홈퍼니싱', clean_(req.stage, 20), clean_(req.kind, 10) || '공정',
+    append_('posts', [id, r[0], day_(req.date) || today_(), '회사', clean_(req.author, 20) || '홈퍼니싱', clean_(req.stage, 20), clean_(req.kind, 10) || '공정',
                       text, req.important ? 'Y' : '', JSON.stringify(photos), now_(), '', '']);
     return { id: id };
+  },
+  /* v1: 드라이브 폴더(현장 폴더의 시공 전·중·후 사진)에서 사진 불러오기 — 원본은 읽기만 */
+  importFolder: function (req) {
+    admin_(req);
+    var r = site_(req.s);
+    var fid = (String(req.folder || '').match(/[-\w]{25,}/) || [''])[0];
+    if (!fid) throw new Error('드라이브 폴더 주소를 붙여 넣어 주세요');
+    var folder;
+    try { folder = DriveApp.getFolderById(fid); } catch (x) { throw new Error('폴더를 열 수 없어요 (주소·공유 확인)'); }
+    var kind = PHASES.indexOf(String(req.kind)) >= 0 ? String(req.kind) : '시공 중';
+    var have = {};
+    rows_('photos').forEach(function (p) { if (p[1] === r[0]) have[p[0]] = 1; });
+    var it = folder.getFiles(), list = [], skipped = 0, already = 0;
+    while (it.hasNext()) {
+      var f = it.next(), mt = f.getMimeType();
+      if (!/^image\/(jpeg|png|webp)$/.test(mt)) { skipped++; continue; }
+      if (have[f.getId()]) { already++; continue; }
+      if (f.getSize() > 25 * 1024 * 1024) { skipped++; continue; }
+      list.push({ id: f.getId(), name: f.getName(), t: f.getDateCreated().getTime() });
+    }
+    list.sort(function (a, b) { return a.t - b.t || (a.name < b.name ? -1 : 1); });
+    var more = Math.max(0, list.length - 30);
+    list = list.slice(0, 30);
+    if (!list.length) return { count: 0, skipped: skipped, already: already, more: 0 };
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    var id = id_('P');
+    try {
+      list.forEach(function (x) { append_('photos', [x.id, r[0], now_(), '회사', '드라이브 ' + x.name]); });
+      append_('posts', [id, r[0], day_(req.date) || today_(), '회사', clean_(req.author, 20) || '홈퍼니싱', clean_(req.stage, 20), kind,
+                        clean_(req.text, 4000), '', JSON.stringify(list.map(function (x) { return x.id; })), now_(), '', '']);
+    } finally { lock.releaseLock(); }
+    log_('드라이브 사진 불러오기', r[0], '관리', kind + ' ' + list.length + '장 · 폴더 ' + folder.getName());
+    return { count: list.length, skipped: skipped, already: already, more: more, id: id };
   },
   editPost: function (req) {
     admin_(req);
@@ -288,6 +409,7 @@ var ACTIONS = {
     if (req.important != null) setCell_('posts', p._row, 8, req.important ? 'Y' : '');
     if (req.hidden != null) setCell_('posts', p._row, 11, req.hidden ? 'Y' : '');
     if (req.text != null) { log_('글 수정 전 내용', r[0], '관리', p[7]); setCell_('posts', p._row, 7, clean_(req.text, 4000)); }
+    if (req.kind != null) setCell_('posts', p._row, 6, clean_(req.kind, 10));
     setCell_('posts', p._row, 12, now_());
     return {};
   },
@@ -320,14 +442,15 @@ var ACTIONS = {
   }
 };
 
-/* 처음 한 번: 시트 탭·설정·사진 폴더 만들기 (편집기에서 실행 ▶) */
+/* 처음 한 번: 시트 탭·설정·사진 폴더 만들기 (편집기에서 실행 ▶) — v1로 바꾼 뒤에도 한 번 실행하면 새 칸 머리글이 생김 */
 function setup() {
   Object.keys(TAB).forEach(sheet_);
+  ensureCols_('sites');
   ensureSettings_();
   if (!setting_('사진 폴더ID')) append_('settings', ['사진 폴더ID', root_().getId(), '현장별 폴더가 이 안에 생김']);
   seedTest_();
   rows_('sites').forEach(function (r) { siteFolder_(r); });
-  log_('설치', '', '관리', '탭·설정·시험 현장 준비');
+  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v1)');
 }
 
 /* 시험 현장(대표 확인용) 3일치 — 이미 있으면 다시 넣지 않음 */
@@ -344,7 +467,7 @@ function seedTest_() {
     append_('photos', [f.getId(), code, '2026-11-0' + (3 + Math.min(2, Math.floor(i / 3))) + ' 17:00:00', i === 7 ? '고객' : '회사', '예시사진_' + i + '.jpg']);
   }
   var stages = [{ n: '철거', s: 2 }, { n: '설비', s: 2 }, { n: '전기', s: 1 }, { n: '목공', s: 1 }, { n: '타일', s: 0 }, { n: '도장', s: 0 }, { n: '마감', s: 0 }];
-  append_('sites', [code, '시험 현장(대표 확인용)', '정진혁 실장', '1566-5904', '서울 (예시 주소)', '2026-11-03', '2026-11-20', JSON.stringify(stages), '진행', folder.getId(), '2026-11-03 08:00:00', '2026-11-05 18:00:00', '2026-11-05 20:12:00', '', '대표 확인용 시험 현장. 고객에게 보내지 않음']);
+  append_('sites', [code, '시험 현장(대표 확인용)', '정진혁 실장', '1566-5904', '서울 (예시 주소)', '2026-11-03', '2026-11-20', JSON.stringify(stages), '진행', folder.getId(), '2026-11-03 08:00:00', '2026-11-05 18:00:00', '2026-11-05 20:12:00', '', '대표 확인용 시험 현장. 고객에게 보내지 않음', '[]', '']);
   var P = [
     ['P_s1', '2026-11-03', '회사', '정진혁 실장', '철거', '공정', '오늘 철거 작업을 마쳤습니다.\n· 거실·주방 기존 마루, 걸레받이 철거\n· 욕실 2곳 타일·도기 철거\n· 폐기물 1톤 반출, 엘리베이터 보양 완료\n내일은 설비(배관) 작업이 들어갑니다.', '', [0, 1, 2], '2026-11-03 17:40:00'],
     ['P_s2', '2026-11-04', '회사', '정진혁 실장', '설비', '공정', '욕실·주방 배관 교체와 수압 시험을 마쳤습니다. 누수 없음 확인했습니다.\n전기 배선은 오후부터 시작했습니다.', '', [3, 4], '2026-11-04 17:20:00'],
