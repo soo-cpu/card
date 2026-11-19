@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-18 v1 (이전: '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-19 v2 (이전: '현장소통 Code.gs 2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -14,6 +14,14 @@
  *  - 인트라넷 프로젝트 번호(proj)는 '메모' 칸에만 (고객 화면에는 안 나감)
  *  - 고객 화면에 나가는 것: 현장명·담당자·연락처·주소·공사 기간·공정·결제 일정·글·사진·댓글
  *    (원가·마진·메모·프로젝트 번호·확인 번호는 절대 안 나감)
+ *
+ * v2에서 더한 것 (대표 지시 2026-11-19 · 직원이 비밀번호 없이 관리 화면 열기)
+ *  - 직원 입장권(ticket): 인트라넷이 '직원 열쇠'로 서명한 5분짜리 입장권을 확인하고 6시간짜리 출입증(token)을 내줌
+ *    열쇠는 스크립트 속성 FIELD_STAFF_KEY 에만 (코드·시트·기록에 쓰지 않음). 속성이 없으면 입장권은 모두 거절
+ *    같은 입장권은 한 번만 (10분 동안 기억). 출입증은 캐시에만 있고 6시간 뒤 사라짐
+ *  - 관리 요청의 pw 자리에 "T:출입증"이 오면 비밀번호 대신 인정. 그 밖의 값은 예전 그대로 비밀번호 확인(10번 틀리면 15분 잠금)
+ *  - '기록' 탭의 '누가' 칸: 비밀번호로 들어오면 '관리', 입장권으로 들어오면 직원 이름
+ *  - 고객 확인 번호(PIN)·횟수 제한·고객 화면 요청은 그대로
  */
 
 var TAB = {
@@ -36,7 +44,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 1 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 2 });
 }
 
 function doPost(e) {
@@ -121,14 +129,52 @@ function newCode_() {
 }
 
 /* ---------- 권한 ---------- */
+/* 관리 권한 확인. 돌려주는 값 = 누가 ('관리' 또는 입장권으로 들어온 직원 이름) */
 function admin_(req) {
+  var cache = CacheService.getScriptCache();
+  var who = staffTok_(req, cache);
+  if (who) return who;   // v2: 직원 출입증 (아래 비밀번호 확인·잠금은 예전 그대로)
   ensureSettings_();
-  var cache = CacheService.getScriptCache(), fails = Number(cache.get('pwfail') || 0);
+  var fails = Number(cache.get('pwfail') || 0);
   if (fails >= 10) throw new Error('비밀번호를 여러 번 틀려 15분 동안 잠겼어요');
   if (!req.pw || String(req.pw) !== String(setting_('관리 비밀번호'))) {
     cache.put('pwfail', String(fails + 1), 900);
-    throw new Error('비밀번호가 맞지 않아요');
+    throw new Error(/^T:/.test(String(req.pw || '')) ? '직원 입장권 시간이 끝났어요 (비밀번호가 맞지 않아요)' : '비밀번호가 맞지 않아요');
   }
+  return '관리';
+}
+
+/* ---------- v2: 직원 입장권 ---------- */
+var TICKET_MS = 5 * 60 * 1000;   // 입장권은 만든 지 5분 안에만
+function b64u_(bytes) { return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, ''); }
+function sameStr_(a, b) {   // 길이가 같을 때 끝까지 비교 (앞에서 멈추지 않음)
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return false;
+  var d = 0;
+  for (var i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+function whoName_(w) {
+  try {
+    var n = clean_(Utilities.newBlob(Utilities.base64DecodeWebSafe(w + '==='.slice((w.length + 3) % 4))).getDataAsString(), 20);
+    return n.replace(/[^0-9A-Za-z가-힣 ]/g, '') || '직원';
+  } catch (x) { return '직원'; }
+}
+/* 입장권 "시각.누구.한번값.서명" 확인 — 서명 = HMAC-SHA256(열쇠, "시각.누구.한번값") base64url. 틀리면 오류, 맞으면 { who, nonce } */
+function ticketCheck_(k, key, nowMs) {
+  if (!key) throw new Error('직원 열쇠가 아직 연결되지 않았어요 (스크립트 속성 FIELD_STAFF_KEY)');
+  var m = /^(\d{13})\.([A-Za-z0-9_-]{1,120})\.([A-Za-z0-9_-]{16,64})\.([A-Za-z0-9_-]{43})$/.exec(String(k || ''));
+  if (!m) throw new Error('입장권 모양이 맞지 않아요');
+  var sig = b64u_(Utilities.computeHmacSha256Signature(m[1] + '.' + m[2] + '.' + m[3], String(key)));
+  if (!sameStr_(sig, m[4])) throw new Error('입장권이 맞지 않아요 (인트라넷에서 다시 열어 주세요)');
+  if (Math.abs(nowMs - Number(m[1])) > TICKET_MS) throw new Error('입장권 시간이 지났어요 (인트라넷에서 다시 열어 주세요)');
+  return { who: whoName_(m[2]), nonce: m[3] };
+}
+/* pw 자리에 "T:출입증"이 오고 그 출입증이 캐시에 살아 있으면 직원 이름, 아니면 '' */
+function staffTok_(req, cache) {
+  var pw = String(req && req.pw || '');
+  if (!/^T:[A-Za-z0-9]{32,80}$/.test(pw)) return '';
+  return String(cache.get('tks_' + pw.slice(2)) || '');
 }
 function site_(code) {
   if (!code || String(code).length < 20) throw new Error('주소를 확인해 주세요');
@@ -300,6 +346,22 @@ var ACTIONS = {
     return { id: id };
   },
 
+  /* v2: 직원 입장권 → 출입증 (인트라넷 '관리 화면 열기') */
+  ticket: function (req) {
+    var key = String(PropertiesService.getScriptProperties().getProperty('FIELD_STAFF_KEY') || '').trim();
+    var t = ticketCheck_(req.k, key, Date.now());
+    var cache = CacheService.getScriptCache();
+    var lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {   // 같은 입장권은 한 번만 (잠금 안에서 확인해 동시에 두 번 와도 하나만)
+      if (cache.get('tkn_' + t.nonce)) throw new Error('이미 쓴 입장권이에요 (인트라넷에서 다시 열어 주세요)');
+      cache.put('tkn_' + t.nonce, '1', 600);
+    } finally { lock.releaseLock(); }
+    var token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+    cache.put('tks_' + token, t.who, 21600);   // 6시간
+    log_('직원 입장', '', t.who, '인트라넷 입장권');
+    return { token: token };
+  },
+
   /* 관리 전용 */
   login: function (req) { admin_(req); return {}; },
   sites: function (req) {
@@ -324,7 +386,7 @@ var ACTIONS = {
     return { site: s, posts: b.posts, comments: b.comments, pinOn: !!x.pin };
   },
   addSite: function (req) {
-    admin_(req);
+    var who = admin_(req);
     ensureCols_('sites');
     var name = clean_(req.name, 60);
     if (!name) throw new Error('현장 이름을 적어 주세요');
@@ -338,11 +400,11 @@ var ACTIONS = {
                         JSON.stringify(stages), '진행', '', now_(), now_(), '', '', proj ? ('인트라넷 ' + proj) : '', JSON.stringify(pays_(req.payments)), pin]);
     } finally { lock.releaseLock(); }
     var r = site_(code); siteFolder_(r);
-    log_('현장 추가', code, '관리', name + (proj ? ' · ' + proj : ''));
+    log_('현장 추가', code, who, name + (proj ? ' · ' + proj : ''));
     return { code: code };
   },
   updateSite: function (req) {
-    admin_(req);
+    var who = admin_(req);
     ensureCols_('sites');
     var r = site_(req.s), f = req.fields || {};
     var map = { name: 1, manager: 2, phone: 3, address: 4, status: 8 };
@@ -356,7 +418,7 @@ var ACTIONS = {
       if (pin && !/^\d{4}$/.test(pin)) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
       setCell_('sites', r._row, 16, pin);
     }
-    log_('현장 수정', r[0], '관리', Object.keys(f).join(','));
+    log_('현장 수정', r[0], who, Object.keys(f).join(','));
     return {};
   },
   adminPost: function (req) {
@@ -370,7 +432,7 @@ var ACTIONS = {
   },
   /* v1: 드라이브 폴더(현장 폴더의 시공 전·중·후 사진)에서 사진 불러오기 — 원본은 읽기만 */
   importFolder: function (req) {
-    admin_(req);
+    var who = admin_(req);
     var r = site_(req.s);
     var fid = (String(req.folder || '').match(/[-\w]{25,}/) || [''])[0];
     if (!fid) throw new Error('드라이브 폴더 주소를 붙여 넣어 주세요');
@@ -398,17 +460,17 @@ var ACTIONS = {
       append_('posts', [id, r[0], day_(req.date) || today_(), '회사', clean_(req.author, 20) || '홈퍼니싱', clean_(req.stage, 20), kind,
                         clean_(req.text, 4000), '', JSON.stringify(list.map(function (x) { return x.id; })), now_(), '', '']);
     } finally { lock.releaseLock(); }
-    log_('드라이브 사진 불러오기', r[0], '관리', kind + ' ' + list.length + '장 · 폴더 ' + folder.getName());
+    log_('드라이브 사진 불러오기', r[0], who, kind + ' ' + list.length + '장 · 폴더 ' + folder.getName());
     return { count: list.length, skipped: skipped, already: already, more: more, id: id };
   },
   editPost: function (req) {
-    admin_(req);
+    var who = admin_(req);
     var r = site_(req.s);
     var p = rows_('posts').filter(function (x) { return x[0] === req.id && x[1] === r[0]; })[0];
     if (!p) throw new Error('글을 찾을 수 없어요');
     if (req.important != null) setCell_('posts', p._row, 8, req.important ? 'Y' : '');
     if (req.hidden != null) setCell_('posts', p._row, 11, req.hidden ? 'Y' : '');
-    if (req.text != null) { log_('글 수정 전 내용', r[0], '관리', p[7]); setCell_('posts', p._row, 7, clean_(req.text, 4000)); }
+    if (req.text != null) { log_('글 수정 전 내용', r[0], who, p[7]); setCell_('posts', p._row, 7, clean_(req.text, 4000)); }
     if (req.kind != null) setCell_('posts', p._row, 6, clean_(req.kind, 10));
     setCell_('posts', p._row, 12, now_());
     return {};
@@ -422,7 +484,7 @@ var ACTIONS = {
     return {};
   },
   savePdf: function (req) {
-    admin_(req);
+    var who = admin_(req);
     var r = site_(req.s), m = /^data:application\/pdf;(?:[^;,]*;)?base64,(.+)$/.exec(req.data || '');
     if (!m) throw new Error('PDF 형식 오류');
     var folder = siteFolder_(r), base = '현장기록 ' + r[1].replace(/[\\\/:*?"<>|]/g, ' ') + ' ', max = -1, it = folder.getFiles();
@@ -433,7 +495,7 @@ var ACTIONS = {
     var name = base + today_() + ' v' + (max + 1) + '.pdf';
     var f = folder.createFile(Utilities.newBlob(Utilities.base64Decode(m[1]), 'application/pdf', name));
     append_('pdfs', [f.getId(), r[0], name, now_()]);
-    log_('PDF 저장', r[0], '관리', name);
+    log_('PDF 저장', r[0], who, name);
     return { name: name, url: f.getUrl() };
   },
   folder: function (req) {

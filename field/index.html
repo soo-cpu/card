@@ -210,6 +210,14 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp
 const DEF_STAGES = ["철거","설비","전기","목공","타일","도장","마감"];
 const WD = "일월화수목금토";
 let PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {}
+/* 직원 입장권 (2026-11-19): 인트라넷이 주소 맨 뒤 # 뒤에 붙여 준 5분짜리 입장권. 읽자마자 주소에서 지우고(서버·기록에 안 남음),
+   서버에 한 번 확인받아 받은 출입증을 이 탭에만(sessionStorage) 둔다. 비밀번호는 쓰지도 저장하지도 않는다. */
+const TICKET_RE = /^\d{13}\.[A-Za-z0-9_-]{1,120}\.[A-Za-z0-9_-]{16,64}\.[A-Za-z0-9_-]{43}$/;
+let TICKET = "";
+{ const m = /(?:^#|&)k=([^&]*)/.exec(location.hash || ""); if (m) { TICKET = m[1]; try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (x) {} } } }
+let TK = ""; try { TK = sessionStorage.getItem("field_tk") || ""; } catch (e) {}
+if (TK) PW = "T:" + TK; // 출입증이 있으면 그것으로 (서버에는 pw 자리에 "T:출입증")
+function tkDrop() { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (e) {} PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {} }
 let NAME = ""; try { NAME = localStorage.getItem("field_name") || ""; } catch (e) {}
 let PIN = ""; try { PIN = sessionStorage.getItem("field_pin_" + CODE) || ""; } catch (e) {}
 const PHASES = ["시공 전", "시공 중", "시공 후"];
@@ -275,7 +283,8 @@ const Local = (() => {
   function site(code) { const s = load().sites.find(x => x.code === code && !x.hidden); if (!s) throw new Error("주소를 확인해 주세요"); return s; }
   function pub(s) { const { code, name, manager, phone, address, start, end, stages, status } = s; return { code, name, manager, phone, address, start, end, stages, status, payments: s.payments || [] }; }
   function pinOk(s, d) { if (!s.pin || d.pw) return; if (!d.pin) throw new Error("PIN:"); if (String(d.pin) !== s.pin) throw new Error("PIN:번호가 맞지 않아요"); }
-  function admin(d) { if (d.pw !== PWD) throw new Error("비밀번호가 맞지 않아요"); }
+  function pvTk() { try { return sessionStorage.getItem("field_preview_tk") || ""; } catch (e) { return ""; } }
+  function admin(d) { const t = pvTk(); if (t && d.pw === "T:" + t) return; if (/^T:/.test(String(d.pw || ""))) throw new Error("직원 입장권 시간이 끝났어요"); if (d.pw !== PWD) throw new Error("비밀번호가 맞지 않아요"); }
   function bundle(code, isAdmin, seen) {
     const b = load();
     return {
@@ -290,6 +299,7 @@ const Local = (() => {
     post: d => { const s = site(d.s); pinOk(s, d); const t = nowStr(); load().posts.push({ id: uid("P"), code: s.code, date: today(), by: "c", author: d.author || "고객", stage: "", kind: d.kind || "의견", text: d.text || "", important: false, photos: d.photos || [], createdAt: t }); s.lastCustomerAt = t; save(); return {}; },
     comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); else pinOk(s, d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
     login: d => { admin(d); return {}; },
+    ticket: d => { if (!TICKET_RE.test(String(d.k || ""))) throw new Error("입장권 모양이 맞지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; }, // 미리보기: 모양만 확인
     sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
     adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: Object.assign(pub(s), { pin: s.pin || "", proj: s.proj || "" }), pinOn: !!s.pin }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
     addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: d.payments || [], pin: d.pin || "", proj: d.proj || "" }); save(); return { code }; },
@@ -421,6 +431,7 @@ async function openSite() {
   const app = $("#app");
   try { D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE }); }
   catch (e) {
+    if (ADMIN && TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return openSite(); $("#bar").innerHTML = ""; loginView("직원 입장권 시간이 끝났어요 · 인트라넷에서 다시 열거나 비밀번호로 들어가 주세요"); return; }
     if (ADMIN && /비밀번호|잠겼/.test(e.message)) { logout(); return; }
     if (!ADMIN && /^PIN:/.test(e.message)) { if (PIN) { PIN = ""; try { sessionStorage.removeItem("field_pin_" + CODE); } catch (x) {} } pinGate(e.message.slice(4)); return; }
     app.innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
@@ -600,12 +611,12 @@ function modal(html) {
 }
 
 /* ============ 관리 화면 ============ */
-function logout() { PW = ""; try { localStorage.removeItem("field_pw"); } catch (e) {} $("#bar").innerHTML = ""; loginView(); }
+function logout() { PW = ""; TK = ""; try { localStorage.removeItem("field_pw"); } catch (e) {} try { sessionStorage.removeItem("field_tk"); } catch (e) {} $("#bar").innerHTML = ""; loginView(); }
 function loginView(msg) {
   $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:380px;margin:40px auto 0"><h2>관리 화면</h2><div class="meta">회사 직원만 들어갈 수 있어요.</div><form id="lf"><label class="f">관리 비밀번호</label><input type="password" id="lp" autocomplete="current-password"><button class="btn pri big" style="margin-top:12px">들어가기</button><div class="status err" id="ls">' + esc(msg || "") + '</div></form></section>';
   $("#lf").onsubmit = async e => {
     e.preventDefault(); const pw = $("#lp").value.trim(); if (!pw) return;
-    try { await call("login", { pw }); PW = pw; try { localStorage.setItem("field_pw", pw); } catch (x) {} route(); } catch (x) { $("#ls").textContent = x.message; }
+    try { await call("login", { pw }); if (TK) { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (x) {} } PW = pw; try { localStorage.setItem("field_pw", pw); } catch (x) {} route(); } catch (x) { $("#ls").textContent = x.message; }
   };
 }
 function adminBar() {
@@ -696,7 +707,7 @@ async function listView() {
   $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><button class="btn sm" id="abOut">나가기</button></div>';
   $("#abOut").onclick = logout;
   let r;
-  try { r = await call("sites", { pw: PW }); } catch (e) { if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
+  try { r = await call("sites", { pw: PW }); } catch (e) { if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return listView(); $("#bar").innerHTML = ""; loginView("직원 입장권 시간이 끝났어요 · 인트라넷에서 다시 열거나 비밀번호로 들어가 주세요"); return; } if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
   const list = r.sites.sort((a, b) => (b.newCount - a.newCount) || (b.createdAt || "").localeCompare(a.createdAt || ""));
   let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><h1>현장 목록</h1><div class="meta">고객이 글·사진을 올리면 \'새 글\'이 붙어요.</div>';
   h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="slist">';
@@ -775,8 +786,22 @@ function loadLib() {
 }
 
 /* ============ 시작 ============ */
+/* 직원 입장권 확인: 맞으면 출입증을 이 탭에만 두고 관리 화면으로, 틀리면 예전처럼 비밀번호 화면 */
+async function ticketIn() {
+  const k = TICKET; TICKET = "";
+  let msg = "";
+  if (!TICKET_RE.test(k)) msg = "직원 입장권을 읽지 못했어요";
+  else {
+    try { const r = await call("ticket", { k }); if (!r.token) throw new Error("입장권 확인 실패"); TK = String(r.token); try { sessionStorage.setItem("field_tk", TK); } catch (e) {} PW = "T:" + TK; }
+    catch (e) { msg = "직원 입장권을 확인하지 못했어요 (" + String(e.message || "").slice(0, 60) + ")"; }
+  }
+  if (msg && PW) toast(msg + " · 저장된 비밀번호로 들어가요", 3500);
+  if (msg && !PW) return loginView(msg + " · 비밀번호로 들어가 주세요");
+  route();
+}
 function route() {
   if (ADMIN) {
+    if (TICKET) { ticketIn(); return; }
     if (!PW) return loginView();
     if (CODE) return openSite();
     listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'에서 넘어온 값으로 '현장 추가' 창 채우기

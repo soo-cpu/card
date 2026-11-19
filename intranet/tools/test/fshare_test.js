@@ -38,7 +38,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
    // p2: 코드(주소 전체) 있음 → 열기·복사
    await P.evaluate(()=>window.__hfT.open('projects','p2'));await wait(1200);
    const sh2=P.locator('#pjHub .hubshare');const n2=await sh2.count();
-   {const h=n2?await sh2.locator('a').getAttribute('href'):'';ok(tag+'p2 ‘고객 화면 열기’ = 고객 주소 (?s=24자리, admin 없음)',n2===1&&h==='https://soo-cpu.github.io/card/field/?s=AbCdEfGhIjKlMnOpQrStUv12',h);
+   {const h=n2?await sh2.locator('a:not([data-fadm])').getAttribute('href'):'';ok(tag+'p2 ‘고객 화면 열기’ = 고객 주소 (?s=24자리, admin 없음)',n2===1&&h==='https://soo-cpu.github.io/card/field/?s=AbCdEfGhIjKlMnOpQrStUv12',h);
     await P.evaluate(()=>{window.__clip='';document.addEventListener('copy',e=>{const t=e.target;window.__fb=(t&&t.value)||String(document.getSelection()||'')},true)});await sh2.locator('[data-fcopy]').click();await wait(500);const fb=await P.evaluate(()=>window.__fb||'');
     ok(tag+'복사 막힌 곳(클립보드 API 없음): 예비 복사로 고객 주소',fb==='https://soo-cpu.github.io/card/field/?s=AbCdEfGhIjKlMnOpQrStUv12',fb);
     await P.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:t=>{window.__clip=t;return Promise.resolve()}}})});await sh2.locator('[data-fcopy]').click();await wait(500);const clip=await P.evaluate(()=>window.__clip);
