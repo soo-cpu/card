@@ -8,7 +8,9 @@
   DATA/stats.json    {id: {n, med, min, max}}
   DATA/users.json    [{name, role: "staff"|"cost"}]  (비밀번호는 빌드 때 새로 만듦)
   DATA/meta.json     {priceSrc, statSrc, statSites, aboutHtml, version, procStats?}
-사용: python3 build.py DATA OUT.html PASSWORDS.md
+사용: python3 build.py DATA OUT.html PASSWORDS.md          (계정·비밀번호 새로 만듦)
+      python3 build.py DATA OUT.html --keep OLD.html OLDPW.md  (지난 파일의 계정·비밀번호 그대로, 내용만 바꿈)
+  DATA/prices.json 의 costSrc 가 있으면 화면에 원가 근거로 표시
 """
 import base64, hashlib, json, os, secrets, sys, datetime
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -31,7 +33,24 @@ def kek(pw, salt):
 def gen_pw():
     return "-".join("".join(secrets.choice(ALPHA) for _ in range(4)) for _ in range(4))
 
-def main(data_dir, out_html, pw_file):
+def reuse_keys(old_html, old_pw):
+    """지난 빌드의 열쇠 칸(slots)과 데이터 열쇠를 그대로 꺼낸다 (원가 권한자 비밀번호로 연다)."""
+    import re
+    h = open(old_html, encoding="utf-8").read()
+    old = json.loads(re.search(r'<script id="payload" type="application/json">(.*?)</script>', h, re.S).group(1).replace("<\\/", "</"))
+    rows = [re.match(r"\| (.+?) \| (.+?) \| `(.+?)` \|", l) for l in open(old_pw, encoding="utf-8")]
+    rows = [m.groups() for m in rows if m]
+    for name, role, pw in rows:
+        sid = hashlib.sha256(f"hf-dq|{old['meta']['salt']}|{name.replace(' ', '')}".encode()).hexdigest()
+        slot = old["slots"].get(sid)
+        if not slot or "c" not in slot:
+            continue
+        k = kek(pw, base64.b64decode(slot["salt"]))
+        op = lambda box: AESGCM(k).decrypt(base64.b64decode(box["iv"]), base64.b64decode(box["ct"]), None)
+        return old["slots"], old["meta"]["salt"], op(slot["s"]), op(slot["c"]), len(rows)
+    raise SystemExit("원가 권한자 비밀번호로 지난 파일을 열 수 없음")
+
+def main(data_dir, out_html, pw_file, keep_pw=None):
     L = lambda n: json.load(open(os.path.join(data_dir, n), encoding="utf-8"))
     prices, rules, recipe, stats, users, meta = (L(n) for n in
         ("prices.json", "rules.json", "recipe.json", "stats.json", "users.json", "meta.json"))
@@ -48,10 +67,17 @@ def main(data_dir, out_html, pw_file):
         "meta": {k: meta[k] for k in ("priceSrc", "statSrc", "statSites")}, "aboutHtml": meta["aboutHtml"],
         "procStats": meta.get("procStats", {}),
     }
-    cost = {"cost": {p["id"]: p["cost"] for p in prices if p.get("cost") is not None}}
-    dk_s, dk_c = AESGCM.generate_key(256), AESGCM.generate_key(256)
-    gsalt = secrets.token_hex(8)
-    slots, pw_rows = {}, []
+    cost = {"cost": {p["id"]: p["cost"] for p in prices if p.get("cost") is not None},
+            "src": {p["id"]: p["costSrc"] for p in prices if p.get("cost") is not None and p.get("costSrc")},
+            "procRate": meta.get("procCostRate", {})}
+    keep = pw_file == "--keep"
+    if keep:
+        slots, gsalt, dk_s, dk_c, nusers = reuse_keys(sys.argv[4], keep_pw)
+        users, pw_rows = [], []
+    else:
+        dk_s, dk_c = AESGCM.generate_key(256), AESGCM.generate_key(256)
+        gsalt = secrets.token_hex(8)
+        slots, pw_rows = {}, []
     for u in users:
         name = u["name"].replace(" ", "")
         pw = gen_pw()
@@ -70,6 +96,9 @@ def main(data_dir, out_html, pw_file):
     tpl = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "template.html"), encoding="utf-8").read()
     js = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
     open(out_html, "w", encoding="utf-8").write(tpl.replace("/*__PAYLOAD__*/", js))
+    if keep:
+        print(f"ok (계정 그대로 {len(slots)}명): {len(prices)} prices, {len(cost['cost'])} costs -> {out_html}")
+        return
     with open(pw_file, "w", encoding="utf-8") as f:
         f.write(f"# 상세 자동견적 {meta['version']} 계정 (대표 전용 · 공유 금지)\n\n")
         f.write("각 직원에게 본인 줄만 따로 전달하세요. 파일을 다시 빌드하면 비밀번호가 모두 바뀝니다.\n\n")
@@ -79,4 +108,7 @@ def main(data_dir, out_html, pw_file):
     print(f"ok: {len(prices)} prices, {len(cost['cost'])} costs, {len(slots)} users -> {out_html}")
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    if len(sys.argv) > 3 and sys.argv[3] == "--keep":
+        main(sys.argv[1], sys.argv[2], "--keep", sys.argv[5])
+    else:
+        main(*sys.argv[1:4])
