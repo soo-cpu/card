@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-19 v2 (이전: '현장소통 Code.gs 2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-20 v3 (이전: '현장소통 Code.gs 2026-11-19 v2', '현장소통 Code.gs 2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -22,6 +22,11 @@
  *  - 관리 요청의 pw 자리에 "T:출입증"이 오면 비밀번호 대신 인정. 그 밖의 값은 예전 그대로 비밀번호 확인(10번 틀리면 15분 잠금)
  *  - '기록' 탭의 '누가' 칸: 비밀번호로 들어오면 '관리', 입장권으로 들어오면 직원 이름
  *  - 고객 확인 번호(PIN)·횟수 제한·고객 화면 요청은 그대로
+ *
+ * v3에서 고친 것 (검토 권고 2026-11-20)
+ *  - 시간이 끝난 출입증은 '비밀번호 틀린 횟수'에 넣지 않음 (오래 열어 둔 탭을 다시 쓴 직원일 뿐 — '시간이 끝났어요' 안내만)
+ *    출입증 뒤쪽 절반에 '직원 열쇠'로 만든 서명을 넣어, 서명이 맞는 것(= 이 서버가 내준 것)만 '시간이 끝난 것'으로 봄
+ *    서명이 틀린 것·가짜·고친 출입증과 틀린 비밀번호는 예전 그대로 틀린 횟수에 들어감(10번 틀리면 15분 잠금). 출입증 모양(64자)·화면은 그대로
  */
 
 var TAB = {
@@ -44,7 +49,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 2 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 3 });
 }
 
 function doPost(e) {
@@ -134,6 +139,8 @@ function admin_(req) {
   var cache = CacheService.getScriptCache();
   var who = staffTok_(req, cache);
   if (who) return who;   // v2: 직원 출입증 (아래 비밀번호 확인·잠금은 예전 그대로)
+  // v3: 이 서버가 내준 출입증(서명 맞음)인데 캐시에서 사라진 것 = 시간이 끝난 것 → 틀린 횟수에 넣지 않음
+  if (staffTokOld_(req)) throw new Error('직원 입장권 시간이 끝났어요 (인트라넷에서 관리 화면 열기를 다시 눌러 주세요)');
   ensureSettings_();
   var fails = Number(cache.get('pwfail') || 0);
   if (fails >= 10) throw new Error('비밀번호를 여러 번 틀려 15분 동안 잠겼어요');
@@ -175,6 +182,18 @@ function staffTok_(req, cache) {
   var pw = String(req && req.pw || '');
   if (!/^T:[A-Za-z0-9]{32,80}$/.test(pw)) return '';
   return String(cache.get('tks_' + pw.slice(2)) || '');
+}
+/* v3: 출입증 = 무작위 32자 + 서명 32자. 서명 = HMAC-SHA256(직원 열쇠, "tok." + 무작위 32자)의 앞 16바이트(16진수) */
+function tokSig_(r, key) {
+  return Utilities.computeHmacSha256Signature('tok.' + r, String(key)).slice(0, 16)
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
+}
+/* pw 자리의 "T:출입증"이 이 서버가 내준 것(서명 맞음)이면 true. 열쇠가 없거나 서명이 틀리면 false → 비밀번호 확인(틀린 횟수)으로 넘어감 */
+function staffTokOld_(req) {
+  var m = /^T:([0-9a-f]{32})([0-9a-f]{32})$/.exec(String(req && req.pw || ''));
+  if (!m) return false;
+  var key = String(PropertiesService.getScriptProperties().getProperty('FIELD_STAFF_KEY') || '').trim();
+  return !!key && sameStr_(tokSig_(m[1], key), m[2]);
 }
 function site_(code) {
   if (!code || String(code).length < 20) throw new Error('주소를 확인해 주세요');
@@ -356,7 +375,8 @@ var ACTIONS = {
       if (cache.get('tkn_' + t.nonce)) throw new Error('이미 쓴 입장권이에요 (인트라넷에서 다시 열어 주세요)');
       cache.put('tkn_' + t.nonce, '1', 600);
     } finally { lock.releaseLock(); }
-    var token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+    var rnd = Utilities.getUuid().replace(/-/g, '');
+    var token = rnd + tokSig_(rnd, key);   // v3: 뒤쪽 절반은 서명 (시간이 끝난 뒤에도 이 서버가 내준 것인지 알아보려고)
     cache.put('tks_' + token, t.who, 21600);   // 6시간
     log_('직원 입장', '', t.who, '인트라넷 입장권');
     return { token: token };
