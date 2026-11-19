@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-19 v2 (이전: '현장소통 Code.gs 2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-20 v3 (이전: v2 = 2026-11-19 직원 열쇠, '현장소통 Code.gs 2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -22,6 +22,14 @@
  *  - 관리 요청의 pw 자리에 "T:출입증"이 오면 비밀번호 대신 인정. 그 밖의 값은 예전 그대로 비밀번호 확인(10번 틀리면 15분 잠금)
  *  - '기록' 탭의 '누가' 칸: 비밀번호로 들어오면 '관리', 입장권으로 들어오면 직원 이름
  *  - 고객 확인 번호(PIN)·횟수 제한·고객 화면 요청은 그대로
+ *
+ * v3에서 고친 것 (대표 지시 2026-11-20 · v2 검토 권고)
+ *  - 시간이 끝난 출입증이 비밀번호 틀린 횟수에 들어가던 문제: 6시간 지난 탭이 몇 번 요청하면 관리 비밀번호까지 15분 잠겼음
+ *  - 이제 출입증 모양("T:" + 영문·숫자 32~80자)인데 살아 있지 않으면, 비밀번호와 비교하지 않고 틀린 횟수에도 넣지 않고
+ *    '직원 입장권 시간이 끝났어요'만 돌려줌 (현장소통 화면은 이 말을 보고 비밀번호 화면을 띄움 — 화면 코드는 그대로)
+ *  - 안전: 출입증은 64자리 무작위라 맞혀 볼 수 없고, 이 모양의 값은 비밀번호로 인정하지 않으므로 이 길로 비밀번호를 추측할 수 없음
+ *    (그래서 관리 비밀번호는 'T:'로 시작하는 긴 영문·숫자로 정하지 말 것)
+ *  - 그 밖의 틀린 값('T:', 'T:abc' 같은 모양이 다른 값 포함)은 예전처럼 10번 틀리면 15분 잠금
  */
 
 var TAB = {
@@ -44,7 +52,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 2 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 3 });
 }
 
 function doPost(e) {
@@ -134,6 +142,8 @@ function admin_(req) {
   var cache = CacheService.getScriptCache();
   var who = staffTok_(req, cache);
   if (who) return who;   // v2: 직원 출입증 (아래 비밀번호 확인·잠금은 예전 그대로)
+  // v3: 출입증 모양인데 캐시에 없음(6시간 지남) → 비밀번호와 비교하지 않고, 틀린 횟수에도 넣지 않음
+  if (tokShape_(req)) throw new Error('직원 입장권 시간이 끝났어요 (인트라넷에서 다시 열거나 비밀번호로 들어가 주세요)');
   ensureSettings_();
   var fails = Number(cache.get('pwfail') || 0);
   if (fails >= 10) throw new Error('비밀번호를 여러 번 틀려 15분 동안 잠겼어요');
@@ -171,9 +181,10 @@ function ticketCheck_(k, key, nowMs) {
   return { who: whoName_(m[2]), nonce: m[3] };
 }
 /* pw 자리에 "T:출입증"이 오고 그 출입증이 캐시에 살아 있으면 직원 이름, 아니면 '' */
+function tokShape_(req) { return /^T:[A-Za-z0-9]{32,80}$/.test(String(req && req.pw || '')); }   // v3
 function staffTok_(req, cache) {
   var pw = String(req && req.pw || '');
-  if (!/^T:[A-Za-z0-9]{32,80}$/.test(pw)) return '';
+  if (!tokShape_(req)) return '';
   return String(cache.get('tks_' + pw.slice(2)) || '');
 }
 function site_(code) {

@@ -1,4 +1,4 @@
-// 현장소통 직원 열쇠·입장권 시험 (v0.99-40, 2026-11-19): node intranet/tools/test/fstaff_test.js [index.html]
+// 현장소통 직원 열쇠·입장권 시험 (v0.99-40, 2026-11-19 · 2026-11-20 Code.gs v3 기준으로 서버 8·10 고침, 10a 추가): node intranet/tools/test/fstaff_test.js [index.html]
 // 1부 서버(Code.gs · Node 틀): 입장권 확인·5분·한 번만·출입증 6시간·비밀번호 잠금·확인 번호(PIN) 그대로
 // 2부 인트라넷(가짜 저장소): 버튼 3개·관리 화면 열기·열쇠 없음 → 보통 주소·직원은 열쇠 읽기만·주소에 전화·금액·원가·열쇠 없음·가린 줄에는 버튼 없음·대표 화면 열쇠 만들기(옛 열쇠 hist)
 // 3부 현장소통 화면(field/index.html): 입장권 → 관리 화면(비밀번호 화면 없음)·주소에서 바로 지움·실패하면 비밀번호 화면·고객 화면·확인 번호·비밀번호 로그인 그대로
@@ -38,11 +38,13 @@ function part1(){ // ===== 1부: 서버 (Code.gs) =====
   const bad=S.ticket(crypto.randomBytes(32).toString('base64url')),g=S.ticket(KEY),gm=TK_RE.exec(g);
   ok('서버 6: 다른 열쇠로 만든 것·이름만 바꾼 것·시각만 바꾼 것·모양이 다른 것 거절',[bad,gm[1]+'.'+Buffer.from('최윤수').toString('base64url')+'.'+gm[3]+'.'+gm[4],(Number(gm[1])+1)+'.'+gm[2]+'.'+gm[3]+'.'+gm[4],'abc','',gm[1]+'.'+gm[2]+'.'+gm[3],g+'x'].every(k=>S.post({a:'ticket',k}).ok===false));
   ok('서버 7: 고친 뒤에도 원래 입장권은 아직 쓸 수 있음(틀린 시도가 한번값을 태우지 않음)',S.post({a:'ticket',k:g}).ok);
-  ok('서버 8: 없는 출입증·빈 값은 거절 (비밀번호 확인으로 넘어감)',[ 'T:'+'0'.repeat(64),'T:','T:null','' ].every(pw=>S.post({a:'sites',pw}).ok===false));
+  ok('서버 8: 없는 출입증·빈 값은 거절 (v3: 출입증 모양은 입장권 안내, 나머지는 비밀번호 확인)',[ 'T:'+'0'.repeat(64),'T:','T:null','' ].every(pw=>S.post({a:'sites',pw}).ok===false));
   delete S.st.cache.pwfail;
   ok('서버 9: 비밀번호 로그인 그대로',S.post({a:'login',pw:'pw-test-77'}).ok&&S.post({a:'login',pw:'pw-test-78'}).error==='비밀번호가 맞지 않아요');
   delete S.st.cache.pwfail;for(let i=0;i<10;i++)S.post({a:'login',pw:'T:'+String(i).repeat(40)});
-  ok('서버 10: 틀린 값 10번(가짜 출입증 포함) → 잠금 그대로, 맞는 비밀번호도 15분 막힘',/잠겼/.test(S.post({a:'login',pw:'pw-test-77'}).error||''));
+  ok('서버 10a: v3 — 출입증 모양 값 10번은 잠금에 안 들어감(시간이 끝난 출입증이 비밀번호를 잠그던 문제)',S.post({a:'login',pw:'pw-test-77'}).ok);
+  delete S.st.cache.pwfail;for(let i=0;i<10;i++)S.post({a:'login',pw:i%2?'x'+i:'T:bogus'+i});
+  ok('서버 10: 틀린 값 10번(모양 다른 T: 값 포함) → 잠금 그대로, 맞는 비밀번호도 15분 막힘',/잠겼/.test(S.post({a:'login',pw:'pw-test-77'}).error||''));
   ok('서버 11: 잠금 중에도 살아 있는 출입증은 통과(비밀번호 추측과 무관)',S.post({a:'sites',pw:'T:'+r1.token}).ok);
   delete S.st.cache.pwfail;
   const a=S.post({a:'addSite',pw:'T:'+r1.token,name:'시험 현장',pin:'4321',proj:'P-2611-901'});
