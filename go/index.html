@@ -61,6 +61,24 @@ body.m-thanks .thanks{display:block}
 .works span small{display:block;font-weight:400;color:var(--sub);font-size:12px}
 .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .links a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 13px}
+/* 밀어서 보는 전·후 */
+#ba{display:none}#ba.on{display:block}
+.bachips{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}
+.bachips::-webkit-scrollbar{display:none}
+.bachips button{white-space:nowrap;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:13px}
+.bachips button[aria-pressed="true"]{background:var(--deep);border-color:var(--deep);color:var(--on);font-weight:600}
+.bas{position:relative;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:var(--paper);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize;--p:50%}
+.bas img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
+.bas .bf{clip-path:inset(0 calc(100% - var(--p)) 0 0)}
+.bas .tag{position:absolute;top:10px;background:rgba(30,24,20,.72);color:#fbf8f3;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;pointer-events:none}
+.bas .tag.l{left:10px}.bas .tag.r{right:10px}
+.bas .bar{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.35);pointer-events:none}
+.bas .knob{position:absolute;top:50%;left:var(--p);width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;pointer-events:none}
+.bas .knob svg{width:22px;height:22px;stroke:#7a5f3f;fill:none;stroke-width:2}
+.bas input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;padding:0;border:0;cursor:ew-resize;pointer-events:none}
+.bas input:focus-visible+.knob{outline:3px solid var(--pt);outline-offset:2px}
+.bacap{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;margin-top:8px}
+.bacap b{font-weight:600}.bacap span{color:var(--sub)}
 /* 방문 예약 */
 .kind{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 .kind button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 8px;text-align:left;font-size:14px;font-weight:600}
@@ -150,6 +168,13 @@ details.pv{font-size:12.5px;color:var(--sub);margin:-4px 0 12px}
     <div class="links"><a href="../site/works/">시공 사례 전체 →</a><a href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew/shorts" target="_blank" rel="noopener">현장 쇼츠 영상</a><a href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집 포트폴리오</a><a href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener">인스타그램</a></div>
   </section>
 
+  <section id="ba"><div class="lb">Before &amp; After</div><h2>밀어서 보는 시공 전·후</h2><p class="lead">가운데 동그라미를 좌우로 밀어 보세요. 같은 자리에서 찍은 사진이에요.</p>
+    <div class="bachips" id="baChips" role="group" aria-label="현장 고르기"></div>
+    <div class="bas" id="bas"><img class="af" id="baA" alt=""><img class="bf" id="baB" alt=""><span class="tag l">시공 전</span><span class="tag r">시공 후</span><span class="bar"></span>
+      <input type="range" min="0" max="100" value="50" id="baR" aria-label="시공 전과 후 비교. 왼쪽으로 밀면 시공 후, 오른쪽으로 밀면 시공 전이 넓어져요"><span class="knob" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg></span></div>
+    <div class="bacap"><b id="baN"></b><span id="baH"></span></div>
+  </section>
+
   <hr class="sp">
   <section id="book"><div class="lb">Booking</div><h2>방문 상담 신청</h2><p class="lead">원하시는 날짜와 시간을 고르고 이름·연락처만 남겨 주세요. 담당 실장이 확인한 뒤 전화로 확정해 드려요. 평일 저녁과 주말은 100% 예약제로 열어요.</p>
     <div class="kind" role="group" aria-label="상담 방법">
@@ -222,6 +247,7 @@ details.pv{font-size:12.5px;color:var(--sub);margin:-4px 0 12px}
 
 <a class="fab" href="#book"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4V5a1 1 0 0 1 1-1z"/></svg>상담 신청</a>
 
+<script src="ba/list.js"></script>
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)};
@@ -288,6 +314,28 @@ $('bk').addEventListener('submit',function(e){e.preventDefault();var f=e.target,
      msg.textContent=label()+' 신청을 받았어요. 담당 실장이 확인하고 전화로 확정해 드릴게요.'})
    .catch(function(){btn.disabled=false;btn.textContent='이 시간으로 신청하기';msg.innerHTML='보내지 못했어요. <a href="tel:15665904">1566-5904</a>로 전화 주세요.'})});
 
+/* ── 5. 밀어서 보는 시공 전·후 (사진 목록: ba/list.js) ── */
+(function(){var demo=/[?&]demo=1/.test(location.search),L=(window.BA||[]).slice();if(!L.length&&demo)L=window.BA_DEMO||[];if(!L.length)return;
+  var box=$('bas'),r=$('baR'),chips=$('baChips'),cur=-1;
+  function set(v){v=Math.max(0,Math.min(100,v));box.style.setProperty('--p',v+'%');r.value=v}
+  function show(i){if(i===cur)return;cur=i;var x=L[i];$('baB').src='ba/'+x.before;$('baA').src='ba/'+x.after;
+    $('baB').alt=x.name+' '+(x.room||'')+' 시공 전';$('baA').alt=x.name+' '+(x.room||'')+' 시공 후';
+    $('baN').textContent=x.name+(x.room?' · '+x.room:'');$('baH').textContent=x.demo?'예시 화면 (왼쪽은 실제 전 사진이 아니에요)':(i+1)+' / '+L.length;
+    chips.querySelectorAll('button').forEach(function(b,k){b.setAttribute('aria-pressed',k===i?'true':'false')});set(50)}
+  if(L.length>1)L.forEach(function(x,i){var b=document.createElement('button');b.type='button';b.textContent=x.name+(x.room?' '+x.room:'');b.onclick=function(){show(i)};chips.appendChild(b)});
+  /* 손가락·마우스로 밀기. 세로로 움직이면 화면 스크롤이 그대로 됨 */
+  var drag=false;function at(e){var b=box.getBoundingClientRect();set((e.clientX-b.left)/b.width*100)}
+  box.addEventListener('pointerdown',function(e){drag=true;try{box.setPointerCapture(e.pointerId)}catch(_){}at(e)});
+  box.addEventListener('pointermove',function(e){if(drag)at(e)});
+  ['pointerup','pointercancel'].forEach(function(n){box.addEventListener(n,function(){drag=false})});
+  r.addEventListener('input',function(){set(+r.value)});
+  box.addEventListener('keydown',function(e){if(e.key==='ArrowLeft')set(+r.value-5);if(e.key==='ArrowRight')set(+r.value+5)});
+  r.style.pointerEvents='none';box.tabIndex=0;box.setAttribute('role','group');box.setAttribute('aria-label','시공 전·후 비교. 좌우 화살표로 움직여요');
+  $('ba').classList.add('on');show(0);
+  /* 처음 보일 때 한 번 살짝 움직여 밀 수 있다는 걸 알려 줌 */
+  if('IntersectionObserver' in window&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var io=new IntersectionObserver(function(en){if(!en[0].isIntersecting)return;io.disconnect();
+    var t0=null;requestAnimationFrame(function st(t){if(drag)return;t0=t0||t;var k=(t-t0)/1100;if(k>=1){set(50);return}set(50+Math.sin(k*Math.PI*2)*14);requestAnimationFrame(st)})},{threshold:.6});io.observe(box)}
+})();
 /* ── 4. 주소 복사 ── */
 document.querySelectorAll('[data-copy]').forEach(function(b){b.onclick=function(){var t=b.getAttribute('data-copy'),done=function(){b.textContent='복사됐어요';setTimeout(function(){b.textContent='주소 복사'},1600)};
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(done,function(){prompt('주소를 길게 눌러 복사하세요',t)});else prompt('주소를 길게 눌러 복사하세요',t)}});
