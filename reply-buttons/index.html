@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="답장 버튼판">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1F4E79">
+<link rel="apple-touch-icon" href="../site/images/apple-touch-icon.png">
+<link rel="icon" href="../site/images/favicon-32.png">
+<title>답장 버튼판</title>
+<style>
+:root{
+  --navy:#1F4E79; --deep:#203864; --yellow:#FFC000; --bg:#F2F2F2; --card:#FFFFFF;
+  --line:#D9DEE5; --text:#111111; --sub:#5F6B78; --soft:#D1E3F3; --mark:#FFF1C2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --navy:#7FB2E5; --deep:#0F1B2E; --bg:#0E141C; --card:#18212D; --line:#2B3746;
+    --text:#ECEFF3; --sub:#9AA7B6; --soft:#1E3550; --mark:#4A3D12;
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#7FB2E5; --deep:#0F1B2E; --bg:#0E141C; --card:#18212D; --line:#2B3746;
+  --text:#ECEFF3; --sub:#9AA7B6; --soft:#1E3550; --mark:#4A3D12;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:"Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  font-size:16px;line-height:1.55;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--deep);color:#fff;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+header h1{margin:0 0 8px;font-size:19px;letter-spacing:-.3px}
+header h1 small{font-weight:400;opacity:.75;font-size:13px;margin-left:6px}
+#q{width:100%;font-size:16px;padding:10px 12px;border-radius:10px;border:0;outline:none;background:#fff;color:#111}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--text);
+  border-radius:999px;padding:6px 12px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+:root[data-theme="dark"] .chip[aria-pressed="true"]{color:#0E141C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#0E141C}}
+main{padding:8px 16px;max-width:640px;margin:0 auto}
+.recent{font-size:13px;color:var(--sub);margin:6px 0 2px}
+.recent button{border:0;background:none;color:var(--navy);text-decoration:underline;font-size:13px;padding:2px 4px}
+.sit{scroll-margin-top:110px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin:8px 0;overflow:hidden}
+.sit>button.head{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;
+  padding:13px 14px;cursor:pointer}
+.num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--soft);color:var(--navy);
+  font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ttl{flex:1;font-weight:700;font-size:16px}
+.ttl span{display:block;font-weight:400;font-size:13px;color:var(--sub)}
+.arrow{flex:none;color:var(--sub);transition:transform .15s}
+.sit.open .arrow{transform:rotate(90deg)}
+.body{display:none;padding:0 12px 12px}
+.sit.open .body{display:block}
+.rep{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:var(--card)}
+.rep:active{transform:scale(.99)}
+.rep .lab{font-size:12px;color:var(--sub);margin-bottom:4px;display:flex;justify-content:space-between}
+.rep .lab b{color:var(--navy)}
+.rep .txt{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font-size:15px}
+.rep.best{border:2px solid var(--yellow);background:var(--mark)}
+.rep.best .lab{color:var(--text);font-weight:700;font-size:13px}
+.fill{background:var(--soft);border-radius:4px;padding:0 2px}
+.note{font-size:12px;color:var(--sub);margin:8px 2px 0}
+.empty{color:var(--sub);text-align:center;padding:30px 0}
+details.set{max-width:640px;margin:16px auto 0;padding:0 16px}
+details.set summary{color:var(--sub);font-size:14px;cursor:pointer;padding:8px 0}
+.setbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px}
+.setbox label{display:block;margin:8px 0 4px;color:var(--sub)}
+.setbox select,.setbox input{width:100%;font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.setbox p{margin:10px 0 0;color:var(--sub);font-size:13px}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:#111;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;
+  transition:all .2s;max-width:calc(100% - 32px);text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{text-align:center;color:var(--sub);font-size:12px;margin:24px 16px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>답장 버튼판 <small>카톡 · 문자</small></h1>
+  <input id="q" type="search" placeholder="상황 찾기 (예: 하자, 입금, 골프)" autocomplete="off">
+</header>
+<nav class="chips" id="chips" aria-label="분류"></nav>
+<main>
+  <div class="recent" id="recent" hidden></div>
+  <div id="list"></div>
+  <p class="note">누르면 바로 복사됩니다. 파란 칸(○)만 고쳐서 보내세요. 금액·비율은 2026-11-18 대표 결정 기준(부가세 별도).</p>
+</main>
+<details class="set">
+  <summary>설정 (회사 이름 · 보내는 사람)</summary>
+  <div class="setbox">
+    <label for="co">고객에게 쓰는 회사 이름</label>
+    <select id="co">
+      <option value="ártico studio">ártico studio (대표 결정 11-18)</option>
+      <option value="아르띠꼬 스튜디오">아르띠꼬 스튜디오 (문자에서 á가 깨질 때)</option>
+      <option value="홈퍼니싱 아르띠꼬스튜디오">홈퍼니싱 아르띠꼬스튜디오 (인트라넷 문자 6종과 같게)</option>
+    </select>
+    <label for="nm">보내는 사람</label>
+    <input id="nm" type="text" value="최윤수">
+    <p>관공서·업체 답장은 늘 '홈퍼니싱'으로 나갑니다. 설정은 이 휴대폰에만 저장됩니다.</p>
+  </div>
+</details>
+<footer>ⓒ HOME FURNISHING CO. all rights reserved.</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* 답장 버튼판 2026-11-21 v0
+   {회사} = 설정의 회사 이름, {법인} = 홈퍼니싱, {이름} = 보내는 사람
+   ○ 가 들어간 곳 = 보내기 전에 고칠 칸
+   best = 추천 (0 짧게 / 1 정중하게 / 2 거절·어려울 때) */
+var CATS = ["전체","상담","공사 중","돈","업체·관공서","모임"];
+var S = [
+{id:"est", cat:"상담", t:"견적 문의 (전체 리모델링)", d:"처음 연락 온 고객", best:1, r:[
+"안녕하세요, {회사} {이름}입니다. 문의 감사합니다.\n단지명, 평형, 공사 범위, 희망 시기 알려 주시면 대략 범위부터 안내드릴게요.",
+"안녕하세요, {회사} {이름}입니다. 문의 주셔서 감사합니다.\n정확하게 안내드리려고 몇 가지만 여쭤볼게요.\n1. 단지명과 평형, 욕실 개수\n2. 공사 범위 (전체 / 부분이면 어디)\n3. 입주나 이사 날짜\n4. 생각하시는 예산\n거실·주방·욕실 사진 2~3장 같이 보내 주시면 비슷한 시공 사례와 대략 범위를 먼저 보내 드릴게요. 실측은 비용 없이 방문드립니다.\n통화가 편하시면 1566-5904로 연락 주세요.",
+"문의 감사합니다. {회사} {이름}입니다.\n말씀하신 지역은 저희가 시공하는 범위(경기 동북부·서울)에서 멀어서, 이번에는 진행이 어렵습니다. 가까운 곳에서 좋은 업체 만나시길 바랍니다."
+]},
+{id:"part", cat:"상담", t:"부분 공사 문의 (욕실·주방)", d:"도배만·바닥만은 거절 칸", best:1, r:[
+"부분 공사 문의 감사합니다.\n주소와 평형, 공사할 곳, 그 공간 사진 1~2장 보내 주시면 범위 잡아서 안내드릴게요.",
+"안녕하세요, {회사} {이름}입니다. 부분 공사 문의 감사합니다.\n욕실 1곳을 전체 철거하고 새로 하면 보통 450~600만 원 선이고(부가세 별도), 정확한 금액은 실측 후에 나옵니다.\n아래만 알려 주세요.\n1. 주소와 평형\n2. 공사할 곳과 개수 (예: 욕실 2곳)\n3. 지금 모습 사진 1~2장\n4. 희망 시기와 예산",
+"문의 감사합니다. {회사} {이름}입니다.\n저희는 공정끼리 일정과 마감을 한 팀이 같이 맞춰야 결과가 깔끔해서, 도배나 바닥 하나만 하는 공사는 하지 않고 있어요. 부분 공사는 5개 공정 이상, 공사비 1,500만 원(부가세 별도) 이상부터 맡고 있습니다.\n나중에 몇 가지를 같이 하시게 되면 꼭 다시 연락 주세요."
+]},
+{id:"py", cat:"상담", t:"\"평당 얼마예요?\"", d:"금액만 먼저 묻는 고객", best:1, r:[
+"최근 현장 기준으로 전체 리모델링은 평당 150~190만 원 정도(부가세 별도, 샷시 제외)가 제일 많았어요.\n범위 알려 주시면 공정별로 나눠서 보여 드릴게요.",
+"평당으로 딱 잘라 말씀드리기가 조심스러운 게, 같은 평수라도 욕실을 새로 하는지, 샷시가 들어가는지에 따라 차이가 크게 나서요.\n저희 최근 현장 기준으로 전체 리모델링은 평당 150~190만 원 정도(부가세 별도, 샷시 제외)가 제일 많았습니다. 32평이면 대략 4,800~6,100만 원 선이고, 샷시까지 하면 평당 45만 원 정도 더 붙어요.\n도배·바닥·필름 위주로 가볍게 하시면 이보다 많이 내려갑니다.\n어디까지 하실지 알려 주시면 공정별로 나눠서 보여 드릴게요. 다른 곳과 비교하실 때도 그게 편하세요.",
+"평당 숫자 하나로만 비교하시면 철거·폐기물·욕실 방수처럼 빠진 항목 때문에 오히려 손해 보실 수 있어서, 숫자 하나로는 말씀드리기 어렵습니다.\n단지와 평형, 범위만 알려 주시면 공정별 금액으로 바로 정리해 드릴게요."
+]},
+{id:"visit", cat:"상담", t:"실측 일정 잡기", d:"방문 날짜 제안", best:0, r:[
+"실측은 30분~1시간 정도 걸리고 비용은 없어요.\n○요일 오전이나 ○요일 오후 중 언제가 편하세요?",
+"안녕하세요, {회사} {이름}입니다.\n실측은 30분~1시간 정도 걸리고 비용 없이 방문드립니다. 결정하시는 분이 같이 계시면 그 자리에서 궁금한 걸 다 정리할 수 있어서 좋아요.\n○월 ○일 ○시나 ○월 ○일 ○시 중 편하신 때 알려 주세요.\n주차 가능한 곳과 공동현관 출입 방법만 미리 알려 주시고, 현관 비밀번호는 문자로 보내지 마세요. 전날 한 번 더 연락드리겠습니다.",
+"말씀하신 날은 이미 다른 현장 일정이 잡혀 있어서 방문이 어렵습니다.\n대신 ○월 ○일 ○시나 ○월 ○일 ○시는 가능한데, 어느 쪽이 괜찮으세요?"
+]},
+{id:"move", cat:"상담", t:"일정 변경 요청", d:"실측·미팅·공사 날짜 바꾸기", best:0, r:[
+"네, 변경 괜찮습니다.\n편하신 날짜와 시간 2~3개 알려 주시면 맞춰서 다시 잡을게요.",
+"일정 변경 말씀 잘 받았습니다.\n가능하신 날짜와 시간대를 2~3개 알려 주시면 담당 실장 일정과 맞춰 새로 잡고, 정해지면 바로 문자 드리겠습니다.\n공사 일정이 바뀌는 경우에는 뒤 공정과 관리사무소 신고도 같이 조정해야 해서, 확정까지 하루 정도 걸릴 수 있어요.",
+"말씀하신 날로 옮기면 뒤 공정(○○)이 같이 밀려서 준공일이 늦어집니다. 그래서 그날은 어렵겠습니다.\n대신 ○월 ○일이나 ○월 ○일은 가능하니 편하신 쪽 알려 주세요."
+]},
+{id:"quote", cat:"상담", t:"\"견적서 언제 와요?\"", d:"실측 후 3~5영업일", best:1, r:[
+"실측 내용으로 정리하고 있고, ○요일까지 보내드릴게요.",
+"기다리게 해 드려 죄송합니다.\n실측 내용으로 공정별 견적을 정리하고 있고, ○요일까지 마무리해서 직접 설명드리겠습니다. 설명은 20분 정도면 되는데, 통화와 방문 중 편하신 쪽 알려 주세요.\n파일은 설명드린 뒤에 바로 보내드립니다.",
+"죄송합니다. ○○ 치수 확인이 하루 더 필요해서 처음 말씀드린 날보다 하루 늦어지겠습니다.\n○요일 오후까지는 꼭 보내드리겠습니다."
+]},
+{id:"dc", cat:"돈", t:"할인 요청", d:"\"좀 깎아 주세요\"", best:1, r:[
+"금액이 부담되시는 거 이해합니다.\n금액만 낮추기보다 범위나 자재를 조정한 안을 두 가지 만들어 보내드릴게요.",
+"예산이 부담되시는 거 충분히 이해합니다.\n다만 금액만 빼면 자재나 인건비에서 빠질 수밖에 없어서, 그 방법은 권해 드리기 어렵습니다.\n대신 욕실 한 곳을 덧방으로 바꾸거나 주방 상판을 한 단계 조정하는 식으로, 범위와 자재로 맞춘 안을 ○요일까지 정리해 드릴게요.\n견적은 부가세 별도이고, 세금계산서나 현금영수증은 꼭 발행해 드립니다.",
+"이번 견적은 꼭 필요한 항목만 넣은 금액이라 더 낮추기는 어렵습니다.\n범위를 줄이는 방법은 언제든 같이 봐 드릴게요."
+]},
+{id:"paid", cat:"돈", t:"입금 확인 (결제 확인)", d:"계약금·중도금·잔금", best:1, r:[
+"입금 확인했습니다. 감사합니다.",
+"○○님, ○○(계약금 / 중도금 / 잔금) ○○원 입금 확인했습니다. 감사합니다.\n세금계산서(또는 현금영수증)는 오늘 발행해 드리겠습니다.",
+"아직 입금 확인이 안 되고 있습니다.\n보내신 계좌가 계약서에 적힌 회사 계좌가 맞는지 한 번만 봐 주시겠어요? 다른 계좌로 안내받으셨다면 입금하지 마시고 1566-5904로 먼저 전화 주세요."
+]},
+{id:"next", cat:"돈", t:"다음 결제 일정 문의", d:"대금 20 / 35 / 35 / 10", best:1, r:[
+"대금은 계약 때 20%, 착공 때 35%, 공정 절반쯤 35%, 잔금 10%는 준공 검수와 하자 조치가 끝난 뒤에 받습니다.",
+"다음은 ○○(중도금 1차 / 중도금 2차 / 잔금) ○○원이고, ○월 ○일 예정입니다.\n계좌는 계약서에 적힌 회사 계좌 그대로이고, 입금하시면 세금계산서(또는 현금영수증)를 발행해 드립니다.\n다른 계좌로 안내가 오면 입금하지 마시고 꼭 저희에게 먼저 전화 주세요.",
+"중도금 날짜가 미뤄지면 자재 주문이 늦어져 공정이 같이 밀릴 수 있어서, 계약서 날짜대로 부탁드립니다.\n사정이 있으시면 통화로 한 번 같이 맞춰 보겠습니다."
+]},
+{id:"prog", cat:"공사 중", t:"공사 진행 상황 문의", d:"\"지금 어디까지 됐어요?\"", best:1, r:[
+"오늘 ○○ 작업 진행 중이고 일정대로 가고 있습니다.\n저녁에 사진 보내드릴게요.",
+"지금 ○○ 공정 진행 중이고, 준공 예정일 ○월 ○일은 그대로입니다.\n오늘 작업 사진은 저녁에 고객 공유 페이지에 올려 드리고, 다음 공정은 ○○부터 들어갑니다.\n현장에 와 보고 싶으시면 미리 말씀 주세요. 안전 때문에 담당자가 같이 있겠습니다.",
+"○○ 자재 입고가 ○일 늦어져서 ○○ 공정이 하루 밀렸습니다. 죄송합니다.\n뒤 공정을 당겨서 준공일은 그대로 맞추겠습니다. 바뀌는 게 생기면 바로 말씀드리겠습니다."
+]},
+{id:"add", cat:"공사 중", t:"추가 공사 요청", d:"\"하는 김에 이것도\"", best:1, r:[
+"가능합니다. 추가 공사라서 금액과 일정 먼저 정리해 보내드리고, 확인해 주시면 진행할게요.",
+"○○ 추가는 가능합니다.\n사진과 금액(부가세 별도), 일정이 얼마나 바뀌는지 정리해서 오늘 중으로 보내드릴게요.\n문자로 확인해 주시면 그때 진행하고, 확인 전에는 시공하지 않습니다.",
+"말씀하신 ○○는 지금 공정에서는 넣기 어렵습니다. 이미 ○○ 작업이 끝나서 다시 뜯어야 하고, 비용과 기간이 많이 늘어납니다.\n준공 후에 따로 하시는 방법으로 안내드릴게요."
+]},
+{id:"noise", cat:"공사 중", t:"소음 항의 (이웃·관리사무소)", d:"사과 + 시간 약속", best:1, r:[
+"시끄럽게 해 드려 죄송합니다.\n소음 큰 작업은 ○시~○시 사이에만 하도록 현장에 바로 전달하겠습니다.",
+"공사로 불편 드려 정말 죄송합니다.\n철거처럼 소음이 큰 작업은 ○월 ○일까지이고, 관리사무소에 신고한 공사 시간(평일 ○시~○시) 안에서만 하겠습니다. 주말과 이른 아침에는 작업하지 않도록 현장에 다시 확인했습니다.\n불편한 점 있으시면 이 번호나 1566-5904로 바로 말씀 주세요.",
+"불편 드려 죄송합니다.\n다만 관리사무소에 신고하고 동의를 받아 진행하는 공사라 공사를 멈추기는 어렵습니다.\n대신 소음이 큰 작업은 ○시~○시 사이로 몰아서 하고, ○월 ○일이면 끝난다는 점 말씀드립니다."
+]},
+{id:"defect", cat:"공사 중", t:"하자 접수", d:"당일 회신 · 3일 안 방문", best:1, r:[
+"불편 드려 죄송합니다.\n그 부분 사진 몇 장 보내 주시면 오늘 안에 확인하고 방문 일정 잡아 드릴게요.",
+"불편 드려 죄송합니다.\n말씀하신 ○○ 부분 사진 2~3장 보내 주시면 오늘 안에 확인해서 연락드리고, 3일 안에 방문해서 보겠습니다.\n준공일부터 1년 안의 하자는 무상으로 보수해 드립니다.",
+"공사하신 지 1년이 지나 무상 보수 기간은 끝났지만, 저희가 시공한 곳이라 먼저 가서 봐 드릴게요.\n비용이 드는 경우에는 미리 금액을 말씀드리고 진행하겠습니다."
+]},
+{id:"urgent", cat:"공사 중", t:"누수·전기 긴급", d:"당일 방문", best:1, r:[
+"바로 확인하겠습니다. 오늘 안에 방문드릴게요.\n그 전까지 물이면 세대 수도 밸브를, 전기면 해당 차단기를 내려 주세요.",
+"많이 놀라셨죠. 누수·전기 문제는 오늘 바로 방문드립니다.\n도착 전까지 물이 계속 나오면 세대 수도 밸브를 잠가 주시고, 전기 문제면 분전함에서 해당 차단기를 내려 주세요.\n사진이나 영상 하나만 보내 주시면 맞는 기사님과 같이 가겠습니다. 급하시면 1566-5904로 바로 전화 주세요.",
+"지금 기사님이 다른 현장에 나가 있어서 ○시쯤 도착 예정입니다. 늦어져서 죄송합니다.\n그 전까지 밸브(차단기)는 내려 두시고, 아랫집 피해가 보이면 바로 말씀 주세요. 같이 확인하겠습니다."
+]},
+{id:"works", cat:"상담", t:"시공 사례·회사소개서 요청", d:"링크 보내기", best:1, r:[
+"시공 사례는 여기 모아 두었습니다.\nhttps://soo-cpu.github.io/card/site/works/",
+"요청하신 회사소개서 보내드립니다.\nhttps://soo-cpu.github.io/card/site/files/company-profile.pdf\n시공 사례는 여기 있습니다.\nhttps://soo-cpu.github.io/card/site/works/\n비슷한 평형이나 단지 사례가 더 필요하시면 말씀해 주세요. 골라서 보내드리겠습니다.",
+"다른 고객님 댁 주소나 동·호수는 알려 드릴 수 없습니다.\n대신 비슷한 평형 사진으로 골라서 보내드릴게요."
+]},
+{id:"gov", cat:"업체·관공서", t:"관공서·학교 견적 문의", d:"회사 이름은 홈퍼니싱", best:1, r:[
+"네, {법인}입니다. 문의 감사합니다.\n공사 장소와 대략 범위, 예산 집행 기한 알려 주시면 맞춰서 준비하겠습니다.",
+"문의 감사합니다. {법인} {이름}입니다.\n공사 장소, 대략 범위, 예산 집행 기한, 견적서와 서류를 받으실 형식 알려 주시면 맞춰서 준비하겠습니다.\n현장 확인 후 2~3영업일 안에 견적서 드리고, 금액 기준 안이면 수의계약도 가능합니다.\n사업자등록증 등 필요한 서류 목록 주시면 한 번에 보내드리겠습니다.",
+"연락 주셔서 감사합니다. {법인} {이름}입니다.\n말씀하신 일정(○월 ○일 준공)으로는 공정을 안전하게 맞추기 어려워 이번에는 참여가 어렵습니다.\n다음에 기회 주시면 꼭 함께하겠습니다."
+]},
+{id:"b2bq", cat:"업체·관공서", t:"업체 단가 문의", d:"다른 업체가 우리 단가를 물을 때", best:1, r:[
+"문의 감사합니다.\n도면이나 물량표 보내 주시면 검토해서 견적으로 회신드리겠습니다.",
+"{법인} {이름}입니다. 문의 감사합니다.\n단가는 현장 조건과 물량에 따라 달라서 단가표로 따로 드리지는 않고 있습니다.\n현장 위치, 공종, 물량(도면·물량표), 공사 시기를 보내 주시면 검토해서 ○일 안에 견적으로 회신드리겠습니다.",
+"죄송하지만 저희 단가는 외부에 따로 공유하지 않고 있습니다.\n현장 단위 견적이 필요하시면 자료 주실 때 검토해 보겠습니다."
+]},
+{id:"b2bs", cat:"업체·관공서", t:"업체 영업 제안", d:"자재·협력업체가 단가표를 보낼 때", best:0, r:[
+"자료 감사합니다. 검토해 보고 필요할 때 연락드리겠습니다.",
+"보내 주신 자료 잘 받았습니다.\n지금은 거래 중인 업체와 진행하는 현장이 있어 바로 바꾸기는 어렵고, 새 현장 견적 때 같이 비교해 보겠습니다. 필요하면 제가 먼저 연락드리겠습니다.",
+"연락 감사합니다.\n지금은 거래하는 업체로 충분해서 새 거래는 생각하지 않고 있습니다. 이 건으로는 더 연락 주지 않으셔도 됩니다."
+]},
+{id:"sg18", cat:"모임", t:"상공18기 공지", d:"모임·행사 참석 회신", best:0, r:[
+"참석하겠습니다. 공지 감사합니다.",
+"총무님, 공지 감사합니다. ○월 ○일 모임 참석하겠습니다.\n회비는 ○일까지 보내겠습니다. 준비하시느라 고생 많으십니다.",
+"공지 감사합니다. 그날 현장 일정이 겹쳐서 이번에는 참석이 어렵겠습니다.\n다음 모임에는 꼭 가겠습니다. 즐거운 시간 되세요."
+]},
+{id:"amp", cat:"모임", t:"AMP 골프회 공지", d:"라운딩 참석 회신", best:0, r:[
+"참석합니다. 감사합니다.",
+"공지 감사합니다. ○월 ○일 라운딩 참석하겠습니다.\n조 편성과 회비는 공지대로 따르겠습니다. 준비하시는 분들 고생 많으십니다.",
+"공지 감사합니다. 이번 라운딩은 일정이 겹쳐 참석이 어렵겠습니다.\n다음에는 꼭 나가겠습니다. 좋은 날씨에 즐거운 라운딩 되세요."
+]}
+];
+var LABELS = ["짧게","정중하게","거절·어려울 때"];
+
+var store = {
+  get:function(k,d){try{var v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var cat = "전체", openId = null;
+var $ = function(id){return document.getElementById(id)};
+var coSel = $("co"), nmIn = $("nm");
+coSel.value = store.get("rb_co","ártico studio");
+if(!coSel.value) coSel.value = "ártico studio";
+nmIn.value = store.get("rb_nm","최윤수");
+
+function fill(t){
+  var name = (nmIn.value||"").trim();
+  return t.replace(/\{회사\}/g, coSel.value)
+          .replace(/\{법인\}/g, "홈퍼니싱")
+          .replace(/ ?\{이름\}/g, name ? " "+name : "");
+}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
+function mark(s){return esc(s).replace(/○+/g,function(m){return '<span class="fill">'+m+'</span>'})}
+
+function renderChips(){
+  $("chips").innerHTML = CATS.map(function(c){
+    return '<button class="chip" aria-pressed="'+(c===cat)+'" data-c="'+c+'">'+c+'</button>';
+  }).join("");
+}
+function renderRecent(){
+  var ids = store.get("rb_recent","").split(",").filter(Boolean);
+  var items = ids.map(function(id){return S.filter(function(s){return s.id===id})[0]}).filter(Boolean);
+  var box = $("recent");
+  if(!items.length){box.hidden=true;return}
+  box.hidden=false;
+  box.innerHTML = "최근 쓴 것: " + items.map(function(s){
+    return '<button data-go="'+s.id+'">'+esc(s.t.replace(/"/g,""))+'</button>';
+  }).join(" ");
+}
+function render(){
+  var q = $("q").value.trim();
+  var rows = S.map(function(s,i){return {s:s,i:i}}).filter(function(o){
+    if(cat!=="전체" && o.s.cat!==cat) return false;
+    if(!q) return true;
+    var hay = (o.s.t+" "+o.s.d+" "+o.s.cat+" "+o.s.r.join(" ")).replace(/\s/g,"");
+    return hay.indexOf(q.replace(/\s/g,""))>=0;
+  });
+  if(!rows.length){$("list").innerHTML='<p class="empty">맞는 상황이 없어요. 다른 말로 찾아 보세요.</p>';return}
+  $("list").innerHTML = rows.map(function(o){
+    var s=o.s, isOpen = openId===s.id;
+    var order = [s.best].concat([0,1,2].filter(function(k){return k!==s.best}));
+    var reps = order.map(function(k,n){
+      var txt = fill(s.r[k]);
+      var has = txt.indexOf("○")>=0;
+      var lab = n===0
+        ? '<span>형, 이거 추천해요 · '+LABELS[k]+'</span><span>눌러서 복사</span>'
+        : '<span><b>'+LABELS[k]+'</b></span><span>'+(has?'○ 칸 고치기':'')+'</span>';
+      return '<button class="rep'+(n===0?' best':'')+'" data-id="'+s.id+'" data-k="'+k+'">'+
+        '<div class="lab">'+lab+'</div><div class="txt">'+mark(txt)+'</div></button>';
+    }).join("");
+    return '<section class="sit'+(isOpen?' open':'')+'" id="s-'+s.id+'">'+
+      '<button class="head" data-open="'+s.id+'" aria-expanded="'+isOpen+'">'+
+      '<span class="num">'+(o.i+1)+'</span><span class="ttl">'+esc(s.t)+'<span>'+esc(s.d)+'</span></span>'+
+      '<span class="arrow">&#9654;</span></button><div class="body">'+reps+'</div></section>';
+  }).join("");
+}
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(toast._h);toast._h=setTimeout(function(){t.classList.remove("on")},1800)}
+function copy(text){
+  function fallback(){
+    var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");
+    ta.style.position="fixed";ta.style.top="-1000px";document.body.appendChild(ta);
+    ta.select();ta.setSelectionRange(0,text.length);
+    var ok=false;try{ok=document.execCommand("copy")}catch(e){}
+    document.body.removeChild(ta);return ok;
+  }
+  if(navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(text).then(function(){return true},function(){return fallback()});
+  }
+  return Promise.resolve(fallback());
+}
+function remember(id){
+  var ids = store.get("rb_recent","").split(",").filter(function(x){return x&&x!==id});
+  ids.unshift(id); store.set("rb_recent", ids.slice(0,3).join(",")); renderRecent();
+}
+document.addEventListener("click",function(e){
+  var el = e.target.closest("button"); if(!el) return;
+  if(el.dataset.c){cat=el.dataset.c;renderChips();render();return}
+  if(el.dataset.open){openId = openId===el.dataset.open?null:el.dataset.open;render();
+    if(openId){var o=$("s-"+openId); if(o) o.scrollIntoView({block:"start",behavior:"smooth"})} return}
+  if(el.dataset.go){cat="전체";$("q").value="";openId=el.dataset.go;renderChips();render();
+    var n=$("s-"+openId); if(n) n.scrollIntoView({block:"start",behavior:"smooth"}); return}
+  if(el.dataset.id){
+    var s=S.filter(function(x){return x.id===el.dataset.id})[0];
+    var txt=fill(s.r[+el.dataset.k]);
+    copy(txt).then(function(ok){
+      if(ok){toast(txt.indexOf("○")>=0?"복사했어요. ○ 칸만 고쳐서 보내세요":"복사했어요. 붙여 넣고 보내세요");remember(s.id)}
+      else toast("복사가 막혔어요. 글을 길게 눌러 복사해 주세요");
+    });
+  }
+});
+$("q").addEventListener("input",function(){openId=null;render()});
+coSel.addEventListener("change",function(){store.set("rb_co",coSel.value);render()});
+nmIn.addEventListener("input",function(){store.set("rb_nm",nmIn.value);render()});
+renderChips();renderRecent();render();
+</script>
+</body>
+</html>
