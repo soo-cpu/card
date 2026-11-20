@@ -351,7 +351,7 @@ var f=document.getElementById('f'),msg=document.getElementById('msg'),btn=f.quer
 f.addEventListener('submit',function(e){e.preventDefault();
   if(!f.elements['개인정보동의'].checked){msg.textContent='개인정보 수집·이용에 동의해야 접수됩니다.';return}
   if(!f.checkValidity()){msg.textContent='이름과 연락처를 확인해 주세요.';f.reportValidity();return}
-  var d=new FormData(f);d.append('_subject','[홈페이지 상담] '+d.get('이름'));d.append('_template','table');
+  var d=new FormData(f);d.append('_subject','[홈페이지 상담] '+d.get('이름'));d.append('_template','table');try{var fr=new URLSearchParams(location.search).get('from')||localStorage.getItem('artico_from');var FN={desk:'QR·상담석',window:'QR·매장 밖',site:'QR·공사 현장',thanks:'QR·감사 카드',sticker:'QR·스티커'};if(fr)d.append('들어온 경로',FN[fr]||('QR·'+fr.slice(0,24)))}catch(e){}
   btn.disabled=true;btn.textContent='보내는 중…';
   fetch('https://formsubmit.co/ajax/artico_studio@naver.com',{method:'POST',headers:{'Accept':'application/json'},body:d})
    .then(function(r){return r.json()}).then(function(j){if(String(j.success)!=='true')throw 0;f.reset();msg.textContent='접수되었습니다. 하루 안에 연락드리겠습니다.';btn.textContent='접수 완료'})

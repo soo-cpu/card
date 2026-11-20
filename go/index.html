@@ -1,0 +1,112 @@
+<!doctype html>
+<!-- QR 안내 2026-11-20 v0 · 상담석·매장 밖·공사 현장·감사 카드·스티커에 붙이는 QR이 여는 페이지.
+     QR 주소: https://soo-cpu.github.io/card/go/?from=desk|window|site|thanks|sticker
+     이 주소는 인쇄물에 찍히므로 바꾸거나 지우지 말 것. 도메인을 옮겨도 이 페이지는 남겨 두고 링크만 바꾸기. -->
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>아르띠꼬 스튜디오 · 바로 상담</title>
+<meta name="description" content="1분 간편 견적, 상담 신청, 시공 사례, 오시는 길을 한 화면에서. 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f0e8">
+<link rel="icon" type="image/png" sizes="32x32" href="../site/images/favicon-32.png">
+<link rel="apple-touch-icon" href="../site/images/apple-touch-icon.png">
+<meta property="og:title" content="아르띠꼬 스튜디오 · 바로 상담"><meta property="og:description" content="1분 간편 견적 · 상담 신청 · 시공 사례 · 오시는 길"><meta property="og:image" content="https://soo-cpu.github.io/card/site/images/og.jpg">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400&family=Cormorant+Garamond:wght@400;500&display=swap">
+<style>
+:root{--bg:#f5f0e8;--paper:#fbf8f3;--ink:#2a2420;--sub:#8c7f72;--line:#e3dace;--pt:#9a7b56;--est-bg:#7a5f3f;--est-fg:#fbf8f3;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;--serif:"Noto Serif KR","Nanum Myeongjo",serif;--latin:"Cormorant Garamond","Times New Roman",serif}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--est-bg:#c2a57a;--est-fg:#1b1815;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:520px;margin:0 auto;padding:36px 16px calc(40px + env(safe-area-inset-bottom))}
+.brand{text-align:center;font-family:var(--latin);letter-spacing:.32em;font-size:13px;color:var(--pt);text-transform:uppercase}
+.brand b{display:block;font-family:var(--serif);font-weight:400;font-size:17px;letter-spacing:.04em;color:var(--ink);text-transform:none;margin-top:4px}
+h1{font-family:var(--serif);font-weight:300;font-size:27px;line-height:1.45;text-align:center;margin:26px 0 10px}
+.lead{text-align:center;color:var(--sub);margin:0 0 26px}
+.hero{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--est-bg);color:var(--est-fg);border-radius:14px;padding:20px 20px;margin-bottom:12px}
+.hero b{display:block;font-size:18px;font-weight:600}
+.hero span{font-size:13.5px;opacity:.85}
+.hero i{font-style:normal;font-size:22px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{display:block;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 14px;min-height:104px}
+.card .n{font-family:var(--latin);color:var(--pt);font-size:20px;line-height:1}
+.card b{display:block;margin-top:8px;font-size:15.5px;font-weight:600}
+.card span{display:block;font-size:12.5px;color:var(--sub);line-height:1.5;margin-top:2px}
+.card.wide{grid-column:1/-1;min-height:0}
+.thanks{display:none}
+body.m-thanks .thanks{display:block}
+.rv2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.rv2 a{display:block;text-align:center;border:1px solid var(--pt);color:var(--pt);border-radius:999px;padding:10px 6px;font-weight:600;font-size:14px}
+details.loc{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:0 14px;margin-top:10px}
+details.loc summary{cursor:pointer;list-style:none;padding:16px 0;display:flex;align-items:center;gap:10px}
+details.loc summary::-webkit-details-marker{display:none}
+details.loc summary .n{font-family:var(--latin);color:var(--pt);font-size:20px}
+details.loc summary b{font-weight:600}
+details.loc summary::after{content:"+";margin-left:auto;color:var(--sub);font-size:20px}
+details.loc[open] summary::after{content:"−"}
+.place{border-top:1px solid var(--line);padding:12px 0}
+.place p{margin:2px 0;font-size:13.5px;color:var(--sub)}
+.place .maps{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.place .maps a{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+.call{display:flex;gap:8px;margin-top:22px}
+.call a{flex:1;text-align:center;border-radius:10px;padding:14px 6px;font-weight:600;border:1px solid var(--ink)}
+.call a.fill{background:var(--ink);color:var(--bg)}
+.foot{text-align:center;color:var(--sub);font-size:12px;margin-top:28px;line-height:1.8}
+.foot a{text-decoration:underline;text-underline-offset:3px}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="brand">Artico Studio<b>아르띠꼬 스튜디오</b></div>
+  <h1 id="title">공간을 설계하고,<br>취향을 디자인합니다.</h1>
+  <p class="lead" id="lead">궁금한 것부터 편하게 눌러 보세요.</p>
+
+  <!-- 감사 카드(from=thanks)로 들어온 분께만 보이는 칸 -->
+  <div class="card wide thanks" style="margin-bottom:12px">
+    <span class="n">♡</span><b>후기 한 줄이 큰 힘이 됩니다</b>
+    <span>살아 보시니 어떠세요? 사진 한 장, 한 줄이면 충분해요.</span>
+    <div class="rv2"><a href="https://naver.me/GL8bt4G4" target="_blank" rel="noopener">네이버 후기</a><a href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집 후기</a></div>
+  </div>
+
+  <a class="hero" data-k="est" href="../estimate/"><span><b>1분 간편 견적</b><span>평형과 공정만 고르면 예상 비용 범위가 나와요</span></span><i aria-hidden="true">→</i></a>
+
+  <div class="grid">
+    <a class="card" data-k="contact" href="../site/#contact"><span class="n">01</span><b>상담 신청</b><span>남겨 주시면 하루 안에 연락드려요</span></a>
+    <a class="card" data-k="works" href="../site/works/"><span class="n">02</span><b>시공 사례</b><span>단지별 실제 현장 사진</span></a>
+    <a class="card" href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew/shorts" target="_blank" rel="noopener"><span class="n">03</span><b>현장 영상</b><span>유튜브 쇼츠로 짧게</span></a>
+    <a class="card" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener"><span class="n">04</span><b>오늘의집</b><span>포트폴리오·후기</span></a>
+  </div>
+
+  <details class="loc">
+    <summary><span class="n">05</span><b>오시는 길</b></summary>
+    <div class="place"><b>상봉 전시장</b><p>서울특별시 중랑구 상봉로 131 듀오트리스 2F · 자재·가구 실물 상담</p>
+      <div class="maps"><a href="https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">네이버 지도</a><a href="https://map.kakao.com/link/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">카카오맵</a><a href="https://naver.me/GL8bt4G4" target="_blank" rel="noopener">방문 예약</a></div></div>
+    <div class="place"><b>구리 본사</b><p>경기도 구리시 동구릉로129번길 2-1</p>
+      <div class="maps"><a href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">네이버 지도</a><a href="https://map.kakao.com/link/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">카카오맵</a></div></div>
+  </details>
+
+  <div class="call"><a class="fill" href="tel:15665904">전화 1566-5904</a><a data-k="contact" href="../site/#contact">문자로 남기기</a></div>
+
+  <p class="foot">주식회사 홈퍼니싱 · 아르띠꼬 스튜디오<br>실내건축공사업 등록 업체 · <a href="../site/">홈페이지 보기</a></p>
+</div>
+<script>
+/* QR마다 다른 첫 문장. from 값은 상담 신청서에 '들어온 경로'로 함께 전달됨 */
+(function(){
+  var M={
+    desk:{t:'상담 전에,<br>먼저 둘러보세요.',l:'기다리시는 동안 예상 비용과 시공 사례를 미리 보실 수 있어요.'},
+    window:{t:'문이 닫혀 있어도<br>상담은 열려 있어요.',l:'1분 간편 견적을 보시고, 연락처를 남겨 주시면 하루 안에 연락드려요.'},
+    site:{t:'이웃집 공사,<br>궁금하셨죠?',l:'같은 단지 공사 사례와 예상 비용을 바로 보실 수 있어요.'},
+    thanks:{t:'함께해 주셔서<br>감사합니다.',l:'A/S가 필요하시면 언제든 1566-5904로 연락 주세요.'},
+    sticker:{t:'공간을 설계하고,<br>취향을 디자인합니다.',l:'궁금한 것부터 편하게 눌러 보세요.'}
+  };
+  var from='';try{from=(new URLSearchParams(location.search).get('from')||'').replace(/[^a-z0-9_-]/gi,'').slice(0,24)}catch(e){}
+  if(!from)return;
+  try{localStorage.setItem('artico_from',from)}catch(e){}
+  var m=M[from];
+  if(m){document.getElementById('title').innerHTML=m.t;document.getElementById('lead').textContent=m.l;document.body.classList.add('m-'+from)}
+  /* 견적·상담 링크에 경로 붙이기 */
+  document.querySelectorAll('a[data-k]').forEach(function(a){var h=a.getAttribute('href'),i=h.indexOf('#');
+    var base=i<0?h:h.slice(0,i),hash=i<0?'':h.slice(i);a.setAttribute('href',base+(base.indexOf('?')<0?'?':'&')+'from='+from+hash)});
+})();
+</script>
+</body></html>
