@@ -63,7 +63,7 @@ main{padding:8px 16px;max-width:640px;margin:0 auto}
 .rep:active{transform:scale(.99)}
 .rep .lab{font-size:12px;color:var(--sub);margin-bottom:4px;display:flex;justify-content:space-between}
 .rep .lab b{color:var(--navy)}
-.rep .txt{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font-size:15px}
+.rep .txt{-webkit-user-select:text;user-select:text;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font-size:15px}
 .rep.best{border:2px solid var(--yellow);background:var(--mark)}
 .rep.best .lab{color:var(--text);font-weight:700;font-size:13px}
 .fill{background:var(--soft);border-radius:4px;padding:0 2px}
@@ -99,8 +99,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;margin:24px 16px 0}
     <label for="co">고객에게 쓰는 회사 이름</label>
     <select id="co">
       <option value="ártico studio">ártico studio (대표 결정 11-18)</option>
-      <option value="아르띠꼬 스튜디오">아르띠꼬 스튜디오 (문자에서 á가 깨질 때)</option>
-      <option value="홈퍼니싱 아르띠꼬스튜디오">홈퍼니싱 아르띠꼬스튜디오 (인트라넷 문자 6종과 같게)</option>
+      <option value="아르띠꼬 스튜디오(artico studio)">아르띠꼬 스튜디오(artico studio) — 문자에서 á가 깨질 때</option>
     </select>
     <label for="nm">보내는 사람</label>
     <input id="nm" type="text" value="최윤수">
@@ -120,17 +119,17 @@ var S = [
 {id:"est", cat:"상담", t:"견적 문의 (전체 리모델링)", d:"처음 연락 온 고객", best:1, r:[
 "안녕하세요, {회사} {이름}입니다. 문의 감사합니다.\n단지명, 평형, 공사 범위, 희망 시기 알려 주시면 대략 범위부터 안내드릴게요.",
 "안녕하세요, {회사} {이름}입니다. 문의 주셔서 감사합니다.\n정확하게 안내드리려고 몇 가지만 여쭤볼게요.\n1. 단지명과 평형, 욕실 개수\n2. 공사 범위 (전체 / 부분이면 어디)\n3. 입주나 이사 날짜\n4. 생각하시는 예산\n거실·주방·욕실 사진 2~3장 같이 보내 주시면 비슷한 시공 사례와 대략 범위를 먼저 보내 드릴게요. 실측은 비용 없이 방문드립니다.\n통화가 편하시면 1566-5904로 연락 주세요.",
-"문의 감사합니다. {회사} {이름}입니다.\n말씀하신 지역은 저희가 시공하는 범위(경기 동북부·서울)에서 멀어서, 이번에는 진행이 어렵습니다. 가까운 곳에서 좋은 업체 만나시길 바랍니다."
+"문의 감사합니다. {회사} {이름}입니다.\n말씀하신 지역은 저희가 시공하는 범위(경기 동북부와 서울 전체)에서 멀어서, 이번에는 진행이 어렵습니다. 가까운 곳에서 좋은 업체 만나시길 바랍니다."
 ]},
 {id:"part", cat:"상담", t:"부분 공사 문의 (욕실·주방)", d:"도배만·바닥만은 거절 칸", best:1, r:[
 "부분 공사 문의 감사합니다.\n주소와 평형, 공사할 곳, 그 공간 사진 1~2장 보내 주시면 범위 잡아서 안내드릴게요.",
-"안녕하세요, {회사} {이름}입니다. 부분 공사 문의 감사합니다.\n욕실 1곳을 전체 철거하고 새로 하면 보통 450~600만 원 선이고(부가세 별도), 정확한 금액은 실측 후에 나옵니다.\n아래만 알려 주세요.\n1. 주소와 평형\n2. 공사할 곳과 개수 (예: 욕실 2곳)\n3. 지금 모습 사진 1~2장\n4. 희망 시기와 예산",
+"안녕하세요, {회사} {이름}입니다. 부분 공사 문의 감사합니다.\n욕실 1곳을 전체 철거하고 새로 하면 보통 450~600만 원 선이고(부가세 별도), 정확한 금액은 실측 후에 나옵니다. 부분 공사는 5개 공정 이상, 공급가 1,500만 원 이상부터 맡고 있어요.\n아래만 알려 주세요.\n1. 주소와 평형\n2. 공사할 곳과 개수 (예: 욕실 2곳)\n3. 지금 모습 사진 1~2장\n4. 희망 시기와 예산",
 "문의 감사합니다. {회사} {이름}입니다.\n저희는 공정끼리 일정과 마감을 한 팀이 같이 맞춰야 결과가 깔끔해서, 도배나 바닥 하나만 하는 공사는 하지 않고 있어요. 부분 공사는 5개 공정 이상, 공사비 1,500만 원(부가세 별도) 이상부터 맡고 있습니다.\n나중에 몇 가지를 같이 하시게 되면 꼭 다시 연락 주세요."
 ]},
 {id:"py", cat:"상담", t:"\"평당 얼마예요?\"", d:"금액만 먼저 묻는 고객", best:1, r:[
 "최근 현장 기준으로 전체 리모델링은 평당 150~190만 원 정도(부가세 별도, 샷시 제외)가 제일 많았어요.\n범위 알려 주시면 공정별로 나눠서 보여 드릴게요.",
-"평당으로 딱 잘라 말씀드리기가 조심스러운 게, 같은 평수라도 욕실을 새로 하는지, 샷시가 들어가는지에 따라 차이가 크게 나서요.\n저희 최근 현장 기준으로 전체 리모델링은 평당 150~190만 원 정도(부가세 별도, 샷시 제외)가 제일 많았습니다. 32평이면 대략 4,800~6,100만 원 선이고, 샷시까지 하면 평당 45만 원 정도 더 붙어요.\n도배·바닥·필름 위주로 가볍게 하시면 이보다 많이 내려갑니다.\n어디까지 하실지 알려 주시면 공정별로 나눠서 보여 드릴게요. 다른 곳과 비교하실 때도 그게 편하세요.",
-"평당 숫자 하나로만 비교하시면 철거·폐기물·욕실 방수처럼 빠진 항목 때문에 오히려 손해 보실 수 있어서, 숫자 하나로는 말씀드리기 어렵습니다.\n단지와 평형, 범위만 알려 주시면 공정별 금액으로 바로 정리해 드릴게요."
+"평당으로 딱 잘라 말씀드리기가 조심스러운 게, 같은 평수라도 욕실을 새로 하는지, 샷시가 들어가는지에 따라 차이가 크게 나서요.\n저희 최근 현장 기준으로 전체 리모델링은 평당 150~190만 원 정도(부가세 별도, 샷시 제외)가 제일 많았습니다. 32평이면 대략 4,800~6,100만 원 선이고, 샷시까지 하면 평당 45만 원 정도 더 붙어요.\n범위를 줄이시면 금액도 내려가는데, 부분 공사는 5개 공정 이상, 1,500만 원(부가세 별도) 이상부터 합니다.\n어디까지 하실지 알려 주시면 공정별로 나눠서 보여 드릴게요. 다른 곳과 비교하실 때도 그게 편하세요.",
+"평당 숫자 하나로만 비교하시면 철거·폐기물·욕실 방수처럼 빠진 항목 때문에 오히려 손해 보실 수 있어서, 숫자 하나로는 말씀드리기 어렵습니다.\n단지와 평형, 범위만 알려 주시면 공정별로 대략 범위를 정리해 드리고, 정확한 금액은 실측 후에 말씀드릴게요."
 ]},
 {id:"visit", cat:"상담", t:"실측 일정 잡기", d:"방문 날짜 제안", best:0, r:[
 "실측은 30분~1시간 정도 걸리고 비용은 없어요.\n○요일 오전이나 ○요일 오후 중 언제가 편하세요?",
@@ -150,7 +149,7 @@ var S = [
 {id:"dc", cat:"돈", t:"할인 요청", d:"\"좀 깎아 주세요\"", best:1, r:[
 "금액이 부담되시는 거 이해합니다.\n금액만 낮추기보다 범위나 자재를 조정한 안을 두 가지 만들어 보내드릴게요.",
 "예산이 부담되시는 거 충분히 이해합니다.\n다만 금액만 빼면 자재나 인건비에서 빠질 수밖에 없어서, 그 방법은 권해 드리기 어렵습니다.\n대신 욕실 한 곳을 덧방으로 바꾸거나 주방 상판을 한 단계 조정하는 식으로, 범위와 자재로 맞춘 안을 ○요일까지 정리해 드릴게요.\n견적은 부가세 별도이고, 세금계산서나 현금영수증은 꼭 발행해 드립니다.",
-"이번 견적은 꼭 필요한 항목만 넣은 금액이라 더 낮추기는 어렵습니다.\n범위를 줄이는 방법은 언제든 같이 봐 드릴게요."
+"이번 견적은 꼭 필요한 항목만 넣은 금액이라 더 낮추기는 어렵습니다.\n범위나 자재를 조정하는 방법은 언제든 같이 봐 드릴게요."
 ]},
 {id:"paid", cat:"돈", t:"입금 확인 (결제 확인)", d:"계약금·중도금·잔금", best:1, r:[
 "입금 확인했습니다. 감사합니다.",
@@ -175,7 +174,7 @@ var S = [
 {id:"noise", cat:"공사 중", t:"소음 항의 (이웃·관리사무소)", d:"사과 + 시간 약속", best:1, r:[
 "시끄럽게 해 드려 죄송합니다.\n소음 큰 작업은 ○시~○시 사이에만 하도록 현장에 바로 전달하겠습니다.",
 "공사로 불편 드려 정말 죄송합니다.\n철거처럼 소음이 큰 작업은 ○월 ○일까지이고, 관리사무소에 신고한 공사 시간(평일 ○시~○시) 안에서만 하겠습니다. 주말과 이른 아침에는 작업하지 않도록 현장에 다시 확인했습니다.\n불편한 점 있으시면 이 번호나 1566-5904로 바로 말씀 주세요.",
-"불편 드려 죄송합니다.\n다만 관리사무소에 신고하고 동의를 받아 진행하는 공사라 공사를 멈추기는 어렵습니다.\n대신 소음이 큰 작업은 ○시~○시 사이로 몰아서 하고, ○월 ○일이면 끝난다는 점 말씀드립니다."
+"불편 드려 죄송합니다.\n다만 관리사무소에 신고하고 동의를 받아 진행하는 공사라 공사를 멈추기는 어렵습니다.\n대신 소음이 큰 작업은 ○시~○시 사이로 몰아서 하고, ○월 ○일이면 끝납니다. 조금만 양해 부탁드립니다."
 ]},
 {id:"defect", cat:"공사 중", t:"하자 접수", d:"당일 회신 · 3일 안 방문", best:1, r:[
 "불편 드려 죄송합니다.\n그 부분 사진 몇 장 보내 주시면 오늘 안에 확인하고 방문 일정 잡아 드릴게요.",
@@ -214,7 +213,7 @@ var S = [
 ]},
 {id:"amp", cat:"모임", t:"AMP 골프회 공지", d:"라운딩 참석 회신", best:0, r:[
 "참석합니다. 감사합니다.",
-"공지 감사합니다. ○월 ○일 라운딩 참석하겠습니다.\n조 편성과 회비는 공지대로 따르겠습니다. 준비하시는 분들 고생 많으십니다.",
+"공지 감사합니다. ○월 ○일 라운딩 참석하겠습니다.\n조 편성은 편하게 넣어 주세요. 회비는 ○일까지 보내겠습니다. 준비하시는 분들 고생 많으십니다.",
 "공지 감사합니다. 이번 라운딩은 일정이 겹쳐 참석이 어렵겠습니다.\n다음에는 꼭 나가겠습니다. 좋은 날씨에 즐거운 라운딩 되세요."
 ]}
 ];
@@ -228,7 +227,7 @@ var cat = "전체", openId = null;
 var $ = function(id){return document.getElementById(id)};
 var coSel = $("co"), nmIn = $("nm");
 coSel.value = store.get("rb_co","ártico studio");
-if(!coSel.value) coSel.value = "ártico studio";
+if(!coSel.value || coSel.selectedIndex<0) coSel.value = "ártico studio";
 nmIn.value = store.get("rb_nm","최윤수");
 
 function fill(t){
@@ -286,15 +285,16 @@ function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTi
 function copy(text){
   function fallback(){
     var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");
-    ta.style.position="fixed";ta.style.top="-1000px";document.body.appendChild(ta);
+    ta.style.position="fixed";ta.style.fontSize="16px";ta.style.top="-1000px";document.body.appendChild(ta);
     ta.select();ta.setSelectionRange(0,text.length);
     var ok=false;try{ok=document.execCommand("copy")}catch(e){}
     document.body.removeChild(ta);return ok;
   }
+  if(fallback()) return Promise.resolve(true);
   if(navigator.clipboard && window.isSecureContext){
-    return navigator.clipboard.writeText(text).then(function(){return true},function(){return fallback()});
+    return navigator.clipboard.writeText(text).then(function(){return true},function(){return false});
   }
-  return Promise.resolve(fallback());
+  return Promise.resolve(false);
 }
 function remember(id){
   var ids = store.get("rb_recent","").split(",").filter(function(x){return x&&x!==id});
