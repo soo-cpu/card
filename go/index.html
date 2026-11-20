@@ -1,112 +1,295 @@
 <!doctype html>
-<!-- QR 안내 2026-11-20 v0 · 상담석·매장 밖·공사 현장·감사 카드·스티커에 붙이는 QR이 여는 페이지.
-     QR 주소: https://soo-cpu.github.io/card/go/?from=desk|window|site|thanks|sticker
-     이 주소는 인쇄물에 찍히므로 바꾸거나 지우지 말 것. 도메인을 옮겨도 이 페이지는 남겨 두고 링크만 바꾸기. -->
+<!-- QR 안내 2026-11-20 v2 · 오아로 안내 페이지 구성 참고: 큰 사진 + 빠른 버튼 4개, 사례, 방문 예약 달력, 담당자, 약속, 공사 뒤 관리, 오시는 길, 떠 있는 상담 버튼.
+     QR 주소: https://soo-cpu.github.io/card/go/?from=desk|window|site|thanks|sticker  ← 인쇄물에 찍히므로 이 주소는 바꾸거나 지우지 말 것.
+     예약 가능 시간은 아래 script 의 SLOTS 에서 고치기 (대표 확인 필요). 예약 신청은 artico_studio@naver.com 메일로 옴(확정 아님, 담당 실장이 전화로 확정). -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>아르띠꼬 스튜디오 · 바로 상담</title>
-<meta name="description" content="1분 간편 견적, 상담 신청, 시공 사례, 오시는 길을 한 화면에서. 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오">
+<meta name="description" content="1분 간편 견적, 방문 상담 예약, 시공 사례, 오시는 길을 한 화면에서. 주식회사 홈퍼니싱 · 아르띠꼬 스튜디오">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#f5f0e8">
 <link rel="icon" type="image/png" sizes="32x32" href="../site/images/favicon-32.png">
 <link rel="apple-touch-icon" href="../site/images/apple-touch-icon.png">
-<meta property="og:title" content="아르띠꼬 스튜디오 · 바로 상담"><meta property="og:description" content="1분 간편 견적 · 상담 신청 · 시공 사례 · 오시는 길"><meta property="og:image" content="https://soo-cpu.github.io/card/site/images/og.jpg">
+<meta property="og:title" content="아르띠꼬 스튜디오 · 바로 상담"><meta property="og:description" content="1분 간편 견적 · 방문 상담 예약 · 시공 사례 · 오시는 길"><meta property="og:image" content="https://soo-cpu.github.io/card/site/images/og.jpg">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400&family=Cormorant+Garamond:wght@400;500&display=swap">
 <style>
-:root{--bg:#f5f0e8;--paper:#fbf8f3;--ink:#2a2420;--sub:#8c7f72;--line:#e3dace;--pt:#9a7b56;--est-bg:#7a5f3f;--est-fg:#fbf8f3;
+:root{--bg:#f5f0e8;--paper:#fbf8f3;--card:#fff;--ink:#2a2420;--sub:#8c7f72;--line:#e3dace;--pt:#9a7b56;--deep:#7a5f3f;--on:#fbf8f3;
   --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;--serif:"Noto Serif KR","Nanum Myeongjo",serif;--latin:"Cormorant Garamond","Times New Roman",serif}
-@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#211d19;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--est-bg:#c2a57a;--est-fg:#1b1815;color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#211d19;--card:#26211c;--ink:#ede6dc;--sub:#a39a8e;--line:#332d27;--pt:#c2a57a;--deep:#c2a57a;--on:#1b1815;color-scheme:dark}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
-.wrap{max-width:520px;margin:0 auto;padding:36px 16px calc(40px + env(safe-area-inset-bottom))}
-.brand{text-align:center;font-family:var(--latin);letter-spacing:.32em;font-size:13px;color:var(--pt);text-transform:uppercase}
-.brand b{display:block;font-family:var(--serif);font-weight:400;font-size:17px;letter-spacing:.04em;color:var(--ink);text-transform:none;margin-top:4px}
-h1{font-family:var(--serif);font-weight:300;font-size:27px;line-height:1.45;text-align:center;margin:26px 0 10px}
-.lead{text-align:center;color:var(--sub);margin:0 0 26px}
-.hero{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--est-bg);color:var(--est-fg);border-radius:14px;padding:20px 20px;margin-bottom:12px}
-.hero b{display:block;font-size:18px;font-weight:600}
-.hero span{font-size:13.5px;opacity:.85}
-.hero i{font-style:normal;font-size:22px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{display:block;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 14px;min-height:104px}
-.card .n{font-family:var(--latin);color:var(--pt);font-size:20px;line-height:1}
-.card b{display:block;margin-top:8px;font-size:15.5px;font-weight:600}
-.card span{display:block;font-size:12.5px;color:var(--sub);line-height:1.5;margin-top:2px}
-.card.wide{grid-column:1/-1;min-height:0}
-.thanks{display:none}
+img{display:block;max-width:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--pt);outline-offset:2px}
+.in{max-width:560px;margin:0 auto;padding:0 16px}
+header.in{padding-top:18px;padding-bottom:14px}
+.brand{font-family:var(--latin);letter-spacing:.3em;font-size:14px;text-transform:uppercase}
+.brand small{font-family:var(--sans);letter-spacing:.04em;text-transform:none;color:var(--sub);font-size:12px;margin-left:8px}
+/* 큰 사진 */
+.hero{position:relative;max-width:560px;margin:0 auto;height:420px;overflow:hidden;background:#3a3029}
+.hero img{width:100%;height:100%;object-fit:cover;object-position:center 60%}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,10,.05) 30%,rgba(20,15,10,.72))}
+.hero .tx{position:absolute;left:20px;right:20px;bottom:64px;color:#fbf8f3;z-index:1}
+.hero .lbl{font-family:var(--latin);letter-spacing:.28em;font-size:12px;text-transform:uppercase;color:#e3cfae}
+.hero h1{font-family:var(--serif);font-weight:300;font-size:29px;line-height:1.4;margin:8px 0 6px}
+.hero p{margin:0;font-size:13.5px;opacity:.9}
+/* 빠른 버튼 4개 */
+.quick{position:relative;z-index:2;margin:-42px 16px 0;background:var(--card);border-radius:18px;box-shadow:0 6px 24px rgba(40,30,20,.12);display:grid;grid-template-columns:repeat(4,1fr);padding:14px 4px}
+@media (min-width:592px){.quick{max-width:528px;margin-left:auto;margin-right:auto}}
+.quick a{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13.5px;font-weight:600;text-align:center;padding:4px 2px}
+.quick svg{width:26px;height:26px;stroke:var(--deep);fill:none;stroke-width:1.6}
+section{padding:40px 0 8px}
+.lb{font-family:var(--latin);letter-spacing:.3em;font-size:12px;text-transform:uppercase;color:var(--pt)}
+h2{font-family:var(--serif);font-weight:400;font-size:23px;line-height:1.45;margin:6px 0 6px}
+.lead{color:var(--sub);margin:0 0 16px;font-size:14px}
+hr.sp{border:0;border-top:1px solid var(--line);margin:36px 16px 0}
+@media (min-width:592px){hr.sp{max-width:528px;margin-left:auto;margin-right:auto}}
+/* 감사 카드 전용 */
+.thanks{display:none;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:20px}
 body.m-thanks .thanks{display:block}
-.rv2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.rv2 a{display:block;text-align:center;border:1px solid var(--pt);color:var(--pt);border-radius:999px;padding:10px 6px;font-weight:600;font-size:14px}
-details.loc{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:0 14px;margin-top:10px}
-details.loc summary{cursor:pointer;list-style:none;padding:16px 0;display:flex;align-items:center;gap:10px}
-details.loc summary::-webkit-details-marker{display:none}
-details.loc summary .n{font-family:var(--latin);color:var(--pt);font-size:20px}
-details.loc summary b{font-weight:600}
-details.loc summary::after{content:"+";margin-left:auto;color:var(--sub);font-size:20px}
-details.loc[open] summary::after{content:"−"}
-.place{border-top:1px solid var(--line);padding:12px 0}
-.place p{margin:2px 0;font-size:13.5px;color:var(--sub)}
-.place .maps{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.place .maps a{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:5px 11px}
-.call{display:flex;gap:8px;margin-top:22px}
-.call a{flex:1;text-align:center;border-radius:10px;padding:14px 6px;font-weight:600;border:1px solid var(--ink)}
-.call a.fill{background:var(--ink);color:var(--bg)}
-.foot{text-align:center;color:var(--sub);font-size:12px;margin-top:28px;line-height:1.8}
+.thanks b{font-size:16px}.thanks p{margin:4px 0 12px;color:var(--sub);font-size:13.5px}
+.pill2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pill2 a{text-align:center;border:1px solid var(--deep);color:var(--deep);border-radius:999px;padding:10px;font-weight:600;font-size:14px}
+/* 사례 */
+.works{display:grid;grid-auto-flow:column;grid-auto-columns:62%;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;scrollbar-width:none}
+.works::-webkit-scrollbar{display:none}
+.works a{scroll-snap-align:start;border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.works img{aspect-ratio:4/5;object-fit:cover;width:100%}
+.works span{display:block;padding:8px 10px;font-size:13.5px;font-weight:600}
+.works span small{display:block;font-weight:400;color:var(--sub);font-size:12px}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.links a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 13px}
+/* 방문 예약 */
+.kind{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.kind button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 8px;text-align:left;font-size:14px;font-weight:600}
+.kind button small{display:block;font-weight:400;color:var(--sub);font-size:12px}
+.kind button[aria-pressed="true"]{border-color:var(--deep);box-shadow:inset 0 0 0 1px var(--deep)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .w{font-size:12.5px;color:var(--sub);padding-bottom:4px}
+.cal button{border:0;background:none;border-radius:12px;padding:10px 0;font-size:16px}
+.cal button:disabled{color:var(--line);cursor:default}
+.cal button[aria-pressed="true"]{background:var(--deep);color:var(--on);font-weight:600}
+.cal .m{font-size:11px;display:block;line-height:1;color:inherit;opacity:.7}
+.day{font-weight:600;font-size:17px;margin:20px 0 6px}
+.ap{font-size:13px;color:var(--sub);margin:10px 0 6px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slots button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:12px 0;font-size:16px}
+.slots button[aria-pressed="true"]{border-color:var(--deep);background:var(--deep);color:var(--on)}
+.slots button:disabled{color:var(--line);text-decoration:line-through;cursor:default}
+form#bk{display:none;margin-top:18px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+form#bk.show{display:block}
+.pick{font-weight:600;margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--sub);margin-bottom:10px}
+input,select{display:block;width:100%;margin-top:4px;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px}
+label.ag{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:13.5px}
+label.ag input{width:auto;margin:3px 0 0}
+details.pv{font-size:12.5px;color:var(--sub);margin:-4px 0 12px}
+.hp{position:absolute;left:-9999px}
+.btn{display:block;width:100%;text-align:center;border-radius:10px;padding:14px;font-weight:600;font-size:16px;border:1px solid var(--ink)}
+.btn.fill{background:var(--deep);border-color:var(--deep);color:var(--on)}
+.note{font-size:12.5px;color:var(--sub);margin:10px 0 0}
+.msg{font-size:14px;margin:10px 0 0;font-weight:600}
+.alt{font-size:13.5px;color:var(--sub);margin-top:14px}
+.alt a{color:var(--deep);font-weight:600;border-bottom:1px solid currentColor}
+/* 담당자 */
+.team{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.team a{text-align:center}
+.team .ph{aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:30px;color:var(--pt)}
+.team .ph img{width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.team b{display:block;margin-top:8px;font-size:15px}
+.team span{font-size:12.5px;color:var(--sub)}
+/* 약속 · 관리 */
+.pr{list-style:none;margin:0;padding:0}
+.pr li{display:grid;grid-template-columns:44px 1fr;padding:14px 0;border-bottom:1px solid var(--line)}
+.pr li:last-child{border-bottom:0}
+.pr i{font-style:normal;font-family:var(--latin);font-size:24px;color:var(--pt);line-height:1.1}
+.pr b{display:block;font-size:15.5px}
+.pr span{color:var(--sub);font-size:13.5px}
+.care{display:grid;gap:14px}
+.care div b{display:block;font-size:15px}.care div span{color:var(--sub);font-size:13.5px}
+/* 오시는 길 */
+.place{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px}
+.place b{font-size:16px}
+.place p{margin:4px 0 0;font-size:14px;color:var(--sub)}
+.place .row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.place .row a,.place .row button{border-radius:8px;padding:9px 13px;font-size:13.5px;font-weight:600;background:var(--deep);color:var(--on);border:0}
+.place .row button.copy{background:none;color:var(--ink);border:1px solid var(--line);border-radius:999px}
+.hours{font-size:13.5px;color:var(--sub);margin-top:6px}
+.end{text-align:center;padding:36px 0 8px}
+.end .btn{margin-top:10px}
+.foot{text-align:center;color:var(--sub);font-size:12px;padding:24px 16px 0;line-height:1.8;border-top:1px solid var(--line);margin-top:32px}
 .foot a{text-decoration:underline;text-underline-offset:3px}
+/* 떠 있는 상담 버튼 */
+.fab{position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:10;display:flex;align-items:center;gap:8px;background:var(--deep);color:var(--on);border-radius:999px;padding:13px 20px;font-weight:600;font-size:15.5px;box-shadow:0 6px 18px rgba(40,30,20,.28)}
+.fab svg{width:20px;height:20px;fill:currentColor}
 </style></head>
 <body>
-<div class="wrap">
-  <div class="brand">Artico Studio<b>아르띠꼬 스튜디오</b></div>
-  <h1 id="title">공간을 설계하고,<br>취향을 디자인합니다.</h1>
-  <p class="lead" id="lead">궁금한 것부터 편하게 눌러 보세요.</p>
+<header class="in"><div class="brand">Artico Studio<small>주식회사 홈퍼니싱</small></div></header>
 
-  <!-- 감사 카드(from=thanks)로 들어온 분께만 보이는 칸 -->
-  <div class="card wide thanks" style="margin-bottom:12px">
-    <span class="n">♡</span><b>후기 한 줄이 큰 힘이 됩니다</b>
-    <span>살아 보시니 어떠세요? 사진 한 장, 한 줄이면 충분해요.</span>
-    <div class="rv2"><a href="https://naver.me/GL8bt4G4" target="_blank" rel="noopener">네이버 후기</a><a href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집 후기</a></div>
-  </div>
+<div class="hero"><img src="../site/images/hero.jpg" alt="구리역 롯데캐슬 시그니처 복도" fetchpriority="high">
+  <div class="tx"><div class="lbl">Artico Studio · 상봉 전시장</div><h1 id="title">공간을 설계하고,<br>취향을 디자인합니다.</h1><p id="lead">아파트·상업 공간 인테리어 디자인과 시공 · 실내건축공사업 등록 업체</p></div></div>
+<nav class="quick" aria-label="바로가기">
+  <a data-k="1" href="../estimate/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h8"/></svg>1분 견적</a>
+  <a href="#book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>방문 예약</a>
+  <a href="#map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>오시는 길</a>
+  <a href="tel:15665904"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>전화하기</a>
+</nav>
 
-  <a class="hero" data-k="est" href="../estimate/"><span><b>1분 간편 견적</b><span>평형과 공정만 고르면 예상 비용 범위가 나와요</span></span><i aria-hidden="true">→</i></a>
+<div class="in">
+  <div class="thanks" id="thanks"><b>♡ 후기 한 줄이 큰 힘이 됩니다</b><p>살아 보시니 어떠세요? 사진 한 장, 한 줄이면 충분해요. A/S는 언제든 1566-5904로 연락 주세요.</p>
+    <div class="pill2"><a href="https://naver.me/GL8bt4G4" target="_blank" rel="noopener">네이버 후기</a><a href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집 후기</a></div></div>
 
-  <div class="grid">
-    <a class="card" data-k="contact" href="../site/#contact"><span class="n">01</span><b>상담 신청</b><span>남겨 주시면 하루 안에 연락드려요</span></a>
-    <a class="card" data-k="works" href="../site/works/"><span class="n">02</span><b>시공 사례</b><span>단지별 실제 현장 사진</span></a>
-    <a class="card" href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew/shorts" target="_blank" rel="noopener"><span class="n">03</span><b>현장 영상</b><span>유튜브 쇼츠로 짧게</span></a>
-    <a class="card" href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener"><span class="n">04</span><b>오늘의집</b><span>포트폴리오·후기</span></a>
-  </div>
+  <section id="works"><div class="lb">Works</div><h2>실제 시공 사례</h2><p class="lead">단지별 현장 사진을 넘겨 보세요.</p>
+    <div class="works">
+      <a href="../site/works/"><img src="../site/images/work-1.jpg" alt="구리역 롯데캐슬 시그니처 거실" loading="lazy"><span>구리역 롯데캐슬 시그니처<small>아파트</small></span></a>
+      <a href="../site/works/"><img src="../site/images/work-2.jpg" alt="구의현대 2단지 거실" loading="lazy"><span>구의현대 2단지<small>아파트 · 34평</small></span></a>
+      <a href="../site/works/"><img src="../site/images/work-3.jpg" alt="구리 갈매 상업 사무실 계단" loading="lazy"><span>구리 갈매 상업 사무실<small>상가·사무실</small></span></a>
+    </div>
+    <div class="links"><a href="../site/works/">시공 사례 전체 →</a><a href="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew/shorts" target="_blank" rel="noopener">현장 쇼츠 영상</a><a href="https://o2o.ohou.se/partner/myhome/13553169" target="_blank" rel="noopener">오늘의집 포트폴리오</a><a href="https://www.instagram.com/artico_design.studio" target="_blank" rel="noopener">인스타그램</a></div>
+  </section>
 
-  <details class="loc">
-    <summary><span class="n">05</span><b>오시는 길</b></summary>
-    <div class="place"><b>상봉 전시장</b><p>서울특별시 중랑구 상봉로 131 듀오트리스 2F · 자재·가구 실물 상담</p>
-      <div class="maps"><a href="https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">네이버 지도</a><a href="https://map.kakao.com/link/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">카카오맵</a><a href="https://naver.me/GL8bt4G4" target="_blank" rel="noopener">방문 예약</a></div></div>
+  <hr class="sp">
+  <section id="book"><div class="lb">Booking</div><h2>방문 상담 신청</h2><p class="lead">원하시는 날짜와 시간을 고르고 이름·연락처만 남겨 주세요. 담당 실장이 확인한 뒤 전화로 확정해 드려요.</p>
+    <div class="kind" role="group" aria-label="상담 방법">
+      <button type="button" data-kind="전시장 방문 상담" aria-pressed="true">전시장 방문<small>상봉 · 자재·가구 실물</small></button>
+      <button type="button" data-kind="우리 집 실측 방문" aria-pressed="false">우리 집 실측<small>담당자가 현장 방문</small></button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div id="slotBox" hidden><p class="day" id="dayT"></p><div id="slots"></div></div>
+    <form id="bk" novalidate>
+      <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p class="pick" id="pick"></p>
+      <label>이름<input name="이름" required autocomplete="name"></label>
+      <label>휴대폰 번호<input name="연락처" type="tel" required autocomplete="tel" placeholder="010-0000-0000"></label>
+      <label>단지·평형 (선택)<input name="단지·평형" placeholder="예: 구의현대 2단지 34평"></label>
+      <label class="ag"><input type="checkbox" name="개인정보동의" value="예" required>[필수] 개인정보 수집·이용에 동의합니다</label>
+      <details class="pv"><summary>내용 보기</summary>수집 항목: 이름, 연락처, 단지·평형, 희망 일시 · 이용 목적: 방문 상담 일정 안내 · 보관 기간: 상담 종료 후 1년 (요청 시 즉시 삭제)</details>
+      <button class="btn fill" type="submit" id="bkBtn">이 시간으로 신청하기</button>
+      <p class="note">신청만으로 확정되지 않아요. 확정 연락을 드린 뒤 방문해 주세요.</p>
+      <p class="msg" id="bkMsg" role="status" aria-live="polite"></p>
+    </form>
+    <p class="alt">원하는 시간이 없으세요? <a href="tel:15665904">전화로 잡기</a> · <a data-k="1" href="../site/#contact">문자로 남기기</a></p>
+  </section>
+
+  <hr class="sp">
+  <section id="team"><div class="lb">Team</div><h2>상담부터 공사 끝까지 함께하는 사람들</h2><p class="lead">누르면 각자의 모바일 명함이 열려요.</p>
+    <div class="team">
+      <a href="../soo/"><div class="ph"><img src="../site/images/ceo.jpg" alt="최윤수 대표" loading="lazy"></div><b>최윤수</b><span>대표</span></a>
+      <a href="../jung/"><div class="ph" aria-hidden="true">정</div><b>정진혁</b><span>실장 · 상담·현장</span></a>
+      <a href="../lee/"><div class="ph" aria-hidden="true">이</div><b>이봄이</b><span>실장 · 디자인</span></a>
+    </div>
+  </section>
+
+  <hr class="sp">
+  <section id="promise"><div class="lb">Artico Promise</div><h2>아르띠꼬가 지키는 것</h2>
+    <ul class="pr">
+      <li><i>01</i><div><b>먼저 듣습니다</b><span>공간을 쓰실 분의 생활과 목적을 먼저 이해하고 설계를 시작합니다.</span></div></li>
+      <li><i>02</i><div><b>정한 대로 지킵니다</b><span>함께 정한 설계·일정·예산을 현장에서 그대로 지키는 것을 가장 중요한 원칙으로 삼습니다.</span></div></li>
+      <li><i>03</i><div><b>한 분의 담당 실장</b><span>상담·실측·공사·마무리까지 한 사람이 이어서 챙깁니다.</span></div></li>
+      <li><i>04</i><div><b>등록된 업체가 책임 시공</b><span>2014년 출발, 2020년 법인. 실내건축공사업 등록 업체로 관공서·학교부터 가정까지 맡아 왔습니다.</span></div></li>
+    </ul>
+  </section>
+
+  <hr class="sp">
+  <section id="care"><div class="lb">After</div><h2>공사 중에도, 끝난 뒤에도</h2>
+    <div class="care">
+      <div><b>내 현장 페이지</b><span>공정표와 시공 전·중·후 사진을 휴대폰으로 받아 보세요. 계약하신 분께 주소를 보내 드려요.</span></div>
+      <div><b>결제 일정 한눈에</b><span>계약금·중도금·잔금 날짜를 현장 페이지에서 바로 확인할 수 있어요.</span></div>
+      <div><b>담당 실장 1:1 소통</b><span>궁금한 점을 글·사진으로 남기시면 담당 실장이 직접 확인하고 답해 드려요.</span></div>
+      <div><b>입주 뒤 A/S</b><span>살아 보시다 불편한 곳이 생기면 대표번호 1566-5904로 연락 주세요.</span></div>
+    </div>
+  </section>
+
+  <hr class="sp">
+  <section id="map"><div class="lb">Location</div><h2>오시는 길</h2><p class="lead">방문 상담은 미리 신청해 주시면 기다리지 않고 바로 보실 수 있어요.</p>
+    <div class="place"><b>상봉 전시장</b><p>서울특별시 중랑구 상봉로 131 듀오트리스 2F</p><p>자재·가구 실물을 보며 상담해요.</p>
+      <div class="row"><button type="button" class="copy" data-copy="서울특별시 중랑구 상봉로 131 듀오트리스 2F">주소 복사</button></div>
+      <div class="row"><a href="https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">네이버 지도</a><a href="https://map.kakao.com/link/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">카카오맵</a><a href="https://www.google.com/maps/search/?api=1&amp;query=%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131" target="_blank" rel="noopener">구글 지도</a></div></div>
     <div class="place"><b>구리 본사</b><p>경기도 구리시 동구릉로129번길 2-1</p>
-      <div class="maps"><a href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">네이버 지도</a><a href="https://map.kakao.com/link/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">카카오맵</a></div></div>
-  </details>
+      <div class="row"><button type="button" class="copy" data-copy="경기도 구리시 동구릉로129번길 2-1">주소 복사</button></div>
+      <div class="row"><a href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">네이버 지도</a><a href="https://map.kakao.com/link/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">카카오맵</a><a href="https://www.google.com/maps/search/?api=1&amp;query=%EA%B2%BD%EA%B8%B0%EB%8F%84%20%EA%B5%AC%EB%A6%AC%EC%8B%9C%20%EB%8F%99%EA%B5%AC%EB%A6%89%EB%A1%9C129%EB%B2%88%EA%B8%B8%202-1" target="_blank" rel="noopener">구글 지도</a></div></div>
+    <p class="hours">대표번호 1566-5904 · 전화 031-513-9560</p>
+  </section>
 
-  <div class="call"><a class="fill" href="tel:15665904">전화 1566-5904</a><a data-k="contact" href="../site/#contact">문자로 남기기</a></div>
-
-  <p class="foot">주식회사 홈퍼니싱 · 아르띠꼬 스튜디오<br>실내건축공사업 등록 업체 · <a href="../site/">홈페이지 보기</a></p>
+  <div class="end"><h2>더 궁금한 점이 있으세요?</h2>
+    <a class="btn fill" data-k="1" href="../estimate/">1분 간편 견적 보기</a>
+    <a class="btn" href="tel:15665904">전화 상담 1566-5904</a></div>
 </div>
+
+<p class="foot">주식회사 홈퍼니싱 · 아르띠꼬 스튜디오 · 실내건축공사업 등록 업체<br>누수 등 급한 A/S는 이 화면보다 전화(1566-5904)가 가장 빨라요 · <a href="../site/">홈페이지</a></p>
+
+<a class="fab" href="#book"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4V5a1 1 0 0 1 1-1z"/></svg>상담 신청</a>
+
 <script>
-/* QR마다 다른 첫 문장. from 값은 상담 신청서에 '들어온 경로'로 함께 전달됨 */
 (function(){
-  var M={
-    desk:{t:'상담 전에,<br>먼저 둘러보세요.',l:'기다리시는 동안 예상 비용과 시공 사례를 미리 보실 수 있어요.'},
-    window:{t:'문이 닫혀 있어도<br>상담은 열려 있어요.',l:'1분 간편 견적을 보시고, 연락처를 남겨 주시면 하루 안에 연락드려요.'},
-    site:{t:'이웃집 공사,<br>궁금하셨죠?',l:'같은 단지 공사 사례와 예상 비용을 바로 보실 수 있어요.'},
-    thanks:{t:'함께해 주셔서<br>감사합니다.',l:'A/S가 필요하시면 언제든 1566-5904로 연락 주세요.'},
-    sticker:{t:'공간을 설계하고,<br>취향을 디자인합니다.',l:'궁금한 것부터 편하게 눌러 보세요.'}
-  };
-  var from='';try{from=(new URLSearchParams(location.search).get('from')||'').replace(/[^a-z0-9_-]/gi,'').slice(0,24)}catch(e){}
-  if(!from)return;
-  try{localStorage.setItem('artico_from',from)}catch(e){}
-  var m=M[from];
-  if(m){document.getElementById('title').innerHTML=m.t;document.getElementById('lead').textContent=m.l;document.body.classList.add('m-'+from)}
-  /* 견적·상담 링크에 경로 붙이기 */
-  document.querySelectorAll('a[data-k]').forEach(function(a){var h=a.getAttribute('href'),i=h.indexOf('#');
-    var base=i<0?h:h.slice(0,i),hash=i<0?'':h.slice(i);a.setAttribute('href',base+(base.indexOf('?')<0?'?':'&')+'from='+from+hash)});
+var $=function(i){return document.getElementById(i)};
+/* ── 1. QR마다 다른 첫 문장 ── */
+var M={
+  desk:{t:'상담 전에,<br>먼저 둘러보세요.',l:'기다리시는 동안 예상 비용과 시공 사례를 미리 보실 수 있어요.'},
+  window:{t:'문이 닫혀 있어도<br>상담은 열려 있어요.',l:'1분 견적을 보시고 방문 시간을 신청해 주세요.'},
+  site:{t:'이웃집 공사,<br>궁금하셨죠?',l:'같은 단지 시공 사례와 예상 비용을 바로 보실 수 있어요.'},
+  thanks:{t:'함께해 주셔서<br>감사합니다.',l:'새 공간에서의 하루가 늘 편안하시길 바랍니다.'}
+};
+var FN={desk:'QR·상담석',window:'QR·매장 밖',site:'QR·공사 현장',thanks:'QR·감사 카드',sticker:'QR·스티커'};
+var from='';try{from=(new URLSearchParams(location.search).get('from')||'').replace(/[^a-z0-9_-]/gi,'').slice(0,24)}catch(e){}
+if(!from){try{from=localStorage.getItem('artico_from')||''}catch(e){}}else{try{localStorage.setItem('artico_from',from)}catch(e){}}
+var m=M[new URLSearchParams(location.search).get('from')||''];
+if(m){$('title').innerHTML=m.t;$('lead').textContent=m.l;document.body.classList.add('m-'+new URLSearchParams(location.search).get('from'))}
+if(from)document.querySelectorAll('a[data-k]').forEach(function(a){var h=a.getAttribute('href'),i=h.indexOf('#'),b=i<0?h:h.slice(0,i),hs=i<0?'':h.slice(i);
+  a.setAttribute('href',b+(b.indexOf('?')<0?'?':'&')+'from='+from+hs)});
+
+/* ── 2. 방문 상담 달력 (오늘부터 2주, 주 단위로 보여 줌) ──
+   SLOTS: 요일(0 일 ~ 6 토)별 신청 받는 시간. 빈 배열이면 쉬는 날. ※ 대표 확인 후 고치기 */
+var SLOTS={0:[],1:['10:00','11:00','13:30','14:30','15:30','16:30'],2:['10:00','11:00','13:30','14:30','15:30','16:30'],3:['10:00','11:00','13:30','14:30','15:30','16:30'],
+  4:['10:00','11:00','13:30','14:30','15:30','16:30'],5:['10:00','11:00','13:30','14:30','15:30','16:30'],6:['10:00','11:00','13:30']};
+var W='일월화수목금토',now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+var sel={kind:'전시장 방문 상담',date:null,time:null};
+var cal=$('cal');W.split('').forEach(function(w){var d=document.createElement('div');d.className='w';d.textContent=w;cal.appendChild(d)});
+var start=new Date(t0);start.setDate(start.getDate()-start.getDay());
+function openTimes(d){var list=SLOTS[d.getDay()]||[];if(d.getTime()!==t0.getTime())return list;
+  return list.filter(function(s){var p=s.split(':');return (+p[0])*60+(+p[1])>now.getHours()*60+now.getMinutes()+90})}
+var first=null;
+var cells=Math.ceil((t0.getDay()+14)/7)*7;
+for(var i=0;i<cells;i++){(function(d){var b=document.createElement('button');b.type='button';
+  var showM=d.getDate()===1||i===0;b.innerHTML=(showM?'<span class="m">'+(d.getMonth()+1)+'월</span>':'')+d.getDate();
+  b.setAttribute('aria-label',(d.getMonth()+1)+'월 '+d.getDate()+'일 '+W[d.getDay()]+'요일');
+  var ok=d>=t0&&(d-t0)/864e5<14&&openTimes(d).length>0;b.disabled=!ok;b.setAttribute('aria-pressed','false');
+  if(ok&&!first)first=b;
+  b.onclick=function(){cal.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false')});b.setAttribute('aria-pressed','true');sel.date=d;sel.time=null;drawSlots()};
+  cal.appendChild(b)})(new Date(start.getFullYear(),start.getMonth(),start.getDate()+i))}
+function drawSlots(){var d=sel.date,list=openTimes(d);$('slotBox').hidden=false;$('bk').classList.remove('show');
+  $('dayT').textContent=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+W[d.getDay()]+')';
+  var box=$('slots');box.innerHTML='';
+  [['오전',function(h){return h<12}],['오후',function(h){return h>=12}]].forEach(function(g){var l=list.filter(function(s){return g[1](+s.split(':')[0])});if(!l.length)return;
+    var p=document.createElement('p');p.className='ap';p.textContent=g[0];box.appendChild(p);
+    var row=document.createElement('div');row.className='slots';l.forEach(function(s){var b=document.createElement('button');b.type='button';b.textContent=s;b.setAttribute('aria-pressed','false');
+      b.onclick=function(){box.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false')});b.setAttribute('aria-pressed','true');sel.time=s;showForm()};row.appendChild(b)});box.appendChild(row)})}
+function label(){var d=sel.date;return (d.getMonth()+1)+'월 '+d.getDate()+'일('+W[d.getDay()]+') '+sel.time}
+function showForm(){$('pick').textContent=sel.kind+' · '+label();$('bk').classList.add('show');$('bkMsg').textContent='';
+  setTimeout(function(){$('bk').scrollIntoView({behavior:'smooth',block:'nearest'})},50)}
+document.querySelectorAll('.kind button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.kind button').forEach(function(x){x.setAttribute('aria-pressed','false')});
+  b.setAttribute('aria-pressed','true');sel.kind=b.getAttribute('data-kind');if(sel.time)$('pick').textContent=sel.kind+' · '+label()}});
+if(first)first.click();
+
+/* ── 3. 신청 보내기 (홈페이지 상담 신청과 같은 메일) ── */
+$('bk').addEventListener('submit',function(e){e.preventDefault();var f=e.target,btn=$('bkBtn'),msg=$('bkMsg');
+  if(f._honey.value)return;
+  if(!sel.time){msg.textContent='시간을 먼저 골라 주세요.';return}
+  if(!f.checkValidity()){msg.textContent='이름과 연락처, 동의를 확인해 주세요.';f.reportValidity();return}
+  var d=new FormData(f);d.delete('_honey');
+  d.append('상담 방법',sel.kind);d.append('희망 일시',label());if(from)d.append('들어온 경로',FN[from]||('QR·'+from));
+  d.append('_subject','[방문 상담 신청] '+label()+' '+d.get('이름'));d.append('_template','table');
+  btn.disabled=true;btn.textContent='보내는 중…';
+  fetch('https://formsubmit.co/ajax/artico_studio@naver.com',{method:'POST',headers:{'Accept':'application/json'},body:d})
+   .then(function(r){return r.json()}).then(function(j){if(String(j.success)!=='true')throw 0;f.reset();btn.textContent='신청 완료';
+     msg.textContent=label()+' 신청을 받았어요. 담당 실장이 확인하고 전화로 확정해 드릴게요.'})
+   .catch(function(){btn.disabled=false;btn.textContent='이 시간으로 신청하기';msg.innerHTML='보내지 못했어요. <a href="tel:15665904">1566-5904</a>로 전화 주세요.'})});
+
+/* ── 4. 주소 복사 ── */
+document.querySelectorAll('[data-copy]').forEach(function(b){b.onclick=function(){var t=b.getAttribute('data-copy'),done=function(){b.textContent='복사됐어요';setTimeout(function(){b.textContent='주소 복사'},1600)};
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(done,function(){prompt('주소를 길게 눌러 복사하세요',t)});else prompt('주소를 길게 눌러 복사하세요',t)}});
 })();
 </script>
 </body></html>

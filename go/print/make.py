@@ -51,7 +51,7 @@ FOOT_CSS = ".foot{position:absolute;left:18mm;right:18mm;bottom:12mm;border-top:
 
 STEPS = """<div class="steps">
 <div><i>01</i><b>1분 간편 견적</b><span>평형·공정만 고르면<br>예상 비용 범위가 바로</span></div>
-<div><i>02</i><b>상담 신청</b><span>남겨 주시면<br>하루 안에 연락드려요</span></div>
+<div><i>02</i><b>방문 상담 예약</b><span>원하는 날짜·시간을 골라<br>바로 신청</span></div>
 <div><i>03</i><b>시공 사례</b><span>단지별 실제 현장<br>사진과 쇼츠 영상</span></div>
 <div><i>04</i><b>오시는 길</b><span>상봉 전시장에서<br>자재·가구 실물 상담</span></div>
 </div>"""
@@ -81,7 +81,7 @@ h1{font-family:var(--serif);font-weight:300;font-size:30pt;text-align:center;mar
 <div class="top"><div class="brand">Artico Studio<small>주식회사 홈퍼니싱</small></div><div class="lbl">Interior Design &amp; Build</div></div>
 <h1>상담 전에, 먼저 둘러보세요.</h1>
 <p class="lead">기다리시는 동안 예상 비용과 시공 사례를 미리 보실 수 있어요.<br>궁금한 점은 담당자에게 편하게 물어보세요.</p>
-<div class="box"><div class="q">{q}</div><b>휴대폰 카메라로 비춰 주세요</b><p>견적 보기 → 사례 보기 → 상담 신청까지 한 화면에서</p></div>
+<div class="box"><div class="q">{q}</div><b>휴대폰 카메라로 비춰 주세요</b><p>견적 보기 → 날짜·시간 고르기 → 이름·번호로 신청</p></div>
 {STEPS}
 {FOOT}</div>"""))
 
