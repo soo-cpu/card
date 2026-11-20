@@ -111,7 +111,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:36pt;line-height:1.35;text
 
 # 3. 공사 현장 안내문 (엘리베이터·현관 게시)
 POSTERS.append(dict(code="site", file="site.html", title="QR 안내판 · 공사 현장 안내문", fmt=A4,
-  name="공사 현장 안내문", where="공사하는 아파트 엘리베이터·1층 게시판·세대 현관 (A4 세로, 빈칸은 손으로 채움)",
+  name="공사 현장 안내문 (빈칸 손글씨용)", where="공사하는 아파트 엘리베이터·1층 게시판·세대 현관 (A4 세로, 빈칸은 손으로 채움)",
   why="어차피 붙여야 하는 공사 안내문에 QR을 넣어, 같은 단지 이웃이 그 집 공사 사례·비용을 보고 문의 (단지 연쇄 수주)",
   hint="A4 세로 · 빈칸(동·호수, 기간, 책임자)은 인쇄 후 펜으로 채우기",
   css="""
@@ -185,7 +185,15 @@ def main():
         html = HEAD.format(title=p["title"], css=p["css"], hint=p["hint"], body=p["body"](qr(p["code"])), **p["fmt"])
         with open(os.path.join(HERE, p["file"]), "w", encoding="utf-8") as f:
             f.write(html)
-    rows = "".join(
+    with open(os.path.join(HERE, "notice.tpl.html"), encoding="utf-8") as f:
+        tpl = f.read()
+    with open(os.path.join(HERE, "notice.html"), "w", encoding="utf-8") as f:
+        f.write(tpl.replace("{{QR}}", qr("site")).replace("이 파일은 틀입니다. make.py 를 실행하면 QR이 들어간 notice.html 이 만들어집니다.", "make.py 가 notice.tpl.html 로 만든 파일. 고칠 땐 notice.tpl.html 을 고치고 make.py 실행."))
+    notice = (f'<a class="it" href="notice.html" style="border-color:var(--pt)"><i>★</i><div><b>공사 안내문 만들기 (입력해서 인쇄)</b>'
+              f'<p><em>어디에</em>공사 단지 엘리베이터·1층 게시판·세대 현관 + 2장째 입주민 동의서</p>'
+              f'<p><em>왜</em>단지·동호수·공정별 날짜·소음 큰 날을 칸에 넣으면 안내문이 바로 완성. 하단 QR로 이웃 문의</p>'
+              f'<p class="u">QR 주소 · {BASE}site</p></div><span>열기 →</span></a>')
+    rows = notice + "".join(
         f'<a class="it" href="{p["file"]}"><i>{i+1:02d}</i><div><b>{p["name"]}</b><p><em>어디에</em>{p["where"]}</p><p><em>왜</em>{p["why"]}</p><p class="u">QR 주소 · {BASE}{p["code"]}</p></div><span>열기 →</span></a><p style="margin:-4px 0 12px 12px;font-size:13px"><a href="pdf/{p["code"]}.pdf">PDF 바로 받기</a></p>'
         for i, p in enumerate(POSTERS))
     index = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
