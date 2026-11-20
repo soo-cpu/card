@@ -4599,10 +4599,9 @@ function gnCustTels(p){const L=[],add=v=>{let d=String(v||"").replace(/\D/g,"");
 function gnDefaults(p){const pv=hubV("projects",p);let si={};try{si=hubParts(p).si[0]||{}}catch(e){}const s=gnDay(p.start)||gnDay(si.start),e=gnDay(p.endPlan)||gnDay(p.end)||gnDay(si.end);
   const procs=[];(Array.isArray(p.sched)?p.sched:[]).forEach(x=>{const n=String((x&&x.proc)||"").trim();if(n&&!procs.includes(n))procs.push(n)});
   const cn=coGet("name").replace(/^주식회사\s*/,"(주)").replace(/\s*주식회사$/,"(주)"),br=coGet("brand");
-  const st=(S.staff||[]).find(x=>x&&x.name&&x.name===p.mgr),my=PV?null:myStaff(),bad=gnCustTels(p);let mg=null;
-  [st,my].forEach(x=>{if(mg||!x)return;const i=smsMgrInfo(x.id),d=gnTelOf(i.tel);if(d&&!bad.includes(d))mg=i});
+  // 연락처 기본값 = 회사 대표번호만 (대표 결정 2026-11-20): 이벤트 설정의 회사 대표번호 → 회사 기본 정보의 대표 전화. 담당자 번호는 창에서 직접 적을 때만
   return {unit:String(pv.addr||pv.title||"").trim().slice(0,60),period:(s&&e?s+" ~ "+(e.slice(0,5)===s.slice(0,5)?e.slice(6):e):s?s+" ~ ":"").slice(0,60),work:(procs.length?procs.join(", "):String(pv.work||"").trim()).slice(0,120),noise:"",co:(br&&br!==cn?cn+" & "+br:cn).slice(0,60),
-    tel:(mg?telFmt(mg.tel)+" (담당 "+mg.name+(mg.pos?" "+mg.pos:"")+")":(gnCfg().tel||coGet("tel"))).slice(0,60),greet:GN_GREET}}
+    tel:String(gnCfg().tel||coGet("tel")||"").slice(0,60),greet:GN_GREET}}
 // A4 세로 한 장 (200dpi · 1654×2339). 글이 길면 글자를 줄여 한 장에 맞춤. 돌려줌: {canvas, log(찍힌 글), qr{x,y,size,n}, fit}
 function gnPaper(f,o){const W=1654,H=2339,M=100,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d"),NV="#1F4E79",DN="#203864",YL="#FFC000",QM=gnQr(o.url);let log=[],qr=null;
   const wrap=(s,w)=>{const out=[];String(s||"").split("\n").forEach(par=>{let line="";par.split(" ").forEach(word=>{const t=line?line+" "+word:word;if(x.measureText(t).width<=w){line=t;return}if(line){out.push(line);line=""}let cur="";for(const ch of word){if(cur&&x.measureText(cur+ch).width>w){out.push(cur);cur=ch}else cur+=ch}line=cur});out.push(line)});return out};
@@ -4646,10 +4645,11 @@ function gnLogHTML(p){const L=(Array.isArray(p&&p.noticeLog)?p.noticeLog:[]).sli
   return L.length?`만든 기록 ${L.length}건 · `+L.slice(0,4).map(e=>esc(String(e.at||"").slice(0,10))+" "+esc(e.byName||who(e.by))+" ("+esc(e.how||"")+" · "+esc(e.coupon||"")+")").join(" / ")+(L.length>4?" …":""):"만든 기록 없음"}
 function gnDrawWin(){let v=document.getElementById("gnVeil");if(!GN||!GN.open){if(v)v.remove();return}const p=gnPjOf();if(!p){GN=null;if(v)v.remove();return}
   if(!v){v=document.createElement("div");v.className="veil";v.id="gnVeil";v.style.zIndex="25";document.body.appendChild(v)}const pv=hubV("projects",p),off=PV?' disabled title="미리 보기에서는 만들 수 없어요 (읽기 전용)"':"";
-  v.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="공사 안내문 만들기" style="width:min(900px,100%)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2 style="margin:0">공사 안내문 만들기 <small class="muted">${esc(p.no||"")} ${esc(pv.title||"")}</small></h2><button type="button" class="btn sm" data-gnclose="1">닫기</button></div>
+  v.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="공사 안내문 만들기" style="width:min(900px,100%)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2 style="margin:0">공사 안내문 만들기 <small class="muted">${esc(p.no||"")} ${esc(pv.title||"")}</small></h2><button type="button" class="btn sm" data-gnclose="1" style="white-space:nowrap;flex:none">닫기</button></div>
   <p class="hint" style="margin:0">엘리베이터·게시판에 붙이는 A4 한 장이에요. 아래 칸은 프로젝트에서 자동으로 채웠고 고칠 수 있어요 (여기서 고쳐도 프로젝트는 바뀌지 않아요). 이웃이 QR을 찍으면 간편견적·우리 집 디자인 시안·상담 예약으로 이어져요.</p>
   <div class="form">${GN_F.map(([k,l,ph,mx])=>`<div class="f${k==="work"||k==="noise"?" wide":""}"><label for="gn_${k}">${esc(l)}</label><input id="gn_${k}" data-gnf="${k}" value="${esc(GN.f[k])}" placeholder="${esc(ph)}" maxlength="${mx}" autocomplete="off"${k==="tel"?' inputmode="text"':""}></div>`).join("")}
   <div class="f wide"><label for="gn_greet">인사말 (비우면 빠져요)</label><textarea id="gn_greet" data-gnf="greet" rows="2" maxlength="140">${esc(GN.f.greet)}</textarea></div></div>
+  <p class="hint" style="margin:0">· ‘공사 세대’ 칸에 고객 이름이 들어 있으면 지우고 뽑아 주세요 (안내문은 이웃 모두가 봐요).<br>· 연락처 기본값은 회사 대표번호예요. 대표번호로는 QR 페이지에 문자 예약 버튼이 안 나오고 전화 걸기만 나와요. 문자 예약을 받으려면 휴대폰 번호를 적어요.</p>
   <div class="secnote" id="gnWarn" role="alert" style="display:none;border-color:#c62828"></div>
   <div class="hint" id="gnEv"></div>
   <div class="hint">QR 주소 (쿠폰 번호 ${esc(GN.coupon)} + 안내문 연락처 숫자만 · 고객 이름·전화·주소·금액은 들어가지 않아요): <span id="gnUrl" style="word-break:break-all;user-select:all"></span></div>
@@ -4657,9 +4657,8 @@ function gnDrawWin(){let v=document.getElementById("gnVeil");if(!GN||!GN.open){i
   <div class="chips"><button type="button" class="btn pri" data-gnout="print"${off}>출력</button><button type="button" class="btn ok" data-gnout="pdf"${off}>PDF 저장</button><button type="button" class="btn" data-gnclose="1">닫기</button></div>
   <div class="hint" id="gnLogs">${gnLogHTML(p)}${mode!=="shared"?" · 연습 모드에서는 만든 기록을 남기지 않아요":""}</div></div>`;gnRefresh()}
 async function gnOpen(pid){const p=(S.projects||[]).find(x=>x.id===pid);if(!p)return;if(hubV("projects",p).__masked){toast("내 담당 프로젝트에서만 만들 수 있어요");return}
-  GN={open:true,pid,f:gnDefaults(p),coupon:gnCoupon(p.no),busy:false,logged:false,telEdit:false};gnDrawWin();
-  try{await cvFonts()}catch(e){}if(GN&&GN.pid===pid&&GN.open)gnRefresh();
-  try{await smsMyLoad()}catch(e){}if(GN&&GN.pid===pid&&GN.open&&!GN.telEdit){const t=gnDefaults(p).tel;if(t!==GN.f.tel){GN.f.tel=t;const i=document.getElementById("gn_tel");if(i)i.value=t;gnRefresh()}}}
+  GN={open:true,pid,f:gnDefaults(p),coupon:gnCoupon(p.no),busy:false,logged:false};gnDrawWin();
+  try{await cvFonts()}catch(e){}if(GN&&GN.pid===pid&&GN.open)gnRefresh();}
 async function gnOut(how){const G=GN,p=gnPjOf();if(!G||!p||G.busy)return;if(PV){toast("미리 보기에서는 만들 수 없어요 (읽기 전용)");return}
   if(!String(G.f.unit||"").trim()){toast("공사 세대를 적어 주세요");return}
   G.busy=true;try{try{await cvFonts()}catch(e){}const P=gnMake(),N=P.N;if(N.cust){toast("연락처에 고객 전화번호가 들어 있어요 · 회사·담당자 번호로 고쳐 주세요");return}
@@ -4677,7 +4676,7 @@ function gnBtnHTML(p,pv){if(!p||!p.id||!pv||pv.__masked)return "";const n=Array.
 function gnSiteHTML(d){const p=d&&d.pno?(S.projects||[]).find(x=>x.no===d.pno&&canSeeRow("projects",x)):null;return p?gnBtnHTML(p,hubV("projects",p)):""}
 document.addEventListener("click",e=>{const t=e.target&&e.target.closest&&e.target.closest("[data-gnopen],[data-gnclose],[data-gnout]");if(!t)return;e.preventDefault();
   if(t.dataset.gnopen){gnOpen(t.dataset.gnopen);return}if(t.dataset.gnclose){if(GN&&GN.busy)return;GN=null;gnDrawWin();return}if(t.dataset.gnout)gnOut(t.dataset.gnout)});
-document.addEventListener("input",e=>{const t=e.target;if(!GN||!t||!t.dataset||!t.dataset.gnf||!t.closest("#gnVeil"))return;GN.f[t.dataset.gnf]=t.value;if(t.dataset.gnf==="tel")GN.telEdit=true;clearTimeout(gnTimer);gnTimer=setTimeout(gnRefresh,e.isComposing?500:250)});
+document.addEventListener("input",e=>{const t=e.target;if(!GN||!t||!t.dataset||!t.dataset.gnf||!t.closest("#gnVeil"))return;GN.f[t.dataset.gnf]=t.value;clearTimeout(gnTimer);gnTimer=setTimeout(gnRefresh,e.isComposing?500:250)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&GN&&GN.open&&!GN.busy){e.stopPropagation();GN=null;gnDrawWin()}},true);
 // 대표 화면: 서식 자료실 › 공사 안내문 이벤트 설정 (config/notice · 기본값 비움 — 할인 내용은 대표가 직접 적은 글만 찍힘)
 function gnCfgCard(){if(!me.admin||mode!=="shared"||PV)return "";const c=cfg(GN_ID),g=gnCfg(),n=(c.hist||[]).length;

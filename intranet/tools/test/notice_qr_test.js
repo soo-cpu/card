@@ -13,16 +13,16 @@ const jsQR=loadJsQR();
 const RULES=[["hr","owner","owner"],["catalog","view","owner"],["acct","owner","owner"],["acct/{self}","interact","interact"],["config","view","owner"],["knock","owner","owner"],["knock/{self}","interact","interact"],["access","owner","owner"],["access/{self}","interact","interact"],["devok","interact","owner"],["members","owner","owner"],["members/{self}","interact","owner"],["creq","owner","owner"],["creq/{self}","interact","interact"],["cgrant","interact","owner"],["cpriv","owner","owner"],["ppriv","owner","owner"],["cshare","owner","owner"],["cshare/{self}","interact","interact"],["ccost","owner","owner"],["fin","owner","owner"],["fincf","owner","owner"],["customers","owner","owner"],["projects","owner","owner"],["quotes","owner","owner"],["sites","owner","owner"],["reports","owner","owner"],["activity","owner","owner"],["mine","owner","owner"],["mine/{self}","interact","interact"],["seal","owner","owner"],["certs","owner","owner"],["work","interact","interact"]].map(([path,read,write])=>({path,read,write}));
 const T0="2026-11-01T00:00:00Z";
 const P1={no:"P-2611-901",title:"시험마을 8단지",custName:"홍길동",custCode:"C-2611-901",stage:"시공",mgr:"정진혁",contractAmt:"33000000",estCost:"",perf:"순수 인테리어",approvals:[{amt:1515151,t:"자재"}],cat:"주거",inq:"2026-11-01",addr:"시험마을 8단지 804동 603호",work:"욕실",start:"2026-11-05",endPlan:"2026-12-20",sched:[{proc:"철거",start:"2026-11-05",end:"2026-11-07"},{proc:"목공",start:"2026-11-09",end:"2026-11-14"},{proc:"타일",start:"2026-11-16",end:"2026-11-20"},{proc:"철거",start:"2026-11-21",end:"2026-11-21"}],acLog:[{id:"ac1",at:T0,by:"u_boss",text:"옛 기록"}],updatedAt:T0};
-const SEED={"staff/st-chae":{name:"채진아",uid:"u_cja",level:"전체 담당",state:"재직",pos:"차장",finOk:"허락"},"staff/st-choi":{name:"최윤수",uid:"u_boss",state:"재직",pos:"대표이사"},"staff/st-jung":{name:"정진혁",uid:"u_jjh",level:"실무 팀",state:"재직",pos:"실장"},"staff/st-lee":{name:"이봄이",uid:"u_bom",level:"실무 팀",state:"재직",pos:"실장"},
- "members/u_jjh":{active:true,staffId:"st-jung",name:"정진혁"},"members/u_bom":{active:true,staffId:"st-lee",name:"이봄이"},"members/u_cja":{active:true,staffId:"st-chae",name:"채진아"},
+const SEED={"staff/st-chae":{name:"채진아",uid:"u_cja",level:"전체 담당",state:"재직",pos:"차장",finOk:"허락"},"staff/st-choi":{name:"최윤수",uid:"u_boss",state:"재직",pos:"대표이사"},"staff/st-jung":{name:"정진혁",uid:"u_jjh",level:"실무 팀",state:"재직",pos:"실장"},"staff/st-lee":{name:"이봄이",uid:"u_bom",level:"실무 팀",state:"재직",pos:"실장"},"staff/st-kim":{name:"김일반",uid:"u_kim",state:"재직",pos:"사원"},
+ "members/u_jjh":{active:true,staffId:"st-jung",name:"정진혁"},"members/u_bom":{active:true,staffId:"st-lee",name:"이봄이"},"members/u_cja":{active:true,staffId:"st-chae",name:"채진아"},"members/u_kim":{active:true,staffId:"st-kim",name:"김일반"},
  "acct/u_jjh/sms/my":{cardPos:"실장",cardTel:"010-9999-0001",tpls:{}},
  "config/smscard":{cards:{"st-jung":{name:"정진혁",pos:"실장",tel:"010-9999-0001"}},at:T0},
  "customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:[1,2],stage:"1-상담영업",inq:"2026-11-01",createdAt:T0,updatedAt:T0},"cpriv/c1":{tel:"010-1234-5678",addr:"서울시 시험구 1",updatedAt:T0},
  "projects/p1":P1,"ppriv/p1":{estCost:"20202020",updatedAt:T0},
  "projects/p2":{no:"P-2605-902",title:"지난 현장 주방",custName:"홍길동",custCode:"C-2611-901",stage:"시공",mgr:"이봄이",contractAmt:"12000000",cat:"주거",inq:"2026-04-01",work:"주방, 타일",start:"2026-04-10",end:"2026-05-01",updatedAt:T0},
  "sites/s1":{pno:"P-2611-901",code:"C-2611-901",name:"시험마을 8단지",customer:"홍길동",mgr:"정진혁",status:"공사 중",proc:"타일",progress:"40",start:"2026-11-05",logs:[],updatedAt:T0}};
-const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},bom:{id:"u_bom",name:"이봄이",email:"bom@test",isOwner:false},cja:{id:"u_cja",name:"채진아",email:"cja@test",isOwner:false}};
-const BASE='https://soo-cpu.github.io/card/event/',URL1=BASE+'?n=HF2611901&t=01099990001';
+const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},bom:{id:"u_bom",name:"이봄이",email:"bom@test",isOwner:false},cja:{id:"u_cja",name:"채진아",email:"cja@test",isOwner:false},kim:{id:"u_kim",name:"김일반",email:"kim@test",isOwner:false}};
+const BASE='https://soo-cpu.github.io/card/event/',URL1=BASE+'?n=HF2611901&t=15665904',URLM=BASE+'?n=HF2611901&t=01099990001',URL2=BASE+'?n=HF2611901&t=021234567';
 const LEAK=/홍길동|%ED%99%8D|12345678|1234-5678|33000000|12000000|20202020|1515151|원가|마진|시험마을|804|603|%EC%8B%9C%ED%97%98/; // 고객 이름·고객 전화·금액·원가·주소
 const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===undefined?'':String(x).replace(/\s+/g,' ').slice(0,300))};const wait=ms=>new Promise(r=>setTimeout(r,ms));
 // 화면에 보이는 미리 보기 그림(img)에서 QR 자리만 잘라 읽음
@@ -54,8 +54,9 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
    ok(tag+'프로젝트 화면 ‘현장 진행 상황’ 칸에 ‘공사 안내문 만들기’ 버튼',await btn.count()===1&&await btn.isVisible()&&await P.locator('#pjHub .hubc[data-pt="prog"] [data-gnopen]').count()===1&&/공사 안내문 만들기/.test(hubTxt));
    await btn.click();await wait(1500);const g=await P.evaluate(()=>window.__hfT.gn()),v=await vals(P);
    ok(tag+'화면 안 창(새 창·대화상자 아님) · 자동 채움: 공사 세대·공사기간·공사내용(공정표)·업체명 · 소음 심한 날은 빈칸',await P.locator('#gnVeil.veil .sheet').count()===1&&v.unit==='시험마을 8단지 804동 603호'&&v.period==='2026년 11월 5일 ~ 12월 20일'&&v.work==='철거, 목공, 타일'&&v.noise===''&&v.co==='(주)홈퍼니싱 & 아르띠꼬 스튜디오',JSON.stringify(v));
-   ok(tag+'연락처 기본 = 담당자(정진혁) 문자 명함 번호 — 고객 전화번호 아님',v.tel==='010-9999-0001 (담당 정진혁 실장)'&&!/1234/.test(v.tel),v.tel);
-   ok(tag+'QR 주소 = 고객 안내 페이지 + 쿠폰 번호(HF2611901) + 안내문 연락처 숫자뿐',g&&g.coupon==='HF2611901'&&g.last&&g.last.url===URL1&&(await P.locator('#gnUrl').innerText())===URL1,g&&g.last&&g.last.url);
+   ok(tag+'연락처 기본 = 회사 대표번호만 (담당자 문자 명함 번호·‘담당 OOO’ 꼬리 없음 · 고객 전화번호 아님) + 대표번호·고객 이름 안내 글',v.tel==='1566-5904'&&/대표번호로는 QR 페이지에 문자 예약 버튼이 안 나오고 전화 걸기만/.test(await P.locator('#gnVeil').innerText())&&/‘공사 세대’ 칸에 고객 이름이 들어 있으면 지우고/.test(await P.locator('#gnVeil').innerText()),v.tel);
+   ok(tag+'창 오른쪽 위 ‘닫기’ 버튼이 한 줄 (꺾이지 않음)',await P.locator('#gnVeil [data-gnclose]').first().evaluate(b=>b.getBoundingClientRect().height<48&&b.scrollWidth<=b.clientWidth+2));
+   ok(tag+'QR 주소 = 고객 안내 페이지 + 쿠폰 번호(HF2611901) + 안내문 연락처(대표번호) 숫자뿐',g&&g.coupon==='HF2611901'&&g.last&&g.last.url===URL1&&(await P.locator('#gnUrl').innerText())===URL1,g&&g.last&&g.last.url);
    ok(tag+'QR 주소에 고객 이름·고객 전화·주소·금액·원가·마진 없음 · 칸은 n·t 둘뿐',!LEAK.test(g.last.url)&&!LEAK.test(decodeURIComponent(g.last.url))&&[...new URL(g.last.url).searchParams.keys()].join()==='n,t');
    const q=await readQr(P);
    ok(tag+'미리 보기 그림의 QR을 실제로 읽으면 그 주소 그대로',q.data===URL1,String(q.data));
@@ -67,8 +68,8 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
    ok(tag+'이벤트 설정이 비어 있으면 이벤트 칸·쿠폰 번호·할인 글 없음 (QR 안내만)',!L.some(x=>/이웃 혜택|쿠폰|할인|%|만원/.test(x))&&g.last.ev===false&&/이벤트 칸: 안 나옴/.test(await P.locator('#gnEv').innerText()),L.join(' / ').slice(0,200));
    ok(tag+'안내문 글에 고객 이름·고객 전화·금액·원가 없음',!L.some(x=>/홍길동|1234-5678|33000000|20202020|1515151|원가|마진|성과/.test(x)));
    ok(tag+'가로 넘침 없음',await P.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2&&(()=>{const s=document.querySelector('#gnVeil .sheet');return s.scrollWidth<=s.clientWidth+2})()));
-   if(SHOTS&&vn==='PC'&&w==='jjh'){fs.mkdirSync(SHOTS,{recursive:true});const u=await P.evaluate(()=>document.getElementById('gnImg').src);fs.writeFileSync(path.join(SHOTS,'안내문 A4 이벤트 없음 2026-11-20 v0.png'),Buffer.from(u.split(',')[1],'base64'));await P.screenshot({path:path.join(SHOTS,'인트라넷 창 PC 2026-11-20 v0.png')})}
-   if(SHOTS&&vn!=='PC')await P.screenshot({path:path.join(SHOTS,'인트라넷 창 휴대폰 2026-11-20 v0.png')})}
+   if(SHOTS&&vn==='PC'&&w==='jjh'){fs.mkdirSync(SHOTS,{recursive:true});const u=await P.evaluate(()=>document.getElementById('gnImg').src);fs.writeFileSync(path.join(SHOTS,'안내문 A4 이벤트 없음 2026-11-20 v1.png'),Buffer.from(u.split(',')[1],'base64'));await P.screenshot({path:path.join(SHOTS,'인트라넷 창 PC 2026-11-20 v1.png')})}
+   if(SHOTS&&vn!=='PC')await P.screenshot({path:path.join(SHOTS,'인트라넷 창 휴대폰 2026-11-20 v1.png')})}
 
   // 현장 관리의 현장 카드에서도 같은 버튼 → 같은 창
   {const P=SP.jjh;await P.evaluate(()=>{const c=document.getElementById('gnVeil');if(c)c.querySelector('[data-gnclose]').click();window.__hfT.closeSheet();location.hash='#sites'});await wait(600);await P.evaluate(()=>window.__hfT.open('sites','s1'));await wait(1200);
@@ -77,7 +78,10 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
    await P.evaluate(()=>{const c=document.getElementById('gnVeil');if(c)c.querySelector('[data-gnclose]').click();window.__hfT.closeSheet()});await win(P,'p1')}
   // (나) 고치기: 소음 심한 날 입력 → 그림에 반영 · 프로젝트는 안 바뀜
   {const P=SP.jjh;await P.fill('#gn_noise','11월 5일(목) ~ 7일(토) 철거');await wait(700);const g=await P.evaluate(()=>window.__hfT.gn());
-   ok(vn+' 정진혁: 소음 심한 날 직접 입력 → 안내문에 찍힘 · 주소는 그대로',g.last.log.some(x=>x.includes('11월 5일(목) ~ 7일(토) 철거'))&&g.last.url===URL1)}
+   ok(vn+' 정진혁: 소음 심한 날 직접 입력 → 안내문에 찍힘 · 주소는 그대로',g.last.log.some(x=>x.includes('11월 5일(목) ~ 7일(토) 철거'))&&g.last.url===URL1);
+   await P.fill('#gn_tel','010-9999-0001 (담당 정진혁 실장)');await wait(700);const g2=await P.evaluate(()=>window.__hfT.gn());
+   ok(vn+' 정진혁: 연락처를 손으로 휴대폰 번호로 바꾸면 그 번호가 안내문·QR 주소에 (실제로 읽힘)',g2.last.url===URLM&&g2.last.log.some(x=>x.includes('010-9999-0001 (담당 정진혁 실장)'))&&(await readQr(P)).data===URLM,g2.last.url);
+   await P.fill('#gn_tel','1566-5904');await wait(700)}
 
   // (다) 출력·PDF → 기록 덧붙이기 (한 번 연 창에서는 한 줄)
   for(const w of whos){const P=SP[w],tag=vn+' '+USERS[w].name+': ';if(w!=='jjh')await win(P,'p1');
@@ -112,11 +116,12 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
    const many=await P.evaluate(()=>{const T=window.__hfT;return [T.gnTelOf('02-123-4567'),T.gnTelOf('1566-5904'),T.gnTelOf('담당 010 9999 0001 / 02-1'),T.gnTelOf('12345'),T.gnTelOf('2026-11-20'),T.gnUrl('HF<script>',"010'"),T.gnCoupon('P-2611-012'),T.gnCoupon('').slice(0,3)]});
    ok(vn+' 번호·쿠폰 규칙: 지역번호·대표번호·휴대폰만 숫자로, 그 밖은 뺌 · 주소 값은 영문·숫자만 · P-2611-012 → HF2611012 · 번호 없으면 HFD+날짜',JSON.stringify(many)===JSON.stringify(['021234567','15665904','01099990001','','',BASE+'?n=HFscript','HF2611012','HFD']),JSON.stringify(many))}
 
-  // (마) 담당자 명함이 없는 프로젝트(p2 · 담당 이봄이): 회사 대표번호
-  {const P=SP.bom||SP.jjh,who=SP.bom?'이봄이':'정진혁';await win(P,'p2');const v=await vals(P),g=await P.evaluate(()=>window.__hfT.gn());
-   if(SP.bom)ok(vn+' 이봄이: 문자 명함 번호가 없으면 회사 기본 정보의 대표 전화(1566-5904) · 공정표가 없으면 ‘공사 내용’ 칸 · 준공일까지',v.tel==='1566-5904'&&g.last.url===BASE+'?n=HF2605902&t=15665904'&&v.work==='주방, 타일'&&v.period==='2026년 4월 10일 ~ 5월 1일'&&(await readQr(P)).data===g.last.url,JSON.stringify(v));
-   else ok(vn+' 정진혁: 내 담당이 아닌 프로젝트(p2)에는 버튼 없음 또는 내 번호로',true)}
-
+  // (마) 다른 프로젝트(p2 · 담당 이봄이): 같은 대표번호 · 공정표 없으면 공사 내용 칸
+  if(SP.bom){const P=SP.bom;await win(P,'p2');const v=await vals(P),g=await P.evaluate(()=>window.__hfT.gn());
+   ok(vn+' 이봄이: p2 연락처도 회사 기본 정보의 대표 전화(1566-5904) · 공정표가 없으면 ‘공사 내용’ 칸 · 준공일까지',v.tel==='1566-5904'&&g.last.url===BASE+'?n=HF2605902&t=15665904'&&v.work==='주방, 타일'&&v.period==='2026년 4월 10일 ~ 5월 1일'&&(await readQr(P)).data===g.last.url,JSON.stringify(v))}
+  // 권한 단계가 없는 일반 직원: 내 담당이 아니어서 가려진 프로젝트에는 버튼 없음 · 억지로 열어도 창 안 뜸
+  if(vn==='PC'){const P=await open('kim');const r=await P.evaluate(async()=>{const T=window.__hfT,S=T.S(),p=S.projects.find(x=>x.id==='p1');if(!p)return {row:false};location.hash='#projects';await new Promise(r=>setTimeout(r,500));T.open('projects','p1');await new Promise(r=>setTimeout(r,1200));const hub=!!document.getElementById('pjHub'),btn=document.querySelectorAll('[data-gnopen]').length,share=document.querySelectorAll('#pjHub .hubshare').length;await T.gnOpen('p1');await new Promise(r=>setTimeout(r,600));return {row:true,hub,btn,share,veil:!!document.getElementById('gnVeil'),html:T.gnBtnHTML(p,{__masked:true}),toast:Array.from(document.querySelectorAll('.toast')).map(t=>t.textContent).join('|')}});
+   ok('PC 김일반(권한 단계 없는 일반 직원): 가려진 프로젝트(p1 · 줄은 보이지만 연결 칸은 안 열림)에는 ‘공사 안내문 만들기’ 버튼 없음 · 억지로 불러도 창이 안 뜨고 안내',r.row&&r.btn===0&&r.share===0&&!r.veil&&r.html===''&&/내 담당 프로젝트에서만/.test(r.toast),JSON.stringify(r));await P.close()}
   // (바) 서식 자료실 › 공사 안내문 이벤트 설정 (대표만)
   for(const w of whos){const P=SP[w],tag=vn+' '+USERS[w].name+': ';
    const r=await P.evaluate(async()=>{const c=document.getElementById('gnVeil');if(c)c.querySelector('[data-gnclose]').click();window.__hfT.closeSheet();location.hash='#forms';await new Promise(r=>setTimeout(r,800));const db=await window.claude.use('db');let wr='ok';try{await db.doc('config/notice').set({on:true,text:'직원이 쓴 글'})}catch(e){wr='denied'}return {card:!!document.getElementById('gnCfg'),save:!!document.querySelector('[data-gncfsave]'),txt:/공사 안내문 이벤트 설정/.test(document.getElementById('view')?document.getElementById('view').innerText:document.body.innerText),wr}});
@@ -133,13 +138,13 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
   // (사) 이벤트 설정 채움: 모든 화면의 안내문에 이벤트 칸
   for(const w of all){const P=SP[w],tag=vn+' '+USERS[w].name+': ';const g=await win(P,'p1'),L=g.last.log,i=s=>L.findIndex(x=>x.includes(s));
    ok(tag+'이벤트 켬: 안내문에 ‘이웃 혜택’ + 대표가 적은 문구 그대로 + 기한 + 쿠폰 번호 (이웃 고객 칸 아래)',g.last.ev===true&&i('이웃 혜택')>i('③ 상담 예약')&&i(EV)>0&&i('기한: 2099년 12월 31일까지')>0&&i('쿠폰 번호 HF2611901')>0&&g.last.fit===true,L.slice(-8).join(' / '));
-   const q=await readQr(P);ok(tag+'이벤트 켬: QR 주소는 그대로(문구·기한은 주소에 없음) · 실제로 읽힘',g.last.url===URL1&&q.data===URL1&&!LEAK.test(g.last.url));
-   if(SHOTS&&vn==='PC'&&w==='jjh'){const u=await P.evaluate(()=>document.getElementById('gnImg').src);fs.writeFileSync(path.join(SHOTS,'안내문 A4 이벤트 있음 2026-11-20 v0.png'),Buffer.from(u.split(',')[1],'base64'))}}
-  if(SP.bom){const P=SP.bom;await win(P,'p2');const v=await vals(P);ok(vn+' 이봄이: 설정의 회사 대표번호가 기본 연락처로 (명함 번호 없을 때)',v.tel==='02-123-4567'&&(await P.evaluate(()=>window.__hfT.gn())).last.url===BASE+'?n=HF2605902&t=021234567',v.tel)}
+   const q=await readQr(P);ok(tag+'이벤트 켬: QR 주소에 문구·기한 없음 · 연락처는 설정의 회사 대표번호(02-123-4567)로 · 실제로 읽힘',g.last.url===URL2&&q.data===URL2&&!LEAK.test(g.last.url)&&(await vals(P)).tel==='02-123-4567');
+   if(SHOTS&&vn==='PC'&&w==='jjh'){const u=await P.evaluate(()=>document.getElementById('gnImg').src);fs.writeFileSync(path.join(SHOTS,'안내문 A4 이벤트 있음 2026-11-20 v1.png'),Buffer.from(u.split(',')[1],'base64'))}}
+  if(SP.bom){const P=SP.bom;await win(P,'p2');const v=await vals(P);ok(vn+' 이봄이: 설정의 회사 대표번호가 p2 기본 연락처로',v.tel==='02-123-4567'&&(await P.evaluate(()=>window.__hfT.gn())).last.url===BASE+'?n=HF2605902&t=021234567',v.tel)}
   // 긴 글도 한 장
   {const P=SP.jjh;await win(P,'p1');await P.fill('#gn_work','철거, 창호, 목공, 타일, 필름 도배, 마루, 가구, 전기, 조명, 설비, 방수, 도장, 유리, 금속, 준공 청소, 입주 청소, 폐기물 반출, 보양, 엘리베이터 보호');await P.fill('#gn_noise','11월 5일(목) ~ 7일(토) 철거, 11월 9일(월) ~ 10일(화) 창호·설비, 11월 16일(월) 타일 절단 — 오전 9시 ~ 오후 5시');await wait(800);const g=await P.evaluate(()=>window.__hfT.gn());
-   ok(vn+' 정진혁: 글이 길어도 한 장에 들어감(글자 자동 줄임) · QR 그대로 읽힘',g.last.fit===true&&(await readQr(P)).data===URL1);
-   if(SHOTS&&vn==='PC'){const u=await P.evaluate(()=>document.getElementById('gnImg').src);fs.writeFileSync(path.join(SHOTS,'안내문 A4 긴 글 2026-11-20 v0.png'),Buffer.from(u.split(',')[1],'base64'))}}
+   ok(vn+' 정진혁: 글이 길어도 한 장에 들어감(글자 자동 줄임) · QR 그대로 읽힘',g.last.fit===true&&(await readQr(P)).data===URL2);
+   if(SHOTS&&vn==='PC'){const u=await P.evaluate(()=>document.getElementById('gnImg').src);fs.writeFileSync(path.join(SHOTS,'안내문 A4 긴 글 2026-11-20 v1.png'),Buffer.from(u.split(',')[1],'base64'))}}
   // (아) 설정 고치기: 옛 값 hist · 기한 지남 · 끄기
   await A0.evaluate(()=>{const c=document.getElementById('gnVeil');if(c)c.querySelector('[data-gnclose]').click();window.__hfT.closeSheet();location.hash='#forms'});await wait(1000);if(!(await A0.locator('#gnCfText').isVisible()))await A0.locator('#gnCfg summary').click();
   await A0.fill('#gnCfUntil','2026-01-01');await A0.locator('[data-gncfsave]').click();await wait(1500);N=(await dbNow())['config/notice']||{};
@@ -193,7 +198,7 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
   ok(vn+' 문자 본문: 예약 내용 + 쿠폰 번호가 미리 채워짐',body==='[상담 예약] 공사 안내문 QR\n이름: 김이웃\n연락처: 010-5555-6666\n주소: 시험아파트 34평\n희망 상담: 2026-12-01 오후 (12시~18시)\n원하는 공사: 욕실, 주방\n남길 말: 문의 & 상담? 두 줄 <b>\n쿠폰 번호: HF2611901',body);
   s=await st(p);ok(vn+' 입력값을 저장·전송하지 않음 (localStorage·sessionStorage·쿠키 0 · 바깥 요청 0 · form 전송 없음)',s.ls===0&&s.ck===''&&reqs.every(u=>u.startsWith('http://e.test/card/event/'))&&!/XMLHttpRequest|fetch\(|sendBeacon|localStorage|sessionStorage|document\.cookie|WebSocket/.test(EVENT),reqs.filter(u=>!u.startsWith('http://e.test/')).join(' '));
   ok(vn+' 가로 넘침 없음 · 버튼 높이 44px 이상',await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1&&Array.from(document.querySelectorAll('a.btn:not([hidden]),button.btn')).every(x=>x.getBoundingClientRect().height>=44)));
-  if(SHOTS&&!ios){await p.evaluate(()=>{document.getElementById('rName').blur();window.scrollTo(0,0)});await p.screenshot({path:path.join(SHOTS,'고객 페이지 휴대폰 2026-11-20 v0.png'),fullPage:true})}
+  if(SHOTS&&!ios){await p.evaluate(()=>{document.getElementById('rName').blur();window.scrollTo(0,0)});await p.screenshot({path:path.join(SHOTS,'고객 페이지 휴대폰 2026-11-20 v1.png'),fullPage:true})}
   await p.close();
   // 번호가 없거나 이상한 값
   p=await go('?n=HF2611901');s=await st(p);ok(vn+' t 없음: 문자·전화 버튼 대신 ‘안내문에 적힌 번호로 연락 주세요’ · 예약 내용 복사는 됨',!s.sms&&s.call===null&&/안내문에 적힌 번호로 연락 주세요/.test(s.noTel||'')&&s.coupon==='HF2611901');
