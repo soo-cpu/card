@@ -99,6 +99,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:36pt;line-height:1.35;text
 .box .q{width:96mm;margin:0 auto}
 .box b{display:block;margin-top:4mm;font-size:14pt}
 .call{text-align:center;margin-top:9mm;font-size:12pt;color:#efe6d8}.call b{font-size:22pt;color:#fff;letter-spacing:.04em;margin-left:3mm}
+.hrs{text-align:center;font-size:11pt;color:#efe6d8;margin:3mm 0 0}
 .foot{position:absolute;left:18mm;right:18mm;bottom:12mm;text-align:center;font-size:9pt;color:#d9ccb9}
 """,
   body=lambda q: f"""<div class="sheet">
@@ -107,6 +108,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:36pt;line-height:1.35;text
 <p class="lead">카메라로 비추면 1분 간편 견적부터 바로 보실 수 있어요.<br>연락처를 남겨 주시면 하루 안에 연락드립니다.</p>
 <div class="box"><div class="q">{q}</div><b>24시간 견적 · 상담 신청</b></div>
 <p class="call">전화 상담<b>1566-5904</b></p>
+<p class="hrs">평일 오전 9시 ~ 오후 6시 · 저녁·주말은 100% 예약제</p>
 <div class="foot">아파트·상업 공간 인테리어 디자인과 시공 · 실내건축공사업 등록 업체</div></div>"""))
 
 # 3. 공사 현장 안내문 (엘리베이터·현관 게시)
