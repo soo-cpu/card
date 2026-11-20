@@ -1,0 +1,10 @@
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1280,height:1100}});
+const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+await p.goto('file://'+process.cwd()+'/work/타사 견적 비교기.html');await p.waitForTimeout(1500);
+await p.screenshot({path:'work/shot1.png',fullPage:false});
+await p.click('[data-tab=cust]');await p.waitForTimeout(300);await p.locator('#custDoc').screenshot({path:'work/shot2.png'});
+const w=await p.evaluate(()=>document.documentElement.scrollWidth);
+await p.setViewportSize({width:400,height:900});await p.click('[data-tab=staff]');await p.waitForTimeout(300);
+const w2=await p.evaluate(()=>document.documentElement.scrollWidth);
+console.log('errors',errs,'width',w,'phone',w2);await b.close();})();
