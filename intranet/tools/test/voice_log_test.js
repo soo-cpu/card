@@ -15,6 +15,8 @@ const SEED={"staff/st-chae":{name:"채진아",uid:"u_cja",level:"전체 담당",
  "projects/p1":{no:"P-2611-901",title:"시험마을 8단지",custName:"홍길동",custCode:"C-2611-901",stage:"시공",mgr:"정진혁",contractAmt:"33000000",estCost:"",perf:"순수 인테리어",approvals:[{amt:1515151,t:"자재"}],cat:"주거",inq:"2026-11-01",addr:"시험마을 8단지 804동 603호",work:"욕실",start:"2026-11-05",acLog:[{id:"ac1",at:T0,by:"u_boss",text:"옛 기록"}],progLog:[{id:"pg0",at:T0,by:"u_boss",byName:"최윤수",kind:"확인",proc:"철거",pct:100,src:"직접"}],updatedAt:T0},"ppriv/p1":{estCost:"20202020",updatedAt:T0},
  "projects/p2":{no:"P-2605-902",title:"지난 현장 주방",custName:"홍길동",custCode:"C-2611-901",stage:"시공",mgr:"이봄이",contractAmt:"12000000",cat:"주거",inq:"2026-04-01",work:"주방, 타일",updatedAt:T0},
  "projects/p3":{no:"P-2611-903",title:"다른마을 1동",custName:"박하나",stage:"상담",mgr:"정진혁",contractAmt:"",cat:"주거",inq:"2026-11-10",addr:"다른마을 1동 101호",work:"도배, 장판",updatedAt:T0},
+ "projects/p6":{no:"P-2611-906",title:"시험마을 9단지",custName:"한여섯",stage:"상담",mgr:"정진혁",contractAmt:"",cat:"주거",inq:"2026-11-13",work:"도배",updatedAt:T0},
+ "projects/p7":{no:"P-2611-907",title:"강감찬",custName:"강감찬",stage:"상담",mgr:"정진혁",contractAmt:"",cat:"주거",inq:"2026-11-14",work:"욕실",updatedAt:T0},
  "projects/p5":{no:"P-2611-905",title:"김일반 담당 현장",custName:"최다섯",stage:"시공",mgr:"김일반",contractAmt:"5000000",cat:"주거",inq:"2026-11-12",work:"도배",updatedAt:T0}};
 const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},bom:{id:"u_bom",name:"이봄이",email:"bom@test",isOwner:false},cja:{id:"u_cja",name:"채진아",email:"cja@test",isOwner:false},kim:{id:"u_kim",name:"김일반",email:"kim@test",isOwner:false}};
 // 가짜 받아쓰기: 실제 계약(dictation.d.ts)대로 — start 는 누른 그 자리(사용자 손짓)에서만, 상태 starting→listening→finishing→idle(이유), 거절은 not_granted
@@ -26,7 +28,8 @@ window.__MOCKDICT={onPartial:h=>{H.p.push(h);return()=>{}},onFinal:h=>{H.f.push(
  stop:()=>{const D=window.__dict;D.stops++;if(st==='idle')return Promise.resolve();set('finishing');return new Promise(res=>setTimeout(()=>{if(D.tail){const t=D.tail;D.tail='';H.f.forEach(h=>h({text:t}))}set('idle','stopped');res()},60))}}})();`;
 // 가짜 자동 정리: sample.json(prompt, options) — window.__sampleErr 가 있으면 그 코드로 거절
 const FAKESAMPLE=`window.__sampleCalls=[];window.__sampleReply=null;window.__sampleErr='';window.__MOCKSAMPLE=Object.assign(async()=>({text:'',truncated:false}),{json:async(prompt,opt)=>{window.__sampleCalls.push({prompt:String(prompt),sig:!!(opt&&opt.signal instanceof AbortSignal)});await new Promise(r=>setTimeout(r,150));if(window.__sampleErr)throw {code:window.__sampleErr,message:'x'};return JSON.parse(JSON.stringify(window.__sampleReply))}});`;
-const listOf=pr=>pr.slice(pr.indexOf('[현장 목록] (번호'),pr.lastIndexOf('\n[말한 글]\n')); // 보낸 글에서 현장 목록 부분
+const headOf=pr=>pr.slice(0,pr.lastIndexOf('\n[말한 글]\n')); // 보낸 글에서 말한 글을 뺀 앞부분(지시)
+const PJINFO=/P-26\d\d-\d{3}|현장 목록|시험마을|다른마을|지난 현장|김일반 담당|강감찬|홍길동|박하나|최다섯|한여섯/; // 프로젝트 번호·현장명·고객 이름
 const LEAK=/홍길동|박하나|최다섯|1234-5678|12345678|33000000|12000000|5000000|20202020|1515151|원가|마진|804동|603호/; // 고객 이름·전화·금액·원가·주소
 const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===undefined?'':String(typeof x==='string'?x:JSON.stringify(x)).replace(/\s+/g,' ').slice(0,360))};const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -69,11 +72,13 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
   const d3=await J.evaluate(()=>({st:window.__dict.state(),left:document.getElementById('vlLeft').textContent,txt:document.getElementById('vlText').value}));
   ok('더 말하기: 다시 60초 · 앞 글 뒤에 이어 붙음',d3.st==='listening'&&/남은 시간 (1:00|0:59)/.test(d3.left)&&/다녀옴\. 내일은 다른마을 실측\. 문제는 타일이 모자람\.$/.test(d3.txt),d3);
   // 정리하기 (듣는 중에 눌러도 먼저 멈추고 마지막 말까지 받은 뒤 보냄)
-  await J.evaluate(()=>{window.__dict.tail=' 끝.';window.__sampleReply={done:"- 시험마을 8단지 타일 시공",sites:[{no:"P-2611-901",name:"시험마을 8단지",text:"타일 붙임. 자재비 300만 원 더 든다고 함"},{no:"",name:"없는현장",text:"다녀옴"}],next:"다른마을 실측",issue:"타일이 모자람"}});
+  await J.evaluate(()=>{window.__dict.tail=' 끝.';window.__sampleReply={done:"- 시험마을 8단지 타일 시공",sites:[{name:"시험마을 8단지",text:"타일 붙임. 자재비 300만 원 더 든다고 함"},{name:"없는현장",text:"다녀옴"}],next:"다른마을 실측",issue:"타일이 모자람"}});
   await J.locator('#vlVeil [data-vlorg]').click();await wait(120);const stW=await step(J);await wait(900);
   const c1=await J.evaluate(()=>window.__sampleCalls.slice());
   ok('정리하기: ‘정리하는 중’ 뒤 초안 · 자동 정리 1번 요청(멈출 수 있는 신호 포함) · 마지막 말까지 들어감',stW==='wait'&&(await step(J))==='draft'&&c1.length===1&&c1[0].sig&&/문제는 타일이 모자람\. 끝\./.test(c1[0].prompt),[stW,await step(J),c1.length]);
-  ok('보낸 글: 볼 수 있는 프로젝트의 번호·현장명만 (고객 이름·전화·금액·주소 없음)',/P-2611-901 \| 시험마을 8단지/.test(c1[0].prompt)&&/P-2611-903 \| 다른마을 1동/.test(c1[0].prompt)&&!LEAK.test(listOf(c1[0].prompt))&&(listOf(c1[0].prompt).match(/^P-/gm)||[]).length===4,listOf(c1[0].prompt).slice(-260));
+  ok('자동 정리에 보낸 글: 프로젝트 번호·현장명·고객 이름 목록이 없음 (지시 + 말한 글뿐 · 현장명이 고객 이름인 프로젝트도 안 나감)',!PJINFO.test(headOf(c1[0].prompt))&&!/P-26\d\d-\d{3}|강감찬|지난 현장 주방|김일반 담당 현장|홍길동|박하나|최다섯|한여섯|9단지/.test(c1[0].prompt)&&/\[말한 글\]\n오늘 시험마을 8단지/.test(c1[0].prompt)&&c1[0].prompt.length<1400,c1[0].prompt.length);
+  const mm=await J.evaluate(()=>{const T=window.__hfT;return [T.vlMatch('시험마을 8단지'),T.vlMatch('시험마을8단지'),T.vlMatch('시험마을'),T.vlMatch('없는현장'),T.vlMatch('강감찬'),T.vlMatch('P-2611-903')]});
+  ok('현장 맞추기는 화면 안에서만: 이름이 하나만 걸리면 그 프로젝트 · 여러 개 걸리면(시험마을 → 8·9단지) 맞추지 않음 · 없으면 없음',JSON.stringify(mm)===JSON.stringify(['p1','p1',null,null,'p7','p3']),mm);
   const dr=await J.locator('#vlVeil .sheet').innerText();
   ok('초안: 네 칸(한 일·현장·내일 할 일·문제) · 맞춘 현장(번호)과 못 맞춘 이름 구분 · 맞아요/고칠게요 버튼',await J.locator('#vlVeil [data-vlsec]').count()===4&&/프로젝트 맞춤\s*P-2611-901 시험마을 8단지/.test(dr)&&/목록에 없음\s*없는현장/.test(dr)&&/타일이 모자람/.test(dr)&&(await J.locator('#vlVeil [data-vlsave]').innerText()).trim()==='맞아요'&&(await J.locator('#vlVeil [data-vlfix]').innerText()).trim()==='고칠게요',dr);
   const mid=await dbNow();
@@ -85,7 +90,7 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
   const pl=k=>((db1[k]||{}).progLog||[]).filter(x=>x.kind==='퇴근 일지');
   const wl=pl('work/all/projects/p1').concat(pl('mine/u_jjh/projects/p1'));
   ok('맞춘 현장 프로젝트 ‘현장 진행 상황’ 기록(progLog)에 한 줄 덧붙임 (퇴근 일지 · 이름 · 날짜 · 내용 · 금액 가림)',wl.length>=1&&wl[0].byName==='정진혁'&&wl[0].d===D&&wl[0].text==='타일 붙임. 자재비 (금액) 더 든다고 함'&&wl[0].vid===e1.id&&!/300/.test(JSON.stringify(wl)),wl[0]);
-  ok('못 맞춘 현장·다른 프로젝트에는 반영 없음',!['p2','p3','p5'].some(i=>pl('work/all/projects/'+i).length||pl('mine/u_jjh/projects/'+i).length||pl('projects/'+i).length));
+  ok('못 맞춘 현장·다른 프로젝트에는 반영 없음',!['p2','p3','p5','p6','p7'].some(i=>pl('work/all/projects/'+i).length||pl('mine/u_jjh/projects/'+i).length||pl('projects/'+i).length));
   const doneTxt=await J.locator('#vlDone').innerText();ok('저장 뒤 안내: 현장 1곳 반영 · 문제는 대표에게 알림 · 목록에 없는 현장은 일지에만',/현장 진행 상황 1곳/.test(doneTxt)&&/문제는 대표에게 알렸어요/.test(doneTxt)&&/목록에 없는 현장은 일지에만/.test(doneTxt),doneTxt);
   await wait(9000);db1=await dbNow();const o1=db1['projects/p1'];
   ok('대표 화면이 받아 원본 프로젝트에도 한 줄 (옛 기록·옛 진행 줄·금액 칸 그대로)',pl('projects/p1').length===1&&o1.progLog.some(x=>x.id==='pg0')&&o1.acLog.length===1&&o1.contractAmt==='33000000'&&o1.perf==='순수 인테리어'&&JSON.stringify(o1.approvals)===JSON.stringify(before['projects/p1'].approvals),[pl('projects/p1').length,o1.perf,o1.contractAmt]);
@@ -98,16 +103,16 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
   await J.evaluate(()=>{location.hash='#home'});await wait(600);await J.locator('#vlHomeBtn').click();await wait(1200);
   ok('다시 열면 ‘오늘 쓴 일지 1건’ 안내',/오늘 쓴 일지 1건/.test(await J.locator('#vlVeil .sheet').innerText()));
   await J.locator('#vlText').fill('다른마을 1동 실측했고 내일 견적 보냄');
-  await J.evaluate(()=>{window.__sampleReply={done:"실측",sites:[{no:"",name:"어느 마을",text:"실측 끝"}],next:"견적 보내기",issue:"없음"}});
+  await J.evaluate(()=>{window.__sampleReply={done:"실측",sites:[{name:"시험마을",text:"실측 끝"}],next:"견적 보내기",issue:"없음"}});
   await J.locator('#vlVeil [data-vlorg]').click();await wait(1100);
-  ok('문제가 ‘없음’이면 빈칸으로 봄',(await vl(J)).f.issue===''&&(await step(J))==='draft');
+  ok('문제가 ‘없음’이면 빈칸으로 봄 · 비슷한 현장이 여러 곳이면 ‘목록에 없음’ + 고르라는 안내',(await vl(J)).f.issue===''&&(await step(J))==='draft'&&(await vl(J)).f.sites[0].pid===''&&/목록에 없음\s*시험마을\s*비슷한 현장이 2곳이에요/.test(await J.locator('#vlVeil .sheet').innerText()));
   await J.locator('#vlVeil [data-vlfix]').click();await wait(300);
   ok('고칠게요 → 네 칸을 고치는 화면 (말한 글 보기 · 현장 고르기 목록)',(await step(J))==='edit'&&await J.locator('#vlVeil [data-vlf]').count()===3&&await J.locator('#vlVeil select[data-vlk="pid"]').count()===1&&await J.locator('#vlRaw').count()===1);
   await J.locator('#vlVeil [data-vlf="done"]').fill('다른마을 1동 실측');await J.locator('#vlVeil select[data-vlk="pid"]').selectOption('p3');await wait(300);await J.locator('#vlVeil [data-vls="0"][data-vlk="text"]').fill('실측 끝');
   const mid2=await dbNow();ok('고치는 동안에도 저장소는 그대로',mid2['acct/u_jjh/vlog/'+D].entries.length===1);
   await J.locator('#vlVeil [data-vlsave]').click();await wait(2500);
   let db2=await dbNow();const E2=db2['acct/u_jjh/vlog/'+D].entries,e2=E2[1];
-  ok('고친 뒤 저장: 덧붙여 2건 (첫 일지 그대로) · 고친 것은 옛 값(자동 정리 초안)을 남김 · 글로 씀',E2.length===2&&JSON.stringify(E2[0])===JSON.stringify(e1)&&e2.done==='다른마을 1동 실측'&&e2.how==='글'&&e2.sites[0].pid==='p3'&&e2.old&&e2.old.length===1&&e2.old[0].done==='실측'&&e2.old[0].sites[0].name==='어느 마을'&&e2.old[0].sites[0].pid==='',e2);
+  ok('고친 뒤 저장: 덧붙여 2건 (첫 일지 그대로) · 고친 것은 옛 값(자동 정리 초안)을 남김 · 글로 씀',E2.length===2&&JSON.stringify(E2[0])===JSON.stringify(e1)&&e2.done==='다른마을 1동 실측'&&e2.how==='글'&&e2.sites[0].pid==='p3'&&e2.old&&e2.old.length===1&&e2.old[0].done==='실측'&&e2.old[0].sites[0].name==='시험마을'&&e2.old[0].sites[0].pid==='',e2);
   const wl3=(((db2['work/all/projects/p3']||{}).progLog)||[]).concat(((db2['mine/u_jjh/projects/p3']||{}).progLog)||[]).filter(x=>x.kind==='퇴근 일지');
   ok('고쳐서 고른 현장(p3)에 한 줄 · 문제 목록은 그대로 1건',wl3.length>=1&&wl3[0].text==='실측 끝'&&db2['acct/u_jjh/vlog/idx'].days[D].n===2&&db2['acct/u_jjh/vlog/idx'].days[D].issue.length===1,wl3[0]);
   await closeWin(J);
@@ -136,10 +141,10 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
    if(w==='kim'){ // 가려진 프로젝트 미반영
     const L=await P.evaluate(()=>window.__hfT.vlPjs());ok('김일반(일반 직원): 현장 목록은 본인이 볼 수 있는 프로젝트뿐 (p5)',JSON.stringify(L)==='["p5"]',L);
     await P.locator('#view [data-vlopen]').click();await wait(900);await P.locator('#vlText').fill('시험마을 8단지 가서 도배 봤고 김일반 담당 현장 마무리');
-    await P.evaluate(()=>{window.__sampleReply={done:"도배 확인",sites:[{no:"P-2611-901",name:"시험마을 8단지",text:"도배 봄"},{no:"P-2611-905",name:"김일반 담당 현장",text:"마무리"}],next:"",issue:""}});
-    await P.locator('#vlVeil [data-vlorg]').click();await wait(1100);const pr=listOf(await P.evaluate(()=>window.__sampleCalls.slice(-1)[0].prompt));
-    ok('김일반: 보낸 현장 목록에 가려진 프로젝트(p1·p2·p3) 없음',/P-2611-905 \| 김일반 담당 현장/.test(pr)&&!/P-2611-901|P-2605-902|P-2611-903|시험마을|다른마을/.test(pr),pr.slice(-200));
-    const f=(await vl(P)).f;ok('김일반: 가려진 프로젝트 번호를 받아도 ‘목록에 없음’으로 둠',f.sites[0].pid===''&&f.sites[1].pid==='p5',f.sites);
+    await P.evaluate(()=>{window.__sampleReply={done:"도배 확인",sites:[{no:"P-2611-901",name:"시험마을 8단지",text:"도배 봄"},{name:"김일반 담당 현장",text:"마무리"}],next:"",issue:""}});
+    await P.locator('#vlVeil [data-vlorg]').click();await wait(1100);const pr=headOf(await P.evaluate(()=>window.__sampleCalls.slice(-1)[0].prompt));
+    ok('김일반: 보낸 글에 프로젝트 목록 없음 (가려진 것도 본인 것도)',!PJINFO.test(pr),pr.slice(-120));
+    const f=(await vl(P)).f;ok('김일반: 가려진 프로젝트 이름·번호가 돌아와도 ‘목록에 없음’ · 본인 프로젝트는 화면 안에서 맞춤',f.sites[0].pid===''&&f.sites[1].pid==='p5',f.sites);
     await P.locator('#vlVeil [data-vlfix]').click();await wait(300);const opts=await P.locator('#vlVeil select[data-vlk="pid"]').first().locator('option').allInnerTexts();
     ok('김일반: 고치는 화면의 현장 목록에도 가려진 프로젝트 없음',opts.length===2&&/P-2611-905/.test(opts[1]),opts);
     await P.locator('#vlVeil [data-vlsave]').click();await wait(2500);const dk=await dbNow();const kd=dk['acct/u_kim/vlog/'+D];
@@ -152,7 +157,11 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
   const end=await dbNow();const lost=Object.keys(before).filter(k=>end[k]===undefined);
   const shrink=Object.keys(before).filter(k=>end[k]&&Object.keys(before[k]).some(f=>Array.isArray(before[k][f])&&(!Array.isArray(end[k][f])||end[k][f].length<before[k][f].length)));
   ok('삭제 없음: 처음 있던 문서 전부 그대로 있고 줄어든 목록 칸 없음',lost.length===0&&shrink.length===0,[lost,shrink]);
-  ok('원본 금액·성과 칸 그대로 (perf·contractAmt·approvals·원가)',['p1','p2','p3','p5'].every(i=>['perf','contractAmt','approvals','estCost'].every(f=>JSON.stringify(end['projects/'+i][f])===JSON.stringify(before['projects/'+i][f])))&&JSON.stringify(end['ppriv/p1'])===JSON.stringify(before['ppriv/p1']));
+  ok('원본 금액·성과 칸 그대로 (perf·contractAmt·approvals·원가)',['p1','p2','p3','p5','p6','p7'].every(i=>['perf','contractAmt','approvals','estCost'].every(f=>JSON.stringify(end['projects/'+i][f])===JSON.stringify(before['projects/'+i][f])))&&JSON.stringify(end['ppriv/p1'])===JSON.stringify(before['ppriv/p1']));
+  const mny=await J.evaluate(()=>{const f=window.__hfT.vlNoMoney;const hide=[["3억 5천만 원 계약","(금액) 계약"],["1억 2천만 원","(금액)"],["500만","(금액)"],["200만 추가","(금액) 추가"],["단가 35000","단가 (금액)"],["33,000,000 계약","(금액) 계약"],["5천만원","(금액)"],["이천만 원","(금액)"],["자재비 300만 원 더","자재비 (금액) 더"],["삼억 오천만 원","(금액)"],["5천 원","(금액)"],["1,500,000원","(금액)"]],keep=["이천 원룸 12 원목","202동 708호","11월 23일","오전 9시","3명","2층","P-2611-004","010-1234-5678","1566-5904","2026년 준공","2026-11-21","김 사원이 직원과 병원에 감"];
+   const bad=hide.filter(([i,o])=>f(i)!==o).map(([i])=>i+'→'+f(i)).concat(keep.filter(i=>f(i)!==i).map(i=>i+'→'+f(i)));const ms=["이".repeat(200),"천만".repeat(100),"5"+"천만".repeat(300),"1,".repeat(400),"일이삼사 ".repeat(150),"9".repeat(900)].map(x=>{const t=performance.now();f(x);return Math.round(performance.now()-t)});return {bad,ms,n:hide.length+keep.length}});
+  ok('금액 가림: 가릴 꼴 12가지(3억 5천만 원은 통째로 하나·500만·200만 추가·단가 35000·33,000,000 계약·5천만원·이천만 원 …)는 가리고, 가리면 안 되는 꼴 12가지(이천 원룸 12 원목·202동 708호·11월 23일·오전 9시·3명·2층·P-2611-004·전화번호 꼴 …)는 그대로',mny.bad.length===0&&mny.n===24,mny.bad);
+  ok('금액 가림 속도: ‘이’×200자 · ‘천만’×100 같은 글도 50ms 안에 끝남 (겹친 되풀이 없음)',mny.ms.every(x=>x<50),mny.ms);
   const den=[].concat(await J.evaluate(()=>window.__mockDenied),await A.evaluate(()=>window.__mockDenied)).filter(x=>/vlog/.test(x));ok('퇴근 일지 저장 길에 접근 규칙 거절 없음 (지금 규칙 33개 그대로)',den.length===0,den);
   await ctx.close()}
 
@@ -209,6 +218,13 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
   ok('정리 중 ‘그만’: 말하는 화면으로 돌아오고 글은 그대로',sw==='wait'&&(await step(B))==='say'&&await B.locator('#vlText').inputValue()==='긴 정리 시험');
   await B.keyboard.press('Escape');await wait(300);ok('Esc 로 창 닫힘',await B.locator('#vlVeil').count()===0);
   // 대표 미리 보기(직원 화면으로 보기)에서는 저장 안 됨 · 연습 모드에는 버튼 없음
+  {const D=await today(A);const w=await B.evaluate(async d=>{const db=await window.claude.use('db');try{await db.doc('acct/u_bom/vlog/'+d).set({entries:[null,5,"글",["목록"],{done:{a:1},sites:"문자",next:7,issue:["x"],at:12,how:{}},{done:"정상 일지",sites:[null,"s",{pid:5,name:{},text:"현장글"},{pid:"",name:"이름만",multi:"x"}],next:null,issue:"진짜 문제",at:"엉망"}]});await db.doc('acct/u_bom/vlog/idx').set({days:{[d]:{issue:"x"},bad:5,"2026-11-20":"y","2026-11-19":{issue:[null,7,{id:5,text:{}},{id:"ok1",text:"목록의 진짜 문제",at:9}]}}});return true}catch(e){return String(e)}},D);
+   await A.evaluate(()=>{location.hash='#home'});await wait(500);await A.evaluate(()=>window.__hfT.vlbLoad());await wait(1200);const e0=errs.length;
+   await A.evaluate(()=>{location.hash='#vlog'});await wait(2500);const bc=await A.locator('#vlvCards .vlcard[data-vluid="u_bom"]').innerText().catch(()=>'');
+   ok('직원 문서가 이상한 모양(목록 안에 빈 값·숫자·글, 칸이 객체·목록)이어도 대표 ‘퇴근 일지 요약’이 뜸 (읽을 수 있는 것만 보임 · 화면 오류 없음)',w===true&&errs.length===e0&&await A.locator('#vlvCards .vlcard').count()===4&&/정상 일지/.test(bc)&&/현장글/.test(bc)&&/이름만/.test(bc)&&/진짜 문제/.test(bc)&&/문제 있음/.test(bc)&&/2건/.test(bc)&&!/object Object/.test(bc),bc.slice(0,200));
+   await B.evaluate(async d=>{const db=await window.claude.use('db');await db.doc('acct/u_bom/vlog/'+d).set({entries:"엉망",days:5});await db.doc('acct/u_bom/vlog/idx').set({days:"엉망"})},D);await A.locator('#view [data-vlvre]').click();await wait(2000);
+   const bc2=await A.locator('#vlvCards .vlcard[data-vluid="u_bom"]').innerText().catch(()=>'');await A.evaluate(()=>{location.hash='#home'});await wait(500);await A.evaluate(()=>window.__hfT.vlbLoad());await wait(1200);
+   ok('일지 목록 칸이 글자여도 요약·대표 홈이 멈추지 않음 (그 직원은 ‘아직 없음’)',errs.length===e0&&/아직 없음/.test(bc2)&&await A.locator('#vlvCards').count()===0&&await A.locator('#view h1').count()>=1,bc2)}
   {await A.evaluate(()=>{location.hash='#preview'});await wait(900);await A.locator('[data-pvgo="st-jung"]').click();await wait(3000);const k0=JSON.stringify(Object.keys(await dbNow()).filter(k=>/vlog/.test(k)));
    await A.evaluate(()=>{location.hash='#home'});await wait(700);await A.locator('#vlHomeBtn').click();await wait(900);await A.locator('#vlText').fill('미리 보기 시험');await A.evaluate(()=>{window.__sampleReply={done:"미리 보기",sites:[],next:"",issue:"문제"}});await A.locator('#vlVeil [data-vlorg]').click();await wait(1000);
    const st0=await step(A);await A.locator('#vlVeil [data-vlsave]').click();await wait(1500);
