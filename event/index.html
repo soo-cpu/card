@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="format-detection" content="telephone=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#1F4E79">
 <title>이웃 안내 · 홈퍼니싱 아르띠꼬 스튜디오</title>
 <style>
@@ -43,6 +43,12 @@ textarea{min-height:84px;resize:vertical}
 pre{white-space:pre-wrap;word-break:break-all;background:var(--gray);border-radius:10px;padding:12px;font:inherit;font-size:15px;margin:10px 0 0}
 footer{text-align:center;color:var(--sub);font-size:13px;margin-top:22px}
 footer a{color:var(--navy)}
+.back{margin-top:14px}
+.gal{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;margin:8px -4px 0;padding:0 4px 6px}
+.gal figure{flex:0 0 86%;margin:0;scroll-snap-align:center;border-radius:12px;overflow:hidden;background:var(--gray);aspect-ratio:4/3}
+.gal figure:only-child{flex-basis:100%}
+.gal img{display:block;width:100%;height:100%;object-fit:cover}
+.benefit{font-weight:700;font-size:18px;color:var(--deep)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -52,31 +58,44 @@ footer a{color:var(--navy)}
   <h1>이웃 공사로 불편을 드려<br>죄송합니다</h1>
 </header>
 <main class="wrap">
+ <div id="vHome">
   <section class="card">
     <p>공사 기간 동안 소음과 불편을 참아 주셔서 고맙습니다. 끝까지 안전하고 깨끗하게 마무리하겠습니다.</p>
-    <p class="sub">우리 집도 바꿔 보고 싶으시면 아래에서 바로 알아보실 수 있어요.</p>
+  </section>
+
+  <section class="card" id="photoBox" hidden>
+    <h2 id="photoTitle">이 단지 공사 사진</h2>
+    <p class="sub">같은 단지에서 저희가 공사한 집이에요. 옆으로 넘겨 보세요.</p>
+    <div class="gal" id="photoList"></div>
   </section>
 
   <section class="card coupon" id="couponBox" hidden>
-    <h2>이웃 쿠폰 번호</h2>
+    <h2>이웃 혜택</h2>
+    <p class="benefit" id="benefitText" hidden></p>
     <div class="code"><b id="couponNo"></b><button type="button" class="btn sm" id="couponCopy">번호 복사</button></div>
-    <p>안내문에 적힌 이웃 혜택은 <b>상담 때 쿠폰 번호를 알려 주시면</b> 적용해 드려요.</p>
+    <p id="benefitHow">안내문에 적힌 이웃 혜택은 <b>상담 때 쿠폰 번호를 알려 주시면</b> 적용해 드려요.</p>
     <p class="sub" id="copyMsg" role="status" aria-live="polite"></p>
   </section>
 
   <section class="card">
     <h2>무엇을 도와드릴까요?</h2>
     <div class="stack">
-      <a class="btn pri" id="btnEst" target="_blank" rel="noopener noreferrer">① 간편견적 받기<small>우리 집 공사 예상 금액을 알아봐요</small></a>
-      <a class="btn pri" id="btnDesign" target="_blank" rel="noopener noreferrer">② 우리 집 디자인 시안 만들기<small>간편견적 화면에서 우리 집 시안을 만들어요</small></a>
-      <a class="btn" href="#reserve">③ 상담 예약서 쓰기<small>원하는 날짜를 적어 문자로 보내요</small></a>
+      <a class="btn pri" id="btnEst" target="_blank" rel="noopener noreferrer">간편견적<small>우리 집 공사 예상 금액 · 디자인 시안을 바로 알아봐요</small></a>
+      <a class="btn pri" id="btnConsult" href="#consult">상담 문의<small>전화하거나 상담 예약서를 남겨요</small></a>
+      <a class="btn" id="btnAbout" href="#about">회사 소개<small>어떤 회사인지 · 시공 사례 보기</small></a>
     </div>
-    <p class="note" id="estNote">간편견적·디자인 시안을 접수하실 때 <b>요청 칸에 쿠폰 번호를 적어 주세요.</b></p>
+    <p class="note" id="estNote">간편견적을 접수하실 때 <b>요청 칸에 쿠폰 번호를 적어 주세요.</b></p>
   </section>
+ </div>
 
+ <div id="vConsult" hidden>
+  <a class="btn sm back" href="#home">← 처음으로</a>
   <section class="card" id="reserve">
-    <h2>상담 예약서</h2>
-    <p class="sub">적으신 내용은 이 페이지에 저장되거나 어디로도 보내지지 않아요. ‘문자로 예약 보내기’를 누르면 휴대폰 문자 앱이 열리고, 보내기를 누르셔야 전달돼요.</p>
+    <h2 id="consultH" tabindex="-1">상담 문의</h2>
+    <div class="stack">
+      <a class="btn pri" id="btnCall" hidden>전화 걸기</a>
+    </div>
+    <p class="sub" style="margin-top:12px">아래 상담 예약서를 적어 보내셔도 돼요. 적으신 내용은 이 페이지에 저장되거나 어디로도 보내지지 않아요. ‘문자로 예약 보내기’를 누르면 휴대폰 문자 앱이 열리고, 보내기를 누르셔야 전달돼요.</p>
     <form id="rf" autocomplete="on" novalidate>
       <label for="rName">이름</label><input id="rName" maxlength="20" autocomplete="name" required>
       <label for="rTel">연락처</label><input id="rTel" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="010-0000-0000" required>
@@ -98,16 +117,31 @@ footer a{color:var(--navy)}
     </form>
     <div class="msg" id="rMsg" role="alert"></div>
     <div class="stack">
-      <a class="btn pri" id="btnSms" href="#reserve" hidden>문자로 예약 보내기</a>
-      <a class="btn" id="btnCall" hidden>전화 걸기</a>
+      <a class="btn pri" id="btnSms" href="#consult" hidden>문자로 예약 보내기</a>
       <p class="note" id="noTel" hidden>안내문에 적힌 번호로 연락 주세요. 아래 ‘예약 내용 복사’를 눌러 문자에 붙여 넣으셔도 돼요.</p>
       <button type="button" class="btn" id="btnCopy">예약 내용 복사</button>
     </div>
     <pre id="rPreview" hidden></pre>
   </section>
+ </div>
+
+ <div id="vAbout" hidden>
+  <a class="btn sm back" href="#home">← 처음으로</a>
+  <section class="card">
+    <h2 id="aboutH" tabindex="-1">회사 소개</h2>
+    <p><b>(주)홈퍼니싱 &amp; 아르띠꼬 스튜디오</b></p>
+    <p id="aboutText">집을 고치는 상담부터 디자인, 시공, 사후 관리까지 한 팀이 맡아 진행합니다. 지금 이웃 세대 공사도 저희가 하고 있어요.</p>
+    <div class="stack">
+      <a class="btn pri" id="lnkHome" target="_blank" rel="noopener noreferrer">홈페이지 보기<small>회사 안내 · 시공 사례</small></a>
+      <a class="btn" id="lnkBlog" target="_blank" rel="noopener noreferrer">블로그</a>
+      <a class="btn" id="lnkYt" target="_blank" rel="noopener noreferrer">유튜브</a>
+      <a class="btn" id="btnCall2" hidden>전화 걸기</a>
+    </div>
+  </section>
+ </div>
 
   <footer>
-    <p><a id="lnkBlog" target="_blank" rel="noopener noreferrer">블로그</a> · <a id="lnkYt" target="_blank" rel="noopener noreferrer">유튜브</a></p>
+    <p class="sub" id="countNote" hidden>이 페이지는 몇 번 열렸는지만 셉니다. 이름·연락처는 보내지 않아요.</p>
     <p>ⓒ HOME FURNISHING CO. all rights reserved.</p>
   </footer>
 </main>
@@ -115,8 +149,10 @@ footer a{color:var(--navy)}
 (function(){
 "use strict";
 // ── 바꿀 수 있는 주소 (여기만 고치면 됨) ──
-var EST_URL="https://soo17115-cmyk.github.io/";      // ① 간편견적
-var DESIGN_URL="https://soo17115-cmyk.github.io/";   // ② 우리 집 디자인 시안 (간편견적 화면 안)
+var EST_URL="https://soo17115-cmyk.github.io/";      // 간편견적 (디자인 시안도 이 화면 안)
+var HOME_URL="https://soo-cpu.github.io/card/site/";  // 회사 소개 › 홈페이지 보기
+var SITES_URL="sites.json";   // 쿠폰 번호(현장)별 단지 이름·사진·혜택 문구 (같은 폴더 · 기본은 빈 파일)
+var COUNT_URL="";             // QR 방문 집계 주소 (구글 Apps Script 웹앱 /exec). 비워 두면 아무것도 보내지 않음. 보내는 값 = 현장 코드 + 버튼 종류뿐
 var BLOG_URL="https://blog.naver.com/artico_studio";
 var YT_URL="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew";
 
@@ -128,9 +164,50 @@ var coupon=/^[A-Za-z0-9]{1,16}$/.test(rawN)?rawN.toUpperCase():"";
 var tel=/^(01[016789]\d{7,8}|0[2-6]\d{7,9}|070\d{7,8}|1[5-8]\d{6})$/.test(rawT)?rawT:"";
 var mobile=/^01[016789]\d{7,8}$/.test(tel);
 
-$("btnEst").href=EST_URL;$("btnDesign").href=DESIGN_URL;$("lnkBlog").href=BLOG_URL;$("lnkYt").href=YT_URL;
+// 간편견적: 정보를 묻지 않고 바로 이동 (이름·전화·동호수는 간편견적 쪽에서 결과 보기 직전에만). 쿠폰 번호만 주소에 붙여 넘김(간편견적 사이트가 읽지 않아도 문제없음)
+$("btnEst").href=EST_URL+(coupon?"?coupon="+coupon:"");$("lnkHome").href=HOME_URL;$("lnkBlog").href=BLOG_URL;$("lnkYt").href=YT_URL;
 if(coupon){$("couponNo").textContent=coupon;$("couponBox").hidden=false}
-else{$("estNote").textContent="간편견적·디자인 시안을 접수하실 때 요청 칸에 ‘공사 안내문을 보고 왔어요’라고 적어 주세요."}
+else{$("estNote").textContent="간편견적을 접수하실 때 요청 칸에 ‘공사 안내문을 보고 왔어요’라고 적어 주세요."}
+
+// 방문 집계: COUNT_URL 이 있을 때만, 현장 코드(쿠폰 번호)와 버튼 종류만 보냄. 이름·전화·적은 내용은 보내지 않음. 실패해도 화면에는 영향 없음
+var KINDS={visit:1,est:1,consult:1,about:1,sms:1,call:1};
+function count(kind){
+  if(!COUNT_URL||!KINDS[kind]||!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(COUNT_URL))return;
+  try{fetch(COUNT_URL+"?c="+(coupon||"NONE")+"&b="+kind,{method:"GET",mode:"no-cors",credentials:"omit",cache:"no-store",keepalive:true,referrerPolicy:"no-referrer"}).catch(function(){})}catch(e){}
+}
+if(COUNT_URL)$("countNote").hidden=false;
+count("visit");
+$("btnEst").addEventListener("click",function(){count("est")});
+
+// 화면 바꾸기: 처음(#home) · 상담 문의(#consult · 옛 #reserve) · 회사 소개(#about). 모르는 값은 처음 화면
+var VIEWS={home:"vHome",consult:"vConsult",reserve:"vConsult",about:"vAbout"},curView="";
+function show(first){
+  var h=String(location.hash||"").replace(/^#/,""),id=VIEWS.hasOwnProperty(h)?VIEWS[h]:"vHome";
+  ["vHome","vConsult","vAbout"].forEach(function(v){$(v).hidden=v!==id});
+  if(id!==curView){
+    if(!first){try{window.scrollTo(0,0)}catch(e){}var t=id==="vConsult"?$("consultH"):id==="vAbout"?$("aboutH"):null;if(t){try{t.focus({preventScroll:true})}catch(e){}}}
+    if(id==="vConsult")count("consult");if(id==="vAbout")count("about");
+    curView=id;
+  }
+}
+window.addEventListener("hashchange",function(){show(false)});show(true);
+
+// 단지별 내용(sites.json): 쿠폰 번호 → {name 단지 이름, photos 사진 주소 목록, benefit 혜택 문구}. 없거나 못 읽으면 기본 화면 그대로. 글은 textContent, 사진은 정해진 모양의 주소만
+function txt(v,max){return String(v==null?"":v).replace(/[\u0000-\u001F\u007F<>]+/g," ").replace(/\s+/g," ").trim().slice(0,max)}
+function okPhoto(u){u=String(u||"");if(u.length>300||/\.\.|[\s"'<>\\]/.test(u))return "";if(/^https:\/\/[A-Za-z0-9.-]+\/[^?#]*\.(jpe?g|png|webp)(\?[A-Za-z0-9=&_.%-]*)?$/i.test(u))return u;if(/^[A-Za-z0-9_\-][A-Za-z0-9_\-.\/%]*\.(jpe?g|png|webp)$/i.test(u))return u;return ""}
+function applySite(o){
+  if(!o||typeof o!=="object")return;
+  var name=txt(o.name,30),ben=txt(o.benefit,200),ph=Array.isArray(o.photos)?o.photos.map(okPhoto).filter(Boolean).slice(0,8):[];
+  if(ben){$("benefitText").textContent=ben;$("benefitText").hidden=false;$("benefitHow").textContent="상담 때 아래 쿠폰 번호를 알려 주시면 적용해 드려요."}
+  if(ph.length){
+    var box=$("photoBox"),list=$("photoList"),left=ph.length;
+    if(name)$("photoTitle").textContent=name+" 공사 사진";
+    ph.forEach(function(u,i){var f=document.createElement("figure"),im=document.createElement("img");im.alt=(name||"이 단지")+" 공사 사진 "+(i+1);im.loading=i?"lazy":"eager";im.decoding="async";im.referrerPolicy="no-referrer";
+      im.addEventListener("error",function(){f.remove();left--;if(left<=0)box.hidden=true});im.src=u;f.appendChild(im);list.appendChild(f)});
+    box.hidden=false;
+  }
+}
+if(coupon){try{fetch(SITES_URL,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&typeof j==="object"&&Object.prototype.hasOwnProperty.call(j,coupon))applySite(j[coupon])}).catch(function(){})}catch(e){}}
 
 function copy(text,done){
   function fb(){var ok=false;try{var a=document.createElement("textarea");a.value=text;a.setAttribute("readonly","");a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();ok=document.execCommand("copy");a.remove()}catch(e){}done(ok)}
@@ -161,10 +238,10 @@ function check(){
 function isIOS(){var u=navigator.userAgent||"";return /iPhone|iPad|iPod/i.test(u)||(/Macintosh/i.test(u)&&navigator.maxTouchPoints>1)}
 function smsHref(text){return "sms:"+tel+(isIOS()?"&":"?")+"body="+encodeURIComponent(text)}
 
-if(tel){var call=$("btnCall");call.href="tel:"+tel;call.hidden=false}
+if(tel){[$("btnCall"),$("btnCall2")].forEach(function(call){call.href="tel:"+tel;call.hidden=false;call.addEventListener("click",function(){count("call")})})}
 if(mobile){
   var sms=$("btnSms");sms.hidden=false;
-  sms.addEventListener("click",function(e){if(!check()){e.preventDefault();sms.setAttribute("href","#reserve");return}sms.setAttribute("href",smsHref(body()))});
+  sms.addEventListener("click",function(e){if(!check()){e.preventDefault();sms.setAttribute("href","#consult");return}sms.setAttribute("href",smsHref(body()));count("sms")});
 }else{
   $("noTel").hidden=false;
   if(tel)$("noTel").textContent="이 번호는 문자를 받지 못할 수 있어요. ‘전화 걸기’를 누르시거나, 안내문에 적힌 번호로 연락 주세요.";
