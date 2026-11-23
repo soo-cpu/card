@@ -49,6 +49,15 @@ footer a{color:var(--navy)}
 .gal figure:only-child{flex-basis:100%}
 .gal img{display:block;width:100%;height:100%;object-fit:cover}
 .benefit{font-weight:700;font-size:18px;color:var(--deep)}
+.hist{list-style:none;margin:6px 0 0;padding:0}.hist li{display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--line)}.hist li:first-child{border-top:0}.hist b{flex:0 0 52px;color:var(--navy)}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.tags span{background:var(--blue);color:var(--deep);border-radius:999px;padding:6px 12px;font-size:15px;font-weight:700}
+.gal figcaption{position:relative;margin-top:-34px;padding:6px 10px;background:rgba(0,0,0,.45);color:#fff;font-size:14px}
+.docs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}.doc{border:1.5px solid var(--line);border-radius:12px;background:#fff;padding:8px;font:inherit;color:var(--ink);text-align:left;cursor:pointer;display:block;text-decoration:none}
+.doc img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;object-position:top;border-radius:8px;background:var(--gray)}.doc b{display:block;font-size:15px;margin-top:6px}.doc small{display:block;color:var(--sub);font-size:13px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+#docView{position:fixed;inset:0;background:rgba(10,18,32,.86);z-index:30;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px))}
+#docView .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#fff;font-weight:700;margin-bottom:8px}#docView .bar button{min-height:44px}
+#docView .pic{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;text-align:center}#docView img{max-width:100%;background:#fff;border-radius:6px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -126,17 +135,55 @@ footer a{color:var(--navy)}
  </div>
 
  <div id="vAbout" hidden>
-  <a class="btn sm back" href="#home">← 처음으로</a>
+  <a class="btn sm back" href="#home" id="aboutBack">← 처음으로</a>
   <section class="card">
     <h2 id="aboutH" tabindex="-1">회사 소개</h2>
-    <p><b>(주)홈퍼니싱 &amp; 아르띠꼬 스튜디오</b></p>
-    <p id="aboutText">집을 고치는 상담부터 디자인, 시공, 사후 관리까지 한 팀이 맡아 진행합니다. 지금 이웃 세대 공사도 저희가 하고 있어요.</p>
+    <p><b id="coName">주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</b></p>
+    <p id="aboutText">“좋은 공간은 화려한 디자인보다 지켜진 약속에서 완성된다고 믿습니다.”</p>
+    <p class="sub" id="aboutWho">대표 최윤수</p>
+  </section>
+  <section class="card">
+    <h2>바로 하기</h2>
     <div class="stack">
-      <a class="btn pri" id="lnkHome" target="_blank" rel="noopener noreferrer">홈페이지 보기<small>회사 안내 · 시공 사례</small></a>
-      <a class="btn" id="lnkBlog" target="_blank" rel="noopener noreferrer">블로그</a>
-      <a class="btn" id="lnkYt" target="_blank" rel="noopener noreferrer">유튜브</a>
-      <a class="btn" id="btnCall2" hidden>전화 걸기</a>
+      <a class="btn pri" id="abEst" target="_blank" rel="noopener noreferrer">간편견적 받기<small>평수만 넣으면 예상 금액이 나와요</small></a>
+      <a class="btn pri" href="#consult" id="abConsult">상담 예약<small>원하는 날짜를 남겨요</small></a>
+      <div class="row2"><a class="btn" id="btnCall2" href="tel:15665904">전화하기</a><a class="btn" id="abKakao" target="_blank" rel="noopener noreferrer" hidden>카톡 상담</a></div>
     </div>
+  </section>
+  <section class="card">
+    <h2>걸어온 길</h2>
+    <ul class="hist" id="histList"><li><b>2014</b><span>아르띠꼬 스튜디오로 인테리어 시작</span></li><li><b>2020</b><span>주식회사 홈퍼니싱 법인 설립 · 실내건축공사업 등록</span></li><li><b>2020~</b><span>관공서·학교 공간 50곳 이상 시공</span></li><li><b>2026</b><span>여성기업 확인 갱신 (2029년 11월까지)</span></li></ul>
+  </section>
+  <section class="card">
+    <h2>시공 분야</h2>
+    <div class="tags" id="fieldList"><span>주거 · 아파트 리모델링</span><span>상가 · 사무실</span><span>관공서 · 학교</span></div>
+  </section>
+  <section class="card" id="worksBox">
+    <h2>대표 시공 사진</h2>
+    <div class="gal" id="worksList"></div>
+  </section>
+  <section class="card" id="docsBox">
+    <h2>믿을 수 있는 회사입니다</h2>
+    <p class="sub">누르면 크게 볼 수 있어요. 개인 정보가 있는 칸은 가렸습니다.</p>
+    <div class="docs" id="docsList"></div>
+  </section>
+  <section class="card">
+    <h2>찾아오시는 길</h2>
+    <p><b>대표번호 1566-5904</b></p>
+    <p id="addrShow">상봉 전시장 · 서울특별시 중랑구 상봉로 131 듀오트리스 2F</p>
+    <p class="sub" id="addrHq">구리 본사 · 경기도 구리시 동구릉로129번길 2-1, 1층</p>
+    <div class="row2"><a class="btn sm" id="mapKakao" target="_blank" rel="noopener noreferrer">카카오맵</a><a class="btn sm" id="mapNaver" target="_blank" rel="noopener noreferrer">네이버 지도</a></div>
+    <p class="sub" style="margin-top:10px">방문 상담은 미리 예약해 주세요. 저녁과 주말은 예약제로 운영해요.</p>
+  </section>
+  <section class="card">
+    <h2>더 보기</h2>
+    <div class="stack">
+      <a class="btn" id="lnkHome" target="_blank" rel="noopener noreferrer">홈페이지<small>회사 안내 · 시공 사례</small></a>
+      <div class="row2"><a class="btn sm" id="lnkYt" target="_blank" rel="noopener noreferrer">유튜브</a><a class="btn sm" id="lnkBlog" target="_blank" rel="noopener noreferrer">블로그</a><a class="btn sm" id="lnkInsta" target="_blank" rel="noopener noreferrer">인스타그램</a><a class="btn sm" id="lnkOhouse" target="_blank" rel="noopener noreferrer">오늘의집</a></div>
+    </div>
+  </section>
+ </div>
+ <div id="docView" hidden role="dialog" aria-modal="true" aria-labelledby="docViewT"><div class="bar"><span id="docViewT"></span><button type="button" class="btn sm" id="docClose">닫기</button></div><div class="pic"><img id="docViewImg" alt=""></div></div>
   </section>
  </div>
 
@@ -155,6 +202,16 @@ var SITES_URL="sites.json";   // 쿠폰 번호(현장)별 단지 이름·사진�
 var COUNT_URL="";             // QR 방문 집계 주소 (구글 Apps Script 웹앱 /exec). 비워 두면 아무것도 보내지 않음. 보내는 값 = 현장 코드 + 버튼 종류뿐
 var BLOG_URL="https://blog.naver.com/artico_studio";
 var YT_URL="https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew";
+var COMPANY_URL="company.json"; // 회사 소개 문구·사진·서류·채널 (같은 폴더 · 인트라넷 '회사 소개 페이지 (QR)' 설정에서 만듦 · 없거나 못 읽으면 아래 기본값)
+// 회사 소개 기본값 (company.json 이 없을 때)
+var CO={greeting:"“좋은 공간은 화려한 디자인보다 지켜진 약속에서 완성된다고 믿습니다.”",who:"대표 최윤수",
+  history:[["2014","아르띠꼬 스튜디오로 인테리어 시작"],["2020","주식회사 홈퍼니싱 법인 설립 · 실내건축공사업 등록"],["2020~","관공서·학교 공간 50곳 이상 시공"],["2026","여성기업 확인 갱신 (2029년 11월까지)"]],
+  fields:["주거 · 아파트 리모델링","상가 · 사무실","관공서 · 학교"],
+  works:[["../site/images/work-1.jpg","구리역 롯데캐슬 시그니처"],["../site/images/work-2.jpg","구의현대 2단지 34평"],["../site/images/work-3.jpg","구리 갈매 상업 사무실"],["../site/images/record.jpg","관공서 · 학교 실적"]],
+  docs:[["docs/license.jpg","실내건축공사업 등록증","경기도 구리시 · 2020"],["docs/biz.jpg","사업자등록증","주식회사 홈퍼니싱"],["docs/women.jpg","여성기업 확인서","2026.11.22 ~ 2029.11.21"],["../site/files/company-profile.pdf","회사 지명원","PDF · 시공 실적 전체"]],
+  links:{kakao:"",insta:"https://www.instagram.com/artico_design.studio",ohouse:"https://ohou.se/partner/myhome/13553169",blog:BLOG_URL,yt:YT_URL},
+  mapKakao:"https://map.kakao.com/link/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131",
+  mapNaver:"https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%A4%91%EB%9E%91%EA%B5%AC%20%EC%83%81%EB%B4%89%EB%A1%9C%20131"};
 
 var $=function(id){return document.getElementById(id)};
 // 주소 값은 엄격히 걸러서만 씀: n = 영문·숫자 1~16자, t = 숫자만(휴대폰·지역번호·070·15xx). 화면에는 textContent 로만 넣음
@@ -170,12 +227,12 @@ var rawS=q?String(q.get("src")||""):"",place=Object.prototype.hasOwnProperty.cal
 if(place&&q&&String(q.get("go")||"")==="est"){try{location.replace(EST_URL+"?src="+rawS)}catch(e){}}
 if(place){
   document.title="매장 방문·상담 예약 · 홈퍼니싱 아르띠꼬 스튜디오";
-  var h1=document.querySelector("header h1");if(h1)h1.textContent=rawS==="desk"?"상담 예약 · 간편견적":"매장 방문·상담 예약";
+  var h1=document.querySelector("header h1");if(h1)h1.textContent=rawS==="OFFICE"?"매장 방문·상담 예약":"찾아 주셔서 고맙습니다";
   var p1=document.querySelector("#vHome .card p");if(p1)p1.textContent=rawS==="desk"?"찾아 주셔서 고맙습니다. 상담 중 궁금한 건 여기서 바로 확인하세요.":"찾아 주셔서 고맙습니다. 저녁과 주말은 예약제로 운영하고 있어요.";
 }
 
 // 간편견적: 정보를 묻지 않고 바로 이동 (이름·전화·동호수는 간편견적 쪽에서 결과 보기 직전에만). 쿠폰 번호만 주소에 붙여 넘김(간편견적 사이트가 읽지 않아도 문제없음)
-$("btnEst").href=EST_URL+(place?"?src="+rawS:coupon?"?coupon="+coupon:"");$("lnkHome").href=HOME_URL;$("lnkBlog").href=BLOG_URL;$("lnkYt").href=YT_URL;
+$("btnEst").href=EST_URL+(place?"?src="+rawS:coupon?"?coupon="+coupon:"");$("abEst").href=$("btnEst").href;$("lnkHome").href=HOME_URL;
 if(coupon){$("couponNo").textContent=coupon;$("couponBox").hidden=false}
 else{$("estNote").textContent=place?"간편견적을 접수하실 때 요청 칸에 ‘"+FROM+"’라고 적어 주세요.":"간편견적을 접수하실 때 요청 칸에 ‘공사 안내문을 보고 왔어요’라고 적어 주세요."}
 
@@ -192,7 +249,7 @@ $("btnEst").addEventListener("click",function(){count("est")});
 // 화면 바꾸기: 처음(#home) · 상담 문의(#consult · 옛 #reserve) · 회사 소개(#about). 모르는 값은 처음 화면
 var VIEWS={home:"vHome",consult:"vConsult",reserve:"vConsult",about:"vAbout"},curView="";
 function show(first){
-  var h=String(location.hash||"").replace(/^#/,""),id=VIEWS.hasOwnProperty(h)?VIEWS[h]:(!h&&place)?"vConsult":"vHome"; /* 매장 QR 은 처음부터 상담 문의 화면 */
+  var h=String(location.hash||"").replace(/^#/,""),id=VIEWS.hasOwnProperty(h)?VIEWS[h]:(!h&&place)?(rawS==="OFFICE"?"vConsult":"vAbout"):"vHome"; /* 매장 문 앞·상담석 QR 은 회사 소개가 첫 화면 (다음 지시 2026-11-23 v6 C) · 사무실 유리문 ‘상담 문의 남기기’ QR 은 상담 문의 화면 */
   ["vHome","vConsult","vAbout"].forEach(function(v){$(v).hidden=v!==id});
   if(id!==curView){
     if(!first){try{window.scrollTo(0,0)}catch(e){}var t=id==="vConsult"?$("consultH"):id==="vAbout"?$("aboutH"):null;if(t){try{t.focus({preventScroll:true})}catch(e){}}}
@@ -204,6 +261,36 @@ window.addEventListener("hashchange",function(){show(false)});show(true);
 
 // 단지별 내용(sites.json): 쿠폰 번호 → {name 단지 이름, photos 사진 주소 목록, benefit 혜택 문구}. 없거나 못 읽으면 기본 화면 그대로. 글은 textContent, 사진은 정해진 모양의 주소만
 function txt(v,max){return String(v==null?"":v).replace(/[\u0000-\u001F\u007F<>]+/g," ").replace(/\s+/g," ").trim().slice(0,max)}
+function okDoc(u){u=String(u||"");return /^(docs\/[A-Za-z0-9_-]+\.(jpe?g|png|webp)|\.\.\/site\/files\/[A-Za-z0-9_-]+\.pdf)$/.test(u)?u:""}
+function okLink(u,hosts){u=String(u||"");var m=/^https:\/\/([A-Za-z0-9.-]+)\/[^\s"'<>\\]{0,200}$/.exec(u);if(!m)return "";var hst=m[1].toLowerCase();return hosts.some(function(x){return hst===x||hst.slice(-x.length-1)==="."+x})?u:""}
+var LINK_HOSTS={kakao:["pf.kakao.com","open.kakao.com"],insta:["instagram.com"],ohouse:["ohou.se"],blog:["blog.naver.com"],yt:["youtube.com"]};
+function el(tag,txtv,cls){var e=document.createElement(tag);if(txtv!=null)e.textContent=txtv;if(cls)e.className=cls;return e}
+function drawCo(){
+  $("aboutText").textContent=CO.greeting;$("aboutWho").textContent=CO.who;
+  var hl=$("histList");hl.textContent="";CO.history.forEach(function(r){var li=el("li");li.appendChild(el("b",r[0]));li.appendChild(el("span",r[1]));hl.appendChild(li)});
+  var fl=$("fieldList");fl.textContent="";CO.fields.forEach(function(f){fl.appendChild(el("span",f))});
+  var wl=$("worksList");wl.textContent="";CO.works.forEach(function(w,i){var f=el("figure"),im=el("img");im.alt=w[1]||("시공 사진 "+(i+1));im.loading=i?"lazy":"eager";im.decoding="async";im.src=w[0];im.addEventListener("error",function(){f.remove();if(!wl.children.length)$("worksBox").hidden=true});f.appendChild(im);if(w[1])f.appendChild(el("figcaption",w[1]));wl.appendChild(f)});$("worksBox").hidden=!CO.works.length;
+  var dl=$("docsList");dl.textContent="";CO.docs.forEach(function(d){var pdf=/\.pdf$/.test(d[0]),b=el(pdf?"a":"button",null,"doc");if(pdf){b.href=d[0];b.target="_blank";b.rel="noopener"}else{b.type="button";b.addEventListener("click",function(){openDoc(d)})}
+    var im=el("img");im.alt="";im.loading="lazy";im.src=pdf?"../site/images/record.jpg":d[0];b.appendChild(im);b.appendChild(el("b",d[1]));if(d[2])b.appendChild(el("small",d[2]));dl.appendChild(b)});$("docsBox").hidden=!CO.docs.length;
+  var L=CO.links;$("abKakao").hidden=!L.kakao;if(L.kakao)$("abKakao").href=L.kakao;
+  [["lnkYt","yt"],["lnkBlog","blog"],["lnkInsta","insta"],["lnkOhouse","ohouse"]].forEach(function(p){var a=$(p[0]);a.hidden=!L[p[1]];if(L[p[1]])a.href=L[p[1]]});
+  $("mapKakao").href=CO.mapKakao;$("mapNaver").href=CO.mapNaver;
+}
+var lastFocus=null;
+function openDoc(d){lastFocus=document.activeElement;$("docViewT").textContent=d[1];var im=$("docViewImg");im.alt=d[1];im.src=d[0];$("docView").hidden=false;try{$("docClose").focus()}catch(e){}}
+function closeDoc(){$("docView").hidden=true;$("docViewImg").removeAttribute("src");if(lastFocus){try{lastFocus.focus()}catch(e){}}}
+$("docClose").addEventListener("click",closeDoc);$("docView").addEventListener("click",function(e){if(e.target===this)closeDoc()});document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("docView").hidden)closeDoc()});
+// company.json: 정해진 모양만 받음 (글은 textContent, 사진·서류는 이 사이트 안 정해진 경로, 채널은 정해진 주소만)
+function applyCo(j){if(!j||typeof j!=="object")return;
+  if(txt(j.greeting,200))CO.greeting=txt(j.greeting,200);if(txt(j.who,40))CO.who=txt(j.who,40);
+  if(Array.isArray(j.history)){var h=j.history.slice(0,10).map(function(r){return Array.isArray(r)?[txt(r[0],10),txt(r[1],80)]:null}).filter(function(r){return r&&r[0]&&r[1]});if(h.length)CO.history=h}
+  if(Array.isArray(j.fields)){var f=j.fields.slice(0,8).map(function(x){return txt(x,30)}).filter(Boolean);if(f.length)CO.fields=f}
+  if(Array.isArray(j.works))CO.works=j.works.slice(0,8).map(function(w){return Array.isArray(w)&&/^\.\.\/site\/images\/[A-Za-z0-9_-]+\.(jpe?g|png|webp)$/.test(String(w[0]||""))?[w[0],txt(w[1],30)]:null}).filter(Boolean);
+  if(Array.isArray(j.docs))CO.docs=j.docs.slice(0,8).map(function(d){return Array.isArray(d)&&okDoc(d[0])?[d[0],txt(d[1],30),txt(d[2],40)]:null}).filter(function(d){return d&&d[1]});
+  if(j.links&&typeof j.links==="object")Object.keys(LINK_HOSTS).forEach(function(k){if(Object.prototype.hasOwnProperty.call(j.links,k))CO.links[k]=okLink(j.links[k],LINK_HOSTS[k])});
+}
+drawCo();
+try{fetch(COMPANY_URL,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j){applyCo(j);drawCo()}}).catch(function(){})}catch(e){}
 function okPhoto(u){u=String(u||"");if(u.length>300||/\.\.|[\s"'<>\\]/.test(u))return "";if(/^https:\/\/[A-Za-z0-9.-]+\/[^?#]*\.(jpe?g|png|webp)(\?[A-Za-z0-9=&_.%-]*)?$/i.test(u))return u;if(/^[A-Za-z0-9_\-][A-Za-z0-9_\-.\/%]*\.(jpe?g|png|webp)$/i.test(u))return u;return ""}
 function applySite(o){
   if(!o||typeof o!=="object")return;
@@ -248,7 +335,9 @@ function check(){
 function isIOS(){var u=navigator.userAgent||"";return /iPhone|iPad|iPod/i.test(u)||(/Macintosh/i.test(u)&&navigator.maxTouchPoints>1)}
 function smsHref(text){return "sms:"+tel+(isIOS()?"&":"?")+"body="+encodeURIComponent(text)}
 
-if(tel){[$("btnCall"),$("btnCall2")].forEach(function(call){call.href="tel:"+tel;call.hidden=false;call.addEventListener("click",function(){count("call")})})}
+if(tel){$("btnCall").href="tel:"+tel;$("btnCall").hidden=false}
+$("btnCall2").href="tel:"+(tel||"15665904");
+[$("btnCall"),$("btnCall2")].forEach(function(call){call.addEventListener("click",function(){count("call")})});
 if(mobile){
   var sms=$("btnSms");sms.hidden=false;
   sms.addEventListener("click",function(e){if(!check()){e.preventDefault();sms.setAttribute("href","#consult");return}sms.setAttribute("href",smsHref(body()));count("sms")});
