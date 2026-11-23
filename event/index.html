@@ -220,19 +220,19 @@ var tel=/^(01[016789]\d{7,8}|0[2-6]\d{7,9}|070\d{7,8}|1[5-8]\d{6})$/.test(rawT)?
 var mobile=/^01[016789]\d{7,8}$/.test(tel);
 // 매장에서 찍은 QR (src): store = 매장 문 앞 안내문 · OFFICE = 사무실 유리문 시트지 · desk = 상담석 아크릴 안내문. 그 밖의 값은 무시(공사 안내문 화면 그대로)
 // [집계 코드, 문자 첫 줄·유입 경로 표시]. 매장 QR 은 모두 회사 소개가 첫 화면 (대표 결정 2026-11-23 '모든 매장 QR → 회사 소개') · go=est(간편견적 QR)도 바로 넘기지 않고 회사 소개 맨 위 '간편견적 받기'로 이어짐
-var PLACES={store:["STORE","매장 QR"],OFFICE:["OFFICE","매장 QR · OFFICE"],desk:["DESK","상담석 QR"]};
+var PLACES={store:["STORE","매장 QR"],OFFICE:["OFFICE","매장 QR · OFFICE"],desk:["DESK","상담석 QR"],share:["SHARE","카톡·문자 공유"]}; /* share = 카톡·문자로 보낸 회사 소개 링크(event/about/ → ?src=share) · 대표 지시 2026-11-23 */
 var rawS=q?String(q.get("src")||""):"",place=Object.prototype.hasOwnProperty.call(PLACES,rawS)?PLACES[rawS]:null,FROM=place?place[1]:"공사 안내문 QR";
 var goEst=!!(place&&q&&String(q.get("go")||"")==="est");
 if(place){
-  document.title="매장 방문·상담 예약 · 홈퍼니싱 아르띠꼬 스튜디오";
-  var h1=document.querySelector("header h1");if(h1)h1.textContent="찾아 주셔서 고맙습니다";
+  document.title=rawS==="share"?"아르띠꼬 스튜디오를 소개합니다 · 홈퍼니싱 아르띠꼬 스튜디오":"매장 방문·상담 예약 · 홈퍼니싱 아르띠꼬 스튜디오";
+  var h1=document.querySelector("header h1");if(h1)h1.textContent=rawS==="share"?"아르띠꼬 스튜디오를 소개합니다":"찾아 주셔서 고맙습니다";
   var p1=document.querySelector("#vHome .card p");if(p1)p1.textContent=rawS==="desk"?"찾아 주셔서 고맙습니다. 상담 중 궁금한 건 여기서 바로 확인하세요.":"찾아 주셔서 고맙습니다. 저녁과 주말은 예약제로 운영하고 있어요.";
 }
 
 // 간편견적: 정보를 묻지 않고 바로 이동 (이름·전화·동호수는 간편견적 쪽에서 결과 보기 직전에만). 쿠폰 번호만 주소에 붙여 넘김(간편견적 사이트가 읽지 않아도 문제없음)
 $("btnEst").href=EST_URL+(place?"?src="+rawS:coupon?"?coupon="+coupon:"");$("abEst").href=$("btnEst").href;
 if(rawS==="desk"){$("abConsult").hidden=true} /* 상담석은 이미 상담 중 → 회사 소개 화면에 상담 예약 버튼 숨김 (대표 지시 2026-11-23) */
-if(goEst||rawS==="desk"){var qa=$("abEst").closest("section"),ab=$("vAbout"),back=$("aboutBack");if(qa&&ab&&back)ab.insertBefore(qa,back.nextSibling);$("abEst").querySelector("small").textContent="여기를 누르면 간편견적이 열려요";}$("lnkHome").href=HOME_URL;
+if(goEst||rawS==="desk"||rawS==="share"){var qa=$("abEst").closest("section"),ab=$("vAbout"),back=$("aboutBack");if(qa&&ab&&back)ab.insertBefore(qa,back.nextSibling);$("abEst").querySelector("small").textContent="여기를 누르면 간편견적이 열려요";}$("lnkHome").href=HOME_URL;
 if(coupon){$("couponNo").textContent=coupon;$("couponBox").hidden=false}
 else{$("estNote").textContent=place?"간편견적을 접수하실 때 요청 칸에 ‘"+FROM+"’라고 적어 주세요.":"간편견적을 접수하실 때 요청 칸에 ‘공사 안내문을 보고 왔어요’라고 적어 주세요."}
 
@@ -345,6 +345,7 @@ if(mobile){
   $("noTel").hidden=false;
   if(place)$("noTel").textContent="안내문에 적힌 상담 전화로 연락 주세요. 아래 ‘예약 내용 복사’를 눌러 문자에 붙여 넣으셔도 돼요.";
   if(tel)$("noTel").textContent="이 번호는 문자를 받지 못할 수 있어요. ‘전화 걸기’를 누르시거나, 안내문에 적힌 번호로 연락 주세요.";
+  if(tel&&rawS==="share")$("noTel").textContent="‘전화 걸기’를 누르시거나, ‘예약 내용 복사’를 눌러 링크를 보내 준 담당자에게 문자로 보내 주세요.";
 }
 $("btnCopy").addEventListener("click",function(){if(!check())return;var t=body(),p=$("rPreview");p.textContent=t;p.hidden=false;copy(t,function(ok){$("rMsg").textContent="";p.textContent=t+(ok?"\n\n(복사했어요 · 문자에 붙여 넣어 보내 주세요)":"\n\n(복사가 막혔어요 · 위 글을 길게 눌러 복사해 주세요)")})});
 $("rf").addEventListener("submit",function(e){e.preventDefault()});
