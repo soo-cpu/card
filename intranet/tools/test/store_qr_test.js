@@ -70,7 +70,7 @@ const readQr=async(P,i,gray)=>{const d=await P.evaluate(async([i,gray])=>{const 
  if(SHOTS){fs.mkdirSync(SHOTS,{recursive:true});const u=await A.evaluate(()=>document.getElementById('gsImg').src);fs.writeFileSync(path.join(SHOTS,'매장 안내문 미리 보기.png'),Buffer.from(u.split(',')[1],'base64'))}
  // 유입 경로
  await A.evaluate(()=>{location.hash='#projects'});await wait(1500);
- ok('유입 경로 목록에 ‘매장 QR’·‘공사 안내문 QR’',await A.evaluate(()=>{window.__hfT.openQ;return true})&&/"공사 안내문 QR","매장 QR","상담석 QR","기타"\]/.test(HTML));
+ ok('유입 경로 목록에 ‘매장 QR’·‘공사 안내문 QR’',await A.evaluate(()=>{window.__hfT.openQ;return true})&&/"공사 안내문 QR","매장 QR","상담석 QR","카톡·문자 공유","기타"\]/.test(HTML));
  d=await D();
  ok('간편견적 접수 글에 쿠폰 번호 → 유입 경로 ‘공사 안내문 QR’ (옛 값 ‘간편견적’은 routeAuto.from 에 남음) · 성과금 실적 구분 그대로',d['projects/p1'].route==='공사 안내문 QR'&&d['projects/p1'].routeAuto&&d['projects/p1'].routeAuto.from==='간편견적'&&d['projects/p1'].perf==='순수 인테리어'&&d['projects/p1'].lead.text===SEED['projects/p1'].lead.text,JSON.stringify([d['projects/p1'].route,d['projects/p1'].routeAuto,d['projects/p1'].perf]));
  ok('간편견적 접수 글에 ‘매장 QR’ → 유입 경로 ‘매장 QR’',d['projects/p2'].route==='매장 QR'&&d['projects/p2'].routeAuto.from==='간편견적',d['projects/p2'].route);
