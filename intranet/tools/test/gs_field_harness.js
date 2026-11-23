@@ -3,7 +3,7 @@
 const fs=require('fs'),vm=require('vm'),crypto=require('crypto'),path=require('path');
 module.exports=function makeServer(opt){opt=opt||{};
   const src=fs.readFileSync(opt.file||path.join(__dirname,'../../field-script/Code.gs'),'utf8');
-  const st={now:0,props:Object.assign({},opt.props||{}),cache:{},sheets:{},locks:0};
+  const st={now:0,props:Object.assign({},opt.props||{}),cache:{},sheets:{},locks:0,mails:[]};  // v5(2026-11-23): setProperty·MailApp 흉내 더함
   const sb=a=>Array.from(a,b=>b>127?b-256:b),ub=a=>Buffer.from(Array.from(a,b=>b&255));
   const Utilities={
     computeHmacSha256Signature:(v,k)=>sb(crypto.createHmac('sha256',Buffer.from(String(k),'utf8')).update(Buffer.from(String(v),'utf8')).digest()),
@@ -22,7 +22,7 @@ module.exports=function makeServer(opt){opt=opt||{};
       getDisplayValues(){const o=[];for(let i=0;i<nr;i++){const a=[];for(let j=0;j<nc;j++)a.push(String((rows[r-1+i]||[])[c-1+j]||''));o.push(a)}return o}};return R}};return sh}
   const ss={getSheetByName:n=>st.sheets[n]||null,insertSheet:n=>(st.sheets[n]=sheet(n)),getId:()=>'ss'};
   let fid=0;const folder=n=>({getId:()=>'folder'+(++fid),getUrl:()=>'https://drive.test/f',getName:()=>n,createFolder:x=>folder(x),getFoldersByName:()=>({hasNext:()=>false}),getFiles:()=>({hasNext:()=>false}),createFile:()=>({getId:()=>'file'+(++fid),getUrl:()=>'https://drive.test/x'})});
-  const ctx={Utilities,CacheService:{getScriptCache:()=>cacheObj},PropertiesService:{getScriptProperties:()=>({getProperty:k=>st.props[k]===undefined?null:st.props[k]})},
+  const ctx={Utilities,CacheService:{getScriptCache:()=>cacheObj},PropertiesService:{getScriptProperties:()=>({getProperty:k=>st.props[k]===undefined?null:st.props[k],setProperty:(k,v)=>{st.props[k]=String(v)}})},MailApp:{sendEmail:(to,subj,body)=>{if(st.mailFail)throw new Error('mail fail');st.mails.push({to,subj,body})}},
     LockService:{getScriptLock:()=>({waitLock(){st.locks++},releaseLock(){st.locks--}})},SpreadsheetApp:{openById:()=>ss,getActiveSpreadsheet:()=>ss},
     DriveApp:{getFolderById:id=>folder(id),getFileById:()=>{throw new Error('no file')},getFilesByName:()=>({hasNext:()=>false}),getRootFolder:()=>folder('root')},
     ContentService:{createTextOutput:t=>({text:t,setMimeType(){return this}}),MimeType:{JSON:'json'}},UrlFetchApp:{fetch:()=>{throw new Error('no net')}},ScriptApp:{getOAuthToken:()=>''},console};

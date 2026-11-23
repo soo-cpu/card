@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-23 v4 (이전: '현장소통 Code.gs 2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-23 v5 (이전: '현장소통 Code.gs 2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -34,6 +34,16 @@
  *
  * v4 (검토 반영 2026-11-23): 자동 생성 현장명이 비면 고정 글 '홈퍼니싱 현장' (현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호 안 씀)
  *    확인 번호는 자르기 전 원래 값이 숫자 4자리일 때만 (긴 값을 앞 4자리로 저장하지 않음). 시트 칸·탭은 v3 와 같음 (setup 다시 안 해도 됨)
+ *
+ * v5에서 더한 것 (대표 지시 2026-11-23 · 직원별 고정 6자리 번호로 관리 화면 입장)
+ *  - 직원 번호: 대표가 직원마다 정하는 6자리. 서버에는 HMAC-SHA256(소금, 이름+번호) 해시만 ('직원 번호' 탭). 소금 = 스크립트 속성 PIN_SALT (없으면 setup 이 무작위로 만듦)
+ *    직원 이름 목록 = '설정' 탭 '직원 이름' 줄 (쉼표로 구분, 대표가 고침. 처음 값 정진혁,이봄이,채진아)
+ *  - 5번 틀리면 그 직원 '잠김' (시간이 지나도 안 풀림, 대표가 풀어 줌) · 전체 틀린 시도도 1시간에 20번까지 (잠금 안에서 셈)
+ *  - 번호가 맞으면 30일 기억 기기 토큰(기기 localStorage)을 주고, 서버는 토큰 해시만 '기억 기기' 탭에. 30일 안에는 토큰 → 6시간 출입증 ("T:" 구조 그대로)
+ *  - 새 기기로 들어오면 대표에게 메일 (스크립트 속성 OWNER_EMAIL, 없으면 기록만. 메일에 번호·토큰 없음) + '기록' 탭에 '새 기기'
+ *  - 대표(관리 비밀번호로 들어온 사람)만: 번호 정하기·바꾸기(그 직원 기억 기기 모두 무효)·잠금 풀기·즉시 차단(번호·기기·출입증 무효)·이름 추가·접속 기록 보기
+ *    직원 출입증(임시 열쇠·직원 번호)으로 온 요청은 이 동작들을 거절
+ *  - 기존 5분 입장권(FIELD_STAFF_KEY, 화면 이름 '임시 열쇠')·관리 비밀번호·고객 확인 번호는 그대로. 지우는 행·칸 없음 (바뀐 값은 '옛 값' 탭)
  */
 
 var TAB = {
@@ -44,7 +54,9 @@ var TAB = {
   pdfs:     ['PDF',  ['파일ID','현장코드','파일 이름','만든 시각']],
   settings: ['설정', ['항목','값','설명']],
   log:      ['기록', ['시각','동작','현장코드','누가','내용']],
-  hist:     ['옛 값', ['시각','현장코드','칸','옛 값','누가','까닭']]   // v3: 고치기 전 값 (지우지 않음)
+  hist:     ['옛 값', ['시각','현장코드','칸','옛 값','누가','까닭']],   // v3: 고치기 전 값 (지우지 않음)
+  pins:     ['직원 번호', ['이름','번호 해시','상태','틀린 횟수','바꾼 때','세대','잠긴 때']],          // v5: 번호는 해시만
+  devs:     ['기억 기기', ['직원','토큰 해시','만든 때','만료','기기 요약','상태','마지막 사용']]      // v5: 토큰은 해시만
 };
 var INIT_PW = '';   // 비워 둠(저장소 공개). 설치 때 대표 드라이브 '현장소통 첫 비밀번호.txt'를 읽고, 없으면 무작위.
 var SHEET_ID = '1Mx45YBU5_Dy7a9i9pAn89VLA40PRJdMGAHTvmc0zpHI';   // 현장소통 데이터 2026-11-06 v0
@@ -57,7 +69,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 4 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 5 });
 }
 
 function doPost(e) {
@@ -189,8 +201,70 @@ function ticketCheck_(k, key, nowMs) {
 function staffTok_(req, cache) {
   var pw = String(req && req.pw || '');
   if (!/^T:[A-Za-z0-9]{32,80}$/.test(pw)) return '';
-  return String(cache.get('tks_' + pw.slice(2)) || '');
+  var v = String(cache.get('tks_' + pw.slice(2)) || '');
+  if (!v) return '';
+  var o = null;
+  if (v.charAt(0) === '{') { try { o = JSON.parse(v); } catch (x) { return ''; } }
+  var who = o ? String(o.w || '') : v;
+  if (!who) return '';
+  var pr = pinRow_(who);   // v5: 즉시 차단된 직원은 어떤 출입증도 안 됨
+  if (pr && pr[2] === '차단') return '';
+  if (o && o.p && (!pr || String(pr[5]) !== String(o.g))) return '';   // 직원 번호 출입증: 번호를 바꾸거나 차단하면 끝
+  return who;
 }
+/* v5: 대표만 (관리 비밀번호로 온 요청). 직원 출입증("T:")은 거절 */
+function owner_(req) {
+  if (/^T:/.test(String(req && req.pw || ''))) throw new Error('대표만 할 수 있어요 (관리 비밀번호로 들어와 주세요)');
+  var who = admin_(req);
+  if (who !== '관리') throw new Error('대표만 할 수 있어요 (관리 비밀번호로 들어와 주세요)');
+  return who;
+}
+
+/* ---------- v5: 직원 번호 · 기억 기기 ---------- */
+var PIN_MAX_FAIL = 5, PIN_ALL_MAX = 20, PIN_ALL_TTL = 3600, DEV_DAYS = 30, SESSION_S = 21600;
+var STAFF_DEFAULT = '정진혁,이봄이,채진아';
+function props_() { return PropertiesService.getScriptProperties(); }
+/* 소금(PIN_SALT): make 가 참이면 없을 때 무작위로 만듦 (setup·번호 정하기). 이미 있으면 절대 바꾸지 않음 */
+function salt_(make) {
+  var p = props_(), s = String(p.getProperty('PIN_SALT') || '').trim();
+  if (!s && make) { s = newCode_() + newCode_(); p.setProperty('PIN_SALT', s); }
+  if (!s) throw new Error('직원 번호가 아직 준비되지 않았어요 (대표가 setup 을 한 번 실행해 주세요)');
+  return s;
+}
+function mac_(msg) { return b64u_(Utilities.computeHmacSha256Signature(String(msg), salt_())); }
+function pinHash_(name, pin) { return mac_('pin:' + name + ':' + pin); }
+function devHash_(tok) { return mac_('dev:' + tok); }
+function newTok_() { return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, ''); }
+function validName_(n) { n = String(n == null ? '' : n).replace(/\s+/g, ''); return /^[가-힣A-Za-z]{2,10}$/.test(n) ? n : ''; }
+function staffNames_() {
+  var seen = {}, out = [];
+  String(setting_('직원 이름') || '').split(/[,·\s]+/).forEach(function (x) { var n = validName_(x); if (n && !seen[n] && out.length < 30) { seen[n] = 1; out.push(n); } });
+  return out;
+}
+function ensurePinSettings_() {
+  if (!rows_('settings').some(function (x) { return x[0] === '직원 이름'; })) append_('settings', ['직원 이름', STAFF_DEFAULT, '현장소통 관리 화면에 직원 번호로 들어갈 수 있는 이름 (쉼표로 구분). 대표가 고침']);
+}
+function pinRow_(name) { return name ? (rows_('pins').filter(function (x) { return x[0] === name; })[0] || null) : null; }
+function uaSum_(v) { return clean_(v, 40).replace(/[^0-9A-Za-z가-힣 ·\/().-]/g, '').trim() || '알 수 없는 기기'; }
+function addDays_(n) { return Utilities.formatDate(new Date(Date.now() + n * 86400000), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss'); }
+/* 그 직원의 살아 있는 기억 기기를 모두 무효로 (행은 남기고 상태만) */
+function devKill_(name, why) {
+  var n = 0;
+  rows_('devs').forEach(function (d) { if (d[0] === name && d[5] === '사용') { setCell_('devs', d._row, 5, why); n++; } });
+  return n;
+}
+function pinSession_(name, gen) {
+  var tok = newTok_();
+  CacheService.getScriptCache().put('tks_' + tok, JSON.stringify({ w: name, g: String(gen), p: 1 }), SESSION_S);
+  return tok;
+}
+/* 대표에게 메일 — 받는 주소는 스크립트 속성 OWNER_EMAIL 에만. 번호·토큰은 넣지 않음 */
+function mailOwner_(subj, body) {
+  var to = String(props_().getProperty('OWNER_EMAIL') || '').trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return '메일 주소 없음(기록만)';
+  try { MailApp.sendEmail(to, subj, body); return '메일 보냄'; } catch (x) { return '메일 못 보냄'; }
+}
+function pinAllFail_(cache) { cache.put('pinall', String(Number(cache.get('pinall') || 0) + 1), PIN_ALL_TTL); }
 function site_(code) {
   if (!code || String(code).length < 20) throw new Error('주소를 확인해 주세요');
   var r = rows_('sites').filter(function (x) { return x[0] === String(code); })[0];
@@ -384,6 +458,8 @@ var ACTIONS = {
   ticket: function (req) {
     var key = String(PropertiesService.getScriptProperties().getProperty('FIELD_STAFF_KEY') || '').trim();
     var t = ticketCheck_(req.k, key, Date.now());
+    var tb = pinRow_(t.who);
+    if (tb && tb[2] === '차단') throw new Error('들어갈 수 없어요 (대표에게 문의해 주세요)');   // v5: 즉시 차단된 직원
     var cache = CacheService.getScriptCache();
     var lock = LockService.getScriptLock(); lock.waitLock(10000);
     try {   // 같은 입장권은 한 번만 (잠금 안에서 확인해 동시에 두 번 와도 하나만)
@@ -394,6 +470,146 @@ var ACTIONS = {
     cache.put('tks_' + token, t.who, 21600);   // 6시간
     log_('직원 입장', '', t.who, '인트라넷 입장권');
     return { token: token };
+  },
+
+  /* ---------- v5: 직원 번호 (로그인 화면) ---------- */
+  /* 이름 버튼에 쓸 목록: 번호가 정해졌고 차단이 아닌 이름만 (번호·해시·횟수는 안 나감) */
+  pinNames: function (req) {
+    ensurePinSettings_();
+    var pins = rows_('pins');
+    var names = staffNames_().filter(function (n) { return pins.some(function (x) { return x[0] === n && x[1] && x[2] !== '차단'; }); });
+    return { names: names };
+  },
+  /* 6자리 번호 확인 → 30일 기억 기기 토큰 + 6시간 출입증. 새 기기는 대표에게 메일 */
+  pinLogin: function (req) {
+    salt_();
+    var name = validName_(req.name), pin = String(req.pin == null ? '' : req.pin), ua = uaSum_(req.ua);
+    var cache = CacheService.getScriptCache(), out = null, err = '', act = '', detail = '';
+    var lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {   // 직원별·전체 틀린 횟수는 잠금 안에서 셈 (동시에 많이 보내도 한도 그대로)
+      var all = Number(cache.get('pinall') || 0);
+      var r = name && staffNames_().indexOf(name) >= 0 ? pinRow_(name) : null;
+      if (all >= PIN_ALL_MAX) { err = '틀린 번호가 너무 많아 잠시 막혔어요. 1시간 뒤에 다시 해 주세요'; act = '직원 번호 막힘'; detail = '전체 시도 제한 · ' + ua; }
+      else if (!r || !r[1]) { pinAllFail_(cache); err = '이름 또는 번호를 확인해 주세요'; act = '직원 번호 틀림'; detail = '번호 없는 이름 · ' + ua; }
+      else if (r[2] === '차단') { pinAllFail_(cache); err = '들어갈 수 없어요 (대표에게 문의해 주세요)'; act = '직원 번호 틀림'; detail = '차단된 이름 · ' + ua; }
+      else if (r[2] === '잠김') { pinAllFail_(cache); err = '번호를 ' + PIN_MAX_FAIL + '번 틀려 잠겼어요. 대표가 풀어 줘야 해요'; act = '직원 번호 틀림'; detail = '잠긴 상태 · ' + ua; }
+      else if (!/^\d{6}$/.test(pin) || !sameStr_(pinHash_(name, pin), r[1])) {
+        pinAllFail_(cache);
+        var f = Number(r[3] || 0) + 1;
+        setCell_('pins', r._row, 3, f);
+        if (f >= PIN_MAX_FAIL) { setCell_('pins', r._row, 2, '잠김'); setCell_('pins', r._row, 6, now_()); err = '번호를 ' + PIN_MAX_FAIL + '번 틀려 잠겼어요. 대표가 풀어 줘야 해요'; act = '직원 번호 잠김'; }
+        else { err = '번호가 맞지 않아요 (' + f + '/' + PIN_MAX_FAIL + ')'; act = '직원 번호 틀림'; }
+        detail = f + '/' + PIN_MAX_FAIL + ' · ' + ua;
+      } else {
+        if (Number(r[3] || 0)) setCell_('pins', r._row, 3, 0);
+        var dev = newTok_();
+        append_('devs', [name, devHash_(dev), now_(), addDays_(DEV_DAYS), ua, '사용', now_()]);
+        out = { token: pinSession_(name, r[5]), dev: dev, who: name, days: DEV_DAYS };
+        act = '직원 번호 입장'; detail = '새 기기 · ' + ua;
+      }
+    } finally { lock.releaseLock(); }
+    if (!out) { log_(act, '', name || '(이름 없음)', detail); throw new Error(err); }
+    var m = mailOwner_('[현장소통] 새 기기 접속 — ' + name + ' ' + now_().slice(0, 16),
+      name + ' 님이 새 기기로 현장소통 관리 화면에 들어왔어요.\n시각: ' + now_() + '\n기기: ' + ua + '\n\n모르는 접속이면 현장소통 관리 화면(관리 비밀번호) › 직원 번호 › 즉시 차단 을 눌러 주세요.\nⓒ HOME FURNISHING CO. all rights reserved.');
+    log_(act, '', name, detail + ' · ' + m);
+    return out;
+  },
+  /* 기억 기기 토큰 → 6시간 출입증 (30일 안, 번호를 바꾸거나 차단하면 무효) */
+  devLogin: function (req) {
+    var tok = String(req.dev || '');
+    var cache = CacheService.getScriptCache();
+    if (Number(cache.get('devall') || 0) >= 50) throw new Error('DEV:잠시 막혔어요. 1시간 뒤에 다시 해 주세요');   // 없는 토큰이 1시간에 50번 넘으면 (번호 틀림과 따로 셈 → 기억 기기는 번호 막힘에 안 걸림)
+    if (!/^[0-9a-f]{64}$/.test(tok)) throw new Error('DEV:기억 기기 정보가 맞지 않아요');
+    salt_();
+    var h = devHash_(tok), d = rows_('devs').filter(function (x) { return sameStr_(x[1], h); })[0];
+    if (!d) { var l = LockService.getScriptLock(); l.waitLock(10000); try { cache.put('devall', String(Number(cache.get('devall') || 0) + 1), PIN_ALL_TTL); } finally { l.releaseLock(); } throw new Error('DEV:이 기기는 기억되어 있지 않아요'); }
+    var r = pinRow_(d[0]);
+    if (d[5] !== '사용') throw new Error('DEV:이 기기 기억이 끝났어요 (번호를 다시 넣어 주세요)');
+    if (String(d[3]) <= now_()) { setCell_('devs', d._row, 5, '만료'); log_('기억 기기 만료', '', d[0], d[4]); throw new Error('DEV:30일이 지나 번호를 다시 넣어 주세요'); }
+    if (!r || r[2] === '차단' || !r[1] || staffNames_().indexOf(d[0]) < 0) { setCell_('devs', d._row, 5, '무효(차단)'); throw new Error('DEV:들어갈 수 없어요 (대표에게 문의해 주세요)'); }
+    setCell_('devs', d._row, 6, now_());
+    log_('직원 번호 입장', '', d[0], '기억 기기 · ' + d[4]);
+    return { token: pinSession_(d[0], r[5]), who: d[0] };
+  },
+
+  /* ---------- v5: 직원 번호 관리 (대표만) ---------- */
+  pinAdmin: function (req) {
+    owner_(req);
+    ensurePinSettings_();
+    var pins = rows_('pins'), devs = rows_('devs'), t = now_(), names = staffNames_();
+    pins.forEach(function (x) { if (x[0] && names.indexOf(x[0]) < 0) names.push(x[0]); });   // 목록에서 뺀 이름도 상태는 보임
+    var list = names.map(function (n) {
+      var r = pins.filter(function (x) { return x[0] === n; })[0];
+      return { name: n, listed: staffNames_().indexOf(n) >= 0, set: !!(r && r[1]), state: r ? (r[2] || '사용') : '번호 없음', fails: r ? Number(r[3] || 0) : 0, changedAt: r ? r[4] : '', lockedAt: r ? r[6] : '',
+               devs: devs.filter(function (d) { return d[0] === n && d[5] === '사용' && String(d[3]) > t; }).map(function (d) { return { made: d[2], exp: d[3], ua: d[4], last: d[6] }; }) };
+    });
+    var acts = /^(직원 번호|기억 기기|번호 |잠금 풀기|즉시 차단|직원 입장|직원 이름)/;
+    var logs = rows_('log').filter(function (x) { return acts.test(x[1]); }).slice(-80).reverse().map(function (x) {
+      return { t: x[0], act: x[1], who: x[3], detail: x[4], newDev: /새 기기/.test(x[4]), ok: /입장/.test(x[1]) };
+    });
+    return { staff: list, logs: logs, mail: !!String(props_().getProperty('OWNER_EMAIL') || '').trim(), salt: !!String(props_().getProperty('PIN_SALT') || '').trim() };
+  },
+  pinSet: function (req) {
+    var who = owner_(req);
+    ensurePinSettings_();
+    var name = validName_(req.name), pin = String(req.pin == null ? '' : req.pin);
+    if (!name || staffNames_().indexOf(name) < 0) throw new Error('직원 이름 목록에 없는 이름이에요');
+    if (!/^\d{6}$/.test(pin)) throw new Error('번호는 숫자 6자리로 넣어 주세요');
+    if (/^(\d)\1{5}$/.test(pin) || '0123456789'.indexOf(pin) >= 0 || '9876543210'.indexOf(pin) >= 0) throw new Error('같은 숫자·이어지는 숫자는 쓸 수 없어요');
+    var killed = 0, first = false, lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      salt_(true);
+      var h = pinHash_(name, pin), r = pinRow_(name);
+      if (!r) { append_('pins', [name, h, '사용', 0, now_(), 1, '']); first = true; }
+      else {
+        keepOld_('', '직원 번호 ' + name, '상태 ' + (r[2] || '') + ' · 세대 ' + (r[5] || '') + ' · 바꾼 때 ' + (r[4] || ''), who, '번호 바꿈 (해시는 남기지 않음)');
+        setCell_('pins', r._row, 1, h); setCell_('pins', r._row, 2, '사용'); setCell_('pins', r._row, 3, 0); setCell_('pins', r._row, 4, now_());
+        setCell_('pins', r._row, 5, Number(r[5] || 0) + 1); setCell_('pins', r._row, 6, '');
+        killed = devKill_(name, '무효(번호 바뀜)');
+      }
+    } finally { lock.releaseLock(); }
+    log_(first ? '번호 정함' : '번호 바꿈', '', who, name + (first ? '' : ' · 기억 기기 ' + killed + '대 무효'));
+    return { first: first, killed: killed };
+  },
+  pinUnlock: function (req) {
+    var who = owner_(req);
+    var name = validName_(req.name), r = pinRow_(name);
+    if (!r) throw new Error('번호가 없는 이름이에요');
+    if (r[2] !== '잠김') throw new Error(r[2] === '차단' ? '차단된 직원은 새 번호를 정하면 다시 쓸 수 있어요' : '잠겨 있지 않아요');
+    keepOld_('', '직원 번호 ' + name, '상태 잠김 · 틀린 횟수 ' + r[3] + ' · 잠긴 때 ' + r[6], who, '잠금 풀기');
+    setCell_('pins', r._row, 2, '사용'); setCell_('pins', r._row, 3, 0);
+    log_('잠금 풀기', '', who, name);
+    return {};
+  },
+  pinBlock: function (req) {
+    var who = owner_(req);
+    var name = validName_(req.name);
+    if (!name) throw new Error('이름을 확인해 주세요');
+    var killed = 0, lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      var r = pinRow_(name);
+      if (!r) append_('pins', [name, '', '차단', 0, now_(), 1, '']);   // 번호를 정하기 전이라도 차단 표시 (임시 열쇠 출입증도 막힘)
+      else {
+        keepOld_('', '직원 번호 ' + name, '상태 ' + (r[2] || '') + ' · 세대 ' + (r[5] || ''), who, '즉시 차단');
+        setCell_('pins', r._row, 2, '차단'); setCell_('pins', r._row, 4, now_()); setCell_('pins', r._row, 5, Number(r[5] || 0) + 1);
+      }
+      killed = devKill_(name, '무효(차단)');
+    } finally { lock.releaseLock(); }
+    log_('즉시 차단', '', who, name + ' · 기억 기기 ' + killed + '대 무효 · 출입증 끝');
+    return { killed: killed };
+  },
+  pinAddName: function (req) {
+    var who = owner_(req);
+    ensurePinSettings_();
+    var name = validName_(req.name);
+    if (!name) throw new Error('이름은 한글·영문 2~10자로 넣어 주세요');
+    var cur = staffNames_();
+    if (cur.indexOf(name) >= 0) return { names: cur };
+    var row = rows_('settings').filter(function (x) { return x[0] === '직원 이름'; })[0];
+    keepOld_('', '설정 직원 이름', row[1], who, '이름 추가 ' + name);
+    setCell_('settings', row._row, 1, cur.concat([name]).join(','));
+    log_('직원 이름 추가', '', who, name);
+    return { names: staffNames_() };
   },
 
   /* 관리 전용 */
@@ -581,10 +797,12 @@ function setup() {
   Object.keys(TAB).forEach(sheet_);
   ensureCols_('sites');
   ensureSettings_();
+  ensurePinSettings_();   // v5: '직원 이름' 줄
+  salt_(true);            // v5: PIN_SALT 가 없으면 무작위로 만듦 (있으면 그대로)
   if (!setting_('사진 폴더ID')) append_('settings', ['사진 폴더ID', root_().getId(), '현장별 폴더가 이 안에 생김']);
   seedTest_();
   rows_('sites').forEach(function (r) { siteFolder_(r); });
-  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v3)');
+  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v5 · 직원 번호 탭)');
 }
 
 /* 시험 현장(대표 확인용) 3일치 — 이미 있으면 다시 넣지 않음 */

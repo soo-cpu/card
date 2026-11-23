@@ -75,7 +75,7 @@ function part1(){ // ===== 1부: 서버 =====
    const q=S.post({a:'projSite',pw:PW,proj:'P-2611-963',cust:'정고객이름',pin:'2222'});const j=JSON.stringify(S.post({a:'site',s:q.code,pin:'2222'}));
    const pno=S.rowsOf('현장').filter(x=>x[13]!=='Y').map(x=>JSON.stringify(S.post({a:'site',s:x[0],pin:x[16]}))).filter(t=>/P-\d{4}-\d{3}/.test(t));
    ok('서버 17: 고객 화면 응답(site)에 고객 이름·프로젝트 번호(P-) 없음 — 모든 현장(현장명 빈 자동 생성 포함)',leaks.length===0&&pno.length===0&&j.includes('"ok":true')&&!j.includes('정고객이름')&&!/P-\d{4}-\d{3}/.test(j)&&j.includes('홈퍼니싱 현장'),leaks.length+' '+j.slice(0,120))}
-  ok('서버 18: Code.gs v4 머리말 · doGet v:4',/현장소통 Code\.gs 2026-11-23 v4/.test(GS)&&JSON.parse(S.ctx.doGet({parameter:{}}).text).v===4);
+  ok('서버 18: Code.gs v4 이상 머리말 · doGet v:4 이상 (v5 직원 번호 2026-11-23)',/현장소통 Code\.gs 2026-11-23 v[4-9]/.test(GS)&&JSON.parse(S.ctx.doGet({parameter:{}}).text).v>=4);
   ok('서버 15: Code.gs 에 지우는 동작(deleteRow·clear·setTrashed·removeFile) 없음 · 같은 proj 찾기·만들기가 한 잠금 안',!/deleteRow|deleteRows|\.clear\(|setTrashed|removeFile|deleteSheet/.test(GS)&&(()=>{const i=GS.indexOf('projSite: function'),seg=GS.slice(i,GS.indexOf('addSite: function',i));const w=seg.indexOf('waitLock'),f=seg.indexOf('projOf_(x) === proj'),ap=seg.indexOf("append_('sites'"),rl=seg.indexOf('releaseLock');return i>0&&w>0&&w<f&&f<ap&&ap<rl})());
 }
 
