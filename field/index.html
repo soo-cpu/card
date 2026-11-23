@@ -339,7 +339,7 @@ const Local = (() => {
     login: d => { admin(d); return {}; },
     pinNames: () => ({ names: ["정진혁", "이봄이", "채진아"] }), // 미리보기: 번호는 모두 000000 (이 기기에 번호를 저장하지 않음)
     pinLogin: d => { if (!["정진혁", "이봄이", "채진아"].includes(d.name) || d.pin !== "000000") throw new Error("번호가 맞지 않아요 (미리보기 번호 000000)"); const t = uid("T"), dv = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, "0")).join(""); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} const b = load(); b.devs = (b.devs || []).concat([dv]); save(); return { token: t, dev: dv, who: d.name, days: 30 }; },
-    devLogin: d => { if (!(load().devs || []).includes(d.dev)) throw new Error("DEV:이 기기는 기억되어 있지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; },
+    devLogin: d => { if (!(load().devs || []).includes(d.dev)) throw new Error("DEVBAD:이 기기는 기억되어 있지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; },
     pinAdmin: () => { throw new Error("미리보기에서는 직원 번호를 정할 수 없어요 — 서버(Code.gs v5) 연결 뒤에 돼요"); },
     ticket: d => { if (!TICKET_RE.test(String(d.k || ""))) throw new Error("입장권 모양이 맞지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; }, // 미리보기: 모양만 확인
     sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", cust: s.cust || "", pin: s.pin || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
@@ -681,7 +681,11 @@ function tkSet(t) { TK = String(t); try { sessionStorage.setItem("field_tk", TK)
 function devForget() { DEV = ""; try { localStorage.removeItem("field_dev"); localStorage.removeItem("field_dev_who"); } catch (e) {} }
 async function devIn() {
   try { const r = await call("devLogin", { dev: DEV }); if (!r.token) return false; tkSet(r.token); return true; }
-  catch (e) { if (/^DEV:/.test(e.message)) { devForget(); toast(e.message.slice(4), 3500); } return false; }
+  catch (e) { // 서버가 확실히 무효라고 할 때(DEVBAD:)만 기억을 지움 · 잠시 문제(DEVWAIT:)·연결 오류는 그대로 둠 (검토 반영)
+    const m = String(e.message || "");
+    if (/^DEVBAD:/.test(m)) { devForget(); toast(m.slice(7), 3500); }
+    else toast((/^DEVWAIT:/.test(m) ? m.slice(8) : m) + " · 이 기기 기억은 그대로예요", 3500);
+    return false; }
 }
 /* 이름 고르기 (큰 버튼) */
 async function staffPick() {
@@ -767,7 +771,7 @@ async function pinPanel() {
   m.querySelectorAll("[data-punl]").forEach(b => { b.onclick = async () => { try { await call("pinUnlock", { pw: PW, name: b.dataset.punl }); toast(b.dataset.punl + " 님 잠금을 풀었어요"); again(); } catch (e) { toast(e.message); } }; });
   m.querySelectorAll("[data-pblk]").forEach(b => { b.onclick = async () => {
     const n = b.dataset.pblk;
-    if (!await askBox(n + " 님 즉시 차단", "번호·기억 기기·지금 열린 출입증(임시 열쇠 포함)이 모두 끝나요. 다시 쓰려면 새 번호를 정해 주세요.", "차단")) return;
+    if (!await askBox(n + " 님 즉시 차단", "번호·기억 기기·이 이름 출입증이 끊겨요. 다시 쓰려면 새 번호를 정해 주세요.", "차단")) return;
     try { const x = await call("pinBlock", { pw: PW, name: n }); toast(n + " 님을 차단했어요 · 기억 기기 " + (x.killed || 0) + "대 끝", 3000); again(); } catch (e) { toast(e.message); }
   }; });
   $("#pnAdd", m).onclick = async () => { const n = $("#pnNew", m).value.trim(); if (!n) return; try { await call("pinAddName", { pw: PW, name: n }); toast(n + " 님을 이름 목록에 넣었어요"); again(); } catch (e) { toast(e.message); } };

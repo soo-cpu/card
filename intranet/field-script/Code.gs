@@ -507,7 +507,7 @@ var ACTIONS = {
         out = { token: pinSession_(name, r[5]), dev: dev, who: name, days: DEV_DAYS };
         act = '직원 번호 입장'; detail = '새 기기 · ' + ua;
       }
-    } finally { lock.releaseLock(); }
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }   // 검토 반영: 잠금 풀기 전에 시트에 확실히 씀
     if (!out) { log_(act, '', name || '(이름 없음)', detail); throw new Error(err); }
     var m = mailOwner_('[현장소통] 새 기기 접속 — ' + name + ' ' + now_().slice(0, 16),
       name + ' 님이 새 기기로 현장소통 관리 화면에 들어왔어요.\n시각: ' + now_() + '\n기기: ' + ua + '\n\n모르는 접속이면 현장소통 관리 화면(관리 비밀번호) › 직원 번호 › 즉시 차단 을 눌러 주세요.\nⓒ HOME FURNISHING CO. all rights reserved.');
@@ -516,17 +516,22 @@ var ACTIONS = {
   },
   /* 기억 기기 토큰 → 6시간 출입증 (30일 안, 번호를 바꾸거나 차단하면 무효) */
   devLogin: function (req) {
+    // 토큰을 먼저 찾는다. 찾은 토큰은 어떤 횟수 제한에도 걸리지 않음 (검토 반영: 가짜 토큰으로 진짜 기기를 막지 못하게)
+    // 오류 앞머리: DEVBAD: = 확실히 무효(화면이 기기 기억을 지움) · DEVWAIT: = 잠시 문제(지우지 않음)
     var tok = String(req.dev || '');
-    var cache = CacheService.getScriptCache();
-    if (Number(cache.get('devall') || 0) >= 50) throw new Error('DEV:잠시 막혔어요. 1시간 뒤에 다시 해 주세요');   // 없는 토큰이 1시간에 50번 넘으면 (번호 틀림과 따로 셈 → 기억 기기는 번호 막힘에 안 걸림)
-    if (!/^[0-9a-f]{64}$/.test(tok)) throw new Error('DEV:기억 기기 정보가 맞지 않아요');
-    salt_();
+    if (!/^[0-9a-f]{64}$/.test(tok)) throw new Error('DEVBAD:기억 기기 정보가 맞지 않아요');
+    try { salt_(); } catch (x) { throw new Error('DEVWAIT:' + x.message); }
     var h = devHash_(tok), d = rows_('devs').filter(function (x) { return sameStr_(x[1], h); })[0];
-    if (!d) { var l = LockService.getScriptLock(); l.waitLock(10000); try { cache.put('devall', String(Number(cache.get('devall') || 0) + 1), PIN_ALL_TTL); } finally { l.releaseLock(); } throw new Error('DEV:이 기기는 기억되어 있지 않아요'); }
+    if (!d) {   // 없는 토큰(244비트 무작위라 짐작 불가) — 막지 않고 기록만 (1시간에 5줄까지, 기록 탭이 넘치지 않게)
+      var c = CacheService.getScriptCache(), n = Number(c.get('devmiss') || 0);
+      c.put('devmiss', String(n + 1), PIN_ALL_TTL);
+      if (n < 5) log_('기억 기기 없음', '', '(모름)', '없는 기억 기기 토큰' + (n === 4 ? ' · 이 뒤 1시간은 기록 생략' : ''));
+      throw new Error('DEVBAD:이 기기는 기억되어 있지 않아요');
+    }
     var r = pinRow_(d[0]);
-    if (d[5] !== '사용') throw new Error('DEV:이 기기 기억이 끝났어요 (번호를 다시 넣어 주세요)');
-    if (String(d[3]) <= now_()) { setCell_('devs', d._row, 5, '만료'); log_('기억 기기 만료', '', d[0], d[4]); throw new Error('DEV:30일이 지나 번호를 다시 넣어 주세요'); }
-    if (!r || r[2] === '차단' || !r[1] || staffNames_().indexOf(d[0]) < 0) { setCell_('devs', d._row, 5, '무효(차단)'); throw new Error('DEV:들어갈 수 없어요 (대표에게 문의해 주세요)'); }
+    if (d[5] !== '사용') throw new Error('DEVBAD:이 기기 기억이 끝났어요 (번호를 다시 넣어 주세요)');
+    if (String(d[3]) <= now_()) { setCell_('devs', d._row, 5, '만료'); log_('기억 기기 만료', '', d[0], d[4]); throw new Error('DEVBAD:30일이 지나 번호를 다시 넣어 주세요'); }
+    if (!r || r[2] === '차단' || !r[1] || staffNames_().indexOf(d[0]) < 0) { setCell_('devs', d._row, 5, '무효(차단)'); throw new Error('DEVBAD:들어갈 수 없어요 (대표에게 문의해 주세요)'); }
     setCell_('devs', d._row, 6, now_());
     log_('직원 번호 입장', '', d[0], '기억 기기 · ' + d[4]);
     return { token: pinSession_(d[0], r[5]), who: d[0] };
@@ -567,7 +572,7 @@ var ACTIONS = {
         setCell_('pins', r._row, 5, Number(r[5] || 0) + 1); setCell_('pins', r._row, 6, '');
         killed = devKill_(name, '무효(번호 바뀜)');
       }
-    } finally { lock.releaseLock(); }
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
     log_(first ? '번호 정함' : '번호 바꿈', '', who, name + (first ? '' : ' · 기억 기기 ' + killed + '대 무효'));
     return { first: first, killed: killed };
   },
@@ -594,7 +599,7 @@ var ACTIONS = {
         setCell_('pins', r._row, 2, '차단'); setCell_('pins', r._row, 4, now_()); setCell_('pins', r._row, 5, Number(r[5] || 0) + 1);
       }
       killed = devKill_(name, '무효(차단)');
-    } finally { lock.releaseLock(); }
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }   // 검토 반영: 잠금 풀기 전에 시트에 확실히 씀
     log_('즉시 차단', '', who, name + ' · 기억 기기 ' + killed + '대 무효 · 출입증 끝');
     return { killed: killed };
   },

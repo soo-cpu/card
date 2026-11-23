@@ -23,7 +23,7 @@ module.exports=function makeServer(opt){opt=opt||{};
   const ss={getSheetByName:n=>st.sheets[n]||null,insertSheet:n=>(st.sheets[n]=sheet(n)),getId:()=>'ss'};
   let fid=0;const folder=n=>({getId:()=>'folder'+(++fid),getUrl:()=>'https://drive.test/f',getName:()=>n,createFolder:x=>folder(x),getFoldersByName:()=>({hasNext:()=>false}),getFiles:()=>({hasNext:()=>false}),createFile:()=>({getId:()=>'file'+(++fid),getUrl:()=>'https://drive.test/x'})});
   const ctx={Utilities,CacheService:{getScriptCache:()=>cacheObj},PropertiesService:{getScriptProperties:()=>({getProperty:k=>st.props[k]===undefined?null:st.props[k],setProperty:(k,v)=>{st.props[k]=String(v)}})},MailApp:{sendEmail:(to,subj,body)=>{if(st.mailFail)throw new Error('mail fail');st.mails.push({to,subj,body})}},
-    LockService:{getScriptLock:()=>({waitLock(){st.locks++},releaseLock(){st.locks--}})},SpreadsheetApp:{openById:()=>ss,getActiveSpreadsheet:()=>ss},
+    LockService:{getScriptLock:()=>({waitLock(){st.locks++},releaseLock(){st.locks--}})},SpreadsheetApp:{openById:()=>ss,getActiveSpreadsheet:()=>ss,flush:()=>{st.flushes=(st.flushes||0)+1}},
     DriveApp:{getFolderById:id=>folder(id),getFileById:()=>{throw new Error('no file')},getFilesByName:()=>({hasNext:()=>false}),getRootFolder:()=>folder('root')},
     ContentService:{createTextOutput:t=>({text:t,setMimeType(){return this}}),MimeType:{JSON:'json'}},UrlFetchApp:{fetch:()=>{throw new Error('no net')}},ScriptApp:{getOAuthToken:()=>''},console};
   vm.createContext(ctx);vm.runInContext(src,ctx,{filename:'Code.gs'});

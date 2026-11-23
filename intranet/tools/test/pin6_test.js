@@ -47,8 +47,14 @@ function part1(){
   ok('서버 12: 메일에 번호·토큰·출입증·해시 없음',![PJ,L2.token,L2.dev,salt,want].some(x=>(M.subj+M.body).includes(x)));
   const D1=P({a:'devLogin',dev:L2.dev});
   ok('서버 13: 기억 기기 토큰 → 새 6시간 출입증 (번호 다시 안 물음 · 메일 안 보냄 · 기록 \'기억 기기\')',D1.ok&&/^[0-9a-f]{64}$/.test(D1.token||'')&&S.st.mails.length===1&&S.rowsOf('기록').some(r=>r[1]==='직원 번호 입장'&&/기억 기기/.test(r[4]))&&P({a:'sites',pw:'T:'+D1.token}).ok);
-  ok('서버 14: 이상한 기억 기기 값 → DEV: 오류',['','x','0'.repeat(64),L2.dev.slice(0,63)].every(dev=>/^DEV:/.test(P({a:'devLogin',dev}).error||'')));
+  ok('서버 14: 이상한 기억 기기 값 → DEVBAD: 오류',['','x','0'.repeat(64),L2.dev.slice(0,63)].every(dev=>/^DEVBAD:/.test(P({a:'devLogin',dev}).error||'')));
 
+  for(let i=0;i<100;i++)P({a:'devLogin',dev:crypto.randomBytes(32).toString('hex')});
+  const F=P({a:'devLogin',dev:L2.dev});
+  ok('서버 14-2: 가짜 기억 토큰 100번 뒤에도 진짜 기기는 바로 들어옴 · 없는 토큰 기록은 1시간 5줄까지',F.ok&&/^[0-9a-f]{64}$/.test(F.token||'')&&S.rowsOf('기록').filter(r=>r[1]==='기억 기기 없음').length===5,F.error);
+  const S0=makeServer();S0.setPw('p0');const W0=S0.post({a:'devLogin',dev:'a'.repeat(64)});
+  ok('서버 14-3: 소금이 아직 없을 때 등 잠시 문제는 DEVWAIT: (화면이 기기 기억을 지우지 않음)',/^DEVWAIT:/.test(W0.error||''),W0.error);
+  ok('서버 14-4: 번호 입장 잠금 안에서 시트에 쓰고 풀기 전에 SpreadsheetApp.flush()',(S.st.flushes||0)>=3);
   // 틀림·잠금
   const w=[];for(let i=0;i<4;i++)w.push(P({a:'pinLogin',name:'이봄이',pin:'000001',ua:'x'}).error||'');
   ok('서버 15: 틀리면 횟수 안내 (1/5 … 4/5) · 맞으면 횟수 0으로',w.join('|')==='번호가 맞지 않아요 (1/5)|번호가 맞지 않아요 (2/5)|번호가 맞지 않아요 (3/5)|번호가 맞지 않아요 (4/5)'&&P({a:'pinLogin',name:'이봄이',pin:PB,ua:'x'}).ok&&(S.rowsOf('직원 번호').find(r=>r[0]==='이봄이')||[])[3]==='0',w.join('|'));
@@ -73,20 +79,20 @@ function part1(){
   const before=S.rowsOf('기억 기기').filter(r=>r[0]==='정진혁'&&r[5]==='사용').length;
   const C=own({a:'pinSet',name:'정진혁',pin:PJ2});
   const devRows=S.rowsOf('기억 기기').filter(r=>r[0]==='정진혁');
-  ok('서버 22: 번호 바꾸면 그 직원 기억 기기 모두 무효 (행은 남기고 상태만 \'무효(번호 바뀜)\')',C.ok&&C.killed===before&&before>=2&&devRows.every(r=>r[5]==='무효(번호 바뀜)')&&/^DEV:/.test(P({a:'devLogin',dev:L2.dev}).error||''),before+'대');
+  ok('서버 22: 번호 바꾸면 그 직원 기억 기기 모두 무효 (행은 남기고 상태만 \'무효(번호 바뀜)\')',C.ok&&C.killed===before&&before>=2&&devRows.every(r=>r[5]==='무효(번호 바뀜)')&&/^DEVBAD:/.test(P({a:'devLogin',dev:L2.dev}).error||''),before+'대');
   ok('서버 23: 번호 바꾸면 그 직원의 6시간 출입증도 끝 · 옛 번호 거절 · 새 번호 통과 · 다른 직원 기기는 그대로',P({a:'sites',pw:'T:'+T}).ok===false&&P({a:'pinLogin',name:'정진혁',pin:PJ,ua:'x'}).ok===false&&P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'x'}).ok&&P({a:'devLogin',dev:LB.dev}).ok);
   delete S.st.cache.pwfail;
   // 30일 만료
   const L3=P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'맥 · 사파리'});const sh=S.st.sheets['기억 기기'];const h3=crypto.createHmac('sha256',salt).update('dev:'+L3.dev).digest('base64url');
   const ri=sh.rows.findIndex(r=>r&&r[1]===h3);sh.rows[ri][3]='2026-01-01 00:00:00';
   const E=P({a:'devLogin',dev:L3.dev});
-  ok('서버 24: 30일(만료 시각) 지난 기억 기기 → 거절 · 상태 \'만료\' · 번호를 다시 넣으면 됨',/^DEV:30일/.test(E.error||'')&&sh.rows[ri][5]==='만료'&&P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'맥 · 사파리'}).ok,E.error);
+  ok('서버 24: 30일(만료 시각) 지난 기억 기기 → 거절 · 상태 \'만료\' · 번호를 다시 넣으면 됨',/^DEVBAD:30일/.test(E.error||'')&&sh.rows[ri][5]==='만료'&&P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'맥 · 사파리'}).ok,E.error);
   // 즉시 차단
   const L4=P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'x'});const tkJ=P({a:'ticket',k:S.ticket(KEY,{who:'정진혁'})}).token;
   ok('서버 25: 차단 전: 임시 열쇠 출입증(정진혁) 통과',P({a:'sites',pw:'T:'+tkJ}).ok);
   const B=own({a:'pinBlock',name:'정진혁'});
   const rj=S.rowsOf('직원 번호').find(r=>r[0]==='정진혁')||[];
-  ok('서버 26: 즉시 차단 → 상태 \'차단\' · 번호·기억 기기·직원 번호 출입증·임시 열쇠 출입증 모두 끝',B.ok&&rj[2]==='차단'&&P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'x'}).ok===false&&/^DEV:/.test(P({a:'devLogin',dev:L4.dev}).error||'')&&P({a:'sites',pw:'T:'+L4.token}).ok===false&&P({a:'sites',pw:'T:'+tkJ}).ok===false&&S.rowsOf('기억 기기').filter(r=>r[0]==='정진혁').every(r=>r[5]!=='사용'));
+  ok('서버 26: 즉시 차단 → 상태 \'차단\' · 번호·기억 기기·직원 번호 출입증·임시 열쇠 출입증 모두 끝',B.ok&&rj[2]==='차단'&&P({a:'pinLogin',name:'정진혁',pin:PJ2,ua:'x'}).ok===false&&/^DEVBAD:/.test(P({a:'devLogin',dev:L4.dev}).error||'')&&P({a:'sites',pw:'T:'+L4.token}).ok===false&&P({a:'sites',pw:'T:'+tkJ}).ok===false&&S.rowsOf('기억 기기').filter(r=>r[0]==='정진혁').every(r=>r[5]!=='사용'));
   ok('서버 27: 차단된 직원은 새 임시 열쇠 입장권도 거절 · 이름 버튼에서 빠짐 · 다른 직원(이봄이) 그대로',P({a:'ticket',k:S.ticket(KEY,{who:'정진혁'})}).ok===false&&!P({a:'pinNames'}).names.includes('정진혁')&&P({a:'ticket',k:S.ticket(KEY,{who:'이봄이'})}).ok&&P({a:'devLogin',dev:LB.dev}).ok);
   ok('서버 28: 차단은 잠금 풀기로 못 풂 · 대표가 새 번호를 정하면 다시 사용',own({a:'pinUnlock',name:'정진혁'}).ok===false&&own({a:'pinSet',name:'정진혁',pin:PJ}).ok&&P({a:'pinLogin',name:'정진혁',pin:PJ,ua:'x'}).ok);
   delete S.st.cache.pwfail;
@@ -105,7 +111,8 @@ function part1(){
   for(let i=0;i<12;i++)S2.post({a:'pinLogin',name:['채진아','홍길동','김','최윤수'][i%4],pin:'000004',ua:'x'});
   const G=S2.post({a:'pinLogin',name:'정진혁',pin:PJ,ua:'x'});
   ok('서버 31: 전체 틀린 시도 20번(여러 이름에 나눠도) → 맞는 번호도 1시간 막힘 · 직원별 잠금 전이라도',G.ok===false&&/1시간/.test(G.error||'')&&(S2.rowsOf('직원 번호').find(r=>r[0]==='정진혁')||[])[2]==='사용',G.error);
-  ok('서버 32: 전체 막힘 중에도 기억 기기는 들어옴 (번호 추측과 따로 셈)',S2.post({a:'devLogin',dev:okDev.dev}).ok);
+  for(let i=0;i<60;i++)S2.post({a:'devLogin',dev:crypto.randomBytes(32).toString('hex')});
+  ok('서버 32: 전체 20번 제한이 걸리고 가짜 토큰 60번이 와도 기억 기기는 들어옴',S2.post({a:'devLogin',dev:okDev.dev}).ok);
   S2.advance(3601e3);
   ok('서버 33: 1시간 지나면 전체 제한 풀림',S2.post({a:'pinLogin',name:'정진혁',pin:PJ,ua:'x'}).ok);
   // 임시 열쇠·비밀번호 그대로
@@ -158,6 +165,14 @@ function part1(){
  await p2.goto('http://f.test/field/?admin&s='+S.rowsOf('현장')[0][0]);await wait(1500);
  ok('화면 11: 직원 번호 출입증으로 현장 관리 화면 열림',/관리 모드/.test((await st(p2)).bar));
  await p2.close();
+ // 일시 오류: 서버가 DEVWAIT: 를 주거나 연결이 끊겨도 기억 토큰은 그대로
+ const devKeep=s.dev;let mode='wait';C1.__ab=0;
+ await C1.route('http://api.test/**',async r=>{const q=r.request();const d=q.postData()||'';if(/"devLogin"/.test(d)&&mode==='wait'){mode='net';return r.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:false,error:'DEVWAIT:잠시 막혔어요. 1시간 뒤에 다시 해 주세요'})})}if(/"devLogin"/.test(d)&&mode==='net'){if(++C1.__ab>=2)mode='';return r.abort()}return r.fallback()});
+ const pw1=await fopen(C1,'http://f.test/field/?admin',1500);const w1=await st(pw1);await pw1.close();
+ const pw2=await fopen(C1,'http://f.test/field/?admin',4500);const w2=await st(pw2);await pw2.close();
+ ok('화면 11-2: 서버 일시 오류(DEVWAIT:)·연결 끊김에는 localStorage 기억 토큰을 지우지 않음 (로그인 화면만)',w1.login&&w1.dev===devKeep&&w2.login&&w2.dev===devKeep,JSON.stringify([w1.dev.slice(0,6),w2.dev.slice(0,6),mode]));
+ const pw3=await fopen(C1,'http://f.test/field/?admin',1800);const w3=await st(pw3);await pw3.close();
+ ok('화면 11-3: 문제가 지나가면 같은 기기는 다시 번호 없이 들어옴',w3.list&&w3.dev===devKeep);
  // 대표 (관리 비밀번호)
  const C2=await fieldCtx({width:420,height:860});const q=await fopen(C2,'http://f.test/field/?admin');
  await q.fill('#lp','pw-test-77');await q.click('#lf button');await wait(1300);let o=await st(q);
