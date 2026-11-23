@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-19 v2 (이전: '현장소통 Code.gs 2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-23 v3 (이전: '현장소통 Code.gs 2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -22,16 +22,26 @@
  *  - 관리 요청의 pw 자리에 "T:출입증"이 오면 비밀번호 대신 인정. 그 밖의 값은 예전 그대로 비밀번호 확인(10번 틀리면 15분 잠금)
  *  - '기록' 탭의 '누가' 칸: 비밀번호로 들어오면 '관리', 입장권으로 들어오면 직원 이름
  *  - 고객 확인 번호(PIN)·횟수 제한·고객 화면 요청은 그대로
+ *
+ * v3에서 더한 것 (다음 지시 2026-11-23 v4 · B 고객 공유 페이지 개선)
+ *  - projSite: 인트라넷 프로젝트 번호(proj, P-YYMM-NNN)로 현장을 찾고, 없으면 만든다 (입장권 출입증 또는 관리 비밀번호만)
+ *    찾기·만들기는 한 잠금 안에서 해서 같은 proj 현장이 두 번 생기지 않음. 숨긴 현장은 찾지 않음. 지우는 것 없음
+ *  - '현장' 탭 18번째 칸 '고객 이름' (관리 화면·검색용. 고객 화면에는 안 나감)
+ *  - 인트라넷 공정표 날짜로 공정(JSON)을 고칠 때: 바꾸기 전 값을 '옛 값' 탭에 통째로 남기고 고침 (같으면 쓰지 않음)
+ *    진행 상태(대기·진행 중·완료)는 같은 이름 단계에서 그대로 이어받고, 공정표에 없는 단계는 진행이 있던 것만 남김
+ *  - sites 응답(관리 전용)에 고객 이름·확인 번호를 넣어 현장 목록 검색이 되게 함
+ *  - 단계 이름은 40자까지
  */
 
 var TAB = {
-  sites:    ['현장', ['코드','현장명','담당자','연락처','주소','착공일','준공예정일','공정(JSON)','상태','폴더ID','만든 시각','관리자 확인 시각','고객 최근 글','숨김','메모','결제(JSON)','고객 확인 번호']],
+  sites:    ['현장', ['코드','현장명','담당자','연락처','주소','착공일','준공예정일','공정(JSON)','상태','폴더ID','만든 시각','관리자 확인 시각','고객 최근 글','숨김','메모','결제(JSON)','고객 확인 번호','고객 이름']],
   posts:    ['글',   ['글ID','현장코드','날짜','작성(회사/고객)','이름','공정','종류','내용','중요','사진ID(JSON)','작성 시각','숨김','고친 시각']],
   comments: ['댓글', ['댓글ID','현장코드','글ID','작성(회사/고객)','이름','내용','작성 시각','숨김']],
   photos:   ['사진', ['파일ID','현장코드','올린 시각','작성(회사/고객)','파일 이름']],
   pdfs:     ['PDF',  ['파일ID','현장코드','파일 이름','만든 시각']],
   settings: ['설정', ['항목','값','설명']],
-  log:      ['기록', ['시각','동작','현장코드','누가','내용']]
+  log:      ['기록', ['시각','동작','현장코드','누가','내용']],
+  hist:     ['옛 값', ['시각','현장코드','칸','옛 값','누가','까닭']]   // v3: 고치기 전 값 (지우지 않음)
 };
 var INIT_PW = '';   // 비워 둠(저장소 공개). 설치 때 대표 드라이브 '현장소통 첫 비밀번호.txt'를 읽고, 없으면 무작위.
 var SHEET_ID = '1Mx45YBU5_Dy7a9i9pAn89VLA40PRJdMGAHTvmc0zpHI';   // 현장소통 데이터 2026-11-06 v0
@@ -44,7 +54,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 2 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 3 });
 }
 
 function doPost(e) {
@@ -203,7 +213,7 @@ function pinOk_(r, req) {
 function stages_(json) {
   var a = [];
   try { a = JSON.parse(json || '[]'); } catch (x) {}
-  return (a || []).slice(0, 30).map(function (s) { return { n: clean_(s.n, 20), s: Number(s.s || 0) % 3, a: day_(s.a), b: day_(s.b) }; });
+  return (a || []).slice(0, 30).map(function (s) { return { n: clean_(s.n, 40), s: (Math.floor(Math.abs(Number(s.s) || 0))) % 3, a: day_(s.a), b: day_(s.b) }; }).filter(function (s) { return s.n; });
 }
 function pays_(json) {
   var a = [];
@@ -276,8 +286,27 @@ function bundle_(code, isAdmin, seenAt) {
   return { posts: posts, comments: comments };
 }
 function adminExtra_(r) {
-  return { pin: String(r[16] || ''), proj: String(r[14] || '').match(/P-\d{4}-\d{3}/) ? String(r[14]).match(/P-\d{4}-\d{3}/)[0] : '' };
+  return { pin: String(r[16] || ''), proj: projOf_(r), cust: String(r[17] || '') };
 }
+function projOf_(r) { var m = String(r[14] || '').match(/P-\d{4}-\d{3}/); return m ? m[0] : ''; }
+/* v3: 옛 값 남기기 (값 전체, 자르지 않음 — 시트 칸 한도 5만 자 안) */
+function keepOld_(code, col, old, who, why) { append_('hist', [now_(), code, col, String(old == null ? '' : old).slice(0, 49000), who || '', why || '']); }
+/* v3: 인트라넷 공정표(단계 이름·시작·끝) → 공정(JSON). 같은 이름 단계의 진행 상태는 이어받음. 바뀐 게 없으면 null */
+function mergeSched_(oldJson, sched) {
+  var old = stages_(oldJson), key = function (n) { return String(n || '').replace(/\s+/g, '').toLowerCase(); }, used = {};
+  var plan = stages_(JSON.stringify((sched || []).slice(0, 30))).filter(function (x) { return x.a; });
+  if (!plan.length) return null;
+  var out = plan.map(function (x) {
+    var hit = null;
+    for (var i = 0; i < old.length; i++) if (!used[i] && key(old[i].n) === key(x.n)) { hit = i; break; }
+    if (hit !== null) used[hit] = 1;
+    return { n: x.n, s: hit !== null ? old[hit].s : 0, a: x.a, b: x.b || x.a };
+  });
+  old.forEach(function (x, i) { if (!used[i] && x.s > 0 && out.length < 30) out.push(x); });   // 진행이 있던 단계는 남김
+  var j = JSON.stringify(out);
+  return j === JSON.stringify(old) ? null : j;
+}
+var DEF_STAGES = ['철거', '설비', '전기', '목공', '타일', '도장', '마감'];
 
 var ACTIONS = {
   /* 고객·관리 공통 */
@@ -373,7 +402,7 @@ var ACTIONS = {
                    cm.filter(function (c) { return c[1] === r[0] && c[3] === '고객' && c[6] > seen; }).length;
       s.postCount = posts.filter(function (p) { return p[1] === r[0] && p[11] !== 'Y'; }).length;
       s.createdAt = r[10];
-      var x = adminExtra_(r); s.pinOn = !!x.pin; s.proj = x.proj;
+      var x = adminExtra_(r); s.pinOn = !!x.pin; s.proj = x.proj; s.cust = x.cust; s.pin = x.pin;   // v3: 목록 검색용 (관리 전용)
       return s;
     });
     return { sites: list };
@@ -382,8 +411,43 @@ var ACTIONS = {
     admin_(req);
     var r = site_(req.s), b = bundle_(r[0], true, r[11]);
     setCell_('sites', r._row, 11, now_());
-    var s = sitePublic_(r), x = adminExtra_(r); s.pin = x.pin; s.proj = x.proj;
+    var s = sitePublic_(r), x = adminExtra_(r); s.pin = x.pin; s.proj = x.proj; s.cust = x.cust;
     return { site: s, posts: b.posts, comments: b.comments, pinOn: !!x.pin };
+  },
+  /* v3: 인트라넷 '고객 공유 페이지 열기' — proj 로 찾기/만들기, 공정표 날짜 맞추기 (s 가 오면 그 현장) */
+  projSite: function (req) {
+    var who = admin_(req);
+    ensureCols_('sites');
+    var code = String(req.s || ''), proj = /^P-\d{4}-\d{3}$/.test(String(req.proj || '')) ? String(req.proj) : '';
+    if (!code && !proj) throw new Error('프로젝트 번호가 없어요 (인트라넷에서 다시 열어 주세요)');
+    var pin = clean_(req.pin, 4);
+    if (pin && !/^\d{4}$/.test(pin)) pin = '';
+    var sched = Array.isArray(req.stages) ? req.stages.slice(0, 30) : [];
+    var created = false, schedN = 0, r = null, custFilled = false;
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {   // 찾기와 만들기를 한 잠금 안에서 → 같은 proj 가 동시에 두 번 와도 현장은 하나
+      if (code) r = site_(code);
+      else r = rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] || null;
+      if (!r) {
+        var name = clean_(req.name, 60) || (clean_(req.cust, 30) ? clean_(req.cust, 30) + ' 고객 현장' : proj);
+        var st0 = stages_(JSON.stringify(sched)).filter(function (x) { return x.a; });
+        if (!st0.length) st0 = DEF_STAGES.map(function (n) { return { n: n, s: 0, a: '', b: '' }; });
+        else st0 = st0.map(function (x) { return { n: x.n, s: 0, a: x.a, b: x.b || x.a }; });
+        var nc = newCode_();
+        append_('sites', [nc, name, clean_(req.manager, 30), clean_(req.phone, 30), '', day_(req.start), day_(req.end),
+                          JSON.stringify(st0), '진행', '', now_(), now_(), '', '', '인트라넷 ' + proj, '[]', pin, clean_(req.cust, 30)]);
+        created = true;
+        r = rows_('sites').filter(function (x) { return x[0] === nc; })[0];
+        schedN = st0[0] && st0[0].a ? st0.length : 0;
+      } else {
+        var nj = mergeSched_(r[7], sched);
+        if (nj) { keepOld_(r[0], '공정(JSON)', r[7], who, '인트라넷 공정표로 맞춤' + (proj ? ' ' + proj : '')); setCell_('sites', r._row, 7, nj); schedN = JSON.parse(nj).length; }
+        if (!String(r[17] || '') && clean_(req.cust, 30)) { setCell_('sites', r._row, 17, clean_(req.cust, 30)); custFilled = true; }   // 빈 칸만 채움
+      }
+    } finally { lock.releaseLock(); }
+    if (created) { try { siteFolder_(r); } catch (x) {} log_('현장 자동 생성', r[0], who, r[1] + ' · ' + proj + (pin ? ' · 확인 번호 있음' : ' · 확인 번호 없음')); }
+    else if (schedN || custFilled) log_('인트라넷 맞춤', r[0], who, (schedN ? '공정표 ' + schedN + '단계' : '') + (custFilled ? ' 고객 이름' : ''));
+    return { code: r[0], created: created, sched: schedN, pinOn: !!String(r[16] || pin || '').trim() };
   },
   addSite: function (req) {
     var who = admin_(req);
@@ -397,7 +461,7 @@ var ACTIONS = {
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
       append_('sites', [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), day_(req.start), day_(req.end),
-                        JSON.stringify(stages), '진행', '', now_(), now_(), '', '', proj ? ('인트라넷 ' + proj) : '', JSON.stringify(pays_(req.payments)), pin]);
+                        JSON.stringify(stages), '진행', '', now_(), now_(), '', '', proj ? ('인트라넷 ' + proj) : '', JSON.stringify(pays_(req.payments)), pin, clean_(req.cust, 30)]);
     } finally { lock.releaseLock(); }
     var r = site_(code); siteFolder_(r);
     log_('현장 추가', code, who, name + (proj ? ' · ' + proj : ''));
@@ -407,11 +471,14 @@ var ACTIONS = {
     var who = admin_(req);
     ensureCols_('sites');
     var r = site_(req.s), f = req.fields || {};
-    var map = { name: 1, manager: 2, phone: 3, address: 4, status: 8 };
+    var map = { name: 1, manager: 2, phone: 3, address: 4, status: 8, cust: 17 };
     Object.keys(map).forEach(function (k) { if (f[k] != null) setCell_('sites', r._row, map[k], clean_(f[k], 100)); });
     if (f.start != null) setCell_('sites', r._row, 5, day_(f.start));
     if (f.end != null) setCell_('sites', r._row, 6, day_(f.end));
-    if (f.stages) setCell_('sites', r._row, 7, JSON.stringify(stages_(JSON.stringify(f.stages))));
+    if (f.stages) {
+      var ns = JSON.stringify(stages_(JSON.stringify(f.stages)));
+      if (ns !== JSON.stringify(stages_(r[7]))) { keepOld_(r[0], '공정(JSON)', r[7], who, '관리 화면에서 고침'); setCell_('sites', r._row, 7, ns); }
+    }
     if (f.payments) setCell_('sites', r._row, 15, JSON.stringify(pays_(f.payments)));
     if (f.pin != null) {
       var pin = clean_(f.pin, 4);
@@ -512,7 +579,7 @@ function setup() {
   if (!setting_('사진 폴더ID')) append_('settings', ['사진 폴더ID', root_().getId(), '현장별 폴더가 이 안에 생김']);
   seedTest_();
   rows_('sites').forEach(function (r) { siteFolder_(r); });
-  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v1)');
+  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v3)');
 }
 
 /* 시험 현장(대표 확인용) 3일치 — 이미 있으면 다시 넣지 않음 */

@@ -1,4 +1,4 @@
-// 고객 공유 페이지 버튼 시험 (v0.99-39, 2026-11-18): node intranet/tools/test/fshare_test.js [index.html]
+// 고객 공유 페이지 버튼 시험 (v0.99-39, 2026-11-18 · v0.99-46 B: 계약 뒤 ‘고객 공유 페이지 열기’·값은 # 뒤로 맞춤): node intranet/tools/test/fshare_test.js [index.html]
 // 대표·정진혁·이봄이·채진아 × PC·Pixel 7: 프로젝트 상세의 고객/현장 진행/견적/사후관리 카드, 고객 카드 '이 고객의 모든 것', 고객 이름 검색, 돈 정보(원가·마진·성과금·A/S 비용) 안 샘, 휴대폰 가로 넘침 없음
 const {chromium,devices}=require('playwright');const fs=require('fs');
 const HTML=fs.readFileSync(process.argv[2]||'/home/user/card/intranet/index.html','utf8');const MOCK=fs.readFileSync(__dirname+'/mock.js','utf8');
@@ -32,7 +32,8 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
    await P.evaluate(()=>window.__hfT.open('projects','p1'));await wait(1200);
    const sh1=P.locator('#pjHub .hubshare');const n1=await sh1.count();
    {/* 실무 팀은 통합 화면 전체(고객 전화 포함)를 이미 보므로 버튼도 같은 범위 */const a=sh1.locator('a');const href=n1?await a.getAttribute('href'):'';const u=href?new URL(href):null;const q=u?u.searchParams:new URLSearchParams();
-    ok(tag+'p1 ‘고객 공유 페이지 만들기’ 링크: 새 탭·현장 추가 창 미리 채움',n1===1&&u&&u.origin+u.pathname==='https://soo-cpu.github.io/card/field/'&&q.has('admin')&&q.get('new')==='1'&&q.get('name')==='시험 현장 욕실'&&q.get('manager')==='정진혁 실장'&&q.get('start')==='2026-11-05'&&q.get('end')==='2026-12-20'&&q.get('proj')==='P-2611-901'&&await a.getAttribute('target')==='_blank'&&/noopener/.test(await a.getAttribute('rel')),href);
+    // v0.99-46 B: 계약 단계 이후(p1 = 시공)는 ‘고객 공유 페이지 열기’ (찾기/자동 만들기) · 값은 누르는 순간 # 뒤에만 → 쿼리는 ?admin 뿐
+    ok(tag+'p1 ‘고객 공유 페이지 열기’ 링크: 새 탭 · 쿼리는 ?admin 뿐 (값은 # 뒤)',n1===1&&u&&u.origin+u.pathname==='https://soo-cpu.github.io/card/field/'&&u.search==='?admin'&&/고객 공유 페이지 열기/.test(await a.innerText())&&await a.getAttribute('data-fsm')==='auto'&&await a.getAttribute('target')==='_blank'&&/noopener/.test(await a.getAttribute('rel')),href);
     ok(tag+'주소에 고객 이름·전화·금액 없음',!/홍길동|%ED%99%8D|1234|5678|33000000|20202020/.test(href),href)}
    await P.evaluate(()=>window.__hfT.closeSheet());await wait(300);
    // p2: 코드(주소 전체) 있음 → 열기·복사
@@ -52,6 +53,6 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
  ok('코드 읽기: 24자리·주소 전체 OK, 짧은 것·이상한 것·25자리 이상 거절',JSON.stringify(r)===JSON.stringify(['AbCdEfGhIjKlMnOpQrStUv12','AbCdEfGhIjKlMnOpQrStUv12','','','','']),JSON.stringify(r));
  { const P2=await (await b.newContext()).newPage();await P2.setContent('<script>const S={staff:[]},esc=x=>String(x);'+HTML.slice(HTML.indexOf('const FIELD_BASE='),HTML.indexOf('async function fcCopy'))+'<\/script>');
   const h=await P2.evaluate(()=>hubShareHTML({no:'P-2611-905',title:'',custName:'홍길동',custTel:'010-9999-8888',mgr:'정진혁'},{title:'',custName:'홍길동'}));
-  ok('현장명이 빈 프로젝트 → 주소에 고객 이름·전화 없음 (name 칸 자체 없음)',/proj=P-2611-905/.test(h)&&!/name=|홍길동|%ED%99%8D|9999|8888/.test(h),h.slice(0,200)) }
+  ok('계약 전 프로젝트 → ‘만들기’ 주소는 ?admin 뿐 (값은 누를 때 # 뒤로) · 고객 이름·전화 없음',/href="https:\/\/soo-cpu\.github\.io\/card\/field\/\?admin"/.test(h)&&/data-fsm="new"/.test(h)&&!/name=|proj=|홍길동|%ED%99%8D|9999|8888/.test(h),h.slice(0,200)) }
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
