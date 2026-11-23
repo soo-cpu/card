@@ -61,7 +61,7 @@ function part1(){ // ===== 1부: 서버 =====
   S.st.sheets['현장'].rows[1][13]='Y';const r5=S.post({a:'projSite',pw:PW,proj:'P-2611-901',name:'시험 현장 욕실 2'});
   ok('서버 11: 숨긴 현장(숨김 Y)은 찾지 않고 새로 만듦 · 숨긴 행은 그대로 남음',r5.ok&&r5.created&&r5.code!==r1.code&&S.rowsOf('현장').length===3&&S.rowsOf('현장')[0][0]===r1.code);
   const r6=S.post({a:'projSite',pw:PW,proj:'P-2611-960',cust:'박고객'});const row6=S.rowsOf('현장').find(x=>x[0]===r6.code)||[];
-  ok('서버 12: 공정표 없이 만들면 기본 단계(철거~마감) · 현장명이 비면 ‘인트라넷 현장 + 프로젝트 번호’(고객 이름 안 씀) · 고객 이름은 18번째 칸에만 · 확인 번호 없음 표시',r6.created&&row6[1]==='인트라넷 현장 P-2611-960'&&row6[17]==='박고객'&&JSON.parse(row6[7]).length===7&&r6.pinOn===false);
+  ok('서버 12: 공정표 없이 만들면 기본 단계(철거~마감) · 현장명이 비면 고정 글 ‘홈퍼니싱 현장’(고객 이름·프로젝트 번호 안 씀) · 고객 이름은 18번째 칸에만 · 확인 번호 없음 표시',r6.created&&row6[1]==='홈퍼니싱 현장'&&row6[17]==='박고객'&&JSON.parse(row6[7]).length===7&&r6.pinOn===false);
   const long=Array.from({length:40},(x,i)=>({n:'가'.repeat(60)+i,a:'2026-11-01',b:'2026-11-02'}));const r7=S.post({a:'projSite',pw:PW,proj:'P-2611-961',stages:long,pin:'12a4'});const row7=S.rowsOf('현장').find(x=>x[0]===r7.code)||[];
   ok('서버 13: 단계는 30개·이름 40자까지 · 숫자 4자리가 아닌 확인 번호는 넣지 않음',r7.created&&JSON.parse(row7[7]).length===30&&JSON.parse(row7[7]).every(x=>x.n.length<=40)&&row7[16]==='');
   ok('서버 14: 잠금은 모두 풀림 · 기록 탭에 ‘현장 자동 생성’·‘인트라넷 맞춤’ (누가 = 직원 이름) · 시트 어디에도 비밀번호·출입증 없음',S.st.locks===0&&S.rowsOf('기록').some(r=>r[1]==='현장 자동 생성'&&r[3]==='정진혁')&&S.rowsOf('기록').some(r=>r[1]==='인트라넷 맞춤')&&!JSON.stringify(Object.values(S.st.sheets).map(s=>s.rows)).includes(tok));
@@ -73,7 +73,8 @@ function part1(){ // ===== 1부: 서버 =====
   // 고객 화면 응답(site)에 고객 이름이 어떤 경우에도 없음
   {const names=['홍길동','김영희','박고객','최고객'];const leaks=S.rowsOf('현장').filter(x=>x[13]!=='Y').map(x=>{const pin=x[16];return JSON.stringify(S.post({a:'site',s:x[0],pin}))}).filter(j=>names.some(n=>j.includes(n)));
    const q=S.post({a:'projSite',pw:PW,proj:'P-2611-963',cust:'정고객이름',pin:'2222'});const j=JSON.stringify(S.post({a:'site',s:q.code,pin:'2222'}));
-   ok('서버 17: 고객 화면 응답(site)에 고객 이름 없음 — 모든 현장(현장명 빈 자동 생성 포함)',leaks.length===0&&j.includes('"ok":true')&&!j.includes('정고객이름')&&j.includes('인트라넷 현장 P-2611-963')===true,leaks.length+' '+j.slice(0,120))}
+   const pno=S.rowsOf('현장').filter(x=>x[13]!=='Y').map(x=>JSON.stringify(S.post({a:'site',s:x[0],pin:x[16]}))).filter(t=>/P-\d{4}-\d{3}/.test(t));
+   ok('서버 17: 고객 화면 응답(site)에 고객 이름·프로젝트 번호(P-) 없음 — 모든 현장(현장명 빈 자동 생성 포함)',leaks.length===0&&pno.length===0&&j.includes('"ok":true')&&!j.includes('정고객이름')&&!/P-\d{4}-\d{3}/.test(j)&&j.includes('홈퍼니싱 현장'),leaks.length+' '+j.slice(0,120))}
   ok('서버 18: Code.gs v4 머리말 · doGet v:4',/현장소통 Code\.gs 2026-11-23 v4/.test(GS)&&JSON.parse(S.ctx.doGet({parameter:{}}).text).v===4);
   ok('서버 15: Code.gs 에 지우는 동작(deleteRow·clear·setTrashed·removeFile) 없음 · 같은 proj 찾기·만들기가 한 잠금 안',!/deleteRow|deleteRows|\.clear\(|setTrashed|removeFile|deleteSheet/.test(GS)&&(()=>{const i=GS.indexOf('projSite: function'),seg=GS.slice(i,GS.indexOf('addSite: function',i));const w=seg.indexOf('waitLock'),f=seg.indexOf('projOf_(x) === proj'),ap=seg.indexOf("append_('sites'"),rl=seg.indexOf('releaseLock');return i>0&&w>0&&w<f&&f<ap&&ap<rl})());
 }

@@ -32,7 +32,7 @@
  *  - sites 응답(관리 전용)에 고객 이름·확인 번호를 넣어 현장 목록 검색이 되게 함
  *  - 단계 이름은 40자까지
  *
- * v4 (검토 반영 2026-11-23): 자동 생성 현장명이 비면 고객 이름 대신 '인트라넷 현장 ' + 프로젝트 번호 (현장명은 고객 화면에 나감)
+ * v4 (검토 반영 2026-11-23): 자동 생성 현장명이 비면 고정 글 '홈퍼니싱 현장' (현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호 안 씀)
  *    확인 번호는 자르기 전 원래 값이 숫자 4자리일 때만 (긴 값을 앞 4자리로 저장하지 않음). 시트 칸·탭은 v3 와 같음 (setup 다시 안 해도 됨)
  */
 
@@ -434,7 +434,7 @@ var ACTIONS = {
       if (code) r = site_(code);
       else r = rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] || null;
       if (!r) {
-        var name = clean_(req.name, 60) || ('인트라넷 현장 ' + proj);   // v4: 고객 이름은 현장명(고객 화면)에 쓰지 않음
+        var name = clean_(req.name, 60) || '홈퍼니싱 현장';   // v4: 현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호는 쓰지 않음
         var st0 = stages_(JSON.stringify(sched)).filter(function (x) { return x.a; });
         if (!st0.length) st0 = DEF_STAGES.map(function (n) { return { n: n, s: 0, a: '', b: '' }; });
         else st0 = st0.map(function (x) { return { n: x.n, s: 0, a: x.a, b: x.b || x.a }; });
