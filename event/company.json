@@ -1,0 +1,75 @@
+{
+ "version": "2026-11-23 v0",
+ "greeting": "“좋은 공간은 화려한 디자인보다 지켜진 약속에서 완성된다고 믿습니다.”",
+ "who": "대표 최윤수",
+ "history": [
+  [
+   "2014",
+   "아르띠꼬 스튜디오로 인테리어 시작"
+  ],
+  [
+   "2020",
+   "주식회사 홈퍼니싱 법인 설립 · 실내건축공사업 등록"
+  ],
+  [
+   "2020~",
+   "관공서·학교 공간 50곳 이상 시공"
+  ],
+  [
+   "2026",
+   "여성기업 확인 갱신 (2029년 11월까지)"
+  ]
+ ],
+ "fields": [
+  "주거 · 아파트 리모델링",
+  "상가 · 사무실",
+  "관공서 · 학교"
+ ],
+ "works": [
+  [
+   "../site/images/work-1.jpg",
+   "구리역 롯데캐슬 시그니처"
+  ],
+  [
+   "../site/images/work-2.jpg",
+   "구의현대 2단지 34평"
+  ],
+  [
+   "../site/images/work-3.jpg",
+   "구리 갈매 상업 사무실"
+  ],
+  [
+   "../site/images/record.jpg",
+   "관공서 · 학교 실적"
+  ]
+ ],
+ "docs": [
+  [
+   "docs/license.jpg",
+   "실내건축공사업 등록증",
+   "경기도 구리시 · 2020"
+  ],
+  [
+   "docs/biz.jpg",
+   "사업자등록증",
+   "주식회사 홈퍼니싱"
+  ],
+  [
+   "docs/women.jpg",
+   "여성기업 확인서",
+   "2026.11.22 ~ 2029.11.21"
+  ],
+  [
+   "../site/files/company-profile.pdf",
+   "회사 지명원",
+   "PDF · 시공 실적 전체"
+  ]
+ ],
+ "links": {
+  "kakao": "",
+  "insta": "https://www.instagram.com/artico_design.studio",
+  "ohouse": "https://ohou.se/partner/myhome/13553169",
+  "blog": "https://blog.naver.com/artico_studio",
+  "yt": "https://www.youtube.com/channel/UCB1J5nJuUoEYwXYvhJD82ew"
+ }
+}
