@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 현장소통 2026-11-18 v1 · 고객 공유 페이지 (확인 번호·결제 일정·공정표·시공 전·중·후 사진·드라이브 사진 불러오기) · 이전 2026-11-06 v0 -->
+<!-- 현장소통 2026-11-23 v2 · 인트라넷 ‘고객 공유 페이지 열기’(프로젝트 번호로 찾기·자동 만들기·공정 날짜 맞춤 · 값은 # 뒤에서 읽고 바로 지움) · 현장 목록 검색 · 이전 2026-11-18 v1 (확인 번호·결제 일정·공정표·사진), 2026-11-06 v0 -->
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
@@ -201,7 +201,7 @@ footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
 "use strict";
 /* ============ 기본 ============ */
 const Q = new URLSearchParams(location.search);
-const CODE = (Q.get("s") || "").trim();
+let CODE = (Q.get("s") || "").trim(); // v2: 인트라넷에서 자동으로 만든 현장으로 바꿀 수 있게 let
 const ADMIN = Q.has("admin");
 const API = (window.FIELD_API || "").trim();
 const BASE = location.origin + location.pathname;
@@ -214,7 +214,27 @@ let PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {}
    서버에 한 번 확인받아 받은 출입증을 이 탭에만(sessionStorage) 둔다. 비밀번호는 쓰지도 저장하지도 않는다. */
 const TICKET_RE = /^\d{13}\.[A-Za-z0-9_-]{1,120}\.[A-Za-z0-9_-]{16,64}\.[A-Za-z0-9_-]{43}$/;
 let TICKET = "";
-{ const m = /(?:^#|&)k=([^&]*)/.exec(location.hash || ""); if (m) { TICKET = m[1]; try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (x) {} } } }
+/* v2 (2026-11-23): 인트라넷 프로젝트 값(d=, base64url JSON — 현장명·고객 이름·휴대폰 뒷 4자리·담당·착공/준공·공정표 날짜)도 # 뒤에서만 읽고 같이 지움. 쿼리(?)로는 받지 않음 */
+let AUTO = null;
+const fDay = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : "";
+const fStr = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001F]/g, " ").trim().slice(0, n);
+function autoRead(b64) {
+  try {
+    if (!/^[A-Za-z0-9_-]{4,20000}$/.test(b64)) return null;
+    const bin = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64.length + 3) % 4)), u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    const o = JSON.parse(new TextDecoder().decode(u)); if (!o || typeof o !== "object") return null;
+    const m = ["auto", "new", "sch"].includes(o.m) ? o.m : ""; if (!m) return null;
+    const r = { m, proj: /^P-\d{4}-\d{3}$/.test(String(o.proj || "")) ? String(o.proj) : "", name: fStr(o.name, 60), cust: fStr(o.cust, 30), pin: /^\d{4}$/.test(String(o.pin || "")) ? String(o.pin) : "", manager: fStr(o.mgr, 30), start: fDay(o.start), end: fDay(o.end),
+      sch: (Array.isArray(o.sch) ? o.sch : []).slice(0, 30).map(x => ({ n: fStr(x && x.n, 40), a: fDay(x && x.a), b: fDay(x && x.b) })).filter(x => x.n && x.a).map(x => Object.assign(x, { b: x.b && x.b >= x.a ? x.b : x.a })) };
+    if (m === "auto" && !r.proj) return null;
+    return r;
+  } catch (e) { return null; }
+}
+{ const h = location.hash || "", m = /(?:^#|&)k=([^&]*)/.exec(h), d = /(?:^#|&)d=([^&]*)/.exec(h);
+  if (m) TICKET = m[1];
+  if (d && ADMIN) AUTO = autoRead(d[1]);
+  if (m || d) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (x) {} } } }
 let TK = ""; try { TK = sessionStorage.getItem("field_tk") || ""; } catch (e) {}
 if (TK) PW = "T:" + TK; // 출입증이 있으면 그것으로 (서버에는 pw 자리에 "T:출입증")
 function tkDrop() { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (e) {} PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {} }
@@ -300,9 +320,13 @@ const Local = (() => {
     comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); else pinOk(s, d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
     login: d => { admin(d); return {}; },
     ticket: d => { if (!TICKET_RE.test(String(d.k || ""))) throw new Error("입장권 모양이 맞지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; }, // 미리보기: 모양만 확인
-    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
-    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: Object.assign(pub(s), { pin: s.pin || "", proj: s.proj || "" }), pinOn: !!s.pin }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
-    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: d.payments || [], pin: d.pin || "", proj: d.proj || "" }); save(); return { code }; },
+    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", cust: s.cust || "", pin: s.pin || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
+    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: Object.assign(pub(s), { pin: s.pin || "", proj: s.proj || "", cust: s.cust || "" }), pinOn: !!s.pin }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
+    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: d.payments || [], pin: d.pin || "", proj: d.proj || "", cust: d.cust || "" }); save(); return { code }; },
+    projSite: d => { admin(d); const b = load(); let s = d.s ? site(d.s) : b.sites.find(x => !x.hidden && x.proj && x.proj === d.proj); let created = false, n = 0; // 미리보기: 서버(projSite)와 같은 규칙
+      if (!s) { if (!d.proj) throw new Error("프로젝트 번호가 없어요"); const st = (d.stages || []).filter(x => x.a).map(x => ({ n: x.n, s: 0, a: x.a, b: x.b || x.a })); s = { code: code24(), name: d.name || (d.cust ? d.cust + " 고객 현장" : d.proj), manager: d.manager || "", phone: "", address: "", start: d.start || "", end: d.end || "", stages: st.length ? st : DEF_STAGES.map(n => ({ n, s: 0 })), status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: [], pin: d.pin || "", proj: d.proj, cust: d.cust || "" }; b.sites.push(s); created = true; n = st.length; }
+      else if ((d.stages || []).length) { const key = x => String(x || "").replace(/\s+/g, "").toLowerCase(), used = {}; const out = d.stages.filter(x => x.a).map(x => { const i = s.stages.findIndex((y, j) => !used[j] && key(y.n) === key(x.n)); if (i >= 0) used[i] = 1; return { n: x.n, s: i >= 0 ? s.stages[i].s : 0, a: x.a, b: x.b || x.a }; }); s.stages.forEach((x, i) => { if (!used[i] && x.s > 0) out.push(x); }); if (JSON.stringify(out) !== JSON.stringify(s.stages)) { (b.hist = b.hist || []).push({ code: s.code, old: JSON.stringify(s.stages), at: nowStr() }); s.stages = out; n = out.length; } }
+      if (!created && !s.cust && d.cust) s.cust = d.cust; save(); return { code: s.code, created, sched: n, pinOn: !!s.pin }; },
     updateSite: d => { admin(d); const s = site(d.s); Object.assign(s, d.fields || {}); save(); return {}; },
     adminPost: d => { admin(d); const s = site(d.s); load().posts.push({ id: uid("P"), code: s.code, date: d.date || today(), by: "a", author: d.author || "홈퍼니싱", stage: d.stage || "", kind: d.kind || "공정", text: d.text || "", important: !!d.important, photos: d.photos || [], createdAt: nowStr() }); save(); return {}; },
     importFolder: d => { admin(d); throw new Error("미리보기에서는 드라이브 폴더를 못 열어요 — 서버(Code.gs v1) 연결 뒤에 돼요"); },
@@ -636,12 +660,13 @@ function shareModal(s, fresh) {
 }
 function siteForm(s, pre) {
   const isNew = !s;
-  s = s || Object.assign({ name: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
+  s = s || Object.assign({ name: "", cust: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
   let stages = s.stages.map(x => Object.assign({}, x));
   let pays = (s.payments && s.payments.length ? s.payments : DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" }))).map(x => Object.assign({}, x));
   const m = modal('<h2>' + (isNew ? "현장 추가" : "현장 정보") + '</h2>'
     + (s.proj ? '<div class="meta">인트라넷 프로젝트 ' + esc(s.proj) + ' (고객 화면에는 안 보여요)</div>' : '')
     + '<label class="f">현장 이름 (고객 화면 맨 위)</label><input type="text" id="fN" value="' + esc(s.name) + '" placeholder="예: 반포 OO아파트 34평">'
+    + '<label class="f">고객 이름 (관리 화면·검색용 — 고객 화면에는 안 보여요)</label><input type="text" id="fC" maxlength="30" value="' + esc(s.cust || "") + '" placeholder="예: 홍길동">'
     + '<div class="row"><div><label class="f">담당자</label><input type="text" id="fM" value="' + esc(s.manager) + '" placeholder="정진혁 실장"></div><div><label class="f">연락처</label><input type="tel" id="fP" value="' + esc(s.phone) + '" placeholder="010-0000-0000"></div></div>'
     + '<label class="f">주소 (고객 화면에 보임 — 동·호수는 빼는 걸 권해요)</label><input type="text" id="fA" value="' + esc(s.address) + '">'
     + '<div class="row"><div><label class="f">착공일</label><input type="date" id="fS" value="' + esc(s.start) + '"></div><div><label class="f">준공 예정일</label><input type="date" id="fE" value="' + esc(s.end) + '"></div></div>'
@@ -669,7 +694,7 @@ function siteForm(s, pre) {
   $("#fGo", m).onclick = async () => {
     sync();
     const pin = $("#fPin", m).value.trim();
-    const f = { name: $("#fN", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages,
+    const f = { name: $("#fN", m).value.trim(), cust: $("#fC", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages,
       payments: pays.filter(x => x.n && (x.amt || x.due || x.paid)), pin };
     if (!f.name) { $("#fErr", m).textContent = "현장 이름을 적어 주세요"; return; }
     if (pin && !/^\d{4}$/.test(pin)) { $("#fErr", m).textContent = "확인 번호는 숫자 4자리로 적어 주세요"; return; }
@@ -710,19 +735,23 @@ async function listView() {
   try { r = await call("sites", { pw: PW }); } catch (e) { if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return listView(); $("#bar").innerHTML = ""; loginView("직원 입장권 시간이 끝났어요 · 인트라넷에서 다시 열거나 비밀번호로 들어가 주세요"); return; } if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
   const list = r.sites.sort((a, b) => (b.newCount - a.newCount) || (b.createdAt || "").localeCompare(a.createdAt || ""));
   let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><h1>현장 목록</h1><div class="meta">고객이 글·사진을 올리면 \'새 글\'이 붙어요.</div>';
-  h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="slist">';
+  h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="meta" style="margin-top:4px">인트라넷 프로젝트(계약 단계부터)는 ‘고객 공유 페이지 열기’를 누르면 자동으로 생겨요 · 이 버튼은 예외용</div>';
+  h += '<input type="search" id="sQ" placeholder="고객 이름 · 현장명 · 전화 뒷번호로 찾기" aria-label="현장 찾기" autocomplete="off" style="margin-top:12px;width:100%"><div class="meta" id="sQn" aria-live="polite"></div><div class="slist">';
   if (!list.length) h += '<div class="empty">아직 현장이 없어요.</div>';
   list.forEach(s => {
     const p = pct(s.stages);
-    h += '<div class="sc"><div class="t"><strong>' + esc(s.name) + '</strong>' + (s.newCount ? '<span class="tag n">새 글 ' + s.newCount + '</span>' : '') + '</div>'
+    const sq = [s.name, s.cust, s.pin, s.proj, s.manager].map(x => String(x || "").replace(/\s+/g, "").toLowerCase()).join("|");
+    h += '<div class="sc" data-q="' + esc(sq) + '"><div class="t"><strong>' + esc(s.name) + '</strong>' + (s.cust ? '<span class="meta"> · ' + esc(s.cust) + ' 고객</span>' : '') + (s.newCount ? '<span class="tag n">새 글 ' + s.newCount + '</span>' : '') + '</div>'
       + '<div class="meta">' + esc(s.manager || "") + (s.start ? " · " + fmtDate(s.start) + " ~ " + fmtDate(s.end) : "") + ' · 기록 ' + (s.postCount || 0) + '건</div>'
       + '<div class="bar"><i style="width:' + p + '%"></i></div><div class="meta">진행률 ' + p + '%</div>'
       + '<div class="acts"><a class="btn pri" href="?admin&s=' + esc(s.code) + '">열기</a><button class="btn" data-share="' + esc(s.code) + '">고객 주소 복사</button></div></div>';
   });
   app.innerHTML = h + '</div>' + footerHtml();
   $("#addS").onclick = () => siteForm(null);
+  app.onclick = e => { const c = e.target.dataset && e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
+  const sQ = $("#sQ"); // v2: 화면 안에서 바로 거름 (서버에 다시 묻지 않음)
+  sQ.oninput = () => { const q = sQ.value.replace(/\s+/g, "").toLowerCase(); let n = 0; app.querySelectorAll(".sc[data-q]").forEach(el => { const on = !q || el.dataset.q.includes(q); el.hidden = !on; if (on) n++; }); $("#sQn").textContent = q ? n + "곳 찾음" : ""; };
   return true;
-  app.onclick = e => { const c = e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
 }
 
 /* ============ PDF ============ */
@@ -799,17 +828,36 @@ async function ticketIn() {
   if (msg && !PW) return loginView(msg + " · 비밀번호로 들어가 주세요");
   route();
 }
+/* v2: 인트라넷 ‘고객 공유 페이지 열기’ — 프로젝트 번호로 현장 찾기 · 없으면 자동으로 만들기 · 공정표 날짜 맞추기 → 그 현장 관리 화면 */
+async function autoOpen() {
+  const A = AUTO; AUTO = null;
+  $("#app").innerHTML = '<div class="loading">' + (A.m === "auto" && !CODE ? "인트라넷 프로젝트 " + esc(A.proj) + " 현장 찾는 중…" : "공정 날짜 맞추는 중…") + '</div>';
+  let r;
+  try {
+    r = await call("projSite", { pw: PW, s: CODE || "", proj: A.proj, name: A.name, cust: A.cust, pin: A.pin, manager: A.manager, start: A.start, end: A.end, stages: A.sch });
+  } catch (e) {
+    if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); AUTO = A; if (PW) return route(); $("#bar").innerHTML = ""; loginView("직원 입장권 시간이 끝났어요 · 인트라넷에서 다시 열거나 비밀번호로 들어가 주세요"); return; }
+    if (/비밀번호|잠겼/.test(e.message)) { AUTO = A; logout(); return; }
+    if (/알 수 없는 요청/.test(e.message)) { toast("현장소통 서버가 옛 버전이에요 (Code.gs v3 배포 필요) · 현장 목록으로 열어요", 4000); if (CODE) return openSite(); return listView(); }
+    $("#app").innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
+  }
+  CODE = String(r.code || "");
+  try { history.replaceState(null, "", BASE + "?admin&s=" + encodeURIComponent(CODE)); } catch (x) {}
+  await openSite();
+  if (!D) return;
+  if (r.created) shareModal(Object.assign({}, D.site, { pinOn: !!r.pinOn }), true);
+  else toast(r.sched ? "인트라넷 공정표 날짜로 공정 " + r.sched + "단계를 맞췄어요" : (A.m === "auto" ? "이미 만든 현장을 열었어요" : "공정 날짜가 이미 같아요"), 3000);
+}
 function route() {
   if (ADMIN) {
     if (TICKET) { ticketIn(); return; }
     if (!PW) return loginView();
+    if (AUTO && (AUTO.m === "auto" || AUTO.m === "sch")) return autoOpen();
     if (CODE) return openSite();
-    listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'에서 넘어온 값으로 '현장 추가' 창 채우기
-      if (!ok || !Q.has("new")) return;
-      try { history.replaceState(null, "", BASE + "?admin"); } catch (x) {}
-      const pre = {}; ["name", "manager", "phone", "address", "start", "end", "proj"].forEach(k => { const v = (Q.get(k) || "").trim(); if (v) pre[k] = v.slice(0, 100); });
-      if (pre.proj && !/^P-\d{4}-\d{3}$/.test(pre.proj)) delete pre.proj;
-      ["start", "end"].forEach(k => { if (pre[k] && !/^\d{4}-\d{2}-\d{2}$/.test(pre[k])) delete pre[k]; });
+    listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'(계약 전)에서 # 뒤로 넘어온 값으로 '현장 추가' 창 채우기
+      const A = AUTO; if (!ok || !A || A.m !== "new") return; AUTO = null;
+      const pre = {}; ["name", "manager", "start", "end", "proj", "cust", "pin"].forEach(k => { if (A[k]) pre[k] = A[k]; });
+      if (A.sch.length) pre.stages = A.sch.map(x => ({ n: x.n, s: 0, a: x.a, b: x.b }));
       siteForm(null, pre);
     });
     return;

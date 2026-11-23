@@ -78,8 +78,9 @@ function part1(){ // ===== 1부: 서버 (Code.gs) =====
   for(const w of whos){const P=SP[w],tag=vn+' '+USERS[w].name+': ';
    const sh=await sheetOf(P,'p2');const txt=(await sh.count())?await sh.innerText():'';
    const hrefs=await sh.locator('a').evaluateAll(a=>a.map(x=>[x.textContent.trim(),x.getAttribute('href'),x.target,x.rel]));
-   ok(tag+'코드 있는 프로젝트: ‘고객 화면 열기’·‘고객 공유 링크 복사’·‘관리 화면 열기’',/고객 화면 열기/.test(txt)&&/고객 공유 링크 복사/.test(txt)&&/관리 화면 열기/.test(txt)&&await sh.locator('[data-fcopy]').count()===1,JSON.stringify(hrefs));
-   ok(tag+'고객 화면 = ?s=코드 · 관리 화면 = ?admin&s=코드 · 둘 다 새 탭 보통 링크',hrefs.length===2&&hrefs[0][1]===BASE+'?s='+CODE&&hrefs[1][1]===BASE+'?admin&s='+CODE&&hrefs.every(h=>h[2]==='_blank'&&/noopener/.test(h[3])),JSON.stringify(hrefs));
+   // v0.99-46 B: 계약 뒤(p2 = 사후관리) 코드 있는 프로젝트는 ‘고객 공유 페이지 열기’(관리 화면)·‘고객 주소 복사’·‘고객 화면 보기’
+   ok(tag+'코드 있는 프로젝트(계약 뒤): ‘고객 공유 페이지 열기’·‘고객 주소 복사’·‘고객 화면 보기’',/고객 공유 페이지 열기/.test(txt)&&/고객 주소 복사/.test(txt)&&/고객 화면 보기/.test(txt)&&await sh.locator('[data-fcopy]').count()===1,JSON.stringify(hrefs));
+   ok(tag+'관리 화면 = ?admin&s=코드 · 고객 화면 = ?s=코드 · 둘 다 새 탭 보통 링크',hrefs.length===2&&hrefs[0][1]===BASE+'?admin&s='+CODE&&hrefs[1][1]===BASE+'?s='+CODE&&hrefs.every(h=>h[2]==='_blank'&&/noopener/.test(h[3])),JSON.stringify(hrefs));
    await sh.locator('a[data-fadm]').click();await wait(400);const h0=await lastHref(P);const toastTxt=await P.evaluate(()=>Array.from(document.querySelectorAll('.toast')).map(t=>t.textContent).join('|'));
    ok(tag+'열쇠 없음 → 보통 주소(입장권 없음) + 안내',h0===BASE+'?admin&s='+CODE&&/아직 연결되지 않았어요/.test(toastTxt),h0+' · '+toastTxt)}
   // (나) 대표: 직원 열쇠 만들기
@@ -117,7 +118,8 @@ function part1(){ // ===== 1부: 서버 (Code.gs) =====
    ok(tag+'인트라넷이 만든 입장권을 서버(Code.gs)가 받아 줌 → 출입증 · 같은 입장권 두 번째는 거절 · 기록에 직원 이름',r.ok&&S.post({a:'sites',pw:'T:'+r.token}).ok&&S.post({a:'ticket',k}).ok===false&&S.rowsOf('기록').some(x=>x[1]==='직원 입장'&&x[3]===USERS[w].name));
    // 코드 없는 프로젝트: 만들기
    sh=await sheetOf(P,'p1');const txt1=(await sh.count())?await sh.innerText():'';await sh.locator('a[data-fadm]').click();await wait(300);const hm=await lastHref(P);const um=new URL(hm),q=um.searchParams,km=hm.split('#k=')[1]||'';
-   ok(tag+'코드 없는 프로젝트: ‘고객 공유 페이지 만들기’ = 미리 채움 주소(현장명·담당·착공·준공·프로젝트 번호만) + 입장권',/고객 공유 페이지 만들기/.test(txt1)&&um.origin+um.pathname===BASE&&q.has('admin')&&q.get('new')==='1'&&q.get('name')==='시험 현장 욕실'&&q.get('manager')==='정진혁 실장'&&q.get('start')==='2026-11-05'&&q.get('end')==='2026-12-20'&&q.get('proj')==='P-2611-901'&&[...q.keys()].sort().join()==='admin,end,manager,name,new,proj,start'&&sigOk(KEY,km),hm.slice(0,120));
+   {const hh={};hm.slice(hm.indexOf('#')+1).split('&').forEach(x=>{const i=x.indexOf('=');if(i>0)hh[x.slice(0,i)]=x.slice(i+1)});let dd=null;try{dd=JSON.parse(Buffer.from(hh.d||'','base64url').toString('utf8'))}catch(e){}
+    ok(tag+'코드 없는 프로젝트(계약 뒤 · v0.99-46 B): ‘고객 공유 페이지 열기’ = 주소 ?admin 뿐 + # 뒤 입장권(k)·값(d: 현장명·담당·착공·준공·프로젝트 번호·고객 이름·뒷 4자리)',/고객 공유 페이지 열기/.test(txt1)&&um.origin+um.pathname===BASE&&um.search==='?admin'&&sigOk(KEY,hh.k)&&dd&&dd.m==='auto'&&dd.name==='시험 현장 욕실'&&dd.mgr==='정진혁 실장'&&dd.start==='2026-11-05'&&dd.end==='2026-12-20'&&dd.proj==='P-2611-901'&&dd.cust==='홍길동'&&dd.pin==='5678'&&!/01012345678|1234-5678/.test(JSON.stringify(dd)),hm.slice(0,120))}
    ok(tag+'만들기 주소에도 열쇠·고객 이름·전화·금액·원가 없음',!hm.includes(KEY)&&!LEAK.test(hm.split('#')[0])&&!LEAK.test(decodeURIComponent(hm.split('#')[0])));
    ok(tag+'가로 넘침 없음',await P.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2));
    ok(tag+'권한 밖 쓰기는 일부러 해 본 열쇠 문서뿐',(await P.evaluate(()=>window.__mockDenied)).every(x=>x==='config/fstaff'),(await P.evaluate(()=>window.__mockDenied)).join(','))}
