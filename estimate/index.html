@@ -255,6 +255,7 @@ input[type="checkbox"]{width:20px;height:20px;padding:0;flex:none;margin:2px 0 0
   <h1>상담 전에 <em>1분</em>이면<br>우리 집 공사비 범위를<br>먼저 확인하세요</h1>
   <p>평형과 공사 범위만 누르면 아르띠꼬가 실제로 받는 단가로 예상 금액을 바로 보여드려요. 전화나 방문은 그다음에 하셔도 돼요.</p>
   <div class="trust"><span>실내건축공사업 등록 업체</span><span>2014년부터</span><span>하자보수 12개월</span><span>경기도 구리시</span></div>
+  <p id="refNote" hidden style="margin:12px 0 0;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.92);color:#2A2420;font-size:14px;line-height:1.5;font-weight:600"></p>
   <button class="start" id="startBtn" type="button">1분 견적 시작하기</button>
 </div></header>
 
@@ -551,6 +552,10 @@ function goTo(id){const el=typeof id==="string"?document.getElementById(id):id;i
   setTimeout(()=>{if(Math.abs(el.getBoundingClientRect().top)>200){try{el.scrollIntoView(true)}catch(e){}window.scrollTo(0,top())}},450)}
 const MODE=window.__MODE||"quote";let LINK=window.__LINK||null;
 if(!LINK){try{const q=new URLSearchParams(location.search),c=String(q.get("c")||q.get("t")||"").toLowerCase();if(/^[a-z0-9]{8,20}$/.test(c))LINK={t:c}}catch(e){}}
+// 소개 카드 (2026-11-23): 주소 ?src=referral&code=R-연월-순번 → 접수 글 첫머리에 ‘[소개 카드] 소개 코드 …’ (인트라넷이 유입 경로 ‘소개 카드’로 자동 고르고 소개 코드 칸에 저장). 형식이 맞는 코드만 · 같은 창 안에서는 기억(sessionStorage)
+let REF="";try{const q=new URLSearchParams(location.search),c=String(q.get("code")||"").trim().toUpperCase();if(String(q.get("src")||"")==="referral"&&/^R-\d{4}-\d{3}$/.test(c))REF=c}catch(e){}
+try{if(REF)sessionStorage.setItem("hfRef",REF);else{const v=String(sessionStorage.getItem("hfRef")||"");if(/^R-\d{4}-\d{3}$/.test(v))REF=v}}catch(e){}
+if(REF){const n=$("refNote");if(n){n.textContent="소개 카드로 오셨네요. 이 카드로 문의하시면 실측은 무료예요. (소개 코드 "+REF+")";n.hidden=false}}
 if(MODE!=="quote"){
   document.querySelectorAll("main > section").forEach(s=>{if(s.id!=="introCard")s.hidden=true});
   ["bar"].forEach(id=>{const e=$(id);if(e)e.hidden=true});
@@ -724,7 +729,7 @@ function message(){const g=id=>$(id).value.trim();const net=totalNet(),tot=vat(n
   const extra=DATA.options.filter(k=>st.sel.has(k)).map(k=>byK[k].name);
   const sd=(DATA.styles.find(x=>x.id===st.style)||{}).name||"";const full=st.preset==="전체 리모델링";
   const sash=!full?"해당 없음 (부분 공사)":sashOn()?"포함":"제외";
-  const L=["[아르띠꼬 간편 견적 · 상담 신청]","","■ 고객","이름: "+(g("nm")||"-"),"연락처: "+(g("ph")||"-"),"단지·동: "+(g("ad")||"-")];
+  const L=["[아르띠꼬 간편 견적 · 상담 신청]"].concat(REF?["[소개 카드] 소개 코드 "+REF+" · src=referral (실측 무료 대상)"]:[],["","■ 고객","이름: "+(g("nm")||"-"),"연락처: "+(g("ph")||"-"),"단지·동: "+(g("ad")||"-")]);
   if(home.apt&&home.apt.addr)L.push("주소: "+home.apt.addr);
   L.push("희망 시기: "+(g("wh")||"-"),"하고 싶은 말: "+(g("memo")||"-"),"","■ 집 · 공사");
   L.push("집: "+(st.py?st.py+"평":"-")+" · 욕실 "+st.bath+"개"+(home.type?" · 평형 타입 "+home.type.name:""));
@@ -866,7 +871,7 @@ function b64(blob){return new Promise(r=>{const fr=new FileReader();fr.onload=()
 function record(){const g=id=>$(id).value.trim();const net=totalNet(),tot=vat(net);const sd=(DATA.styles.find(x=>x.id===st.style)||{}).name||"";
   return {at:new Date().toISOString(),name:g("nm"),phone:g("ph"),apt:g("ad"),addr:(home.apt&&home.apt.addr)||"",type:(home.type&&home.type.name)||"",py:st.py,bath:st.bath,
     work:st.preset+(st.preset==="전체 리모델링"?" · "+sd+" · 샷시 "+(sashOn()?"포함":"제외"):""),range:net?man10(rangeLo())+" ~ "+man10(rangeHi())+"원 (VAT 포함, "+sashTxt()+")":"",sash:st.preset==="전체 리모델링"?(sashOn()?"포함":"제외"):"해당 없음",when:g("wh"),memo:g("memo"),
-    link:LINK&&LINK.t||"",plan:home.planFrom==="request"?"요청":(home.files.length+home.pdfs.length)?(home.files.length+home.pdfs.length)+"개":"",concept:(home.files.length||home.pdfs.length||home.refs.length||home.pickedConcept)?CONCEPTS[home.concept].name:"",refs:home.refs.length,pdfs:home.pdfs.map(p=>p.name).join(", "),text:message(),status:"신규"}}
+    link:LINK&&LINK.t||"",plan:home.planFrom==="request"?"요청":(home.files.length+home.pdfs.length)?(home.files.length+home.pdfs.length)+"개":"",concept:(home.files.length||home.pdfs.length||home.refs.length||home.pickedConcept)?CONCEPTS[home.concept].name:"",refs:home.refs.length,pdfs:home.pdfs.map(p=>p.name).join(", "),text:message(),...(REF?{ref:REF,route:"소개 카드"}:{}),status:"신규"}}
 function small(c){const k=Math.min(1,900/Math.max(c.width,c.height)),v=document.createElement("canvas");v.width=Math.round(c.width*k);v.height=Math.round(c.height*k);
   const x=v.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,v.width,v.height);x.drawImage(c,0,0,v.width,v.height);return v.toDataURL("image/jpeg",.62)}
 async function saveRequest(){const rec=record();let ok=false;
