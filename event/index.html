@@ -231,7 +231,8 @@ if(place){
 
 // 간편견적: 정보를 묻지 않고 바로 이동 (이름·전화·동호수는 간편견적 쪽에서 결과 보기 직전에만). 쿠폰 번호만 주소에 붙여 넘김(간편견적 사이트가 읽지 않아도 문제없음)
 $("btnEst").href=EST_URL+(place?"?src="+rawS:coupon?"?coupon="+coupon:"");$("abEst").href=$("btnEst").href;
-if(goEst){var qa=$("abEst").closest("section"),ab=$("vAbout"),back=$("aboutBack");if(qa&&ab&&back)ab.insertBefore(qa,back.nextSibling);$("abEst").querySelector("small").textContent="여기를 누르면 간편견적이 열려요";}$("lnkHome").href=HOME_URL;
+if(rawS==="desk"){$("abConsult").hidden=true} /* 상담석은 이미 상담 중 → 회사 소개 화면에 상담 예약 버튼 숨김 (대표 지시 2026-11-23) */
+if(goEst||rawS==="desk"){var qa=$("abEst").closest("section"),ab=$("vAbout"),back=$("aboutBack");if(qa&&ab&&back)ab.insertBefore(qa,back.nextSibling);$("abEst").querySelector("small").textContent="여기를 누르면 간편견적이 열려요";}$("lnkHome").href=HOME_URL;
 if(coupon){$("couponNo").textContent=coupon;$("couponBox").hidden=false}
 else{$("estNote").textContent=place?"간편견적을 접수하실 때 요청 칸에 ‘"+FROM+"’라고 적어 주세요.":"간편견적을 접수하실 때 요청 칸에 ‘공사 안내문을 보고 왔어요’라고 적어 주세요."}
 
