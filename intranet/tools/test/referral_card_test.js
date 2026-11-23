@@ -31,7 +31,7 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,v||x
  // ── 유입 경로 ──
  {const t=await A.evaluate(()=>{const f=window.__hfT;return {a:f.routeAuto("x src=referral&code=R-2611-001"),b:f.routeAuto("[소개 카드] 소개 코드 R-2611-007"),c:f.routeAuto("고객코드 C-2611-001 P-2611-001"),d:f.routeAuto("매장 QR을 보고"),e:f.routeAuto("소개 코드 r-2611-003"),
    r1:f.refCodeOf("소개 코드 R-2611-001 · src"),r2:f.refCodeOf("XR-2611-001"),r3:f.refCodeOf("R-26110-001"),r4:f.refCodeOf("R-2611-0011")}});
-  {const m=HTML.match(/const ROUTES=(\[[^\]]*\])/),rt=m?JSON.parse(m[1]):[];ok('유입 경로 목록(모든 화면 공통 ROUTES)에 ‘소개 카드’ (‘소개’ 바로 뒤) · 프로젝트·고객 칸에 ‘소개 코드’',rt.indexOf('소개 카드')===rt.indexOf('소개')+1&&rt.indexOf('소개')>=0&&(HTML.match(/\["refCode","소개 코드 \(소개 카드로 온 고객만/g)||[]).length===2,JSON.stringify(rt))}
+  {const m=HTML.match(/const ROUTES=(\[[^\]]*\])/),rt=m?JSON.parse(m[1]):[];ok('유입 경로 목록(모든 화면 공통 ROUTES)에 ‘소개 카드’ (‘기타’ 바로 앞 · 기존 순서 그대로) · 프로젝트·고객 칸에 ‘소개 코드’',rt.indexOf('소개 카드')===rt.indexOf('기타')-1&&rt.indexOf('소개')>=0&&(HTML.match(/\["refCode","소개 코드 \(소개 카드로 온 고객만/g)||[]).length===2,JSON.stringify(rt))}
   ok('자동 고르기: src=referral · ‘소개 카드’ · 소개 코드 → 소개 카드 / 고객·프로젝트 코드는 아님 / 매장 QR 그대로',t.a==='소개 카드'&&t.b==='소개 카드'&&t.c===''&&t.d==='매장 QR'&&t.e==='소개 카드',JSON.stringify(t));
   ok('소개 코드 뽑기: R-2611-001 만 · 앞뒤에 글자·숫자가 붙은 것은 아님',t.r1==='R-2611-001'&&t.r2===''&&t.r3===''&&t.r4==='',JSON.stringify(t))}
  {let d=await D();const p1=d['projects/p1'],p2=d['projects/p2'],p3=d['projects/p3'];

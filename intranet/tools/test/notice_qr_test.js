@@ -200,7 +200,7 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
    ok('PC 미리 보기(정진혁 화면): 창은 보이고 ‘출력’·‘PDF 저장’은 잠김 · 억지로 눌러도 인쇄·기록 없음',dis.length===2&&dis.every(Boolean)&&await P.evaluate(()=>window.__printed)===pr0&&(D['projects/p1'].noticeLog||[]).length===n0&&(D['work/all/projects/p1'].noticeLog||[]).length===w0,JSON.stringify(dis));
    await P.evaluate(()=>{location.hash='#forms'});await wait(800);ok('PC 미리 보기: 직원 화면처럼 설정 칸 없음',await P.locator('#gnCfg').count()===0)}
   // 유입 경로
-  ok(vn+' 유입 경로 선택지에 ‘공사 안내문 QR’ 추가 · 기존 값 순서 그대로',/const ROUTES=\["간편견적","오늘의집","소개","매장방문","유튜브","인스타그램","블로그","전화","공사 안내문 QR",(?:"매장 QR","상담석 QR",(?:"카톡·문자 공유",)?)?"기타"\];/ /* v0.99-45: 매장 QR·상담석 QR 이 그 뒤에 */.test(HTML));
+  ok(vn+' 유입 경로 선택지에 ‘공사 안내문 QR’ 추가 · 기존 값 순서 그대로',/const ROUTES=\["간편견적","오늘의집","소개","매장방문","유튜브","인스타그램","블로그","전화","공사 안내문 QR",(?:"매장 QR","상담석 QR",(?:"카톡·문자 공유",)?(?:"소개 카드",)?)?"기타"\];/ /* v0.99-45: 매장 QR·상담석 QR 이 그 뒤에 · v0.99-48 소개 카드는 기타 바로 앞 */.test(HTML));
   ok(vn+' 바깥으로 나간 요청 0 (QR·안내문을 만들면서 외부 서비스에 주소를 보내지 않음)',reqs.filter(u=>!/^http:\/\/hf\.test\/|^data:|^blob:/.test(u)&&!/fonts\.(googleapis|gstatic)/.test(u)).length===0,reqs.filter(u=>!/^http:\/\/hf\.test\/|^data:|^blob:/.test(u)).slice(0,3).join(' '));
   for(const w of all)await SP[w].close();
   // (차) 연습 모드(저장소 연결 안 됨): 만들 수는 있어도 기록은 남기지 않음
