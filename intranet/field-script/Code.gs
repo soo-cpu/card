@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-23 v3 (이전: '현장소통 Code.gs 2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-23 v4 (이전: '현장소통 Code.gs 2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -31,6 +31,9 @@
  *    진행 상태(대기·진행 중·완료)는 같은 이름 단계에서 그대로 이어받고, 공정표에 없는 단계는 진행이 있던 것만 남김
  *  - sites 응답(관리 전용)에 고객 이름·확인 번호를 넣어 현장 목록 검색이 되게 함
  *  - 단계 이름은 40자까지
+ *
+ * v4 (검토 반영 2026-11-23): 자동 생성 현장명이 비면 고객 이름 대신 '인트라넷 현장 ' + 프로젝트 번호 (현장명은 고객 화면에 나감)
+ *    확인 번호는 자르기 전 원래 값이 숫자 4자리일 때만 (긴 값을 앞 4자리로 저장하지 않음). 시트 칸·탭은 v3 와 같음 (setup 다시 안 해도 됨)
  */
 
 var TAB = {
@@ -54,7 +57,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 3 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 4 });
 }
 
 function doPost(e) {
@@ -113,6 +116,8 @@ function now_() { return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM
 function today_() { return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd'); }
 function id_(p) { return p + Utilities.getUuid().replace(/-/g, '').slice(0, 12); }
 function log_(act, code, who, detail) { try { append_('log', [now_(), act, code || '', who || '', String(detail || '').slice(0, 300)]); } catch (x) {} }
+/* v4: 확인 번호 — 원래 값(앞뒤 빈칸만 뺌)이 숫자 4자리면 그 값, 비었으면 '', 그 밖은 null (자르지 않음) */
+function pin_(v) { var t = String(v == null ? '' : v).trim(); if (!t) return ''; return /^\d{4}$/.test(t) ? t : null; }
 function clean_(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').slice(0, n || 2000).trim(); }
 function day_(s) { s = clean_(s, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''; }
 
@@ -420,8 +425,8 @@ var ACTIONS = {
     ensureCols_('sites');
     var code = String(req.s || ''), proj = /^P-\d{4}-\d{3}$/.test(String(req.proj || '')) ? String(req.proj) : '';
     if (!code && !proj) throw new Error('프로젝트 번호가 없어요 (인트라넷에서 다시 열어 주세요)');
-    var pin = clean_(req.pin, 4);
-    if (pin && !/^\d{4}$/.test(pin)) pin = '';
+    var pin = pin_(req.pin);
+    if (pin === null) pin = '';   // 숫자 4자리가 아니면 넣지 않음
     var sched = Array.isArray(req.stages) ? req.stages.slice(0, 30) : [];
     var created = false, schedN = 0, r = null, custFilled = false;
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
@@ -429,7 +434,7 @@ var ACTIONS = {
       if (code) r = site_(code);
       else r = rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] || null;
       if (!r) {
-        var name = clean_(req.name, 60) || (clean_(req.cust, 30) ? clean_(req.cust, 30) + ' 고객 현장' : proj);
+        var name = clean_(req.name, 60) || ('인트라넷 현장 ' + proj);   // v4: 고객 이름은 현장명(고객 화면)에 쓰지 않음
         var st0 = stages_(JSON.stringify(sched)).filter(function (x) { return x.a; });
         if (!st0.length) st0 = DEF_STAGES.map(function (n) { return { n: n, s: 0, a: '', b: '' }; });
         else st0 = st0.map(function (x) { return { n: x.n, s: 0, a: x.a, b: x.b || x.a }; });
@@ -454,8 +459,8 @@ var ACTIONS = {
     ensureCols_('sites');
     var name = clean_(req.name, 60);
     if (!name) throw new Error('현장 이름을 적어 주세요');
-    var pin = clean_(req.pin, 4);
-    if (pin && !/^\d{4}$/.test(pin)) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
+    var pin = pin_(req.pin);
+    if (pin === null) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
     var code = newCode_(), stages = stages_(JSON.stringify(req.stages || []));
     var proj = (String(req.proj || '').match(/P-\d{4}-\d{3}/) || [''])[0];
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
@@ -481,8 +486,8 @@ var ACTIONS = {
     }
     if (f.payments) setCell_('sites', r._row, 15, JSON.stringify(pays_(f.payments)));
     if (f.pin != null) {
-      var pin = clean_(f.pin, 4);
-      if (pin && !/^\d{4}$/.test(pin)) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
+      var pin = pin_(f.pin);
+      if (pin === null) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
       setCell_('sites', r._row, 16, pin);
     }
     log_('현장 수정', r[0], who, Object.keys(f).join(','));
