@@ -1,0 +1,127 @@
+// 매장 안내문 만들기 + QR 2개 + 유입 경로 자동 고르기 + 고객 페이지 매장 표시 시험 (v0.99-42, 2026-11-21)
+// node intranet/tools/test/store_qr_test.js [index.html]   · STORE_SHOTS=폴더 를 주면 A4 미리 보기·고객 페이지 화면을 저장
+// 1부 인트라넷(가짜 저장소): 대표(편집·저장·옛 값 보관)·정진혁·채진아(보기·출력만) · QR 두 개를 실제로 읽어 주소 확인 · 흑백으로 바꿔도 읽힘 · 유입 경로 ‘매장 QR’ · 간편견적 접수 글의 QR 표시 → 유입 경로 자동
+// 2부 고객 안내 페이지(event/index.html): ?src=store → 상단 문구 ‘매장 방문·상담 예약’ · 문자 첫 줄 ‘[상담 예약] 매장 QR’ · 간편견적 주소에 src=store · 저장·전송 없음 · 기존 공사 안내문 주소는 그대로
+const {chromium,devices}=require('playwright');const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_process');
+const ROOT=path.join(__dirname,'../../..');const HTML=fs.readFileSync(process.argv[2]||path.join(ROOT,'intranet/index.html'),'utf8');const MOCK=fs.readFileSync(__dirname+'/mock.js','utf8');
+const EVENT=fs.readFileSync(path.join(ROOT,'event/index.html'),'utf8');const SHOTS=process.env.STORE_SHOTS||'';
+function loadJsQR(){const tries=[process.env.JSQR_DIR,'jsqr',path.join(os.tmpdir(),'hf-jsqr/node_modules/jsqr')].filter(Boolean);for(const t of tries){try{return require(t)}catch(e){}}
+  try{const d=path.join(os.tmpdir(),'hf-jsqr');fs.mkdirSync(d,{recursive:true});cp.execSync('npm install jsqr --no-audit --no-fund --prefix '+JSON.stringify(d),{stdio:'ignore',timeout:120000});return require(path.join(d,'node_modules/jsqr'))}catch(e){return null}}
+const jsQR=loadJsQR();
+const RULES=[["hr","owner","owner"],["catalog","view","owner"],["acct","owner","owner"],["acct/{self}","interact","interact"],["config","view","owner"],["knock","owner","owner"],["knock/{self}","interact","interact"],["access","owner","owner"],["access/{self}","interact","interact"],["devok","interact","owner"],["members","owner","owner"],["members/{self}","interact","owner"],["creq","owner","owner"],["creq/{self}","interact","interact"],["cgrant","interact","owner"],["cpriv","owner","owner"],["ppriv","owner","owner"],["cshare","owner","owner"],["cshare/{self}","interact","interact"],["ccost","owner","owner"],["fin","owner","owner"],["fincf","owner","owner"],["customers","owner","owner"],["projects","owner","owner"],["quotes","owner","owner"],["sites","owner","owner"],["reports","owner","owner"],["activity","owner","owner"],["mine","owner","owner"],["mine/{self}","interact","interact"],["seal","owner","owner"],["certs","owner","owner"],["notify","interact","interact"],["work","interact","interact"]].map(([path,read,write])=>({path,read,write}));
+const T0="2026-11-01T00:00:00Z";const PJ=o=>Object.assign({custName:"홍길동",stage:"상담",mgr:"정진혁",cat:"주거",inq:"2026-11-20",route:"간편견적",updatedAt:T0},o);
+const SEED={"staff/st-chae":{name:"채진아",uid:"u_cja",level:"전체 담당",state:"재직",pos:"차장",finOk:"허락"},"staff/st-choi":{name:"최윤수",uid:"u_boss",state:"재직",pos:"대표이사"},"staff/st-jung":{name:"정진혁",uid:"u_jjh",level:"실무 팀",state:"재직",pos:"실장"},
+ "members/u_jjh":{active:true,staffId:"st-jung",name:"정진혁"},"members/u_cja":{active:true,staffId:"st-chae",name:"채진아"},
+ "projects/p1":PJ({no:"P-2611-901",title:"접수 1",perf:"순수 인테리어",lead:{at:T0,name:"홍길동",phone:"010-1234-5678",addr:"시험구",work:"욕실",text:"욕실 공사 문의합니다. 쿠폰 번호 HF2611012"}}),
+ "projects/p2":PJ({no:"P-2611-902",title:"접수 2",lead:{at:T0,name:"김매장",phone:"010-2222-3333",work:"주방",text:"매장 QR을 보고 왔어요"}}),
+ "projects/p3":PJ({no:"P-2611-903",title:"접수 3",lead:{at:T0,name:"박보통",phone:"010-4444-5555",work:"도배",text:"도배 견적 부탁드려요"}}),
+ "projects/p4":PJ({no:"P-2611-904",title:"접수 4",route:"소개",lead:{at:T0,name:"이소개",work:"창호",text:"공사 안내문을 보고 왔어요"}}),
+ "projects/p5":PJ({no:"P-2611-905",title:"손으로 등록",route:"간편견적",work:"매장 QR 이라고 적혀 있지만 접수 글(lead)은 없음"}),
+ "customers/c1":{code:"C-2611-901",name:"홍길동",tel:"",addr:"",mgr:"정진혁",status:"진행중",steps:[1],stage:"1-상담영업",updatedAt:T0},"cpriv/c1":{tel:"010-1234-5678",addr:"서울시 시험구 1",updatedAt:T0},
+ "ppriv/p1":{estCost:"20202020",updatedAt:T0}};
+const USERS={admin:{id:"u_boss",name:"최윤수",email:"boss@test",isOwner:true},jjh:{id:"u_jjh",name:"정진혁",email:"jjh@test",isOwner:false},cja:{id:"u_cja",name:"채진아",email:"cja@test",isOwner:false}};
+const BASE='https://soo-cpu.github.io/card/event/',EST=BASE+'?src=store&go=est',ESTGO='https://soo17115-cmyk.github.io/?src=store';
+const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,v||x===undefined?'':String(x).replace(/\s+/g,' ').slice(0,300))};const wait=ms=>new Promise(r=>setTimeout(r,ms));
+// 화면에 보이는 미리 보기 그림에서 QR 자리만 잘라 읽음 (gray=1 이면 흑백으로 바꾸고 절반 크기로 줄여 — 흑백 출력·멀리서 찍기 흉내)
+const readQr=async(P,i,gray)=>{const d=await P.evaluate(async([i,gray])=>{const im=document.getElementById('gsImg'),g=window.__hfT.gs();if(!im||!g||!g.qr||!g.qr[i])return null;if(!im.complete)await new Promise(r=>{im.onload=r});const q=g.qr[i],w=gray?Math.round(q.size/2):q.size,c=document.createElement('canvas');c.width=c.height=w;const x=c.getContext('2d');if(gray)x.filter='grayscale(1) contrast(0.6) brightness(1.1)';x.drawImage(im,q.x,q.y,q.size,q.size,0,0,w,w);return {w,px:Array.from(x.getImageData(0,0,w,w).data),cell:q.cell,size:q.size,nat:[im.naturalWidth,im.naturalHeight]}},[i,gray?1:0]);
+  if(!d||!jsQR)return {data:null};const r=jsQR(Uint8ClampedArray.from(d.px),d.w,d.w);return {data:r&&r.data,cell:d.cell,size:d.size,nat:d.nat}};
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:1000},timezoneId:'Asia/Seoul',acceptDownloads:true});
+ await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
+ const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r))},[SEED,RULES]);
+ const errs=[];const open=async who=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push(who+': '+e.message));await p.addInitScript(`window.__MOCKUSER=${JSON.stringify(USERS[who])};window.__printed=0;window.print=()=>{window.__printed++};window.__dl=[];const __ac=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){window.__dl.push(this.download);return __ac.call(this)};`+MOCK);await p.goto('http://hf.test/');return p};
+ const D=async()=>JSON.parse(await seed.evaluate(()=>localStorage.getItem('mockdb')));
+ const card=async P=>{await P.evaluate(()=>{location.hash='#forms'});await wait(1500);await P.locator('#gsCard > summary').click();await wait(1800)};
+ ok('QR 읽기 도구(jsQR) 준비',!!jsQR);
+
+ // ── 1부 대표 ──
+ const A=await open('admin');await wait(9000);await card(A);let g=await A.evaluate(()=>window.__hfT.gs());
+ ok('대표: 서식 자료실에 ‘매장 안내문 만들기 (대표만 편집)’ · 입력 칸 4개(영업시간·이벤트·매장용 휴대폰·상담 전화) 기본 비움',/매장 안내문 만들기 \(대표만 편집\)/.test(await A.locator('#gsCard > summary').innerText())&&await A.locator('#gsCard [data-gsf]').count()===4&&(await A.locator('#gsCard [data-gsf]').evaluateAll(a=>a.every(i=>i.value===''))));
+ ok('대표: A4 세로 한 장(1654×2339) · 문구(큰 제목 두 줄·칸 1·칸 2·상담 전화 1566-5904) 그대로',g&&g.w===1654&&g.h===2339&&g.fit&&['주말에는 문이 닫혀 있지만,','QR은 열려 있습니다','상담 예약은','간편 견적은','상담 전화 1566-5904'].every(t=>g.log.includes(t))&&g.log.filter(t=>t==='이걸 찍으세요').length===2,g&&JSON.stringify(g.log));
+ ok('대표: 기본(매장용 휴대폰 비움) — QR ① = 고객 페이지 ?src=store&t=상담 전화 · QR ② = 고객 페이지 ?src=store&go=est(간편견적으로 바로) · 영업시간·이벤트 줄 없음 · 문자 예약 안내 경고',g.url1===BASE+'?src=store&t=15665904'&&g.url2===EST&&!g.log.some(t=>/영업시간/.test(t))&&/문자로 예약 보내기/.test(await A.locator('#gsWarn').innerText()),g.url1+' '+g.url2);
+ {const q1=await readQr(A,0),q2=await readQr(A,1);ok('대표: QR 두 개가 실제로 읽힘 (① 상담 예약 ② 간편견적) · 한 칸 9픽셀 이상(200dpi 에서 1mm 넘음) · 미리 보기 그림 = A4 크기',q1.data===g.url1&&q2.data===g.url2&&q1.cell>=9&&q2.cell>=9&&q1.nat[0]===1654,JSON.stringify([q1.data,q2.data,q1.cell,q2.cell]));
+  const g1=await readQr(A,0,1),g2=await readQr(A,1,1);ok('대표: 흑백·흐리게·절반 크기로 바꿔도 QR 두 개 읽힘',g1.data===g.url1&&g2.data===g.url2,JSON.stringify([g1.data,g2.data]))}
+ ok('대표: QR 주소에 고객 정보·금액 없음 (src 와 회사 번호만)',/^https:\/\/soo-cpu\.github\.io\/card\/event\/\?src=store(&t=\d{8,11})?$/.test(g.url1)&&g.url2===EST);
+ // 상담석용 A5 (v0.99-45)
+ {await A.locator('#gsCard [data-gskind="desk"]').click();await wait(900);const d5=await A.evaluate(()=>window.__hfT.gs());
+  ok('대표: 종류 ‘상담석 (A5)’ → A5 세로(1165×1654) · 큰 제목 두 줄 · ① 상담 예약 ② 간편견적 · 상담 전화 1566-5904 · 한 장에 들어감',d5&&d5.kind==='desk'&&d5.w===1165&&d5.h===1654&&d5.fit&&['상담 중 궁금한 건','QR로 바로 확인하세요','상담 예약','간편견적','상담 전화','1566-5904'].every(x=>d5.log.includes(x)),d5&&JSON.stringify(d5.log));
+  ok('대표: 상담석 QR 주소 = 유리문과 같은 방식 · 유입 표시 src=desk (① ?src=desk&t= ② ?src=desk&go=est)',d5.url1===BASE+'?src=desk&t=15665904'&&d5.url2===BASE+'?src=desk&go=est',d5.url1+' '+d5.url2);
+  const a1=await readQr(A,0),a2=await readQr(A,1),b1=await readQr(A,0,1),b2=await readQr(A,1,1);ok('대표: 상담석 QR 두 개 실제로 읽힘 · 흐리게·절반 크기도 읽힘 · 한 칸 7픽셀 이상(약 0.9mm)',a1.data===d5.url1&&a2.data===d5.url2&&b1.data===d5.url1&&b2.data===d5.url2&&a1.cell>=7,JSON.stringify([a1.data,a2.data,b1.data,b2.data,a1.cell]));
+  const dl=A.waitForEvent('download',{timeout:8000}).catch(()=>null);await A.locator('#gsCard [data-gsout="pdf"]').click();const f=await dl;await wait(500);const nm=(await A.evaluate(()=>window.__dl)).slice(-1)[0]||'';let box='';if(f){try{const b=fs.readFileSync(await f.path()).toString('latin1');box=(b.match(/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/)||[]).slice(1).join('x')}catch(e){}}
+  ok('대표: 상담석 PDF = ‘매장 안내문 상담석용 날짜 vN.pdf’ · 쪽 크기 A5(419.53×595.28pt)',/^매장 안내문 상담석용 \d{4}-\d{2}-\d{2} v\d+\.pdf$/.test(nm)&&box==='419.53x595.28',nm+' '+box);
+  if(SHOTS){const u=await A.evaluate(()=>document.getElementById('gsImg').src);fs.writeFileSync(path.join(SHOTS,'매장 안내문 상담석용 미리 보기.png'),Buffer.from(u.split(',')[1],'base64'))}
+  await A.locator('#gsCard [data-gskind="door"]').click();await wait(900);const d4=await A.evaluate(()=>window.__hfT.gs());ok('대표: 다시 ‘문 앞 (A4)’ → A4 · src=store',d4.kind==='door'&&d4.w===1654&&d4.url2===EST)}
+ // 입력 → 미리 보기 바로 바뀜 (저장 전)
+ await A.fill('#gs_hours','오전 9시 ~ 오후 6시');await A.fill('#gs_sms','010-7777-8888');await wait(900);g=await A.evaluate(()=>window.__hfT.gs());
+ ok('대표: 영업시간·매장용 휴대폰을 적으면 미리 보기에 바로 (평일 영업시간 줄 · QR ① 번호가 휴대폰으로) · 경고 사라짐',g.log.includes('평일 영업시간 오전 9시 ~ 오후 6시')&&g.url1===BASE+'?src=store&t=01077778888'&&(await readQr(A,0)).data===BASE+'?src=store&t=01077778888'&&!(await A.locator('#gsWarn').isVisible()),g.url1);
+ ok('대표: 저장 전에는 저장소에 설정 없음',!(await D())['config/store']);
+ await A.fill('#gs_sms','02-123-4567');await A.locator('#gsCard [data-gssave]').click();await wait(900);
+ ok('대표: 매장용 휴대폰에 일반 전화를 적으면 저장하지 않음 (문자를 못 받는 번호)',!(await D())['config/store']);
+ await A.fill('#gs_sms','010-7777-8888');await A.locator('#gsCard [data-gssave]').click();await wait(2500);let d=await D();
+ ok('대표: 저장 → config/store (영업시간·휴대폰 · 이벤트는 비움 그대로)',d['config/store']&&d['config/store'].hours==='오전 9시 ~ 오후 6시'&&d['config/store'].sms==='010-7777-8888'&&d['config/store'].event===''&&(d['config/store'].hist||[]).length===0,JSON.stringify(d['config/store']));
+ await card(A).catch(()=>{});if(!(await A.locator('#gs_event').isVisible()))await A.locator('#gsCard > summary').click();await wait(800);
+ await A.fill('#gs_event','11월 상담 예약 고객 실측 무료');await A.locator('#gsCard [data-gssave]').click();await wait(2500);d=await D();
+ ok('대표: 다시 저장하면 옛 값을 지우지 않고 보관 (hist 1개)',d['config/store'].event==='11월 상담 예약 고객 실측 무료'&&(d['config/store'].hist||[]).length===1&&d['config/store'].hist[0].hours==='오전 9시 ~ 오후 6시'&&d['config/store'].hist[0].event==='',JSON.stringify(d['config/store'].hist));
+ await wait(800);g=await A.evaluate(()=>window.__hfT.gs());ok('대표: 이벤트 문구가 안내문에 찍힘 · 한 장에 들어감',g.log.includes('11월 상담 예약 고객 실측 무료')&&g.fit);
+ {const dl=A.waitForEvent('download',{timeout:8000}).catch(()=>null);await A.locator('#gsCard [data-gsout="pdf"]').click();const f=await dl;await A.locator('#gsCard [data-gsout="print"]').click();await wait(1500);
+  const nm=(await A.evaluate(()=>window.__dl)).slice(-1)[0]||'';/* 파일 이름은 화면이 내려받기 링크에 붙인 이름으로 확인 (시험 브라우저가 알려 주는 이름은 'download' 로만 나올 때가 있음) */ok('대표: ‘PDF 저장’ → ‘매장 안내문 날짜 vN.pdf’ · ‘출력’ → 화면 안 인쇄(새 창 없음)',!!f&&/^매장 안내문 \d{4}-\d{2}-\d{2} v\d+\.pdf$/.test(nm)&&await A.evaluate(()=>window.__printed)>=1,nm)}
+ if(SHOTS){fs.mkdirSync(SHOTS,{recursive:true});const u=await A.evaluate(()=>document.getElementById('gsImg').src);fs.writeFileSync(path.join(SHOTS,'매장 안내문 미리 보기.png'),Buffer.from(u.split(',')[1],'base64'))}
+ // 유입 경로
+ await A.evaluate(()=>{location.hash='#projects'});await wait(1500);
+ ok('유입 경로 목록에 ‘매장 QR’·‘공사 안내문 QR’',await A.evaluate(()=>{window.__hfT.openQ;return true})&&/"공사 안내문 QR","매장 QR","상담석 QR","기타"\]/.test(HTML));
+ d=await D();
+ ok('간편견적 접수 글에 쿠폰 번호 → 유입 경로 ‘공사 안내문 QR’ (옛 값 ‘간편견적’은 routeAuto.from 에 남음) · 성과금 실적 구분 그대로',d['projects/p1'].route==='공사 안내문 QR'&&d['projects/p1'].routeAuto&&d['projects/p1'].routeAuto.from==='간편견적'&&d['projects/p1'].perf==='순수 인테리어'&&d['projects/p1'].lead.text===SEED['projects/p1'].lead.text,JSON.stringify([d['projects/p1'].route,d['projects/p1'].routeAuto,d['projects/p1'].perf]));
+ ok('간편견적 접수 글에 ‘매장 QR’ → 유입 경로 ‘매장 QR’',d['projects/p2'].route==='매장 QR'&&d['projects/p2'].routeAuto.from==='간편견적',d['projects/p2'].route);
+ ok('표시가 없는 접수·직원이 고른 경로(소개)·접수 글이 없는 프로젝트는 그대로',d['projects/p3'].route==='간편견적'&&!d['projects/p3'].routeAuto&&d['projects/p4'].route==='소개'&&!d['projects/p4'].routeAuto&&d['projects/p5'].route==='간편견적'&&!d['projects/p5'].routeAuto,JSON.stringify([d['projects/p3'].route,d['projects/p4'].route,d['projects/p5'].route]));
+ // 대표가 다시 고치면 자동으로 되돌리지 않음
+ await seed.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb'));D['projects/p2']=Object.assign({},D['projects/p2'],{route:'간편견적',updatedAt:new Date().toISOString(),__at:new Date().toISOString()});localStorage.setItem('mockdb',JSON.stringify(D));new BroadcastChannel('mockdb').postMessage(1)});await wait(8000);d=await D();
+ ok('대표가 유입 경로를 다시 고치면 자동으로 되돌리지 않음 (한 번만)',d['projects/p2'].route==='간편견적');
+ ok('글 → 경로 규칙: 상담석 QR / 매장 QR / 공사 안내문 QR / 없음',JSON.stringify(await A.evaluate(()=>['[상담 예약] 상담석 QR','x/?src=desk&go=est','[상담 예약] 매장 QR','https://x/?src=store','쿠폰 번호: HF2611012','[상담 예약] 공사 안내문 QR','n=HFD261120 src=notice','공사 안내문을 보고 왔어요','그냥 문의','전화번호 01012345678 HF12','공사 안내문 붙임'].map(window.__hfT.routeAuto)))===JSON.stringify(['상담석 QR','상담석 QR','매장 QR','매장 QR','공사 안내문 QR','공사 안내문 QR','공사 안내문 QR','공사 안내문 QR','','','']));
+ // 입력 창: 글에 표시를 적으면 문의 경로 자동
+ {await A.locator('tr[data-open]').filter({hasText:'접수 3'}).first().click();await wait(1500);const sel=A.locator('#sheetForm select[data-k="route"]');const before=await sel.inputValue();
+  const ta=A.locator('#sheetForm [data-k="work"]').first();await ta.fill('[상담 예약] 매장 QR 이름: 박보통');await ta.dispatchEvent('change');await wait(500);const after=await sel.inputValue();
+  ok('프로젝트 입력 창: 글 칸에 ‘[상담 예약] 매장 QR’을 적으면 문의 경로가 ‘매장 QR’로 (간편견적 → 매장 QR · 저장 전 · 직원이 다시 바꿀 수 있음)',before==='간편견적'&&after==='매장 QR',before+' → '+after);
+  await sel.selectOption('소개');await ta.fill('쿠폰 번호 HF2611012');await ta.dispatchEvent('change');await wait(400);ok('프로젝트 입력 창: 직원이 고른 경로(소개)는 자동으로 바꾸지 않음',await sel.inputValue()==='소개');await A.keyboard.press('Escape');await wait(500)}
+ ok('대표 화면: 권한 밖 쓰기 0 · 화면 오류 0',!(await A.evaluate(()=>window.__mockDenied||[])).filter(x=>!/^(activity|access|knock)/.test(x)).length&&!errs.length,errs.slice(0,3).join(' | '));
+
+ // ── 1부 직원 ──
+ for(const w of ['jjh','cja']){const P=await open(w);await wait(8000);await card(P);const gg=await P.evaluate(()=>window.__hfT.gs()),nm=USERS[w].name;
+  ok(nm+': 매장 안내문 카드는 보기·출력만 — 입력 칸·저장 버튼 없음',/\(보기·출력\)/.test(await P.locator('#gsCard > summary').innerText())&&await P.locator('#gsCard [data-gsf]').count()===0&&await P.locator('#gsCard [data-gssave]').count()===0);
+  ok(nm+': 대표가 저장한 문구·번호로 미리 보기 · QR 두 개 읽힘',gg&&gg.url1===BASE+'?src=store&t=01077778888'&&gg.log.includes('평일 영업시간 오전 9시 ~ 오후 6시')&&(await readQr(P,0)).data===gg.url1&&(await readQr(P,1)).data===EST,gg&&gg.url1);
+  const dl=P.waitForEvent('download',{timeout:8000}).catch(()=>null);await P.locator('#gsCard [data-gsout="pdf"]').click();const f=await dl;await wait(800);
+  const before=JSON.stringify((await D())['config/store']);
+  ok(nm+': PDF 저장 됨 · 설정은 바뀌지 않음 · 권한 밖 쓰기 0',!!f&&JSON.stringify((await D())['config/store'])===before&&!(await P.evaluate(()=>window.__mockDenied||[])).filter(x=>!/^(activity|access|knock)/.test(x)).length,(await P.evaluate(()=>window.__mockDenied||[])).join(','));
+  ok(nm+': 화면에 성과금·원가 값이 새로 보이지 않음 (서식 자료실)',!/20202020|순수 인테리어/.test(await P.evaluate(()=>document.querySelector('main')?document.querySelector('main').innerText:document.body.innerText)));
+  await P.close()}
+ d=await D();ok('직원 저장소 어디에도 유입 경로 자동 고침 흔적 없음(대표 화면만 고침) · 원본 프로젝트 5개 그대로',['p1','p2','p3','p4','p5'].every(i=>d['projects/'+i]&&d['projects/'+i].title===SEED['projects/'+i].title));
+ ok('전체 화면 오류 0',!errs.length,errs.slice(0,3).join(' | '));
+
+ // ── 소스 점검 ──
+ {const i=HTML.indexOf('// ===== 유입 경로 자동 고르기'),j=HTML.indexOf('// ===== 프로젝트 통합 화면'),seg=HTML.slice(i,j);
+  ok('새 코드에 alert/confirm/prompt/window.open/iframe/외부 QR 서비스·.delete( 0건',seg.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe|chart\.googleapis|qrserver|\.delete\(/.test(seg));
+  ok('새 코드: 원본 컬렉션에 쓰는 곳은 유입 경로 자동(프로젝트 한 줄 · 옛 값 routeAuto.from)과 설정(config/store · hist) 두 곳뿐',(seg.match(/db\.collection\(/g)||[]).length===1&&(seg.match(/await put\("config",GS_ID/g)||[]).length===1)}
+
+ // ── 2부 고객 안내 페이지 (새 첫 화면: 처음 · 상담 문의 · 회사 소개) ──
+ {const reqs=[];const run=async(name,dev,url,fn)=>{const c2=await b.newContext(Object.assign({},dev));await c2.route('**/*',r=>{const u=r.request().url();reqs.push(u);if(u.startsWith('http://e.test/card/event/'))return r.fulfill({contentType:'text/html',body:EVENT});if(u.startsWith('https://soo17115-cmyk.github.io/'))return r.fulfill({contentType:'text/html',body:'<html>est</html>'});return r.abort()});const p=await c2.newPage();const pe=[];p.on('pageerror',e=>pe.push(e.message));await p.goto(url).catch(()=>{});await wait(500);await fn(p,pe);await c2.close()};
+  const fill=async p=>{await p.fill('#rName','김매장');await p.fill('#rTel','010-2222-3333');await p.fill('#rMemo','토요일 방문 희망')};
+  const smsBody=async p=>{await p.locator('#btnSms').click({noWaitAfter:true}).catch(()=>{});await wait(300);const h=String(await p.locator('#btnSms').getAttribute('href'));return {h,body:decodeURIComponent(h.split('body=')[1]||'')}};
+  const title=async p=>(await p.locator('header h1').innerText()).trim();
+  await run('매장·안드로이드',devices['Pixel 7'],'http://e.test/card/event/?src=store&t=01077778888',async(p,pe)=>{
+   ok('고객 페이지(매장 · src=store): 머리말 ‘매장 방문·상담 예약’ · 처음부터 상담 문의 화면 · 공사 사과 문구 없음 · 쿠폰 칸 없음',await title(p)==='매장 방문·상담 예약'&&await p.locator('#vConsult').isVisible()&&!/공사로 불편|소음/.test(await p.locator('header').innerText())&&await p.locator('#couponBox').isHidden());
+   await fill(p);const s=await smsBody(p);ok('고객 페이지(매장·안드로이드): 문자 → sms:매장 휴대폰?body= · 첫 줄 ‘[상담 예약] 매장 QR’',/^sms:01077778888\?body=/.test(s.h)&&s.body.split('\n')[0]==='[상담 예약] 매장 QR'&&/남길 말: 토요일 방문 희망/.test(s.body),s.h.slice(0,80));
+   await p.locator('a.back').first().click();await wait(300);ok('고객 페이지(매장): ‘처음으로’ → 간편견적 버튼 주소에 src=store · 요청 칸 안내 ‘매장 QR’',await p.locator('#vHome').isVisible()&&await p.locator('#btnEst').getAttribute('href')==='https://soo17115-cmyk.github.io/?src=store'&&/매장 QR/.test(await p.locator('#estNote').innerText()));
+   const st=await p.evaluate(()=>({ls:localStorage.length,ss:sessionStorage.length,ck:document.cookie}));ok('고객 페이지(매장): 입력값 저장 없음 · 오류 0',st.ls===0&&st.ss===0&&st.ck===''&&!pe.length,pe.join('|'));
+   if(SHOTS)await p.screenshot({path:path.join(SHOTS,'고객 페이지 매장 QR (휴대폰).png'),fullPage:true})});
+  await run('매장·아이폰',devices['iPhone 13'],'http://e.test/card/event/?src=store&t=01077778888',async p=>{await fill(p);const s=await smsBody(p);ok('고객 페이지(매장·아이폰): sms:번호&body=',/^sms:01077778888&body=/.test(s.h))});
+  await run('매장·대표번호',devices['Pixel 7'],'http://e.test/card/event/?src=store&t=15665904',async p=>{ok('고객 페이지(매장·대표번호): 문자 버튼 없음 · 전화 걸기만 · ‘상담 전화로 연락’ 안내',await p.locator('#btnSms').isHidden()&&await p.locator('#btnCall').getAttribute('href')==='tel:15665904'&&await p.locator('#noTel').isVisible())});
+  await run('상담석',devices['Pixel 7'],'http://e.test/card/event/?src=desk&t=01077778888',async(p,pe)=>{await fill(p);const s=await smsBody(p);
+   ok('고객 페이지(상담석 · src=desk): 머리말 ‘상담 예약 · 간편견적’ · 상담 문의 화면 · 문자 첫 줄 ‘[상담 예약] 상담석 QR’ · 오류 0',await title(p)==='상담 예약 · 간편견적'&&await p.locator('#vConsult').isVisible()&&s.body.split('\n')[0]==='[상담 예약] 상담석 QR'&&!pe.length,s.body.split('\n')[0])});
+  await run('사무실 유리문',devices['Pixel 7'],'http://e.test/card/event/?src=OFFICE&t=01077778888',async p=>{await fill(p);const s=await smsBody(p);
+   ok('고객 페이지(유리문 · src=OFFICE): 매장 화면 · 문자 첫 줄 ‘[상담 예약] 매장 QR · OFFICE’ · 간편견적 버튼 src=OFFICE',await title(p)==='매장 방문·상담 예약'&&s.body.split('\n')[0]==='[상담 예약] 매장 QR · OFFICE'&&await p.locator('#btnEst').getAttribute('href')==='https://soo17115-cmyk.github.io/?src=OFFICE')});
+  for(const [src,want] of [['OFFICE','https://soo17115-cmyk.github.io/?src=OFFICE'],['desk','https://soo17115-cmyk.github.io/?src=desk'],['store','https://soo17115-cmyk.github.io/?src=store']]){
+   await run('go=est '+src,devices['Pixel 7'],'http://e.test/card/event/?src='+src+'&go=est',async p=>{ok('고객 페이지(src='+src+'&go=est): 간편견적으로 바로 넘어감',p.url()===want,p.url())})}
+  await run('공사 안내문',devices['Pixel 7'],'http://e.test/card/event/?n=HF2611012&t=01099990001',async p=>{await p.locator('#btnConsult').click();await wait(300);await fill(p);const s=await smsBody(p);
+   ok('고객 페이지(공사 안내문 · 기존 주소): 머리말 사과 문구 · 처음 화면 · 쿠폰 · 문자 첫 줄 ‘[상담 예약] 공사 안내문 QR’ · 간편견적 ?coupon= 그대로',/이웃 공사로 불편/.test(await title(p))&&(await p.locator('#couponNo').innerText())==='HF2611012'&&s.body.split('\n')[0]==='[상담 예약] 공사 안내문 QR'&&/쿠폰 번호: HF2611012/.test(s.body)&&await p.locator('#btnEst').getAttribute('href')==='https://soo17115-cmyk.github.io/?coupon=HF2611012')});
+  await run('이상한 값',devices['Pixel 7'],'http://e.test/card/event/?src=store%22%3E%3Cscript%3Ealert(1)%3C/script%3E&go=est&n=%3Cb%3E',async(p,pe)=>{ok('고객 페이지: src 가 정해진 값이 아니면 무시(공사 안내문 화면 · 넘어가지 않음) · 스크립트 주입 안 됨',/이웃 공사로 불편/.test(await title(p))&&p.url().startsWith('http://e.test/')&&!pe.length&&await p.locator('script').count()===1)});
+  ok('고객 페이지: 간편견적 말고 바깥 요청 0',reqs.every(u=>u.startsWith('http://e.test/card/event/')||u.startsWith('https://soo17115-cmyk.github.io/')),reqs.filter(u=>!u.startsWith('http://e.test/')&&!u.startsWith('https://soo17115')).slice(0,3).join(' '));
+  ok('고객 페이지 소스: 외부 스크립트·추적·innerHTML·eval 0 · noindex · 집계는 COUNT_URL 비었으면 안 보냄(그대로)',!/<script[^>]+src=|gtag|analytics|innerHTML|insertAdjacentHTML|document\.write|eval\(|new Function|localStorage|sessionStorage|document\.cookie|WebSocket/.test(EVENT)&&/<meta name="robots" content="noindex/.test(EVENT)&&/var COUNT_URL="";/.test(EVENT)&&/coupon\|\|\(place\?place\[0\]:"NONE"\)/.test(EVENT))}
+ const f=R.filter(x=>!x).length;console.log('\n결과: 통과 '+(R.length-f)+' / 실패 '+f);await b.close();process.exit(f?1:0)})();

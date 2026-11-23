@@ -200,7 +200,7 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
    ok('PC 미리 보기(정진혁 화면): 창은 보이고 ‘출력’·‘PDF 저장’은 잠김 · 억지로 눌러도 인쇄·기록 없음',dis.length===2&&dis.every(Boolean)&&await P.evaluate(()=>window.__printed)===pr0&&(D['projects/p1'].noticeLog||[]).length===n0&&(D['work/all/projects/p1'].noticeLog||[]).length===w0,JSON.stringify(dis));
    await P.evaluate(()=>{location.hash='#forms'});await wait(800);ok('PC 미리 보기: 직원 화면처럼 설정 칸 없음',await P.locator('#gnCfg').count()===0)}
   // 유입 경로
-  ok(vn+' 유입 경로 선택지에 ‘공사 안내문 QR’ 추가 · 기존 값 순서 그대로',/const ROUTES=\["간편견적","오늘의집","소개","매장방문","유튜브","인스타그램","블로그","전화","공사 안내문 QR","기타"\];/.test(HTML));
+  ok(vn+' 유입 경로 선택지에 ‘공사 안내문 QR’ 추가 · 기존 값 순서 그대로',/const ROUTES=\["간편견적","오늘의집","소개","매장방문","유튜브","인스타그램","블로그","전화","공사 안내문 QR",(?:"매장 QR","상담석 QR",)?"기타"\];/ /* v0.99-45: 매장 QR·상담석 QR 이 그 뒤에 */.test(HTML));
   ok(vn+' 바깥으로 나간 요청 0 (QR·안내문을 만들면서 외부 서비스에 주소를 보내지 않음)',reqs.filter(u=>!/^http:\/\/hf\.test\/|^data:|^blob:/.test(u)&&!/fonts\.(googleapis|gstatic)/.test(u)).length===0,reqs.filter(u=>!/^http:\/\/hf\.test\/|^data:|^blob:/.test(u)).slice(0,3).join(' '));
   for(const w of all)await SP[w].close();
   // (차) 연습 모드(저장소 연결 안 됨): 만들 수는 있어도 기록은 남기지 않음
@@ -214,7 +214,7 @@ const readQr=async P=>{const d=await P.evaluate(async()=>{const im=document.getE
  {const i=HTML.indexOf('// ===== 공사 안내문 만들기 (대표 지시 2026-11-20'),j=HTML.indexOf('function hubHTML(p){'),seg=HTML.slice(i,j);
   ok('인트라넷 소스(안내문 코드 구간): alert·confirm·prompt·window.open·iframe·fetch·삭제 0 · 외부 QR 서비스 주소 0 · 할인 금액·율을 지어낸 글 0',i>0&&j>i&&!/alert\(|[^k]confirm\(|prompt\(|window\.open|<iframe|fetch\(|\.delete\(|XMLHttpRequest|api\.qrserver|chart\.googleapis|quickchart/.test(seg)&&!/\d+\s*(%|만\s*원|원)\s*할인|할인\s*\d/.test(seg)&&!/<script[^>]+src=/.test(HTML.slice(0,2000)));
   ok('인트라넷 소스: 주소 조립은 gnUrl 한 곳 — n(영문·숫자)·t(숫자)만',(seg.match(/GN_EVENT\+/g)||[]).length===1&&/const gnUrl=\(n,t\)=>GN_EVENT\+"\?n="\+String\(n\|\|""\)\.replace\(\/\[\^A-Za-z0-9\]\/g,""\)/.test(seg));
-  ok('버전: APP_VER v0.99-42 · APP_DATE 2026-11-21 · v0.99-41·v0.99-40 설명 그대로 뒤에',/const APP_VER="(?:v0\.99-43 \([^"]*? · )?v0\.99-42 \(공사 안내문 보강/.test(HTML)&&/\/ v0\.99-41 \(공사 안내문 만들기/.test(HTML)&&/\/ v0\.99-40 \(묶음: 드라이브 파일 새 탭 열기/.test(HTML)&&/APP_DATE="2026-11-21"/.test(HTML));
+  ok('버전: APP_VER v0.99-42 · APP_DATE 2026-11-21 · v0.99-41·v0.99-40 설명 그대로 뒤에',/const APP_VER="[^"]*?v0\.99-42 \(공사 안내문 보강/.test(HTML)&&/\/ v0\.99-41 \(공사 안내문 만들기/.test(HTML)&&/\/ v0\.99-40 \(묶음: 드라이브 파일 새 탭 열기/.test(HTML)&&/APP_DATE="2026-11-2\d"/.test(HTML));
   ok('인트라넷 소스: 이번 작업이 perf·STAFF_HIDE·WORK_DROP 을 건드리지 않음 (v0.99-41 과 같은 줄)',/const STAFF_HIDE=\["approvals","costTotal"\];/.test(HTML)&&/const WORK_DROP=\["estCost","perf","qCost","approvals","costTotal","pc","margin","marginRate","bonus","bonusBase","__leak","__leakCost","__masked","__rawTel","__deleted","__gone","__goneAt","__goneWhy"\];/.test(HTML))}
  ok('인트라넷: 화면 오류 0 · 브라우저 대화상자 0 (설정 저장 확인은 okAsk)',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
 
