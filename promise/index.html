@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>안심 약속 초안 미리보기</title>
+<!-- 안심 약속 2026-11-24 v2 · 적용본 미리보기 (형 결정 7가지 + 새 기준 4가지 승인 · 실제 페이지에 적용)
+     ① 홈페이지(site/index.html) ② 회사 소개(event/index.html #vAbout) ③ 견적서 첫 장 ④ 계약서 특약
+     실제 적용 위치: site/index.html #promise, event/index.html #promiseBox, quote/index.html 표지. -->
+<style>
+:root{
+  /* 홈페이지(site) 색 */
+  --bg:#f5f0e8;--paper:#fbf8f3;--ink:#2a2420;--sub:#8c7f72;--line:#e3dace;--pt:#9a7b56;
+  /* 고객 페이지(event) 색 */
+  --navy:#1F4E79;--deep:#203864;--eline:#cfd8e3;--esub:#51606f;
+  --tbd-bg:#FFE58A;--tbd-fg:#5a4300;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  --serif:"Noto Serif KR","Nanum Myeongjo",serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#e9e4dc;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 60px}
+.note{background:#fff;border:1px dashed #b9a98f;border-radius:10px;padding:14px 16px;margin:0 0 24px;font-size:14px}
+.note b{color:#7a5f3f}
+.box{margin:0 0 36px}
+.box>h2{font-size:15px;margin:0 0 8px;color:#5c4f42;letter-spacing:.02em}
+.box>.where{font-size:13px;color:#6f6458;margin:0 0 10px}
+.frame{border:1px solid #cfc4b4;border-radius:12px;overflow:hidden;background:#fff}
+.tbd{background:var(--tbd-bg);color:var(--tbd-fg);padding:0 6px;border-radius:4px;font-weight:700;white-space:nowrap}
+
+/* ===== ① 홈페이지 배지 + 섹션 (site/index.html 에 붙일 코드) ===== */
+.pm-hero{background:#3a332c;color:#fbf8f3;padding:28px 24px}
+.pm-hero .est{display:block;background:#7a5f3f;color:#fbf8f3;border-radius:2px;padding:14px 16px;text-decoration:none;font-weight:600}
+.pm-badge{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:7px 14px;border:1px solid rgba(251,248,243,.55);border-radius:999px;color:#fbf8f3;text-decoration:none;font-size:13px;letter-spacing:.02em}
+.pm-badge i{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#fbf8f3;color:#3a332c;font-size:11px;font-weight:700}
+.pm-sec{background:var(--paper);padding:48px 24px}
+.pm-sec .lbl{font-family:"Cormorant Garamond","Times New Roman",serif;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--pt)}
+.pm-sec h2{font-family:var(--serif);font-weight:300;font-size:26px;line-height:1.5;margin:14px 0 6px}
+.pm-sec .lead{color:var(--sub);margin:0 0 22px}
+.pm-list{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.pm-list li{display:grid;grid-template-columns:44px 1fr;gap:4px 12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.pm-list .no{font-family:var(--serif);font-size:22px;color:var(--pt);line-height:1.2}
+.pm-list b{display:block;font-weight:600;font-size:16px}
+.pm-list span{color:var(--sub);font-size:14px}
+.pm-trust{margin:18px 0 0;font-size:13px;color:var(--sub)}
+
+/* ===== ② 회사 소개 카드 (event/index.html #vAbout 에 붙일 코드) ===== */
+.ev{background:#F2F2F2;padding:16px}
+.ev .card{background:#fff;border:1px solid var(--eline);border-radius:14px;padding:18px 16px}
+.ev .card h2{margin:0 0 4px;font-size:19px;color:var(--deep)}
+.ev .card .sub{color:var(--esub);font-size:14px;margin:0 0 10px}
+.ev-pm{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.ev-pm li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.ev-pm .n{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
+.ev-pm b{display:block;color:#1b2430}
+.ev-pm small{display:block;color:var(--esub);font-size:13px;line-height:1.55}
+
+/* ===== ③ 견적서 첫 장 · ④ 계약서 특약 ===== */
+.doc{padding:22px 22px}
+.doc h3{margin:0 0 10px;font-size:16px}
+.doc ol{margin:0;padding-left:20px}
+.doc li{margin:4px 0}
+.doc .foot{margin:10px 0 0;font-size:13px;color:#666}
+.doc .tbd{white-space:normal}
+.qbox{border:1px solid #d9cbb5;background:#fbf8f3;border-radius:8px;padding:14px 16px}
+.law{font-size:13px;color:#8a2b1e;margin:0 0 10px}
+@media (max-width:420px){.pm-sec,.pm-hero{padding-left:16px;padding-right:16px}.doc{padding:18px 16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="note"><b>안심 약속 2026-11-24 v2 · 적용본 미리보기</b><br>형 결정 7가지와 새 기준 4가지를 승인받아 홈페이지·회사 소개·견적서에 실제로 넣었습니다. 계약서 특약은 계약서 원본에 붙여 넣을 문구입니다. 근거: <code>promise/안심 약속 2026-11-24 v2.md</code>.</div>
+
+<!-- ① -->
+<section class="box">
+<h2>① 홈페이지 첫 화면 배지 + 안심 약속 섹션</h2>
+<p class="where">site/index.html · 배지는 첫 화면 '1분 간편 견적' 버튼 바로 아래, 섹션은 About(intro)과 관공서·학교 실적(record) 사이</p>
+<div class="frame">
+  <div class="pm-hero">
+    <a class="est" href="#promise">1분 간편 견적 확인하기 →</a>
+    <!-- ▼ 붙일 코드 1: 배지 -->
+    <a class="pm-badge" href="#promise"><i>✓</i>안심 약속 5가지</a>
+    <!-- ▲ -->
+  </div>
+  <!-- ▼ 붙일 코드 2: 섹션 -->
+  <section class="pm-sec" id="promise">
+    <div class="lbl">Promise</div>
+    <h2>지금 하고 있는 다섯 가지를 약속으로</h2>
+    <p class="lead">공사를 맡기실 때 가장 걱정되는 것부터 약속으로 정했습니다.</p>
+    <ol class="pm-list">
+      <li><div class="no">1</div><div><b>단계별 결제</b><span>공사비는 단계마다 나눠 내시고, 결제 전에 그 단계 공사 사진을 먼저 보여 드려요. 잔금은 완공 뒤 함께 점검한 다음 받습니다.</span></div></li>
+      <li><div class="no">2</div><div><b>현장 사진 공유</b><span>공사하는 날에는 그날 안에 현장 사진을 고객님 전용 현장소통 페이지에 올리고, 질문에는 24시간 안에 답해 드려요.</span></div></li>
+      <li><div class="no">3</div><div><b>담당 실장 1:1</b><span>담당 실장이 댁에 방문해 실측하고, 공사 중에는 현장 담당에게 바로 연락하실 수 있어요. 담당이 바뀌면 미리 알려 드려요.</span></div></li>
+      <li><div class="no">4</div><div><b>공정표와 일정</b><span>착공 전에 공정표를 드리고, 일정이 바뀌면 그날 알려 드려요. 늦어지면 계약서대로 보상합니다.</span></div></li>
+      <li><div class="no">5</div><div><b>완공 뒤 A/S</b><span>완공 뒤 2년 동안 시공 하자는 무상으로 고쳐 드려요. 접수하시면 하루 안에 연락드려요.</span></div></li>
+    </ol>
+    <p class="pm-trust">2014년부터 · 실내건축공사업 등록 업체 · 관공서·학교 50곳 이상 시공</p>
+  </section>
+  <!-- ▲ -->
+</div>
+</section>
+
+<!-- ② -->
+<section class="box">
+<h2>② 회사 소개 화면 '안심 약속' 카드</h2>
+<p class="where">event/index.html 회사 소개(#vAbout) · '걸어온 길' 카드 앞 · 매장 QR·카톡 공유(event/about/) 모두 이 화면으로 옵니다</p>
+<div class="frame ev">
+  <!-- ▼ 붙일 코드 3 -->
+  <section class="card" id="promiseBox">
+    <h2>아르띠꼬 안심 약속</h2>
+    <p class="sub">지금 하고 있는 다섯 가지를 약속으로</p>
+    <ul class="ev-pm">
+      <li><span class="n">1</span><div><b>단계별 결제</b><small>단계마다 나눠 내시고, 결제 일정은 휴대폰으로 확인. 잔금은 완공 점검 뒤</small></div></li>
+      <li><span class="n">2</span><div><b>현장 사진 공유</b><small>공사하는 날 그날 사진 · 질문엔 24시간 안 답변</small></div></li>
+      <li><span class="n">3</span><div><b>담당 실장 1:1</b><small>담당 실장이 실측 · 공사 중엔 현장 담당에게 바로 연락</small></div></li>
+      <li><span class="n">4</span><div><b>공정표와 일정</b><small>착공 전 공정표 · 일정이 바뀌면 그날 알림</small></div></li>
+      <li><span class="n">5</span><div><b>완공 뒤 A/S</b><small>2년 무상 하자보수 · 접수 하루 안 연락</small></div></li>
+    </ul>
+  </section>
+  <!-- ▲ -->
+</div>
+</section>
+
+<!-- ③ -->
+<section class="box">
+<h2>③ 견적서 첫 장 문구</h2>
+<p class="where">quote/index.html 표지 · '예상 공사비' 바로 아래</p>
+<div class="frame doc">
+  <div class="qbox">
+    <h3>아르띠꼬 안심 약속</h3>
+    <ol>
+      <li><b>단계별 결제</b> — 공사비는 단계마다 나눠 내시고, 잔금은 완공 점검 뒤에</li>
+      <li><b>현장 사진</b> — 공사하는 날 그날 안에 현장소통 페이지로, 질문엔 24시간 안 답변</li>
+      <li><b>담당 실장 1:1</b> — 담당 실장이 실측, 공사 중엔 현장 담당에게 바로 연락</li>
+      <li><b>공정표</b> — 착공 전에 드리고, 일정이 바뀌면 그날 알림</li>
+      <li><b>완공 뒤 A/S</b> — 2년 무상 하자보수, 접수 하루 안 연락</li>
+    </ol>
+    <p class="foot">자세한 기준은 계약하실 때 계약서 특약으로 함께 적어 드립니다.</p>
+  </div>
+</div>
+</section>
+
+<!-- ④ -->
+<section class="box">
+<h2>④ 계약서 특약 문구 초안</h2>
+<p class="where">표준계약서 제7조③ '특약' 자리 · "갑" = 고객, "을" = ㈜홈퍼니싱</p>
+<div class="frame doc">
+  <p class="law">⚖️ 확인 필요: 법무 검토 전 초안입니다. 그대로 계약서에 쓰지 마세요.</p>
+  <ol>
+    <li><b>대금 지급</b> "을"은 각 회차 대금을 청구하기 전에 해당 공정의 사진을 현장소통 페이지에 올린다. 잔금은 공사 완료 후 "갑"과 "을"이 함께 점검한 뒤 지급한다.</li>
+    <li><b>현장 기록</b> "을"은 작업한 날 그날의 작업 사진을 1장 이상 현장소통 페이지에 올리고, "갑"의 질문에 24시간 안에 답한다.</li>
+    <li><b>담당자</b> "을"은 담당 실장 1인을 정해 이 계약서에 적는다. 담당자를 바꿀 때에는 미리 "갑"에게 알린다.</li>
+    <li><b>공정표·지연</b> "을"은 착공 전에 공정표를 "갑"에게 주고, 일정이 바뀌면 즉시 알린다. 지연 보상은 일반조건 제4조(지체 1일당 공사금액의 1/1,000, "갑"의 요구에 의한 변경·천재지변 등은 면제)에 따른다.</li>
+    <li><b>하자보수</b> 하자보수 기간은 공사 완료일부터 2년으로 하며, 일반조건과 기간이 다르면 이 특약을 따른다. 계약 도면·내역서·자재 규격과 다르게 시공되었거나 누수·균열·들뜸·파손·작동 불량이 생긴 경우, 그리고 공사 완료 점검 때 "갑"과 "을"이 함께 적은 마감 불량은 무상으로 다시 시공한다. "갑"의 사용상 부주의나 천재지변으로 생긴 하자는 유상으로 고친다. "을"은 하자 접수 뒤 하루 안에 "갑"에게 연락하고, 방문 날짜는 "갑"과 정한다.</li>
+  </ol>
+</div>
+</section>
+</div>
+</body>
+</html>

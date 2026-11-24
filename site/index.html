@@ -52,6 +52,16 @@ section.alt{background:var(--paper)}
 .hero .en{font-family:var(--latin);font-size:12px;letter-spacing:.38em;opacity:.92}
 .hero h1{font-family:var(--serif);font-weight:200;font-size:30px;line-height:1.5;margin:14px 0 0;letter-spacing:-.01em}
 .hero .co{margin-top:14px;font-size:13px;font-weight:300;opacity:.85;letter-spacing:.02em}
+/* 안심 약속 (2026-11-24 v1 · 형 결정) — 첫 화면 배지 + 섹션 */
+.hero .pm-badge{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:7px 14px;border:1px solid rgba(251,248,243,.6);border-radius:999px;color:#fbf8f3;font-size:13px;letter-spacing:.02em;background:rgba(20,14,8,.22)}
+.hero .pm-badge i{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#fbf8f3;color:#2a2420;font-size:11px;font-weight:700}
+#promise{border-top:1px solid var(--line)}
+.pm-list{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--line)}
+.pm-list li{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid var(--line)}
+.pm-list .no{font-family:var(--serif);font-size:22px;line-height:1.3;color:var(--pt)}
+.pm-list b{display:block;font-weight:600;font-size:16px}
+.pm-list div span{display:block;color:var(--sub);font-size:14px;margin-top:2px}
+.pm-trust{margin:18px 0 0;font-size:13px;color:var(--sub)}
 /* 첫 화면 '1분 간편 견적' 버튼 */
 .hero .est{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:26px;height:56px;padding:0 22px;max-width:360px;background:rgba(251,248,243,.94);color:#2a2420;font-size:15px;font-weight:500;letter-spacing:.04em;box-shadow:0 8px 24px rgba(20,14,8,.22)}
 .hero .est small{display:block;font-size:11px;font-weight:300;color:#8c7f72;letter-spacing:.02em;margin-top:2px;line-height:1.2}
@@ -197,12 +207,28 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
     <div class="co">주식회사 홈퍼니싱 · 아르띠꼬 스튜디오</div>
     <!-- 간편견적 기본 주소. 도메인을 바꾸면 여기와 아래 고정 버튼 주소를 같이 바꾸기 -->
     <a class="est" href="https://soo-cpu.github.io/card/estimate/"><span>1분 간편 견적 확인하기<small>평형·공정만 고르면 예상 범위가 바로 나와요</small></span><i aria-hidden="true">→</i></a>
+    <a class="pm-badge" href="#promise"><i aria-hidden="true">✓</i>안심 약속 5가지</a>
   </div>
 </section>
 
 <section class="intro"><div class="in rv">
   <div class="lbl">About</div>
   <p>관공서와 학교, 그리고 집까지.<br>쓰는 사람의 이야기에서 시작합니다.</p>
+</div></section>
+
+<!-- 안심 약속 5가지 (2026-11-24 v1 · 형 결정 · 같은 문구: event/index.html, quote/index.html, promise/) -->
+<section id="promise"><div class="in rv">
+  <div class="lbl">Promise</div>
+  <h2>안심 약속 5가지</h2>
+  <p class="lead">지금 하고 있는 일을 약속으로 정했습니다.</p>
+  <ol class="pm-list">
+    <li><span class="no">1</span><div><b>단계별 결제</b><span>공사비는 단계마다 나눠 내시고, 결제 전에 그 단계 공사 사진을 먼저 보여 드려요. 잔금은 완공 뒤 함께 점검한 다음 받습니다.</span></div></li>
+    <li><span class="no">2</span><div><b>현장 사진 공유</b><span>공사하는 날에는 그날 안에 현장 사진을 고객님 전용 현장소통 페이지에 올리고, 질문에는 24시간 안에 답해 드려요.</span></div></li>
+    <li><span class="no">3</span><div><b>담당 실장 1:1</b><span>담당 실장이 댁에 방문해 실측하고, 공사 중에는 현장 담당에게 바로 연락하실 수 있어요. 담당이 바뀌면 미리 알려 드려요.</span></div></li>
+    <li><span class="no">4</span><div><b>공정표와 일정</b><span>착공 전에 공정표를 드리고, 일정이 바뀌면 그날 알려 드려요. 늦어지면 계약서대로 보상합니다.</span></div></li>
+    <li><span class="no">5</span><div><b>완공 뒤 A/S</b><span>완공 뒤 2년 동안 시공 하자는 무상으로 고쳐 드려요. 접수하시면 하루 안에 연락드려요.</span></div></li>
+  </ol>
+  <p class="pm-trust">2014년부터 · 실내건축공사업 등록 업체 · 관공서·학교 50곳 이상 시공</p>
 </div></section>
 
 <section class="alt" id="record"><div class="in split">
