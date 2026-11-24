@@ -7,8 +7,8 @@ const fs = require("fs");
 
 const dir = __dirname;
 const FONT_DIR = process.env.FONT_DIR || "";
-const OUT_PDF = path.join(dir, "안심 약속 A4 2026-11-24 v1.pdf");
-const OUT_PNG = path.join(dir, "안심 약속 카톡 2026-11-24 v1.png");
+const OUT_PDF = path.join(dir, "안심 약속 A4 2026-11-24 v2.pdf");
+const OUT_PNG = path.join(dir, "안심 약속 카톡 2026-11-24 v2.png");
 
 function fontLinks() {
   if (!FONT_DIR) return "";
