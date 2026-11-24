@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 시공 사례 2026-11-11 v0 · 단지별 정리. 사례 추가: 아래 <article class="case"> 한 덩어리를 복사해 이름·구분·사진·설명만 바꾸기 -->
+<!-- 시공 사례 2026-11-11 v0 (2026-11-24 단지별 보기 링크 추가) · 단지별 정리. 사례 추가: 아래 <article class="case"> 한 덩어리를 복사해 이름·구분·사진·설명만 바꾸기 -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>시공 사례 | 홈퍼니싱 · 아르띠꼬 스튜디오</title>
 <meta name="description" content="홈퍼니싱 · 아르띠꼬 스튜디오가 디자인하고 시공한 아파트와 상업 공간을 단지별로 모았습니다. 구리역 롯데캐슬 시그니처, 구의현대 2단지, 구리 갈매 상업 사무실.">
@@ -86,6 +86,7 @@ h1{font-family:var(--serif);font-weight:300;font-size:30px;line-height:1.4;margi
 .desc{margin:24px 0 0;font-weight:300;line-height:1.9}
 .go{display:inline-flex;gap:8px;margin-top:20px;font-size:14px;border-bottom:1px solid var(--ink);padding-bottom:3px}
 .go i{font-style:normal;color:var(--pt)}
+.go.sub{display:flex;width:max-content;font-size:13px;color:var(--sub);border-color:var(--line)}
 .more{padding-top:56px;padding-bottom:80px}
 .more p{margin:0;font-size:13px;color:var(--sub)}
 .chl{list-style:none;margin:16px 0 0;padding:0;border-top:1px solid var(--line)}
@@ -118,6 +119,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
   <div class="lbl">Selected Works</div>
   <h1>시공 사례</h1>
   <p class="lead">단지별로 정리했습니다. 사진을 누르면 크게 볼 수 있습니다.</p>
+  <a class="go" href="../apt/">우리 단지 해본 곳인지 · 단지별 보기<i aria-hidden="true">→</i></a>
   <div class="flt" role="group" aria-label="공간 구분">
     <button type="button" data-k="all" aria-pressed="true">전체</button>
     <button type="button" data-k="apt" aria-pressed="false">아파트</button>
@@ -132,6 +134,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
       <p class="meta">아파트 · 37평</p>
       <p class="desc">거실과 복도의 벽을 같은 질감으로 마감해 집 전체가 한 톤으로 이어지도록 했습니다. 천장 단차 안에 간접조명을 숨기고, 다이닝 옆에는 유리장과 원목 수납장을 짜 넣었습니다. 복도의 방문은 벽과 같은 마감으로 감추고 레일 조명 하나로 정리했습니다.</p>
       <a class="go" href="https://soo-cpu.github.io/card/estimate/">비슷한 평형 예상 비용 보기<i aria-hidden="true">→</i></a>
+          <a class="go sub" href="../apt/guri-lottecastle-signature/">이 단지 자세히 보기<i aria-hidden="true">→</i></a>
     </div>
     <div class="gal">
       <button type="button" data-full="../images/work-1.jpg"><img src="../images/work-1.jpg" alt="구리역 롯데캐슬 시그니처 거실과 다이닝" loading="lazy"></button>
@@ -145,6 +148,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
       <p class="meta">아파트 · 34평</p>
       <p class="desc">거실에서 주방까지 천장 라인 조명을 길게 이어 공간이 하나로 읽히게 했습니다. 주방은 거실을 마주 보는 아일랜드로 구성하고, 현관 쪽 유리 중문 안에는 곡선 조명 거울을 두어 들어서는 순간의 인상을 만들었습니다.</p>
       <a class="go" href="https://soo-cpu.github.io/card/estimate/">비슷한 평형 예상 비용 보기<i aria-hidden="true">→</i></a>
+          <a class="go sub" href="../apt/guui-hyundai-2/">이 단지 자세히 보기<i aria-hidden="true">→</i></a>
     </div>
     <div class="gal">
       <button type="button" data-full="../images/work-2.jpg"><img src="../images/work-2.jpg" alt="구의현대 2단지 거실과 주방" loading="lazy"></button>
@@ -157,6 +161,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
       <p class="meta">상업 공간 · 상가·사무실</p>
       <p class="desc">검은 철판 계단에 원목 디딤판을 얹어 2층으로 오르는 동선을 공간의 중심으로 삼았습니다. 계단 아래 남는 자리에는 작은 실내 정원을 들이고, 입구에는 석재 질감의 안내 데스크를 놓았습니다.</p>
       <a class="go" href="../#contact">상가·사무실 상담 신청<i aria-hidden="true">→</i></a>
+          <a class="go sub" href="../apt/guri-galmae-office/">이 단지 자세히 보기<i aria-hidden="true">→</i></a>
     </div>
     <div class="gal">
       <button type="button" data-full="../images/work-3.jpg"><img src="../images/work-3.jpg" alt="구리 갈매 상업 사무실 2층 계단과 안내 데스크" loading="lazy"></button>
