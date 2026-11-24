@@ -1,6 +1,6 @@
 // 급여 결재 시험 (직원 요청 33번 · 대표 결정 2026-11-24 · v0.99-50): node intranet/tools/test/sal_test.js [index.html]
 // 본사 지급 항목 '급여' → 기안자·채진아·대표(최윤수·신혜현)만 봄 / 정진혁·이봄이 화면(목록·홈·검색·직접 열기·미리 보기 최근 활동)에는 안 보임
-// 금액은 총액 한 줄만 (두 줄이면 저장 막음) · 주민번호·계좌·직원 이름+금액·계좌번호 칸·급여대장 첨부 이름 → 저장 전 경고
+// 금액은 총액 한 줄만 (두 줄이면 저장 막음) · 주민번호·계좌·직원 이름+금액·계좌번호 칸·급여대장 첨부 이름 → 저장 전 경고 (대표·기안자 본인 이름, 사업자번호 모양은 경고 안 함 · 2026-11-25)
 const {chromium}=require('playwright');const fs=require('fs');
 const HTML=fs.readFileSync(process.argv[2]||'/home/user/card/intranet/index.html','utf8');const MOCK=fs.readFileSync(__dirname+'/mock.js','utf8');const OUT=process.env.OUT||'/tmp';
 const RULES=[["hr","owner","owner"],["catalog","view","owner"],["acct","owner","owner"],["acct/{self}","interact","interact"],["config","view","owner"],["knock","owner","owner"],["knock/{self}","interact","interact"],["access","owner","owner"],["access/{self}","interact","interact"],["devok","interact","owner"],["members","owner","owner"],["members/{self}","interact","owner"],["creq","owner","owner"],["creq/{self}","interact","interact"],["cgrant","interact","owner"],["cpriv","owner","owner"],["ppriv","owner","owner"],["cshare","owner","owner"],["cshare/{self}","interact","interact"],["ccost","owner","owner"],["fin","owner","owner"],["fincf","owner","owner"],["customers","owner","owner"],["projects","owner","owner"],["quotes","owner","owner"],["sites","owner","owner"],["reports","owner","owner"],["activity","owner","owner"],["mine","owner","owner"],["mine/{self}","interact","interact"],["seal","owner","owner"],["certs","owner","owner"],["work","interact","interact"]].map(([path,read,write])=>({path,read,write}));
@@ -69,6 +69,12 @@ const TITLE={s1:"11월 급여총액 채진아기안",s2:"급여 이봄이기안"
   d=await D();const nw=Object.keys(d).filter(k=>k.startsWith('approvals/')&&d[k].title==='12월 급여 시험');
   ok('총액 한 줄 · 날짜·전화번호만 → 경고 없이 저장',!ask&&nw.length===1&&d[nw[0]].amount===9090909&&d[nw[0]].hqlines.length===1&&d[nw[0]].status==='결재 대기',JSON.stringify(nw.map(k=>[d[k].amount,d[k].hqlines])));
   const aline=nw.length?d[nw[0]].aline.map(x=>x.role+':'+x.name).join(','):'';ok('결재 라인 그대로 (채진아 기안 → 검토 건너뜀 → 최윤수 → 신혜현)',aline==='결재:최윤수,최종결재:신혜현',aline);
+  // ③-2 오탐 고침 (대표 결정 2026-11-25): 대표·기안자 본인 이름 + 금액, 사업자번호 모양 → 경고 없음 / 다른 직원 이름+금액·주민번호 → 여전히 경고
+  const tryBody=async(body,amt)=>{await newAp();await addLine(0,'급여','직원 급여',amt,'');await P.locator('#sheetForm [data-k="body"]').fill(body);await P.locator('#saveSheet').click();await wait(1300);const a=await P.locator('.okask').innerText().catch(()=>'');if(a){const n=P.locator('.okask [data-ok="0"]');if(await n.count())await n.first().click();else await P.keyboard.press('Escape');await wait(800)}const dd=await D();return {ask:a,saved:Object.keys(dd).some(k=>k.startsWith('approvals/')&&dd[k].amount===amt)}};
+  for(const [i,body] of ["최윤수 대표님 결재 부탁드립니다. 총 1,500만원","채진아 기안 11월 급여 총액 15,000,000원","지급처 사업자번호 123-45-67890 · 12월 급여 총액"].entries()){const r=await tryBody(body,7070700+i);ok('경고 없이 저장: '+body,!r.ask&&r.saved,r.ask.slice(0,160))}
+  {const r=await tryBody('정진혁 3,000,000원',6060601);ok('다른 직원 이름+금액(정진혁 3,000,000원) → 여전히 경고',/직원 이름 \+ 금액/.test(r.ask)&&!r.saved,r.ask.slice(0,160))}
+  {const r=await tryBody('주민 900101-1234567',6060602);ok('주민번호 → 여전히 경고',/주민번호·계좌번호 같은 숫자/.test(r.ask)&&!r.saved,r.ask.slice(0,160))}
+  {const r=await tryBody('계좌 110-123-456789',6060603);ok('계좌번호 → 여전히 경고',/주민번호·계좌번호 같은 숫자/.test(r.ask)&&!r.saved,r.ask.slice(0,160))}
   // ④ 첨부 이름·계좌번호 칸 경고 → 그래도 저장
   await newAp();await addLine(0,'급여','직원 급여',8080808,'');await P.evaluate(()=>{});
   await P.evaluate(()=>{const a=document.querySelector('#sheetForm [data-k="acctNo"]');if(a){a.value='시험은행 111-222-333333';a.dispatchEvent(new Event('input',{bubbles:true}))}});
