@@ -1,13 +1,13 @@
 <!doctype html>
-<!-- 단지별 페이지 2026-11-24 v0 · 같은 단지 이웃 손님용 페이지. 사례 추가: 단지 폴더 하나를 복사해 이름·사실·사진·설명만 바꾸고 sitemap.xml·apt/index.html 에도 추가 -->
+<!-- 단지별 페이지 2026-11-24 v0 · 같은 단지 이웃 손님용 페이지. 사례 추가: site/apt/_tools/gen_apt.py 의 APTS 에 한 덩어리 추가 후 python3 site/apt/_tools/gen_apt.py . 실행 -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>구의현대 2단지 34평 인테리어 시공 사례 | 아르띠꼬 스튜디오</title>
-<meta name="description" content="광진구 구의동 구의현대 2단지 34평 전체 리모델링. 거실~주방 라인 조명, 거실을 마주 보는 아일랜드 주방, 유리 중문과 곡선 조명 거울. 1996년 준공 단지 구축 리모델링 경험.">
+<meta name="description" content="광진구 구의동 구의현대 2단지 34평 리모델링. 거실~주방 라인 조명, 거실을 마주 보는 아일랜드 주방, 유리 중문과 곡선 조명 거울. 1996년 준공 단지 구축 리모델링 경험.">
 <link rel="canonical" href="https://soo-cpu.github.io/card/site/apt/guui-hyundai-2/">
 <meta name="theme-color" content="#f5f0e8">
 <link rel="icon" type="image/png" sizes="32x32" href="../../images/favicon-32.png">
 <link rel="apple-touch-icon" href="../../images/apple-touch-icon.png">
-<meta property="og:title" content="구의현대 2단지 34평 인테리어 시공 사례 | 아르띠꼬 스튜디오"><meta property="og:description" content="광진구 구의동 구의현대 2단지 34평 전체 리모델링. 거실~주방 라인 조명, 거실을 마주 보는 아일랜드 주방, 유리 중문과 곡선 조명 거울. 1996년 준공 단지 구축 리모델링 경험."><meta property="og:type" content="website"><meta property="og:url" content="https://soo-cpu.github.io/card/site/apt/guui-hyundai-2/"><meta property="og:image" content="https://soo-cpu.github.io/card/site/images/og.jpg">
+<meta property="og:title" content="구의현대 2단지 34평 인테리어 시공 사례 | 아르띠꼬 스튜디오"><meta property="og:description" content="광진구 구의동 구의현대 2단지 34평 리모델링. 거실~주방 라인 조명, 거실을 마주 보는 아일랜드 주방, 유리 중문과 곡선 조명 거울. 1996년 준공 단지 구축 리모델링 경험."><meta property="og:type" content="website"><meta property="og:url" content="https://soo-cpu.github.io/card/site/apt/guui-hyundai-2/"><meta property="og:image" content="https://soo-cpu.github.io/card/site/images/og.jpg">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300&family=Cormorant+Garamond:wght@400;500&display=swap">
 <style>:root{--bg:#f5f0e8;--paper:#fbf8f3;--ink:#2a2420;--sub:#8c7f72;--line:#e3dace;--pt:#9a7b56;--ph:#e6dfd4;--est-bg:#7a5f3f;--est-fg:#fbf8f3;--badge-bg:#efe5d6;
@@ -32,7 +32,7 @@ section{padding:72px 0}section.in{padding:72px var(--gut)}section.alt{background
 .crumb{font-size:12px;color:var(--sub);margin-bottom:22px}.crumb a{border-bottom:1px solid var(--line)}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--pt);border-radius:999px;background:var(--badge-bg);color:var(--pt);font-size:13px;font-weight:500;letter-spacing:.02em}
 .badge i{font-style:normal}.badge.sm{font-size:11px;padding:3px 9px;margin:14px 0 6px}
-.cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.cta-row.center{justify-content:center;margin:8px auto 64px}
+.cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.cta-row.center{justify-content:center;margin:8px auto 16px}.note-c{text-align:center;font-size:12px;color:var(--sub);margin:0 auto 64px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:1px solid var(--ink);font-size:14px;letter-spacing:.03em}
 .btn.est{background:var(--est-bg);color:var(--est-fg);border-color:var(--est-bg);font-weight:500}
 .btn svg,.bar svg{width:16px;height:16px;flex:none}
@@ -110,7 +110,7 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
 <section class="alt" aria-labelledby="h-work"><div class="in">
   <div class="lbl">Our Work</div>
   <h2 id="h-work">우리가 한 공사</h2>
-  <ul class="work"><li>거실~주방 천장 라인 조명</li><li>거실을 마주 보는 아일랜드 주방</li><li>현관 유리 중문</li><li>곡선 조명 거울(현관 쪽)</li><li>다운라이트·바닥재·도어 교체</li></ul>
+  <ul class="work"><li>거실~주방 천장 라인 조명</li><li>거실을 마주 보는 아일랜드 주방</li><li>현관 유리 중문</li><li>곡선 조명 거울(현관 쪽)</li></ul>
 </div></section>
 
 <section class="in spaces" aria-labelledby="h-sp">
@@ -119,7 +119,7 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
   <p class="lead">사진을 누르면 크게 볼 수 있습니다. 고객 정보가 보이는 사진은 싣지 않습니다.</p>
   <article class="sp">
     <button type="button" class="ph" data-full="../../images/work-2.jpg"><img src="../../images/work-2.jpg" alt="구의현대 2단지 34평 거실, 아일랜드 주방, 현관 유리 중문" loading="eager"></button>
-    <div class="txt"><span class="n">01</span><h3>거실 · 주방 · 현관</h3><p>거실에서 주방까지 천장 라인 조명을 길게 이어, 앉은 자리 어디에서 봐도 공간이 하나로 읽힙니다. 주방은 거실을 마주 보는 아일랜드로 구성해 요리하면서 가족과 대화할 수 있게 했습니다. 사진 가운데 현관의 유리 중문 안쪽에는 곡선 조명 거울을 두어, 들어서는 순간 은은한 빛이 먼저 맞이합니다.</p></div>
+    <div class="txt"><span class="n">01</span><h3>거실 · 주방 · 현관</h3><p>거실에서 주방까지 천장 라인 조명을 길게 이어, 앉은 자리 어디에서 봐도 공간이 하나로 읽힙니다. 주방은 거실을 마주 보는 아일랜드로 구성해 요리하면서 가족과 대화할 수 있게 했습니다. 사진 왼쪽 현관의 유리 중문 안쪽에는 곡선 조명 거울을 두어, 들어서는 순간 은은한 빛이 먼저 맞이합니다.</p></div>
   </article>
 </section>
 

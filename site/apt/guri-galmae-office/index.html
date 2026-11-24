@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 단지별 페이지 2026-11-24 v0 · 같은 단지 이웃 손님용 페이지. 사례 추가: 단지 폴더 하나를 복사해 이름·사실·사진·설명만 바꾸고 sitemap.xml·apt/index.html 에도 추가 -->
+<!-- 단지별 페이지 2026-11-24 v0 · 같은 단지 이웃 손님용 페이지. 사례 추가: site/apt/_tools/gen_apt.py 의 APTS 에 한 덩어리 추가 후 python3 site/apt/_tools/gen_apt.py . 실행 -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>구리 갈매 상가·사무실 인테리어 시공 사례 | 아르띠꼬 스튜디오</title>
 <meta name="description" content="구리 갈매지구 상업 사무실 인테리어. 철판 계단과 원목 디딤판, 계단 아래 실내 정원, 석재 질감 안내 데스크. 갈매 상가·사무실·지식산업센터 인테리어 상담.">
@@ -32,7 +32,7 @@ section{padding:72px 0}section.in{padding:72px var(--gut)}section.alt{background
 .crumb{font-size:12px;color:var(--sub);margin-bottom:22px}.crumb a{border-bottom:1px solid var(--line)}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--pt);border-radius:999px;background:var(--badge-bg);color:var(--pt);font-size:13px;font-weight:500;letter-spacing:.02em}
 .badge i{font-style:normal}.badge.sm{font-size:11px;padding:3px 9px;margin:14px 0 6px}
-.cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.cta-row.center{justify-content:center;margin:8px auto 64px}
+.cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.cta-row.center{justify-content:center;margin:8px auto 16px}.note-c{text-align:center;font-size:12px;color:var(--sub);margin:0 auto 64px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:1px solid var(--ink);font-size:14px;letter-spacing:.03em}
 .btn.est{background:var(--est-bg);color:var(--est-fg);border-color:var(--est-bg);font-weight:500}
 .btn svg,.bar svg{width:16px;height:16px;flex:none}
@@ -88,7 +88,7 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
 <main>
 <div class="in head">
   <nav class="crumb" aria-label="현재 위치"><a href="../../">홈</a> › <a href="../../works/">시공 사례</a> › <a href="../">단지별 보기</a></nav>
-  <span class="badge"><i aria-hidden="true">✓</i>이 단지 시공 경험 있음</span>
+  <span class="badge"><i aria-hidden="true">✓</i>이 지역 시공 경험 있음</span>
   <h1>구리 갈매 상업 사무실</h1>
   <p class="meta">상업 공간 · 경기도 구리시 갈매동</p>
   <p class="lead">갈매지구는 경춘선 갈매역을 중심으로 조성된 구리의 신도시 생활권입니다. 지식산업센터와 상가가 함께 들어서면서 사무실·매장 인테리어 수요가 꾸준히 늘고 있습니다.</p>
@@ -101,8 +101,8 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
 <section class="in about" aria-labelledby="h-about">
   <div class="lbl">About</div>
   <h2 id="h-about">지역 소개</h2>
-  <dl class="facts"><div><dt>지구</dt><dd>경춘선 갈매역 중심 공공주택지구, 서울 노원구와 인접</dd></div><div><dt>주변</dt><dd>지식산업센터·상업시설 밀집, 별내역(8호선) 이용 가능</dd></div><div><dt>공간 특징</dt><dd>층고가 높은 복층형 상가·사무실이 많음</dd></div></dl>
-  <p class="plan">층고가 높은 상업 공간은 2층으로 오르는 계단이 곧 공간의 얼굴이 됩니다. 계단 아래 남는 자리를 어떻게 쓰느냐에 따라 매장의 인상이 달라집니다.</p>
+  <dl class="facts"><div><dt>지구</dt><dd>경춘선 갈매역 중심 공공주택지구, 서울 노원구와 인접</dd></div><div><dt>주변</dt><dd>지식산업센터·상업시설 밀집, 별내역(8호선) 이용 가능</dd></div><div><dt>이 현장</dt><dd>2층으로 오르는 계단이 있는 복층형 공간</dd></div></dl>
+  <p class="plan">이 현장처럼 복층인 상업 공간은 2층으로 오르는 계단이 곧 공간의 얼굴이 됩니다. 계단 아래 남는 자리를 어떻게 쓰느냐에 따라 매장의 인상이 달라집니다.</p>
   <details class="src"><summary>출처 (공개 자료 · 2026년 11월 확인)</summary><ul><li><a href="https://economist.co.kr/article/view/ecn202607220028" target="_blank" rel="noopener nofollow">이코노미스트, 구리 갈매지구 관련 보도 (2026)</a></li><li><a href="https://www.dt.co.kr/article/11394479" target="_blank" rel="noopener nofollow">디지털타임스, 구리갈매 지식산업센터 상업시설</a></li></ul>
   <p>공개 자료를 옮긴 것으로, 정확한 세대 정보는 관리사무소·건축물대장으로 확인해 주세요.</p></details>
 </section>
@@ -124,9 +124,9 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
 </section>
 
 <section class="alt cta" aria-labelledby="h-cta"><div class="in">
-  <span class="badge"><i aria-hidden="true">✓</i>이 단지 시공 경험 있음</span>
+  <span class="badge"><i aria-hidden="true">✓</i>이 지역 시공 경험 있음</span>
   <h2 id="h-cta">이 지역 상가·사무실, 먼저 상담해 보세요</h2>
-  <p class="lead">같은 지역 공간을 직접 설계하고 시공했습니다. 층고·전기 용량·관리 규정까지 미리 알고 시작합니다.</p>
+  <p class="lead">같은 지역 공간을 직접 설계하고 시공했습니다. 업종과 공간에 맞춰 상담해 드립니다.</p>
   <div class="cta-row">
     <a class="btn est" href="https://soo-cpu.github.io/card/estimate/?src=apt-guri-galmae-office">1분 간편 견적 받기</a>
     <a class="btn" href="tel:15665904"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>전화 상담</a>

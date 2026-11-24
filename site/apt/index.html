@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 단지별 페이지 2026-11-24 v0 · 같은 단지 이웃 손님용 페이지. 사례 추가: 단지 폴더 하나를 복사해 이름·사실·사진·설명만 바꾸고 sitemap.xml·apt/index.html 에도 추가 -->
+<!-- 단지별 페이지 2026-11-24 v0 · 같은 단지 이웃 손님용 페이지. 사례 추가: site/apt/_tools/gen_apt.py 의 APTS 에 한 덩어리 추가 후 python3 site/apt/_tools/gen_apt.py . 실행 -->
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>단지별 시공 사례 | 홈퍼니싱 · 아르띠꼬 스튜디오</title>
 <meta name="description" content="아르띠꼬 스튜디오가 직접 시공한 아파트 단지와 상업 공간을 단지별로 모았습니다. 구리역 롯데캐슬 시그니처, 구의현대 2단지, 고덕 배재현대, 구리 갈매 상업 사무실.">
@@ -32,7 +32,7 @@ section{padding:72px 0}section.in{padding:72px var(--gut)}section.alt{background
 .crumb{font-size:12px;color:var(--sub);margin-bottom:22px}.crumb a{border-bottom:1px solid var(--line)}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--pt);border-radius:999px;background:var(--badge-bg);color:var(--pt);font-size:13px;font-weight:500;letter-spacing:.02em}
 .badge i{font-style:normal}.badge.sm{font-size:11px;padding:3px 9px;margin:14px 0 6px}
-.cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.cta-row.center{justify-content:center;margin:8px auto 64px}
+.cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.cta-row.center{justify-content:center;margin:8px auto 16px}.note-c{text-align:center;font-size:12px;color:var(--sub);margin:0 auto 64px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:1px solid var(--ink);font-size:14px;letter-spacing:.03em}
 .btn.est{background:var(--est-bg);color:var(--est-fg);border-color:var(--est-bg);font-weight:500}
 .btn svg,.bar svg{width:16px;height:16px;flex:none}
@@ -101,6 +101,7 @@ dialog button{position:fixed;top:14px;right:14px;width:44px;height:44px;border:0
   <a class="btn est" href="https://soo-cpu.github.io/card/estimate/?src=apt-index">1분 간편 견적 받기</a>
   <a class="btn" href="tel:15665904"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>1566-5904</a>
 </div>
+<p class="in note-c">견적은 상담 내용 기준의 예상 금액이며, 실측 후 자재와 설계가 확정되면 달라질 수 있습니다.</p>
 </main>
 <footer><div class="in">
   <a class="logo" href="../">HOME FURNISHING</a>
