@@ -191,3 +191,9 @@
 - 정의: `.claude/agents/builder.md`, `.claude/agents/reviewer.md`. 시험 도구: `intranet/tools/test/` (가짜 공용 저장소 mock.js — 실제 접근 규칙을 그대로 흉내, 대표·직원 화면 동시 시험).
 - reviewer 점검: ① 직원 3명([[정진혁]]·[[이봄이]]·[[채진아]]) 권한으로 화면이 맞게 보이는지(돈 정보·성과금·인사 숨김) ② 라이브 버전 = 저장소 ③ 데이터 삭제·덮어쓰기 없음 ④ claude.ai 안에서 막히는 기능(alert/confirm/prompt·새 창 출력·iframe 첨부) ⑤ 실제 화면 점검표 2026-11-06 v0 항목. 반려면 builder가 고친 뒤 다시 점검.
 - 결과는 진행 기록 끝 **'검토 결과'** 칸에 (통과/반려, 반려 사유).
+
+## Apps Script는 clasp로 push·배포 (대표 지시 2026-11-25)
+- 현장소통 Apps Script(현장소통 데이터 시트에 붙은 프로젝트) 수정은 Claude가 `clasp push` → **같은 배포 ID로 새 버전 배포**(`clasp deploy -i <배포ID>`, 웹앱 주소 그대로)까지 직접 한다. 대표가 붙여 넣지 않게.
+- push·배포 전에 builder→reviewer 통과는 그대로. '새 배포'(새 주소)는 만들지 않는다.
+- 저장소의 `intranet/field-script/` 가 원본. 고객 이름·전화 등 실제 데이터가 든 파일(Import.gs 같은 것)은 저장소에 넣지 않고 Apps Script 쪽에만 둔다.
+- clasp 로그인 정보(~/.clasprc.json)는 이 작업 컴퓨터에만 있고 재시작되면 사라진다. 사라지면 `clasp login --no-localhost` 주소를 대표에게 보내 다시 승인받는다. 로그인 정보는 저장소·문서·메일에 절대 쓰지 않는다.
