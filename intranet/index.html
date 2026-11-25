@@ -2074,7 +2074,7 @@ JSON만 답하세요: {"items":[{"date":"YYYY-MM-DD","proc":"공정 이름"}],"n
   return {items:gjMerge(items),note:"AI가 읽은 결과예요 — 날짜를 꼭 확인해 주세요"+(m.note?" · "+String(m.note).slice(0,200):"")}}
 // 파일 하나 읽기: 엑셀은 직접(못 읽으면 AI) · PDF·사진은 AI → 확인 창
 async function gjFromFile(pid,f,src){const p=S.projects.find(x=>x.id===pid);if(!p||gjBusy)return;gjBusy=true;try{gjRedraw()}catch(e){}toast("공정표 읽는 중…");
-  try{let r=null;const xl=/\.(xlsx|xlsm|xls)$/i.test(f.name||"")||String(f.id||"").startsWith("xf_");
+  try{let r=null;const xl=/\.(xlsx|xlsm|xls)$/i.test(f.name||"")||(String(f.id||"").startsWith("xf_")&&!/^image\//i.test(f.type||"")&&!/\.(jpe?g|png|gif|webp|heic|heif)$/i.test(f.name||""));/* v0.99-51: 화면용 사진도 xf_ 라 그림이면 AI 로 */
     if(xl){const X=await getXLSX();const buf=src instanceof Blob?await src.arrayBuffer():await fileBuf(f.id);const wb=X.read(new Uint8Array(buf),{type:"array",cellStyles:true,cellDates:false});
       const x=gjXlParse(wb,p.start||p.cdate||"");if(x)r={items:x.items,note:"엑셀 ‘"+x.sheet+"’ 시트 "+x.hdrRow+"번째 줄 날짜 "+x.cols+"칸과 색칠한 막대를 읽었어요"};
       else{if(!sampleCap)throw new Error("이 엑셀에서 날짜 줄·막대를 찾지 못했어요");const text=wb.SheetNames.slice(0,3).map(n=>"[시트 "+n+"]\n"+X.utils.sheet_to_csv(wb.Sheets[n])).join("\n").slice(0,30000);r=await gjAI(p,f,null,text)}}
