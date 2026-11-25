@@ -71,10 +71,11 @@ const MONEY=/12,345,678|98,765|원가|마진|성과금/;
    // 큰 사진은 줄여서 · 드라이브 현장 폴더 복사 기록
    await openS(A,'sites','s1');const before=await A.evaluate(()=>(window.__mockUploads||[]).length);const nm=await putFiles(A,'#phBox input[data-phin]',['big']);let d;for(let i=0;i<25;i++){await wait(800);d=await dbv();if(phOf(d['projects/p1']).some(e=>/큰 현장 사진/.test(e.name))&&(d['projects/p1'].phAct||[]).some(a=>a.act==='drive'&&(phOf(d['projects/p1']).find(e=>/큰 현장 사진/.test(e.name))||{}).id===a.ph))break}
    const up=await A.evaluate(n=>(window.__mockUploads||[]).slice(n),before);const big=Number(nm[0].split(':')[1]);
-   ok('2 '+vn+' 큰 사진('+Math.round(big/1024)+'KB)은 줄여서 저장 (JPEG · 원본보다 작음)',up.length===1&&up[0].type==='image/jpeg'&&up[0].size<big,JSON.stringify(up));
-   const bigE=phOf(d['projects/p1']).find(e=>/큰 현장 사진/.test(e.name))||{},act=(d['projects/p1'].phAct||[]).find(a=>a.act==='drive'&&a.ph===bigE.id);
+   // v0.99-51 (다음 지시 2026-11-25 v9 2부): 새 현장 사진은 저장 공간(assets)에 안 올림 — 원본은 드라이브 프로젝트 폴더, 화면용은 1600px JPEG 보기용(dv_) · 기록 줄에 drive
+   const bigE=phOf(d['projects/p1']).find(e=>/큰 현장 사진/.test(e.name))||{};
+   ok('2 '+vn+' 큰 사진('+Math.round(big/1024)+'KB)은 줄여서 화면용(JPEG · 원본보다 작음) · 저장 공간(assets)에는 안 올림',up.length===0&&bigE.type==='image/jpeg'&&bigE.size>0&&bigE.size<big&&/^dv_/.test(bigE.fid||''),JSON.stringify([up.length,bigE.type,bigE.size,bigE.fid]));
    const ml=await A.evaluate(()=>window.__mcpLog);
-   ok('2 '+vn+' 프로젝트 번호가 있어 드라이브 현장 폴더에도 복사 · 결과는 따로 덧붙이는 기록(phAct)',!!act&&!!act.drive.id&&ml.some(x=>/^create_file\|2026-\d\d-\d\d 큰 현장 사진/.test(x)),JSON.stringify(ml.slice(-3)));
+   ok('2 '+vn+' 프로젝트 번호가 있어 원본은 드라이브 현장 폴더에 · 보기용도 같은 폴더 · 결과는 사진 기록 줄(drive)',!!bigE.drive&&!!bigE.drive.id&&ml.some(x=>/^create_file\|2026-\d\d-\d\d 큰 현장 사진/.test(x))&&ml.some(x=>/^create_file\|2026-\d\d-\d\d 보기용 큰 현장 사진/.test(x)),JSON.stringify(ml.slice(-3)));
    // 숨기기 → 지우지 않고 기록만
    const nPh=phOf(d['projects/p1']).length;await A.locator('#phBox [data-phhide]').first().click();await wait(400);await A.locator('.okask [data-ok="1"]').click();await wait(1500);d=await dbv();
    ok('2 '+vn+' 대표 숨기기: 사진 기록은 그대로(지우지 않음) · 숨김 기록이 덧붙음',phOf(d['projects/p1']).length===nPh&&(d['projects/p1'].phAct||[]).some(a=>a.act==='숨김'),JSON.stringify((d['projects/p1'].phAct||[]).map(a=>a.act)));
@@ -121,7 +122,7 @@ const MONEY=/12,345,678|98,765|원가|마진|성과금/;
     const ups=await P.evaluate(n=>(window.__mockUploads||[]).slice(n),up0);
     const rep=Object.entries(d).find(([k,v])=>/^(mine\/u_[a-z]+\/)?reports\//.test(k)&&(v.files||[]).some(f=>f.name===who+' 보고 사진.png'));
     ok(tag+'업무 보고에서 프로젝트를 골라 올린 사진 → 그 프로젝트 현장 사진에 참조로 (같은 파일 id · 보고 id · 올린 사람)',!!ref&&!!rep&&ref.fid===(rep[1].files||[])[0].id&&ref.ref==='reports/'+rep[0].split('/').pop()&&ref.byName===USERS[who].name,JSON.stringify(ref));
-    ok(tag+'파일은 한 번만 저장 (올리기 1번)',ups.length===1,JSON.stringify(ups.map(u=>u.name)));
+    ok(tag+'파일은 한 번만 저장 · 새 현장 사진은 저장 공간(assets)에 안 올림 (v0.99-51 · 원본 드라이브·화면용 1600px)',ups.length===0&&/^(dv|xf)_/.test(ref&&ref.fid||''),JSON.stringify(ups.map(u=>u.name))+(ref&&ref.fid));
     if(who!=='admin')await P.close()}
    // 다른 직원 화면: 남의 업무 보고는 못 보지만 사진은 프로젝트 현장 사진에 보임 · 날짜순
    const J=await open('jjh',9000);await openS(J,'projects','p1');await tab(J,'prog');await wait(800);

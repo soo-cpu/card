@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-25 v6 (이전: '현장소통 Code.gs 2026-11-23 v5', '2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-25 v7 (이전: '현장소통 Code.gs 2026-11-25 v6', '2026-11-23 v5', '2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -52,13 +52,23 @@
  *    현장명이 비면 '홈퍼니싱 현장', 공정은 mergeSched_ (바꾸기 전 값은 '옛 값' 탭), 고객 이름은 빈 칸만 채움
  *    처리 칸에 '등록됨 코드…' / '이미 있음 코드…' / '오류: …' 를 적음. 행은 지우지 않음. '기록' 탭에 남김
  *  - setup() 끝에서도 importProjects() 를 부름 (편집기에서 importProjects 만 따로 실행해도 됨)
+ *
+ * v7에서 더한 것 (다음 지시 2026-11-25 v9 2부 · 현장 사진)
+ *  - 사진 원본: upload 요청에 원본(orig)이 같이 오면 공유 드라이브 현장 폴더에 그대로 저장
+ *    현장 폴더 = '현장' 탭 19번째 칸 '원본 폴더ID' → 없으면 '인트라넷 첨부'(공유 드라이브 최상위, 인트라넷 첨부 복사 v0.93 과 같은 곳) 안에서
+ *    이름이 '프로젝트 번호 ' 로 시작하는 폴더(인트라넷이 만든 프로젝트 폴더)를 찾아 씀 → 그것도 없으면 '프로젝트 번호 현장명_고객명' 폴더를 만듦
+ *    그 안 '현장소통 사진 원본' › 'yyyy-MM' 에 원본 · 상위 폴더는 '설정' 탭 '원본 사진 상위 폴더ID' 로 바꿀 수 있음
+ *  - 화면(현장소통·고객)에는 지금처럼 긴 변 1600px 로 줄인 사진만 (현장소통 사진·기록 폴더). 원본 저장이 실패해도 줄인 사진은 올라감
+ *  - '사진' 탭에 칸 3개: 원본ID · 촬영 시각(EXIF, 없으면 파일 날짜) · 숨김 (지우는 칸·행 없음)
+ *  - 같은 프로젝트 번호로 '현장 추가'(addSite)를 또 누르면 새로 만들지 않고 있는 현장을 돌려줌 (직원마다 다른 현장이 생겨 사진이 갈라지던 길 막음)
+ *  - 글·댓글 숨기기(사진 숨기기 포함)는 대표(관리 비밀번호)만. 직원 출입증은 거절. 숨겨도 시트 행·드라이브 원본은 그대로
  */
 
 var TAB = {
-  sites:    ['현장', ['코드','현장명','담당자','연락처','주소','착공일','준공예정일','공정(JSON)','상태','폴더ID','만든 시각','관리자 확인 시각','고객 최근 글','숨김','메모','결제(JSON)','고객 확인 번호','고객 이름']],
+  sites:    ['현장', ['코드','현장명','담당자','연락처','주소','착공일','준공예정일','공정(JSON)','상태','폴더ID','만든 시각','관리자 확인 시각','고객 최근 글','숨김','메모','결제(JSON)','고객 확인 번호','고객 이름','원본 폴더ID']],   // v7: 19번째 칸
   posts:    ['글',   ['글ID','현장코드','날짜','작성(회사/고객)','이름','공정','종류','내용','중요','사진ID(JSON)','작성 시각','숨김','고친 시각']],
   comments: ['댓글', ['댓글ID','현장코드','글ID','작성(회사/고객)','이름','내용','작성 시각','숨김']],
-  photos:   ['사진', ['파일ID','현장코드','올린 시각','작성(회사/고객)','파일 이름']],
+  photos:   ['사진', ['파일ID','현장코드','올린 시각','작성(회사/고객)','파일 이름','원본ID','촬영 시각','숨김']],   // v7: 원본ID·촬영 시각·숨김
   pdfs:     ['PDF',  ['파일ID','현장코드','파일 이름','만든 시각']],
   settings: ['설정', ['항목','값','설명']],
   log:      ['기록', ['시각','동작','현장코드','누가','내용']],
@@ -73,11 +83,13 @@ var TEST_CODE = 'WI7ijOiMEPHIOf4vjkqEPmG2';
 var TEST_FOLDER_ID = '1lw72he2le5Y8tumh8wdacHqucWWiJhcs';
 var SAMPLE_URL = 'https://soo-cpu.github.io/card/field/sample/s';
 var ROOT_NAME = '현장소통 사진·기록';
+var ORIG_ROOT_ID = '1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor';   // v7: 공유 드라이브(0AJ-UqRUzUqsGUk9PVA) 최상위 '인트라넷 첨부' — 인트라넷 첨부 복사와 같은 곳
+var ORIG_SUB = '현장소통 사진 원본';
 var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 6 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 7 });
 }
 
 function doPost(e) {
@@ -341,6 +353,33 @@ function monthFolder_(r) {
   var it = f.getFoldersByName(m);
   return it.hasNext() ? it.next() : f.createFolder(m);
 }
+/* v7: 사진 원본 폴더 (공유 드라이브) — 원본 폴더ID 칸 → '인트라넷 첨부' 안 '프로젝트 번호 …' 폴더 → 새로 만듦 '프로젝트 번호 현장명_고객명'
+   그 안 '현장소통 사진 원본' › 'yyyy-MM'. 폴더를 옮기거나 지우거나 이름을 바꾸지 않음 */
+function safeName_(s) { return String(s == null ? '' : s).replace(/[\\\/:*?"<>|\u0000-\u001F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60); }
+function origSite_(r) {
+  if (r[18]) { try { return DriveApp.getFolderById(r[18]); } catch (x) {} }
+  var rootId = setting_('원본 사진 상위 폴더ID') || ORIG_ROOT_ID, root = DriveApp.getFolderById(rootId), proj = projOf_(r), f = null;
+  if (proj) {
+    var it = root.getFolders();
+    while (it.hasNext()) { var g = it.next(); if (String(g.getName()).indexOf(proj + ' ') === 0 || g.getName() === proj) { f = g; break; } }
+  }
+  if (!f) {
+    var nm = safeName_(r[1]) || '홈퍼니싱 현장', cu = safeName_(r[17]);
+    f = root.createFolder((proj ? proj + ' ' : '') + nm + (cu ? '_' + cu : ''));
+  }
+  setCell_('sites', r._row, 18, f.getId());
+  r[18] = f.getId();
+  return f;
+}
+function origFolder_(r) {
+  var f = origSite_(r), it = f.getFoldersByName(ORIG_SUB), sub = it.hasNext() ? it.next() : f.createFolder(ORIG_SUB);
+  var m = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM'), it2 = sub.getFoldersByName(m);
+  return it2.hasNext() ? it2.next() : sub.createFolder(m);
+}
+function taken_(v) {   // v7: 촬영 시각 'yyyy-MM-dd HH:mm:ss' (EXIF 또는 파일 날짜) — 모양이 다르면 빈 값
+  var t = clean_(v, 19).replace('T', ' ');
+  return /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/.test(t) ? t : '';
+}
 /* v1: 큰 사진(1.5MB 넘음, 드라이브에서 불러온 원본 등)은 드라이브 미리 보기 크기(긴 변 1600)로 보냄 */
 function photoData_(id) {
   var f = DriveApp.getFileById(id);
@@ -409,7 +448,7 @@ var ACTIONS = {
     var r = site_(req.s);
     if (!isAdmin) pinOk_(r, req);
     var ids = (req.ids || []).slice(0, 6), mine = {};
-    rows_('photos').forEach(function (p) { if (p[1] === r[0]) mine[p[0]] = 1; });
+    rows_('photos').forEach(function (p) { if (p[1] === r[0] && (isAdmin || p[7] !== 'Y')) mine[p[0]] = 1; });   // v7: 숨김 칸(대표가 시트에서 Y)은 고객 화면에 안 보냄
     var res = {};
     ids.forEach(function (id) {
       if (!mine[id]) return;
@@ -418,20 +457,31 @@ var ACTIONS = {
     return { photos: res };
   },
   upload: function (req) {
-    var isAdmin = false;
-    if (req.pw) { admin_(req); isAdmin = true; }
+    var isAdmin = false, who = '';
+    if (req.pw) { who = admin_(req); isAdmin = true; }
     var r = site_(req.s);
     if (!isAdmin) { pinOk_(r, req); rate_(r[0], 'up', 80); }
     var m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(req.data || '');
     if (!m) throw new Error('사진 형식 오류');
     var bytes = Utilities.base64Decode(m[2]);
     if (bytes.length > 4 * 1024 * 1024) throw new Error('사진이 너무 커요');
-    var name = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyyMMdd_HHmmss') + '_' + (isAdmin ? '회사' : '고객') + '_' + Math.floor(Math.random() * 1000) + '.jpg';
+    var om = /^data:(image\/[a-z0-9.+-]{2,20});base64,(.+)$/i.exec(req.orig || ''), ob = null;   // v7: 원본 (선택)
+    if (om) { ob = Utilities.base64Decode(om[2]); if (ob.length > 25 * 1024 * 1024) ob = null; }
+    var stamp = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyyMMdd_HHmmss') + '_' + (isAdmin ? '회사' : '고객') + '_' + Math.floor(Math.random() * 1000);
+    var name = stamp + '.jpg', taken = taken_(req.taken);
+    var on = safeName_(req.name).replace(/\.[A-Za-z0-9]{2,5}$/, '') || stamp;
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
-      var f = monthFolder_(r).createFile(Utilities.newBlob(bytes, 'image/' + m[1], name));
-      append_('photos', [f.getId(), r[0], now_(), isAdmin ? '회사' : '고객', name]);
-      return { fileId: f.getId() };
+      ensureCols_('photos'); ensureCols_('sites');
+      var f = monthFolder_(r).createFile(Utilities.newBlob(bytes, 'image/' + m[1], name)), oid = '', warn = '';
+      if (ob) {
+        try {
+          var ext = (/png/i.test(om[1]) ? 'png' : /heic|heif/i.test(om[1]) ? 'heic' : /webp/i.test(om[1]) ? 'webp' : 'jpg');
+          oid = origFolder_(r).createFile(Utilities.newBlob(ob, om[1], (taken ? taken.replace(/[-: ]/g, '').slice(0, 14) + '_' : '') + on + '.' + ext)).getId();
+        } catch (x) { warn = '원본은 공유 드라이브에 저장하지 못했어요 (줄인 사진은 올라감)'; log_('원본 저장 실패', r[0], who || '고객', String(x && x.message || x)); }
+      }
+      append_('photos', [f.getId(), r[0], now_(), isAdmin ? '회사' : '고객', name, oid, taken, '']);
+      return { fileId: f.getId(), orig: oid, warn: warn };
     } finally { lock.releaseLock(); }
   },
   post: function (req) {
@@ -691,12 +741,14 @@ var ACTIONS = {
     var pin = pin_(req.pin);
     if (pin === null) throw new Error('확인 번호는 숫자 4자리로 적어 주세요');
     var code = newCode_(), stages = stages_(JSON.stringify(req.stages || []));
-    var proj = (String(req.proj || '').match(/P-\d{4}-\d{3}/) || [''])[0];
+    var proj = (String(req.proj || '').match(/P-\d{4}-\d{3}/) || [''])[0], same = null;
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
-      append_('sites', [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), day_(req.start), day_(req.end),
+      if (proj) same = rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] || null;   // v7: 같은 프로젝트 현장이 있으면 그것
+      if (!same) append_('sites', [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), day_(req.start), day_(req.end),
                         JSON.stringify(stages), '진행', '', now_(), now_(), '', '', proj ? ('인트라넷 ' + proj) : '', JSON.stringify(pays_(req.payments)), pin, clean_(req.cust, 30)]);
     } finally { lock.releaseLock(); }
+    if (same) { log_('현장 추가 → 있는 현장', same[0], who, proj); return { code: same[0], existing: true }; }
     var r = site_(code); siteFolder_(r);
     log_('현장 추가', code, who, name + (proj ? ' · ' + proj : ''));
     return { code: code };
@@ -769,6 +821,7 @@ var ACTIONS = {
     var r = site_(req.s);
     var p = rows_('posts').filter(function (x) { return x[0] === req.id && x[1] === r[0]; })[0];
     if (!p) throw new Error('글을 찾을 수 없어요');
+    if (req.hidden != null && String(req.hidden ? 'Y' : '') !== String(p[11] || '')) owner_(req);   // v7: 숨기기·다시 보이기는 대표만
     if (req.important != null) setCell_('posts', p._row, 8, req.important ? 'Y' : '');
     if (req.hidden != null) setCell_('posts', p._row, 11, req.hidden ? 'Y' : '');
     if (req.text != null) { log_('글 수정 전 내용', r[0], who, p[7]); setCell_('posts', p._row, 7, clean_(req.text, 4000)); }
@@ -781,6 +834,7 @@ var ACTIONS = {
     var r = site_(req.s);
     var c = rows_('comments').filter(function (x) { return x[0] === req.id && x[1] === r[0]; })[0];
     if (!c) throw new Error('댓글을 찾을 수 없어요');
+    if (req.hidden != null) owner_(req);   // v7: 숨기기는 대표만
     if (req.hidden != null) setCell_('comments', c._row, 7, req.hidden ? 'Y' : '');
     return {};
   },
@@ -809,13 +863,14 @@ var ACTIONS = {
 function setup() {
   Object.keys(TAB).forEach(sheet_);
   ensureCols_('sites');
+  ensureCols_('photos');   // v7: 원본ID·촬영 시각·숨김 머리글
   ensureSettings_();
   ensurePinSettings_();   // v5: '직원 이름' 줄
   salt_(true);            // v5: PIN_SALT 가 없으면 무작위로 만듦 (있으면 그대로)
   if (!setting_('사진 폴더ID')) append_('settings', ['사진 폴더ID', root_().getId(), '현장별 폴더가 이 안에 생김']);
   seedTest_();
   rows_('sites').forEach(function (r) { siteFolder_(r); });
-  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v5 · 직원 번호 탭)');
+  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v7 · 사진 원본 칸)');
   importProjects();   // v6: '인트라넷 가져오기' 탭 (없거나 비면 아무것도 안 함)
 }
 

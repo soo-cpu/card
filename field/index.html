@@ -74,6 +74,7 @@ label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
 .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
 .thumbs div{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--soft)}
 .thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+#wPick.drop{outline:2px dashed #1F4E79;outline-offset:4px;border-radius:8px}
 .thumbs button{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:1;cursor:pointer}
 .status{font-size:13px;color:var(--sub);min-height:1.3em;margin-top:6px}
 .status.err{color:var(--imp)}
@@ -250,6 +251,7 @@ function autoRead(b64) {
   if (m || d) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (x) {} } } }
 let TK = ""; try { TK = sessionStorage.getItem("field_tk") || ""; } catch (e) {}
 if (TK) PW = "T:" + TK; // 출입증이 있으면 그것으로 (서버에는 pw 자리에 "T:출입증")
+const BOSS = () => ADMIN && !!PW && !/^T:/.test(PW); // v7 (2026-11-25): 숨기기는 대표(관리 비밀번호)만 — 직원 출입증 화면에는 숨기기 버튼 없음
 function tkDrop() { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (e) {} PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {} }
 /* v3 (2026-11-23): 직원 번호로 들어온 기기 — 30일 기억 토큰만 이 기기(localStorage)에 둔다. 번호는 어디에도 저장하지 않는다 */
 let DEV = ""; try { DEV = localStorage.getItem("field_dev") || ""; } catch (e) {}
@@ -333,7 +335,7 @@ const Local = (() => {
   const A = {
     site: d => { const s = site(d.s); pinOk(s, d); return Object.assign({ site: pub(s), pinOn: !!s.pin }, bundle(s.code, false)); },
     photo: d => { pinOk(site(d.s), d); const r = {}; (d.ids || []).forEach(id => { const u = localStorage.getItem(PKEY + id); if (u) r[id] = u; }); return { photos: r }; },
-    upload: d => { pinOk(site(d.s), d); const id = uid("F"); putPhoto(id, d.data); return { fileId: id }; },
+    upload: d => { pinOk(site(d.s), d); const id = uid("F"); putPhoto(id, d.data); return { fileId: id, orig: d.orig ? "local-orig" : "" }; }, // 미리보기: 원본은 이 기기에 저장하지 않음 (서버에서는 공유 드라이브)
     post: d => { const s = site(d.s); pinOk(s, d); const t = nowStr(); load().posts.push({ id: uid("P"), code: s.code, date: today(), by: "c", author: d.author || "고객", stage: "", kind: d.kind || "의견", text: d.text || "", important: false, photos: d.photos || [], createdAt: t }); s.lastCustomerAt = t; save(); return {}; },
     comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); else pinOk(s, d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
     login: d => { admin(d); return {}; },
@@ -352,8 +354,8 @@ const Local = (() => {
     updateSite: d => { admin(d); const s = site(d.s); Object.assign(s, d.fields || {}); save(); return {}; },
     adminPost: d => { admin(d); const s = site(d.s); load().posts.push({ id: uid("P"), code: s.code, date: d.date || today(), by: "a", author: d.author || "홈퍼니싱", stage: d.stage || "", kind: d.kind || "공정", text: d.text || "", important: !!d.important, photos: d.photos || [], createdAt: nowStr() }); save(); return {}; },
     importFolder: d => { admin(d); throw new Error("미리보기에서는 드라이브 폴더를 못 열어요 — 서버(Code.gs v1) 연결 뒤에 돼요"); },
-    editPost: d => { admin(d); const p = load().posts.find(x => x.id === d.id); if (!p) throw new Error("글을 찾을 수 없어요"); ["important", "hidden", "text", "kind"].forEach(k => { if (d[k] != null) p[k] = d[k]; }); save(); return {}; },
-    editComment: d => { admin(d); const c = load().comments.find(x => x.id === d.id); if (c && d.hidden != null) c.hidden = d.hidden; save(); return {}; },
+    editPost: d => { admin(d); const p = load().posts.find(x => x.id === d.id); if (!p) throw new Error("글을 찾을 수 없어요"); if (d.hidden != null && !!d.hidden !== !!p.hidden && /^T:/.test(String(d.pw || ""))) throw new Error("대표만 할 수 있어요 (관리 비밀번호로 들어와 주세요)"); ["important", "hidden", "text", "kind"].forEach(k => { if (d[k] != null) p[k] = d[k]; }); save(); return {}; },
+    editComment: d => { admin(d); if (d.hidden != null && /^T:/.test(String(d.pw || ""))) throw new Error("대표만 할 수 있어요 (관리 비밀번호로 들어와 주세요)"); const c = load().comments.find(x => x.id === d.id); if (c && d.hidden != null) c.hidden = d.hidden; save(); return {}; },
     savePdf: d => { admin(d); const s = site(d.s); s.pdfN = (s.pdfN == null ? -1 : s.pdfN) + 1; save(); return { name: "현장기록 " + s.name + " " + today() + " v" + s.pdfN + ".pdf", local: true }; },
     folder: d => ({ url: "" })
   };
@@ -398,6 +400,7 @@ const Local = (() => {
 })();
 
 /* ============ 사진: 압축 · 불러오기 ============ */
+// v7 (2026-11-25): 화면에는 긴 변 1600px 로 줄인 사진만, 원본은 서버가 공유 드라이브 현장 폴더에 그대로 저장
 function compress(file) {
   return new Promise((ok, no) => {
     const url = URL.createObjectURL(file), im = new Image();
@@ -411,6 +414,34 @@ function compress(file) {
     im.src = url;
   });
 }
+// 촬영 날짜: JPEG EXIF DateTimeOriginal(없으면 DateTime) → 없으면 파일 날짜(lastModified). 'yyyy-MM-dd HH:mm:ss'
+function exifDate(buf) {
+  try {
+    const v = new DataView(buf); if (v.getUint16(0) !== 0xFFD8) return "";
+    let o = 2;
+    while (o + 4 < v.byteLength) {
+      const m = v.getUint16(o), len = v.getUint16(o + 2);
+      if (m === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) {
+        const t = o + 10, le = v.getUint16(t) === 0x4949, u16 = x => v.getUint16(x, le), u32 = x => v.getUint32(x, le);
+        const str = (off, n) => { let s = ""; for (let i = 0; i < n - 1 && off + i < v.byteLength; i++) s += String.fromCharCode(v.getUint8(off + i)); return s; };
+        const ifd = (start, want) => { const n = u16(start), out = {}; for (let i = 0; i < n; i++) { const e = start + 2 + i * 12, tag = u16(e); if (want.includes(tag)) out[tag] = u32(e + 8); } return out; };
+        const i0 = ifd(t + u32(t + 4), [0x0132, 0x8769]);
+        let d = "";
+        if (i0[0x8769]) { const ex = ifd(t + i0[0x8769], [0x9003, 0x9004]); if (ex[0x9003]) d = str(t + ex[0x9003], 20); else if (ex[0x9004]) d = str(t + ex[0x9004], 20); }
+        if (!d && i0[0x0132]) d = str(t + i0[0x0132], 20);
+        const mm = /^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/.exec(d);
+        return mm && mm[1] !== "0000" ? mm[1] + "-" + mm[2] + "-" + mm[3] + " " + mm[4] + ":" + mm[5] + ":" + mm[6] : "";
+      }
+      if ((m & 0xFF00) !== 0xFF00 || m === 0xFFDA) break;
+      o += 2 + len;
+    }
+  } catch (e) {}
+  return "";
+}
+const pad2 = n => String(n).padStart(2, "0");
+function fileDay(f) { const d = new Date(f.lastModified || Date.now()); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()); }
+async function takenOf(f) { let t = ""; try { t = exifDate(await f.slice(0, 256 * 1024).arrayBuffer()); } catch (e) {} return t || fileDay(f); }
+function readUrl(f) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error("원본을 읽지 못했어요 (" + f.name + ")")); r.readAsDataURL(f); }); }
 let photoQ = [], photoT = null, photoBusy = false;
 const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); want(e.target.dataset.pid); } }), { rootMargin: "400px" }) : null;
 function want(id) { if (!id || PHOTO[id] || photoQ.includes(id)) return; photoQ.push(id); clearTimeout(photoT); photoT = setTimeout(pump, 60); }
@@ -444,33 +475,56 @@ function lightbox(ids, i) {
 }
 
 /* ============ 사진 고르기 칸 (글쓰기용) ============ */
+// v7: 여러 장 한 번에 (휴대폰 사진첩·PC 여러 개 선택·끌어다 놓기) · 촬영 날짜 순으로 정렬 · 원본은 올릴 때 같이 보냄 (25MB 넘으면 줄인 사진만)
+const ORIG_MAX = 25 * 1024 * 1024;
 function picker(box) {
-  const files = [];
+  const files = [];   // { url: 줄인 사진, file: 원본, taken: 촬영 시각 }
   const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true;
   const th = document.createElement("div"); th.className = "thumbs"; th.hidden = true;
-  const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn"; btn.textContent = "사진 추가";
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn"; btn.textContent = "사진 추가 (여러 장 가능)";
+  const info = document.createElement("div"); info.className = "meta"; info.hidden = true;
   btn.onclick = () => inp.click();
-  inp.onchange = async () => {
-    for (const f of inp.files) { try { files.push(await compress(f)); } catch (e) { toast(e.message); } }
-    inp.value = ""; draw();
-  };
+  async function add(list) {
+    list = [...list].filter(f => /^image\//.test(f.type || "") || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name || ""));
+    let i = 0;
+    for (const f of list) {
+      i++; btn.textContent = "사진 준비 중 " + i + " / " + list.length;
+      try { files.push({ url: await compress(f), file: f, taken: await takenOf(f) }); } catch (e) { toast(e.message); }
+    }
+    files.sort((a, b) => String(a.taken).localeCompare(String(b.taken)));   // 촬영 날짜 순
+    draw();
+  }
+  inp.onchange = async () => { const l = [...inp.files]; inp.value = ""; await add(l); };
+  box.addEventListener("dragover", e => { if (e.dataTransfer && [...(e.dataTransfer.types || [])].includes("Files")) { e.preventDefault(); box.classList.add("drop"); } });
+  box.addEventListener("dragleave", () => box.classList.remove("drop"));
+  box.addEventListener("drop", e => { if (!e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); box.classList.remove("drop"); add(e.dataTransfer.files); });
   function draw() {
-    th.hidden = !files.length; btn.textContent = files.length ? "사진 추가 (" + files.length + "장)" : "사진 추가";
-    th.innerHTML = files.map((u, i) => '<div><img src="' + u + '" alt=""><button type="button" data-i="' + i + '" aria-label="빼기">×</button></div>').join("");
+    th.hidden = !files.length; btn.textContent = files.length ? "사진 추가 (" + files.length + "장)" : "사진 추가 (여러 장 가능)";
+    const days = [...new Set(files.map(x => String(x.taken).slice(0, 10)))];
+    info.hidden = !files.length; info.textContent = files.length ? "촬영 날짜 순 · " + (days.length > 1 ? days[0] + " ~ " + days[days.length - 1] + " (" + days.length + "일)" : days[0]) + " · 원본은 회사 공유 드라이브에 그대로 보관돼요" : "";
+    th.innerHTML = files.map((x, i) => '<div><img src="' + x.url + '" alt=""><button type="button" data-i="' + i + '" aria-label="빼기">×</button></div>').join("");
   }
   th.onclick = e => { const i = e.target.dataset.i; if (i != null) { files.splice(+i, 1); draw(); } };
-  box.append(btn, inp, th);
+  box.append(btn, inp, info, th);
   return { files, clear() { files.length = 0; draw(); } };
 }
 async function uploadAll(list, st, admin) {
   const ids = [];
+  let warn = "";
   for (let i = 0; i < list.length; i++) {
     st.textContent = "사진 올리는 중 " + (i + 1) + " / " + list.length;
-    const r = await call("upload", Object.assign({ s: CODE, data: list[i] }, admin ? { pw: PW } : {}));
-    ids.push(r.fileId); PHOTO[r.fileId] = list[i];
+    const x = list[i], body = { s: CODE, data: x.url, taken: x.taken || "", name: (x.file && x.file.name) || "" };
+    if (x.file && x.file.size <= ORIG_MAX && API) { try { body.orig = await readUrl(x.file); } catch (e) {} }
+    if (admin) body.pw = PW;
+    const r = await call("upload", body);
+    if (r.warn) warn = r.warn;
+    ids.push(r.fileId); PHOTO[r.fileId] = x.url;
   }
+  if (warn) toast(warn, 3500);
   return ids;
 }
+// 촬영 날짜(일)별로 묶음 — 관리 화면에서 지난 사진(카톡방 등)을 한 번에 옮길 때 날짜마다 글 하나
+function byDay(list) { const m = new Map(); list.forEach(x => { const d = String(x.taken || "").slice(0, 10) || today(); if (!m.has(d)) m.set(d, []); m.get(d).push(x); }); return [...m.entries()]; }
 
 /* ============ 화면: 현장 (고객 · 관리 공통) ============ */
 async function openSite() {
@@ -582,9 +636,9 @@ function postHtml(x) {
   h += '<time>' + esc((x.createdAt || "").slice(11, 16)) + '</time></div>';
   if (x.text) h += '<div class="txt">' + esc(x.text) + '</div>';
   if (x.photos && x.photos.length) h += '<div class="pics' + (x.photos.length === 1 ? " one" : "") + '">' + x.photos.map((id, i) => '<button type="button" class="ld" data-pid="' + esc(id) + '" data-post="' + x.id + '" data-i="' + i + '" aria-label="사진 크게 보기"></button>').join("") + '</div>';
-  if (cs.length) h += '<div class="cmts">' + cs.map(c => '<div class="cmt ' + c.by + (c.hidden ? " hid" : "") + '"><div class="b"><b>' + esc(c.author || (c.by === "a" ? "홈퍼니싱" : "고객")) + '</b>' + esc(c.text) + '<small>' + esc(fmtDate((c.createdAt || "").slice(5, 16))) + '</small>' + (c.isNew ? ' <span class="tag n">새 글</span>' : '') + '</div>' + (ADMIN ? '<button class="btn sm ghost" data-hc="' + c.id + '" data-v="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? "보이기" : "숨기기") + '</button>' : '') + '</div>').join("") + '</div>';
+  if (cs.length) h += '<div class="cmts">' + cs.map(c => '<div class="cmt ' + c.by + (c.hidden ? " hid" : "") + '"><div class="b"><b>' + esc(c.author || (c.by === "a" ? "홈퍼니싱" : "고객")) + '</b>' + esc(c.text) + '<small>' + esc(fmtDate((c.createdAt || "").slice(5, 16))) + '</small>' + (c.isNew ? ' <span class="tag n">새 글</span>' : '') + '</div>' + (BOSS() ? '<button class="btn sm ghost" data-hc="' + c.id + '" data-v="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? "보이기" : "숨기기") + '</button>' : '') + '</div>').join("") + '</div>';
   h += '<form class="cform" data-post="' + x.id + '"><input type="text" placeholder="' + (ADMIN ? "답글 달기" : "댓글 달기") + '" maxlength="1000" aria-label="댓글"><button class="btn sm pri">등록</button></form>';
-  if (ADMIN) h += '<div class="tools"><button class="btn sm" data-imp="' + x.id + '" data-v="' + (x.important ? 0 : 1) + '">' + (x.important ? "중요 해제" : "중요 표시") + '</button><button class="btn sm" data-edit="' + x.id + '">내용 고치기</button><button class="btn sm" data-hide="' + x.id + '" data-v="' + (x.hidden ? 0 : 1) + '">' + (x.hidden ? "다시 보이기" : "숨기기") + '</button></div>';
+  if (ADMIN) h += '<div class="tools"><button class="btn sm" data-imp="' + x.id + '" data-v="' + (x.important ? 0 : 1) + '">' + (x.important ? "중요 해제" : "중요 표시") + '</button><button class="btn sm" data-edit="' + x.id + '">내용 고치기</button>' + (BOSS() ? '<button class="btn sm" data-hide="' + x.id + '" data-v="' + (x.hidden ? 0 : 1) + '">' + (x.hidden ? "다시 보이기" : "숨기기") + '</button>' : '') + '</div>';
   return h + '</article>';
 }
 function footerHtml() {
@@ -608,11 +662,24 @@ function writeBox(box) {
     try {
       const author = $("#wAuthor").value.trim();
       if (!ADMIN) { NAME = author; try { localStorage.setItem("field_name", author); } catch (e) {} }
-      const photos = await uploadAll(pk.files, st, ADMIN);
-      st.textContent = "저장 중…";
-      if (ADMIN) await call("adminPost", { s: CODE, pw: PW, date: $("#wDate").value, stage: $("#wStage").value, kind: $("#wKindA").value, author, text, important: $("#wImp").checked, photos });
-      else await call("post", { s: CODE, text, photos, author, kind: ($(".chip.on", box) || {}).textContent });
-      pk.clear(); toast("올렸어요"); await refresh();
+      if (ADMIN) {
+        // v7: 사진 촬영 날짜가 여러 날이면 날짜마다 글 하나 (날짜 = 촬영일, 30장씩) · 하루면 고른 날짜 그대로
+        const groups = byDay(pk.files), multi = groups.length > 1, base = { s: CODE, pw: PW, stage: $("#wStage").value, kind: $("#wKindA").value, author, important: $("#wImp").checked };
+        if (!groups.length) await call("adminPost", Object.assign({}, base, { date: $("#wDate").value, text, photos: [] }));
+        let n = 0;
+        for (const [d, g] of groups) for (let i = 0; i < g.length; i += 30) {
+          const photos = await uploadAll(g.slice(i, i + 30), st, true); st.textContent = "저장 중…";
+          await call("adminPost", Object.assign({}, base, { date: multi ? d : $("#wDate").value, text: n ? "" : text, photos })); n++;
+        }
+        pk.clear(); toast(multi ? "촬영 날짜별로 " + n + "개 글로 올렸어요" : "올렸어요");
+      } else {
+        const photos = [];
+        for (let i = 0; i < pk.files.length; i += 20) photos.push(...await uploadAll(pk.files.slice(i, i + 20), st, false));
+        st.textContent = "저장 중…";
+        for (let i = 0; i < Math.max(1, photos.length); i += 20) await call("post", { s: CODE, text: i ? "" : text, photos: photos.slice(i, i + 20), author, kind: ($(".chip.on", box) || {}).textContent });
+        pk.clear(); toast("올렸어요");
+      }
+      await refresh();
     } catch (e) { if (!ADMIN && /^PIN:/.test(e.message)) return openSite(); st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
   };
 }

@@ -11,7 +11,7 @@ module.exports=function makeServer(opt){opt=opt||{};
     base64EncodeWebSafe:b=>ub(b).toString('base64').replace(/\+/g,'-').replace(/\//g,'_'),
     base64DecodeWebSafe:s=>{if(/[^A-Za-z0-9_=-]/.test(s)||s.length%4)throw new Error('bad base64');return sb(Buffer.from(s.replace(/-/g,'+').replace(/_/g,'/'),'base64'))},
     base64Encode:b=>ub(b).toString('base64'),base64Decode:s=>sb(Buffer.from(s,'base64')),
-    newBlob:(b,t,n)=>({getDataAsString:()=>ub(b).toString('utf8'),getBytes:()=>b,getContentType:()=>t||'',setName(){return this}}),
+    newBlob:(b,t,n)=>({_name:n||'',getDataAsString:()=>ub(b).toString('utf8'),getBytes:()=>b,getContentType:()=>t||'',setName(x){this._name=x;return this}}),
     getUuid:()=>crypto.randomUUID(),
     formatDate:(d,tz,f)=>{const x=new Date(d.getTime()+9*36e5).toISOString();return f==='yyyy-MM-dd'?x.slice(0,10):f==='yyyy-MM'?x.slice(0,7):x.slice(0,19).replace('T',' ')}};
   const cacheObj={get:k=>{const e=st.cache[k];if(!e)return null;if(e.exp<=Date.now()+st.now){delete st.cache[k];return null}return e.v},put:(k,v,ttl)=>{st.cache[k]={v:String(v),exp:Date.now()+st.now+(ttl||600)*1000}}};
@@ -21,10 +21,20 @@ module.exports=function makeServer(opt){opt=opt||{};
       setValue(v){rows[r-1]=rows[r-1]||[];rows[r-1][c-1]=String(v);return R},
       getDisplayValues(){const o=[];for(let i=0;i<nr;i++){const a=[];for(let j=0;j<nc;j++)a.push(String((rows[r-1+i]||[])[c-1+j]||''));o.push(a)}return o}};return R}};return sh}
   const ss={getSheetByName:n=>st.sheets[n]||null,insertSheet:n=>(st.sheets[n]=sheet(n)),getId:()=>'ss'};
-  let fid=0;const folder=n=>({getId:()=>'folder'+(++fid),getUrl:()=>'https://drive.test/f',getName:()=>n,createFolder:x=>folder(x),getFoldersByName:()=>({hasNext:()=>false}),getFiles:()=>({hasNext:()=>false}),createFile:()=>({getId:()=>'file'+(++fid),getUrl:()=>'https://drive.test/x'})});
+  // 드라이브 흉내 (v7 2026-11-25: 폴더·파일을 기억 — st.drive.items[id] = {kind,name,parent,mime,size}. 예전 시험처럼 모르는 폴더 id 도 열림)
+  let fid=0;const items={};st.drive={items,fail:{}};
+  const iter=a=>{let i=0;return {hasNext:()=>i<a.length,next:()=>a[i++]}};
+  const kids=(id,kind)=>Object.keys(items).filter(k=>items[k].parent===id&&items[k].kind===kind);
+  const fileObj=id=>({getId:()=>id,getUrl:()=>'https://drive.test/x/'+id,getName:()=>items[id].name,getSize:()=>items[id].size||0,getMimeType:()=>items[id].mime||'',getDateCreated:()=>new Date(),getBlob:()=>Utilities.newBlob([],items[id].mime)});
+  function folderObj(id){if(!items[id])items[id]={kind:'folder',name:id,parent:''};return {getId:()=>id,getUrl:()=>'https://drive.test/f/'+id,getName:()=>items[id].name,
+    createFolder:x=>{if(st.drive.fail.folder)throw new Error('drive fail');const nid='folder'+(++fid);items[nid]={kind:'folder',name:String(x),parent:id};return folderObj(nid)},
+    getFoldersByName:x=>iter(kids(id,'folder').filter(k=>items[k].name===String(x)).map(folderObj)),getFolders:()=>iter(kids(id,'folder').map(folderObj)),
+    getFiles:()=>iter(kids(id,'file').map(fileObj)),
+    createFile:b=>{if(st.drive.fail.file&&st.drive.fail.file(id))throw new Error('drive fail');const nid='file'+(++fid);items[nid]={kind:'file',name:b&&b._name||'',parent:id,mime:b&&b.getContentType?b.getContentType():'',size:b&&b.getBytes?b.getBytes().length:0};return fileObj(nid)}}}
+  const folder=n=>{const nid='folder'+(++fid);items[nid]={kind:'folder',name:String(n),parent:''};return folderObj(nid)};
   const ctx={Utilities,CacheService:{getScriptCache:()=>cacheObj},PropertiesService:{getScriptProperties:()=>({getProperty:k=>st.props[k]===undefined?null:st.props[k],setProperty:(k,v)=>{st.props[k]=String(v)}})},MailApp:{sendEmail:(to,subj,body)=>{if(st.mailFail)throw new Error('mail fail');st.mails.push({to,subj,body})}},
     LockService:{getScriptLock:()=>({waitLock(){st.locks++},releaseLock(){st.locks--}})},SpreadsheetApp:{openById:()=>ss,getActiveSpreadsheet:()=>ss,flush:()=>{st.flushes=(st.flushes||0)+1}},
-    DriveApp:{getFolderById:id=>folder(id),getFileById:()=>{throw new Error('no file')},getFilesByName:()=>({hasNext:()=>false}),getRootFolder:()=>folder('root')},
+    DriveApp:{getFolderById:id=>folderObj(id),getFileById:id=>{if(items[id]&&items[id].kind==='file')return fileObj(id);throw new Error('no file')},getFilesByName:()=>({hasNext:()=>false}),getRootFolder:()=>folder('root')},
     ContentService:{createTextOutput:t=>({text:t,setMimeType(){return this}}),MimeType:{JSON:'json'}},UrlFetchApp:{fetch:()=>{throw new Error('no net')}},ScriptApp:{getOAuthToken:()=>''},console};
   vm.createContext(ctx);vm.runInContext(src,ctx,{filename:'Code.gs'});
   const post=o=>JSON.parse(ctx.doPost({postData:{contents:typeof o==='string'?o:JSON.stringify(o)}}).text);
