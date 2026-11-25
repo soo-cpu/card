@@ -119,7 +119,7 @@ function part1(){
   const tk2=P({a:'ticket',k:S.ticket(KEY,{who:'채진아'})});
   ok('서버 34: 임시 열쇠(FIELD_STAFF_KEY 5분 입장권) 그대로 · 한 번만 · 관리 비밀번호 그대로',tk2.ok&&P({a:'sites',pw:'T:'+tk2.token}).ok&&P({a:'login',pw:'pw-test-77'}).ok&&P({a:'login',pw:'pw-test-78'}).error==='비밀번호가 맞지 않아요');
   ok('서버 35: 처음부터 끝까지 어느 탭도 행이 줄지 않음 · 번호 그대로는 어디에도 없음',(()=>{const b=rowsShrunk();return !b})()&&![PJ,PB,PJ2].some(x=>JSON.stringify(Object.values(S.st.sheets).map(s=>s.rows)).includes(x)));
-  ok('서버 36: Code.gs v5 머리말 · doGet v:5 · 속성 이름만(PIN_SALT·OWNER_EMAIL) · 메일 주소·eval·clear·deleteRow 없음 · 메일 권한 범위',/현장소통 Code\.gs 2026-11-23 v5/.test(GS)&&JSON.parse(S.ctx.doGet({parameter:{}}).text).v===5&&/getProperty\('PIN_SALT'\)/.test(GS)&&/getProperty\('OWNER_EMAIL'\)/.test(GS)&&!/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/.test(GS)&&!/eval\(|\.clear\(|deleteRow|deleteSheet|clearContent/.test(GS)&&APPS.oauthScopes.includes('https://www.googleapis.com/auth/script.send_mail'));
+  ok('서버 36: Code.gs v5 이상 머리말 · doGet v:5 이상 (v6 가져오기 2026-11-25) · 속성 이름만(PIN_SALT·OWNER_EMAIL) · 메일 주소·eval·clear·deleteRow 없음 · 메일 권한 범위',/현장소통 Code\.gs 2026-11-2\d v([5-9]|\d\d) /.test(GS)&&JSON.parse(S.ctx.doGet({parameter:{}}).text).v>=5&&/getProperty\('PIN_SALT'\)/.test(GS)&&/getProperty\('OWNER_EMAIL'\)/.test(GS)&&!/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/.test(GS)&&!/eval\(|\.clear\(|deleteRow|deleteSheet|clearContent/.test(GS)&&APPS.oauthScopes.includes('https://www.googleapis.com/auth/script.send_mail'));
 }
 
 (async()=>{part1();

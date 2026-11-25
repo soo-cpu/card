@@ -1,6 +1,6 @@
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-23 v5 (이전: '현장소통 Code.gs 2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-25 v6 (이전: '현장소통 Code.gs 2026-11-23 v5', '2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -44,6 +44,14 @@
  *  - 대표(관리 비밀번호로 들어온 사람)만: 번호 정하기·바꾸기(그 직원 기억 기기 모두 무효)·잠금 풀기·즉시 차단(번호·기기·출입증 무효)·이름 추가·접속 기록 보기
  *    직원 출입증(임시 열쇠·직원 번호)으로 온 요청은 이 동작들을 거절
  *  - 기존 5분 입장권(FIELD_STAFF_KEY, 화면 이름 '임시 열쇠')·관리 비밀번호·고객 확인 번호는 그대로. 지우는 행·칸 없음 (바뀐 값은 '옛 값' 탭)
+ *
+ * v6에서 더한 것 (다음 지시 2026-11-25 v9 1부 · 계약 단계 이후 기존 프로젝트 일괄 등록)
+ *  - 시트 탭 '인트라넷 가져오기' (대표 시트에 따로 채움. 이 스크립트는 탭을 만들지 않음 — 없거나 비면 아무것도 안 함)
+ *    칸 순서: 프로젝트 번호 · 현장명 · 고객 이름 · 담당 · 착공일 · 준공예정일 · 확인 번호(뒷4) · 공정(JSON [{n,a,b}]) · 처리
+ *  - importProjects(): 처리 칸이 빈 줄마다 projSite 와 같은 규칙 — 프로젝트 번호로 찾고(숨긴 현장 제외) 없으면 만듦, 중복 없음,
+ *    현장명이 비면 '홈퍼니싱 현장', 공정은 mergeSched_ (바꾸기 전 값은 '옛 값' 탭), 고객 이름은 빈 칸만 채움
+ *    처리 칸에 '등록됨 코드…' / '이미 있음 코드…' / '오류: …' 를 적음. 행은 지우지 않음. '기록' 탭에 남김
+ *  - setup() 끝에서도 importProjects() 를 부름 (편집기에서 importProjects 만 따로 실행해도 됨)
  */
 
 var TAB = {
@@ -69,7 +77,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 5 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 6 });
 }
 
 function doPost(e) {
@@ -808,6 +816,74 @@ function setup() {
   seedTest_();
   rows_('sites').forEach(function (r) { siteFolder_(r); });
   log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v5 · 직원 번호 탭)');
+  importProjects();   // v6: '인트라넷 가져오기' 탭 (없거나 비면 아무것도 안 함)
+}
+
+/* v6: '인트라넷 가져오기' 탭 → 현장 일괄 등록 (projSite 와 같은 규칙). 편집기에서 실행 ▶ 해도 됨. 행·칸은 지우지 않음 */
+var IMPORT_TAB = '인트라넷 가져오기';
+var IMPORT_COLS = ['프로젝트 번호', '현장명', '고객 이름', '담당', '착공일', '준공예정일', '확인 번호(뒷4)', '공정(JSON)', '처리'];
+function impDay_(v) {   // 시트 날짜 표시(2026. 11. 5 · 2026/11/05 · 2026-11-05) → yyyy-MM-dd
+  var m = String(v == null ? '' : v).match(/(\d{4})\D{1,3}(\d{1,2})\D{1,3}(\d{1,2})/);
+  return m ? day_(m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2)) : '';
+}
+function impPin_(v) {   // 숫자 칸이라 앞의 0이 빠진 경우(123 → 0123)만 채움. 그 밖은 숫자 4자리일 때만
+  var t = String(v == null ? '' : v).trim();
+  if (/^\d{1,3}$/.test(t)) t = ('000' + t).slice(-4);
+  var p = pin_(t);
+  return p === null ? '' : p;
+}
+function importProjects() {
+  var sh = ss_().getSheetByName(IMPORT_TAB);
+  if (!sh) return { ok: true, made: 0, exist: 0, err: 0, note: '탭 없음' };
+  var n = sh.getLastRow();
+  if (n < 2) return { ok: true, made: 0, exist: 0, err: 0, note: '빈 탭' };
+  ensureCols_('sites');
+  var data = sh.getRange(2, 1, n - 1, IMPORT_COLS.length).getDisplayValues();
+  var who = '가져오기', made = 0, exist = 0, err = 0, newRows = [];
+  var mark = function (i, t) { sh.getRange(i + 2, IMPORT_COLS.length).setNumberFormat('@').setValue(String(t)); };
+  var lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {   // projSite 처럼 찾기·만들기를 한 잠금 안에서 → 같은 번호 줄이 여러 번 있어도 현장은 하나
+    data.forEach(function (d, i) {
+      if (String(d[8] || '').trim()) return;                                    // 처리 칸이 찬 줄은 건너뜀
+      if (!d.slice(0, 8).join('').trim()) return;                               // 완전히 빈 줄
+      var proj = String(d[0] || '').trim();
+      if (!/^P-\d{4}-\d{3}$/.test(proj)) { mark(i, '오류: 프로젝트 번호 모양 (P-YYMM-NNN)'); err++; return; }
+      var sched = [], sj = String(d[7] || '').trim();
+      if (sj) {
+        try { sched = JSON.parse(sj); } catch (x) { mark(i, '오류: 공정(JSON) 모양'); err++; return; }
+        if (!Array.isArray(sched)) { mark(i, '오류: 공정(JSON) 모양'); err++; return; }
+        sched = sched.slice(0, 30).map(function (x) { x = x || {}; return { n: x.n, a: impDay_(x.a), b: impDay_(x.b) }; });
+      }
+      var cust = clean_(d[2], 30);
+      var r = rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] || null;
+      if (!r) {
+        var name = clean_(d[1], 60) || '홈퍼니싱 현장';   // 현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호는 쓰지 않음
+        var st0 = stages_(JSON.stringify(sched)).filter(function (x) { return x.a; });
+        if (!st0.length) st0 = DEF_STAGES.map(function (k) { return { n: k, s: 0, a: '', b: '' }; });
+        else st0 = st0.map(function (x) { return { n: x.n, s: 0, a: x.a, b: x.b || x.a }; });
+        var pin = impPin_(d[6]), nc = newCode_();
+        append_('sites', [nc, name, clean_(d[3], 30), '', '', impDay_(d[4]), impDay_(d[5]),
+                          JSON.stringify(st0), '진행', '', now_(), now_(), '', '', '인트라넷 ' + proj, '[]', pin, cust]);
+        mark(i, '등록됨 ' + nc);
+        newRows.push([nc, name, proj, pin]);
+        made++;
+      } else {
+        var nj = mergeSched_(r[7], sched), tag = '';
+        if (nj) { keepOld_(r[0], '공정(JSON)', r[7], who, '인트라넷 가져오기로 맞춤 ' + proj); setCell_('sites', r._row, 7, nj); tag += ' · 공정 맞춤'; }
+        if (!String(r[17] || '') && cust) { setCell_('sites', r._row, 17, cust); tag += ' · 고객 이름 채움'; }   // 빈 칸만 채움
+        mark(i, '이미 있음 ' + r[0] + tag);
+        if (tag) log_('인트라넷 맞춤', r[0], who, proj + tag);
+        exist++;
+      }
+    });
+  } finally { lock.releaseLock(); }
+  newRows.forEach(function (x) {
+    var r = rows_('sites').filter(function (y) { return y[0] === x[0]; })[0];
+    try { if (r) siteFolder_(r); } catch (e) {}
+    log_('현장 자동 생성', x[0], who, x[1] + ' · ' + x[2] + (x[3] ? ' · 확인 번호 있음' : ' · 확인 번호 없음'));
+  });
+  if (made || exist || err) log_('인트라넷 가져오기', '', who, '새로 ' + made + ' · 이미 있음 ' + exist + ' · 오류 ' + err);
+  return { ok: true, made: made, exist: exist, err: err };
 }
 
 /* 시험 현장(대표 확인용) 3일치 — 이미 있으면 다시 넣지 않음 */
