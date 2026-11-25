@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 현장소통 2026-11-18 v1 · 고객 공유 페이지 (확인 번호·결제 일정·공정표·시공 전·중·후 사진·드라이브 사진 불러오기) · 이전 2026-11-06 v0 -->
+<!-- 현장소통 2026-11-23 v3 · 관리 화면 직원 번호 입장(이름 고르기 → 6자리 · 이 기기 30일 기억 · 대표만 '직원 번호' 칸) · 이전 2026-11-23 v2 · 인트라넷 ‘고객 공유 페이지 열기’(프로젝트 번호로 찾기·자동 만들기·공정 날짜 맞춤 · 값은 # 뒤에서 읽고 바로 지움) · 현장 목록 검색 · 이전 2026-11-18 v1 (확인 번호·결제 일정·공정표·사진), 2026-11-06 v0 -->
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
@@ -77,6 +77,19 @@ label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
 .thumbs button{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:1;cursor:pointer}
 .status{font-size:13px;color:var(--sub);min-height:1.3em;margin-top:6px}
 .status.err{color:var(--imp)}
+.lgsep{display:flex;align-items:center;gap:8px;margin:18px 0 4px;font-size:12px;color:var(--sub)}.lgsep:before,.lgsep:after{content:"";flex:1;border-top:1px solid var(--line)}
+.names{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.names .btn{min-height:64px;font-size:19px}
+.dots{display:flex;justify-content:center;gap:12px;margin:16px 0 6px}.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--pt2)}.dots i.on{background:var(--pt2)}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.kp button{min-height:62px;font-size:24px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;touch-action:manipulation}
+.kp button.fn{font-size:15px;background:var(--soft)}
+.kp button.go{background:var(--pt2);border-color:var(--pt2);color:#fff;font-size:16px}
+.pinrow{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:#fff}
+.pinrow .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.st-ok{color:var(--ok);font-weight:700}.st-lock,.st-block{color:var(--imp);font-weight:700}
+.newdev{display:inline-block;background:var(--imp);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:4px}
+.plog{font-size:13px;border-top:1px solid var(--line);padding:6px 0}
 .day{margin-top:26px}
 .dayh{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:var(--pt2);margin-bottom:8px}
 .dayh::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -193,7 +206,7 @@ footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
 </style>
 <script src="config.js"></script>
 </head><body>
-<div id="pv" class="preview" hidden>미리보기 모드 — 서버 연결 전이라 글·사진이 이 기기에만 저장돼요. (관리 화면 미리보기 비밀번호 0000)</div>
+<div id="pv" class="preview" hidden>미리보기 모드 — 서버 연결 전이라 글·사진이 이 기기에만 저장돼요. (관리 화면 미리보기 비밀번호 0000 · 직원 번호 000000)</div>
 <div id="bar"></div>
 <main class="wrap" id="app"><div class="loading">불러오는 중…</div></main>
 <div id="pdfroot" aria-hidden="true"></div>
@@ -201,7 +214,7 @@ footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
 "use strict";
 /* ============ 기본 ============ */
 const Q = new URLSearchParams(location.search);
-const CODE = (Q.get("s") || "").trim();
+let CODE = (Q.get("s") || "").trim(); // v2: 인트라넷에서 자동으로 만든 현장으로 바꿀 수 있게 let
 const ADMIN = Q.has("admin");
 const API = (window.FIELD_API || "").trim();
 const BASE = location.origin + location.pathname;
@@ -210,6 +223,39 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp
 const DEF_STAGES = ["철거","설비","전기","목공","타일","도장","마감"];
 const WD = "일월화수목금토";
 let PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {}
+/* 직원 입장권 (2026-11-19): 인트라넷이 주소 맨 뒤 # 뒤에 붙여 준 5분짜리 입장권. 읽자마자 주소에서 지우고(서버·기록에 안 남음),
+   서버에 한 번 확인받아 받은 출입증을 이 탭에만(sessionStorage) 둔다. 비밀번호는 쓰지도 저장하지도 않는다. */
+const TICKET_RE = /^\d{13}\.[A-Za-z0-9_-]{1,120}\.[A-Za-z0-9_-]{16,64}\.[A-Za-z0-9_-]{43}$/;
+let TICKET = "";
+/* v2 (2026-11-23): 인트라넷 프로젝트 값(d=, base64url JSON — 현장명·고객 이름·휴대폰 뒷 4자리·담당·착공/준공·공정표 날짜)도 # 뒤에서만 읽고 같이 지움. 쿼리(?)로는 받지 않음 */
+let AUTO = null;
+const fDay = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : "";
+const fStr = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001F]/g, " ").trim().slice(0, n);
+function autoRead(b64) {
+  try {
+    if (!/^[A-Za-z0-9_-]{4,20000}$/.test(b64)) return null;
+    const bin = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64.length + 3) % 4)), u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    const o = JSON.parse(new TextDecoder().decode(u)); if (!o || typeof o !== "object") return null;
+    const m = ["auto", "new", "sch"].includes(o.m) ? o.m : ""; if (!m) return null;
+    const r = { m, proj: /^P-\d{4}-\d{3}$/.test(String(o.proj || "")) ? String(o.proj) : "", name: fStr(o.name, 60), cust: fStr(o.cust, 30), pin: /^\d{4}$/.test(String(o.pin || "")) ? String(o.pin) : "", manager: fStr(o.mgr, 30), start: fDay(o.start), end: fDay(o.end),
+      sch: (Array.isArray(o.sch) ? o.sch : []).slice(0, 30).map(x => ({ n: fStr(x && x.n, 40), a: fDay(x && x.a), b: fDay(x && x.b) })).filter(x => x.n && x.a).map(x => Object.assign(x, { b: x.b && x.b >= x.a ? x.b : x.a })) };
+    if (m === "auto" && !r.proj) return null;
+    return r;
+  } catch (e) { return null; }
+}
+{ const h = location.hash || "", m = /(?:^#|&)k=([^&]*)/.exec(h), d = /(?:^#|&)d=([^&]*)/.exec(h);
+  if (m) TICKET = m[1];
+  if (d && ADMIN) AUTO = autoRead(d[1]);
+  if (m || d) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (x) {} } } }
+let TK = ""; try { TK = sessionStorage.getItem("field_tk") || ""; } catch (e) {}
+if (TK) PW = "T:" + TK; // 출입증이 있으면 그것으로 (서버에는 pw 자리에 "T:출입증")
+function tkDrop() { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (e) {} PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {} }
+/* v3 (2026-11-23): 직원 번호로 들어온 기기 — 30일 기억 토큰만 이 기기(localStorage)에 둔다. 번호는 어디에도 저장하지 않는다 */
+let DEV = ""; try { DEV = localStorage.getItem("field_dev") || ""; } catch (e) {}
+let DEV_AT = 0;
+const TK_END = "출입 시간이 끝났어요 (입장권·임시 열쇠) · 인트라넷에서 다시 열거나 직원 번호·비밀번호로 들어가 주세요";
+const isOwner = () => !!PW && !/^T:/.test(PW); // 관리 비밀번호로 들어온 사람(대표)
 let NAME = ""; try { NAME = localStorage.getItem("field_name") || ""; } catch (e) {}
 let PIN = ""; try { PIN = sessionStorage.getItem("field_pin_" + CODE) || ""; } catch (e) {}
 const PHASES = ["시공 전", "시공 중", "시공 후"];
@@ -275,7 +321,8 @@ const Local = (() => {
   function site(code) { const s = load().sites.find(x => x.code === code && !x.hidden); if (!s) throw new Error("주소를 확인해 주세요"); return s; }
   function pub(s) { const { code, name, manager, phone, address, start, end, stages, status } = s; return { code, name, manager, phone, address, start, end, stages, status, payments: s.payments || [] }; }
   function pinOk(s, d) { if (!s.pin || d.pw) return; if (!d.pin) throw new Error("PIN:"); if (String(d.pin) !== s.pin) throw new Error("PIN:번호가 맞지 않아요"); }
-  function admin(d) { if (d.pw !== PWD) throw new Error("비밀번호가 맞지 않아요"); }
+  function pvTk() { try { return sessionStorage.getItem("field_preview_tk") || ""; } catch (e) { return ""; } }
+  function admin(d) { const t = pvTk(); if (t && d.pw === "T:" + t) return; if (/^T:/.test(String(d.pw || ""))) throw new Error("직원 입장권 시간이 끝났어요"); if (d.pw !== PWD) throw new Error("비밀번호가 맞지 않아요"); }
   function bundle(code, isAdmin, seen) {
     const b = load();
     return {
@@ -290,9 +337,18 @@ const Local = (() => {
     post: d => { const s = site(d.s); pinOk(s, d); const t = nowStr(); load().posts.push({ id: uid("P"), code: s.code, date: today(), by: "c", author: d.author || "고객", stage: "", kind: d.kind || "의견", text: d.text || "", important: false, photos: d.photos || [], createdAt: t }); s.lastCustomerAt = t; save(); return {}; },
     comment: d => { const s = site(d.s); const isA = !!d.pw; if (isA) admin(d); else pinOk(s, d); load().comments.push({ id: uid("C"), code: s.code, postId: d.postId, by: isA ? "a" : "c", author: d.author || (isA ? "홈퍼니싱" : "고객"), text: d.text, createdAt: nowStr() }); save(); return {}; },
     login: d => { admin(d); return {}; },
-    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
-    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: Object.assign(pub(s), { pin: s.pin || "", proj: s.proj || "" }), pinOn: !!s.pin }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
-    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: d.payments || [], pin: d.pin || "", proj: d.proj || "" }); save(); return { code }; },
+    pinNames: () => ({ names: ["정진혁", "이봄이", "채진아"] }), // 미리보기: 번호는 모두 000000 (이 기기에 번호를 저장하지 않음)
+    pinLogin: d => { if (!["정진혁", "이봄이", "채진아"].includes(d.name) || d.pin !== "000000") throw new Error("번호가 맞지 않아요 (미리보기 번호 000000)"); const t = uid("T"), dv = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, "0")).join(""); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} const b = load(); b.devs = (b.devs || []).concat([dv]); save(); return { token: t, dev: dv, who: d.name, days: 30 }; },
+    devLogin: d => { if (!(load().devs || []).includes(d.dev)) throw new Error("DEVBAD:이 기기는 기억되어 있지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; },
+    pinAdmin: () => { throw new Error("미리보기에서는 직원 번호를 정할 수 없어요 — 서버(Code.gs v5) 연결 뒤에 돼요"); },
+    ticket: d => { if (!TICKET_RE.test(String(d.k || ""))) throw new Error("입장권 모양이 맞지 않아요"); const t = uid("T"); try { sessionStorage.setItem("field_preview_tk", t); } catch (e) {} return { token: t }; }, // 미리보기: 모양만 확인
+    sites: d => { admin(d); const b = load(); return { sites: b.sites.filter(s => !s.hidden).map(s => Object.assign(pub(s), { pinOn: !!s.pin, proj: s.proj || "", cust: s.cust || "", pin: s.pin || "", createdAt: s.createdAt, postCount: b.posts.filter(p => p.code === s.code && !p.hidden).length, newCount: b.posts.filter(p => p.code === s.code && p.by === "c" && p.createdAt > (s.adminSeenAt || "")).length + b.comments.filter(c => c.code === s.code && c.by === "c" && c.createdAt > (s.adminSeenAt || "")).length })) }; },
+    adminSite: d => { admin(d); const s = site(d.s); const r = Object.assign({ site: Object.assign(pub(s), { pin: s.pin || "", proj: s.proj || "", cust: s.cust || "" }), pinOn: !!s.pin }, bundle(s.code, true, s.adminSeenAt)); s.adminSeenAt = nowStr(); save(); return r; },
+    addSite: d => { admin(d); if (!d.name) throw new Error("현장 이름을 적어 주세요"); const code = code24(); load().sites.push({ code, name: d.name, manager: d.manager || "", phone: d.phone || "", address: d.address || "", start: d.start || "", end: d.end || "", stages: d.stages || [], status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: d.payments || [], pin: d.pin || "", proj: d.proj || "", cust: d.cust || "" }); save(); return { code }; },
+    projSite: d => { admin(d); const b = load(); let s = d.s ? site(d.s) : b.sites.find(x => !x.hidden && x.proj && x.proj === d.proj); let created = false, n = 0; // 미리보기: 서버(projSite)와 같은 규칙
+      if (!s) { if (!d.proj) throw new Error("프로젝트 번호가 없어요"); const st = (d.stages || []).filter(x => x.a).map(x => ({ n: x.n, s: 0, a: x.a, b: x.b || x.a })); s = { code: code24(), name: d.name || "홈퍼니싱 현장" /* 현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호 안 씀 */, manager: d.manager || "", phone: "", address: "", start: d.start || "", end: d.end || "", stages: st.length ? st : DEF_STAGES.map(n => ({ n, s: 0 })), status: "진행", createdAt: nowStr(), adminSeenAt: nowStr(), payments: [], pin: /^\d{4}$/.test(String(d.pin || "").trim()) ? String(d.pin).trim() : "", proj: d.proj, cust: d.cust || "" }; b.sites.push(s); created = true; n = st.length; }
+      else if ((d.stages || []).length) { const key = x => String(x || "").replace(/\s+/g, "").toLowerCase(), used = {}; const out = d.stages.filter(x => x.a).map(x => { const i = s.stages.findIndex((y, j) => !used[j] && key(y.n) === key(x.n)); if (i >= 0) used[i] = 1; return { n: x.n, s: i >= 0 ? s.stages[i].s : 0, a: x.a, b: x.b || x.a }; }); s.stages.forEach((x, i) => { if (!used[i] && x.s > 0) out.push(x); }); if (JSON.stringify(out) !== JSON.stringify(s.stages)) { (b.hist = b.hist || []).push({ code: s.code, old: JSON.stringify(s.stages), at: nowStr() }); s.stages = out; n = out.length; } }
+      if (!created && !s.cust && d.cust) s.cust = d.cust; save(); return { code: s.code, created, sched: n, pinOn: !!s.pin }; },
     updateSite: d => { admin(d); const s = site(d.s); Object.assign(s, d.fields || {}); save(); return {}; },
     adminPost: d => { admin(d); const s = site(d.s); load().posts.push({ id: uid("P"), code: s.code, date: d.date || today(), by: "a", author: d.author || "홈퍼니싱", stage: d.stage || "", kind: d.kind || "공정", text: d.text || "", important: !!d.important, photos: d.photos || [], createdAt: nowStr() }); save(); return {}; },
     importFolder: d => { admin(d); throw new Error("미리보기에서는 드라이브 폴더를 못 열어요 — 서버(Code.gs v1) 연결 뒤에 돼요"); },
@@ -421,6 +477,7 @@ async function openSite() {
   const app = $("#app");
   try { D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE }); }
   catch (e) {
+    if (ADMIN && TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return openSite(); $("#bar").innerHTML = ""; loginView(TK_END); return; }
     if (ADMIN && /비밀번호|잠겼/.test(e.message)) { logout(); return; }
     if (!ADMIN && /^PIN:/.test(e.message)) { if (PIN) { PIN = ""; try { sessionStorage.removeItem("field_pin_" + CODE); } catch (x) {} } pinGate(e.message.slice(4)); return; }
     app.innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
@@ -600,14 +657,126 @@ function modal(html) {
 }
 
 /* ============ 관리 화면 ============ */
-function logout() { PW = ""; try { localStorage.removeItem("field_pw"); } catch (e) {} $("#bar").innerHTML = ""; loginView(); }
+function logout() { const hadDev = !!DEV; PW = ""; TK = ""; devForget(); DEV_AT = Date.now(); try { localStorage.removeItem("field_pw"); } catch (e) {} try { sessionStorage.removeItem("field_tk"); } catch (e) {} $("#bar").innerHTML = ""; loginView(); if (hadDev) toast("나갔어요 · 이 기기 기억도 지웠어요", 2500); }
 function loginView(msg) {
-  $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:380px;margin:40px auto 0"><h2>관리 화면</h2><div class="meta">회사 직원만 들어갈 수 있어요.</div><form id="lf"><label class="f">관리 비밀번호</label><input type="password" id="lp" autocomplete="current-password"><button class="btn pri big" style="margin-top:12px">들어가기</button><div class="status err" id="ls">' + esc(msg || "") + '</div></form></section>';
+  if (DEV && Date.now() - DEV_AT > 60000) { DEV_AT = Date.now(); $("#app").innerHTML = '<div class="loading">이 기기로 들어가는 중…</div>'; devIn().then(ok => ok ? route() : loginView(msg)); return; } // 30일 기억 기기
+  $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:420px;margin:28px auto 0"><h2>관리 화면</h2><div class="meta">회사 직원만 들어갈 수 있어요.</div>'
+    + '<button type="button" class="btn pri big" id="lgStaff" style="margin-top:14px;min-height:60px;font-size:18px">직원 번호로 들어가기</button><div class="meta" style="margin-top:6px">이름을 고르고 6자리 번호 · 이 기기는 30일 동안 기억해요</div>'
+    + '<div class="lgsep">대표 전용</div><form id="lf"><label class="f">관리 비밀번호</label><input type="password" id="lp" autocomplete="current-password"><button class="btn big" style="margin-top:12px">들어가기</button><div class="status err" id="ls">' + esc(msg || "") + '</div></form>'
+    + '<div class="meta" style="margin-top:12px">인트라넷 \'관리 화면 열기\'(임시 열쇠)로 오면 번호 없이 바로 열려요.</div></section>';
+  $("#lgStaff").onclick = () => staffPick();
   $("#lf").onsubmit = async e => {
     e.preventDefault(); const pw = $("#lp").value.trim(); if (!pw) return;
-    try { await call("login", { pw }); PW = pw; try { localStorage.setItem("field_pw", pw); } catch (x) {} route(); } catch (x) { $("#ls").textContent = x.message; }
+    try { await call("login", { pw }); if (TK) { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (x) {} } PW = pw; try { localStorage.setItem("field_pw", pw); } catch (x) {} route(); } catch (x) { $("#ls").textContent = x.message; }
   };
 }
+/* v3: 기기 요약(브라우저 종류 정도) — 서버 기록·대표 메일에 이것만 */
+function uaSum() {
+  const u = navigator.userAgent || "";
+  const os = /iPhone/.test(u) ? "아이폰" : /iPad/.test(u) ? "아이패드" : /Android/.test(u) ? "안드로이드" : /Windows/.test(u) ? "윈도우 PC" : /Mac OS X|Macintosh/.test(u) ? "맥" : "기타";
+  const br = /KAKAOTALK/i.test(u) ? "카카오톡" : /NAVER/.test(u) ? "네이버" : /SamsungBrowser/.test(u) ? "삼성 인터넷" : /Edg\//.test(u) ? "엣지" : /Firefox|FxiOS/.test(u) ? "파이어폭스" : /Chrome|CriOS/.test(u) ? "크롬" : /Safari/.test(u) ? "사파리" : "브라우저";
+  return os + " · " + br;
+}
+function tkSet(t) { TK = String(t); try { sessionStorage.setItem("field_tk", TK); } catch (e) {} PW = "T:" + TK; }
+function devForget() { DEV = ""; try { localStorage.removeItem("field_dev"); localStorage.removeItem("field_dev_who"); } catch (e) {} }
+async function devIn() {
+  try { const r = await call("devLogin", { dev: DEV }); if (!r.token) return false; tkSet(r.token); return true; }
+  catch (e) { // 서버가 확실히 무효라고 할 때(DEVBAD:)만 기억을 지움 · 잠시 문제(DEVWAIT:)·연결 오류는 그대로 둠 (검토 반영)
+    const m = String(e.message || "");
+    if (/^DEVBAD:/.test(m)) { devForget(); toast(m.slice(7), 3500); }
+    else toast((/^DEVWAIT:/.test(m) ? m.slice(8) : m) + " · 이 기기 기억은 그대로예요", 3500);
+    return false; }
+}
+/* 이름 고르기 (큰 버튼) */
+async function staffPick() {
+  $("#bar").innerHTML = "";
+  $("#app").innerHTML = '<div class="loading">직원 이름 불러오는 중…</div>';
+  let r; try { r = await call("pinNames", {}); } catch (e) { return loginView(/알 수 없는 요청/.test(e.message) ? "현장소통 서버가 옛 버전이에요 (Code.gs v5 배포 필요)" : e.message); }
+  const names = r.names || [];
+  $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:420px;margin:28px auto 0"><h2>누구세요?</h2><div class="meta">내 이름을 눌러 주세요.</div><div class="names">'
+    + (names.length ? names.map(n => '<button type="button" class="btn big" data-nm="' + esc(n) + '">' + esc(n) + '</button>').join("") : '<div class="empty">아직 번호가 정해진 직원이 없어요. 대표에게 번호를 받아 주세요.</div>')
+    + '</div><button type="button" class="btn ghost big" id="pkBack" style="margin-top:12px">← 돌아가기</button></section>';
+  $("#pkBack").onclick = () => loginView();
+  $("#app").querySelectorAll("[data-nm]").forEach(b => { b.onclick = () => pinPad(b.dataset.nm); });
+}
+/* 6자리 번호 — 화면 키패드(큰 버튼) + 휴대폰 숫자 자판(inputmode=numeric). 번호는 주소·저장소에 남기지 않음 */
+function pinPad(name, msg) {
+  $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:420px;margin:28px auto 0"><h2>' + esc(name) + ' 님 번호</h2><div class="meta">대표에게 받은 6자리 번호를 눌러 주세요.</div>'
+    + '<form id="ppf" autocomplete="off"><div class="dots" aria-hidden="true">' + "<i></i>".repeat(6) + '</div>'
+    + '<input type="password" id="ppIn" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="6자리 번호" style="text-align:center;letter-spacing:.4em;font-size:22px">'
+    + '<div class="kp">' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => '<button type="button" data-k="' + n + '">' + n + '</button>').join("") + '<button type="button" class="fn" data-k="del">지우기</button><button type="button" data-k="0">0</button><button type="submit" class="go" id="ppGo">들어가기</button></div>'
+    + '<div class="status err" id="ppSt" aria-live="polite">' + esc(msg || "") + '</div></form><button type="button" class="btn ghost big" id="ppBack" style="margin-top:8px">← 이름 다시 고르기</button></section>';
+  const inp = $("#ppIn"), dots = $("#app").querySelectorAll(".dots i");
+  const paint = () => { inp.value = inp.value.replace(/\D/g, "").slice(0, 6); dots.forEach((d, i) => d.classList.toggle("on", i < inp.value.length)); };
+  let busy = false;
+  const go = async () => {
+    paint(); if (busy) return; if (inp.value.length !== 6) { $("#ppSt").textContent = "번호 6자리를 모두 눌러 주세요"; return; }
+    const pin = inp.value; inp.value = ""; paint(); busy = true; $("#ppSt").textContent = "확인 중…";
+    try {
+      const r = await call("pinLogin", { name, pin, ua: uaSum() });
+      if (!r.token) throw new Error("확인하지 못했어요");
+      tkSet(r.token);
+      if (r.dev) { DEV = String(r.dev); try { localStorage.setItem("field_dev", DEV); localStorage.setItem("field_dev_who", name); } catch (e) {} }
+      toast(name + " 님, 이 기기는 " + (r.days || 30) + "일 동안 번호 없이 들어와요", 3000);
+      route();
+    } catch (e) { busy = false; $("#ppSt").textContent = /알 수 없는 요청/.test(e.message) ? "현장소통 서버가 옛 버전이에요 (Code.gs v5 배포 필요)" : e.message; }
+  };
+  inp.oninput = () => { paint(); if (inp.value.length === 6) go(); };
+  $("#app").querySelectorAll("[data-k]").forEach(b => { b.onclick = () => { const k = b.dataset.k; inp.value = k === "del" ? inp.value.slice(0, -1) : inp.value + k; paint(); if (inp.value.length === 6) go(); }; });
+  $("#ppf").onsubmit = e => { e.preventDefault(); go(); };
+  $("#ppBack").onclick = () => staffPick();
+}
+/* ============ v3: 직원 번호 관리 (대표만 · 관리 비밀번호로 들어왔을 때) ============ */
+function askBox(title, text, okLabel) { // 화면 안 확인 창 (confirm 안 씀)
+  return new Promise(res => {
+    const m = modal('<h2>' + esc(title) + '</h2><div class="meta" style="margin-bottom:12px">' + esc(text) + '</div><div class="row"><button class="btn" data-close>취소</button><button class="btn pri" id="akOk">' + esc(okLabel || "확인") + '</button></div>');
+    let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+    $("#akOk", m).onclick = () => { fin(true); m.remove(); };
+    m.addEventListener("click", e => { if (e.target === m || e.target.hasAttribute("data-close")) fin(false); });
+  });
+}
+async function pinPanel() {
+  if (!isOwner()) { toast("대표만 볼 수 있어요"); return; }
+  let r; try { r = await call("pinAdmin", { pw: PW }); } catch (e) { toast(/알 수 없는 요청/.test(e.message) ? "현장소통 서버가 옛 버전이에요 (Code.gs v5 배포 필요)" : e.message, 3500); return; }
+  const stCls = s => s === "사용" ? "st-ok" : s === "잠김" ? "st-lock" : s === "차단" ? "st-block" : "";
+  let h = '<h2>직원 번호 (대표만)</h2><div class="meta">직원마다 고정 6자리 번호. 번호는 서버에 해시로만 남고 이 화면에도 다시 보이지 않아요. 바꾸면 그 직원의 기억 기기는 모두 끝나요.</div>'
+    + (r.mail ? '' : '<div class="meta" style="color:var(--imp);margin-top:6px">새 기기 메일: 스크립트 속성 OWNER_EMAIL 이 없어 기록만 남겨요.</div>')
+    + (r.salt ? '' : '<div class="meta" style="color:var(--imp);margin-top:6px">PIN_SALT 가 아직 없어요 — 번호를 처음 정하면 자동으로 만들어요.</div>');
+  (r.staff || []).forEach(x => {
+    h += '<div class="pinrow" data-row="' + esc(x.name) + '"><div><strong>' + esc(x.name) + '</strong> · <span class="' + stCls(x.state) + '">' + esc(x.set || x.state === "차단" ? x.state : "번호 없음") + '</span>' + (x.listed ? '' : ' <span class="meta">(이름 목록에서 뺌)</span>') + '</div>'
+      + '<div class="meta">' + (x.set ? '틀린 횟수 ' + x.fails + '/5' + (x.changedAt ? ' · 바꾼 때 ' + esc(String(x.changedAt).slice(0, 16)) : '') + (x.lockedAt && x.state === "잠김" ? ' · 잠긴 때 ' + esc(String(x.lockedAt).slice(0, 16)) : '') : '아직 번호를 정하지 않았어요') + '</div>'
+      + '<div class="meta">기억 기기 ' + x.devs.length + '대' + (x.devs.length ? ' — ' + x.devs.map(d => esc(d.ua) + ' (~' + esc(String(d.exp).slice(0, 10)) + ')').join(", ") : '') + '</div>'
+      + '<div class="acts">' + (x.listed ? '<button class="btn sm pri" data-pset="' + esc(x.name) + '">' + (x.set ? "번호 바꾸기" : "번호 정하기") + '</button>' : '')
+      + (x.state === "잠김" ? '<button class="btn sm" data-punl="' + esc(x.name) + '">잠금 풀기</button>' : '')
+      + (x.state !== "차단" ? '<button class="btn sm" data-pblk="' + esc(x.name) + '" style="color:var(--imp)">즉시 차단 (퇴사)</button>' : '') + '</div>'
+      + '<div class="pset" hidden><label class="f">새 6자리 번호 (화면에 다시 안 보여요)</label><input type="password" class="pA" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password"><label class="f">한 번 더</label><input type="password" class="pB" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password"><div class="row" style="margin-top:8px"><button class="btn sm" data-pcan>취소</button><button class="btn sm pri" data-pgo="' + esc(x.name) + '">저장</button></div><div class="status err pErr"></div></div></div>';
+  });
+  h += '<div class="row" style="margin-top:12px"><input type="text" id="pnNew" maxlength="10" placeholder="직원 이름 추가 (예: 김OO)"><button class="btn" id="pnAdd" style="flex:none">추가</button></div>';
+  h += '<h2 style="margin-top:18px">접속 기록</h2><div class="meta">최근 80건 · 빨간 \'새 기기\'는 번호로 처음 들어온 기기 (대표에게 메일)</div>';
+  h += (r.logs || []).length ? r.logs.map(l => '<div class="plog"><b>' + esc(l.who) + '</b> · ' + esc(l.act) + (l.newDev ? '<span class="newdev">새 기기</span>' : '') + '<div class="meta">' + esc(l.t) + ' · ' + esc(l.detail) + '</div></div>').join("") : '<div class="empty">아직 기록이 없어요.</div>';
+  h += '<button class="btn ghost big" data-close style="margin-top:10px">닫기</button>';
+  const m = modal(h);
+  m.id = "pinPanel";
+  const again = () => { m.remove(); pinPanel(); };
+  m.querySelectorAll("[data-pset]").forEach(b => { b.onclick = () => { const box = b.closest(".pinrow").querySelector(".pset"); box.hidden = false; $(".pA", box).focus(); }; });
+  m.querySelectorAll("[data-pcan]").forEach(b => { b.onclick = () => { const box = b.closest(".pset"); box.hidden = true; $(".pA", box).value = ""; $(".pB", box).value = ""; }; });
+  m.querySelectorAll("[data-pgo]").forEach(b => { b.onclick = async () => {
+    const box = b.closest(".pset"), a = $(".pA", box).value.trim(), c = $(".pB", box).value.trim();
+    if (!/^\d{6}$/.test(a)) { $(".pErr", box).textContent = "숫자 6자리로 넣어 주세요"; return; }
+    if (a !== c) { $(".pErr", box).textContent = "두 번 넣은 번호가 달라요"; return; }
+    $(".pA", box).value = ""; $(".pB", box).value = "";
+    try { const x = await call("pinSet", { pw: PW, name: b.dataset.pgo, pin: a }); toast(b.dataset.pgo + " 님 번호를 " + (x.first ? "정했어요" : "바꿨어요 · 기억 기기 " + (x.killed || 0) + "대 끝") + " — 직원에게 직접 알려 주세요", 3500); again(); }
+    catch (e) { $(".pErr", box).textContent = e.message; }
+  }; });
+  m.querySelectorAll("[data-punl]").forEach(b => { b.onclick = async () => { try { await call("pinUnlock", { pw: PW, name: b.dataset.punl }); toast(b.dataset.punl + " 님 잠금을 풀었어요"); again(); } catch (e) { toast(e.message); } }; });
+  m.querySelectorAll("[data-pblk]").forEach(b => { b.onclick = async () => {
+    const n = b.dataset.pblk;
+    if (!await askBox(n + " 님 즉시 차단", "번호·기억 기기·이 이름 출입증이 끊겨요. 다시 쓰려면 새 번호를 정해 주세요.", "차단")) return;
+    try { const x = await call("pinBlock", { pw: PW, name: n }); toast(n + " 님을 차단했어요 · 기억 기기 " + (x.killed || 0) + "대 끝", 3000); again(); } catch (e) { toast(e.message); }
+  }; });
+  $("#pnAdd", m).onclick = async () => { const n = $("#pnNew", m).value.trim(); if (!n) return; try { await call("pinAddName", { pw: PW, name: n }); toast(n + " 님을 이름 목록에 넣었어요"); again(); } catch (e) { toast(e.message); } };
+}
+/* ============ 관리 화면 (계속) ============ */
 function adminBar() {
   const s = D.site;
   $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><a class="btn sm" href="?admin">← 현장 목록</a><button class="btn sm pri" id="abCopy">고객 주소 복사</button><button class="btn sm" id="abView">고객 화면 보기</button><button class="btn sm" id="abEdit">현장 정보·결제·확인 번호</button><button class="btn sm" id="abImp">드라이브에서 사진 불러오기</button>' + (API ? '<button class="btn sm" id="abFolder">사진 폴더</button>' : '') + '</div>';
@@ -625,12 +794,13 @@ function shareModal(s, fresh) {
 }
 function siteForm(s, pre) {
   const isNew = !s;
-  s = s || Object.assign({ name: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
+  s = s || Object.assign({ name: "", cust: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
   let stages = s.stages.map(x => Object.assign({}, x));
   let pays = (s.payments && s.payments.length ? s.payments : DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" }))).map(x => Object.assign({}, x));
   const m = modal('<h2>' + (isNew ? "현장 추가" : "현장 정보") + '</h2>'
     + (s.proj ? '<div class="meta">인트라넷 프로젝트 ' + esc(s.proj) + ' (고객 화면에는 안 보여요)</div>' : '')
     + '<label class="f">현장 이름 (고객 화면 맨 위)</label><input type="text" id="fN" value="' + esc(s.name) + '" placeholder="예: 반포 OO아파트 34평">'
+    + '<label class="f">고객 이름 (관리 화면·검색용 — 고객 화면에는 안 보여요)</label><input type="text" id="fC" maxlength="30" value="' + esc(s.cust || "") + '" placeholder="예: 홍길동">'
     + '<div class="row"><div><label class="f">담당자</label><input type="text" id="fM" value="' + esc(s.manager) + '" placeholder="정진혁 실장"></div><div><label class="f">연락처</label><input type="tel" id="fP" value="' + esc(s.phone) + '" placeholder="010-0000-0000"></div></div>'
     + '<label class="f">주소 (고객 화면에 보임 — 동·호수는 빼는 걸 권해요)</label><input type="text" id="fA" value="' + esc(s.address) + '">'
     + '<div class="row"><div><label class="f">착공일</label><input type="date" id="fS" value="' + esc(s.start) + '"></div><div><label class="f">준공 예정일</label><input type="date" id="fE" value="' + esc(s.end) + '"></div></div>'
@@ -658,7 +828,7 @@ function siteForm(s, pre) {
   $("#fGo", m).onclick = async () => {
     sync();
     const pin = $("#fPin", m).value.trim();
-    const f = { name: $("#fN", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages,
+    const f = { name: $("#fN", m).value.trim(), cust: $("#fC", m).value.trim(), manager: $("#fM", m).value.trim(), phone: $("#fP", m).value.trim(), address: $("#fA", m).value.trim(), start: $("#fS", m).value, end: $("#fE", m).value, stages,
       payments: pays.filter(x => x.n && (x.amt || x.due || x.paid)), pin };
     if (!f.name) { $("#fErr", m).textContent = "현장 이름을 적어 주세요"; return; }
     if (pin && !/^\d{4}$/.test(pin)) { $("#fErr", m).textContent = "확인 번호는 숫자 4자리로 적어 주세요"; return; }
@@ -693,25 +863,30 @@ function importForm(s) {
 }
 async function listView() {
   const app = $("#app");
-  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><button class="btn sm" id="abOut">나가기</button></div>';
+  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span>' + (isOwner() ? '<button class="btn sm" id="abPin">직원 번호</button>' : '') + '<button class="btn sm" id="abOut">나가기</button></div>';
   $("#abOut").onclick = logout;
+  if (isOwner()) $("#abPin").onclick = pinPanel; // v3: 대표(관리 비밀번호)만 · 서버도 대표만 받음
   let r;
-  try { r = await call("sites", { pw: PW }); } catch (e) { if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
+  try { r = await call("sites", { pw: PW }); } catch (e) { if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return listView(); $("#bar").innerHTML = ""; loginView(TK_END); return; } if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
   const list = r.sites.sort((a, b) => (b.newCount - a.newCount) || (b.createdAt || "").localeCompare(a.createdAt || ""));
   let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><h1>현장 목록</h1><div class="meta">고객이 글·사진을 올리면 \'새 글\'이 붙어요.</div>';
-  h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="slist">';
+  h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="meta" style="margin-top:4px">인트라넷 프로젝트(계약 단계부터)는 ‘고객 공유 페이지 열기’를 누르면 자동으로 생겨요 · 이 버튼은 예외용</div>';
+  h += '<input type="search" id="sQ" placeholder="고객 이름 · 현장명 · 전화 뒷번호로 찾기" aria-label="현장 찾기" autocomplete="off" style="margin-top:12px;width:100%"><div class="meta" id="sQn" aria-live="polite"></div><div class="slist">';
   if (!list.length) h += '<div class="empty">아직 현장이 없어요.</div>';
   list.forEach(s => {
     const p = pct(s.stages);
-    h += '<div class="sc"><div class="t"><strong>' + esc(s.name) + '</strong>' + (s.newCount ? '<span class="tag n">새 글 ' + s.newCount + '</span>' : '') + '</div>'
+    const sq = [s.name, s.cust, s.pin, s.proj, s.manager].map(x => String(x || "").replace(/\s+/g, "").toLowerCase()).join("|");
+    h += '<div class="sc" data-q="' + esc(sq) + '"><div class="t"><strong>' + esc(s.name) + '</strong>' + (s.cust ? '<span class="meta"> · ' + esc(s.cust) + ' 고객</span>' : '') + (s.newCount ? '<span class="tag n">새 글 ' + s.newCount + '</span>' : '') + '</div>'
       + '<div class="meta">' + esc(s.manager || "") + (s.start ? " · " + fmtDate(s.start) + " ~ " + fmtDate(s.end) : "") + ' · 기록 ' + (s.postCount || 0) + '건</div>'
       + '<div class="bar"><i style="width:' + p + '%"></i></div><div class="meta">진행률 ' + p + '%</div>'
       + '<div class="acts"><a class="btn pri" href="?admin&s=' + esc(s.code) + '">열기</a><button class="btn" data-share="' + esc(s.code) + '">고객 주소 복사</button></div></div>';
   });
   app.innerHTML = h + '</div>' + footerHtml();
   $("#addS").onclick = () => siteForm(null);
+  app.onclick = e => { const c = e.target.dataset && e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
+  const sQ = $("#sQ"); // v2: 화면 안에서 바로 거름 (서버에 다시 묻지 않음)
+  sQ.oninput = () => { const q = sQ.value.replace(/\s+/g, "").toLowerCase(); let n = 0; app.querySelectorAll(".sc[data-q]").forEach(el => { const on = !q || el.dataset.q.includes(q); el.hidden = !on; if (on) n++; }); $("#sQn").textContent = q ? n + "곳 찾음" : ""; };
   return true;
-  app.onclick = e => { const c = e.target.dataset.share; if (c) shareModal(list.find(x => x.code === c)); };
 }
 
 /* ============ PDF ============ */
@@ -775,16 +950,49 @@ function loadLib() {
 }
 
 /* ============ 시작 ============ */
+/* 직원 입장권 확인: 맞으면 출입증을 이 탭에만 두고 관리 화면으로, 틀리면 예전처럼 비밀번호 화면 */
+async function ticketIn() {
+  const k = TICKET; TICKET = "";
+  let msg = "";
+  if (!TICKET_RE.test(k)) msg = "직원 입장권을 읽지 못했어요";
+  else {
+    try { const r = await call("ticket", { k }); if (!r.token) throw new Error("입장권 확인 실패"); TK = String(r.token); try { sessionStorage.setItem("field_tk", TK); } catch (e) {} PW = "T:" + TK; }
+    catch (e) { msg = "직원 입장권을 확인하지 못했어요 (" + String(e.message || "").slice(0, 60) + ")"; }
+  }
+  if (msg && PW) toast(msg + " · 저장된 비밀번호로 들어가요", 3500);
+  if (msg && !PW) return loginView(msg + " · 비밀번호로 들어가 주세요");
+  route();
+}
+/* v2: 인트라넷 ‘고객 공유 페이지 열기’ — 프로젝트 번호로 현장 찾기 · 없으면 자동으로 만들기 · 공정표 날짜 맞추기 → 그 현장 관리 화면 */
+async function autoOpen() {
+  const A = AUTO; AUTO = null;
+  $("#app").innerHTML = '<div class="loading">' + (A.m === "auto" && !CODE ? "인트라넷 프로젝트 " + esc(A.proj) + " 현장 찾는 중…" : "공정 날짜 맞추는 중…") + '</div>';
+  let r;
+  try {
+    r = await call("projSite", { pw: PW, s: CODE || "", proj: A.proj, name: A.name, cust: A.cust, pin: A.pin, manager: A.manager, start: A.start, end: A.end, stages: A.sch });
+  } catch (e) {
+    if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); AUTO = A; if (PW) return route(); $("#bar").innerHTML = ""; loginView(TK_END); return; }
+    if (/비밀번호|잠겼/.test(e.message)) { AUTO = A; logout(); return; }
+    if (/알 수 없는 요청/.test(e.message)) { toast("현장소통 서버가 옛 버전이에요 (Code.gs v3 이상 배포 필요) · 현장 목록으로 열어요", 4000); if (CODE) return openSite(); return listView(); }
+    $("#app").innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
+  }
+  CODE = String(r.code || "");
+  try { history.replaceState(null, "", BASE + "?admin&s=" + encodeURIComponent(CODE)); } catch (x) {}
+  await openSite();
+  if (!D) return;
+  if (r.created) shareModal(Object.assign({}, D.site, { pinOn: !!r.pinOn }), true);
+  else toast(r.sched ? "인트라넷 공정표 날짜로 공정 " + r.sched + "단계를 맞췄어요" : (A.m === "auto" ? "이미 만든 현장을 열었어요" : "공정 날짜가 이미 같아요"), 3000);
+}
 function route() {
   if (ADMIN) {
+    if (TICKET) { ticketIn(); return; }
     if (!PW) return loginView();
+    if (AUTO && (AUTO.m === "auto" || AUTO.m === "sch")) return autoOpen();
     if (CODE) return openSite();
-    listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'에서 넘어온 값으로 '현장 추가' 창 채우기
-      if (!ok || !Q.has("new")) return;
-      try { history.replaceState(null, "", BASE + "?admin"); } catch (x) {}
-      const pre = {}; ["name", "manager", "phone", "address", "start", "end", "proj"].forEach(k => { const v = (Q.get(k) || "").trim(); if (v) pre[k] = v.slice(0, 100); });
-      if (pre.proj && !/^P-\d{4}-\d{3}$/.test(pre.proj)) delete pre.proj;
-      ["start", "end"].forEach(k => { if (pre[k] && !/^\d{4}-\d{2}-\d{2}$/.test(pre[k])) delete pre[k]; });
+    listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'(계약 전)에서 # 뒤로 넘어온 값으로 '현장 추가' 창 채우기
+      const A = AUTO; if (!ok || !A || A.m !== "new") return; AUTO = null;
+      const pre = {}; ["name", "manager", "start", "end", "proj", "cust", "pin"].forEach(k => { if (A[k]) pre[k] = A[k]; });
+      if (A.sch.length) pre.stages = A.sch.map(x => ({ n: x.n, s: 0, a: x.a, b: x.b }));
       siteForm(null, pre);
     });
     return;
