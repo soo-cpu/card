@@ -44,7 +44,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.
  await A.evaluate(()=>{location.hash='#approvals'});await wait(900);const apT=await A.locator('tbody').first().innerText().catch(()=>"");ok('전자결재: 본인(정진혁)이 올린 것만',/정진혁 올린 결재/.test(apT)&&!/이봄이 올린 결재/.test(apT),apT.replace(/\n/g,' '));
  // 쓰기 시도: 프로젝트 저장
  await A.evaluate(()=>{location.hash='#projects'});await wait(900);{const pt=await A.locator('.tablebox tbody').first().innerText().catch(()=>'');ok('미리 보기 프로젝트 목록에 담당 현장 보임 (금액은 보이고 원가·마진 열 없음)',/시험 현장/.test(pt)&&!/21,212,121|20,202,020/.test(pt),pt.replace(/\n/g,' '))}await A.locator('tr[data-open]').first().click({timeout:5000});await wait(1000);
- const inp=A.locator('[data-k="work"]').first();if(await inp.count()){await inp.fill('미리 보기에서 고침');const sv=A.locator('.sheet button').filter({hasText:/^저장/}).first();if(await sv.count()){await sv.click();await wait(1500)}}
+ const inp=A.locator('[data-k="work"]').first();if(await inp.count()){await inp.fill('미리 보기에서 고침');const sv=A.locator('.sheet button:not(#tlAddBtn)').filter({hasText:/^저장/}).first();/* v0.99-54 B: 타임라인 한 줄 ‘저장’(미리 보기에서는 꺼짐)은 빼고 창의 저장 단추 */if(await sv.count()){await sv.click();await wait(1500)}}
  ok('띠가 창(시트) 위에서도 보임',await A.locator('#pvTop').isVisible());await A.screenshot({path:OUT+'/pv_sheet.png'});await A.keyboard.press('Escape');await wait(300);
  // 결재 올리기 + 파일 올리기
  await A.evaluate(()=>{location.hash='#approvals'});await wait(800);await A.locator('button').filter({hasText:'결재 올리기'}).first().click();await wait(900);

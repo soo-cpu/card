@@ -66,7 +66,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(name,v,extr
  await J.evaluate(()=>{location.hash="#projects"});await wait(1500);
  const vis=async()=>J.evaluate(()=>[...document.querySelectorAll('.tablebox thead th')].filter(th=>getComputedStyle(th).display!=="none").map(th=>th.innerText.trim()));
  let th=await vis();ok('2 휴대폰 프로젝트: 중요한 열만',th.length<=5,th.join(','));
- const navVis=await J.evaluate(()=>[...document.querySelectorAll('#nav>a')].filter(a=>getComputedStyle(a).display!=="none").length);ok('2 휴대폰 메뉴: 중요한 메뉴만',navVis<=9,'보이는 메뉴 '+navVis);
+ const navVis=await J.evaluate(()=>[...document.querySelectorAll('#nav>a')].filter(a=>getComputedStyle(a).display!=="none").length);ok('2 휴대폰 메뉴: 중요한 메뉴만 (대표: 기본 8 + v0.99-55 현장 일정 + v0.99-53 대표 현황판 = 10개까지)',navVis<=10,'보이는 메뉴 '+navVis);
  await J.screenshot({path:OUT+'/mob_projects.png'});
  const over=await J.evaluate(()=>document.documentElement.scrollWidth-innerWidth);ok('2 휴대폰 가로 넘침 없음',over<=2,'넘침 '+over+'px');
  await J.tap('#pcvBtn');await wait(800);th=await vis();const thAll=await J.evaluate(()=>document.querySelectorAll('.tablebox thead th').length);ok('2 전체 보기 → 모든 열',th.length===thAll&&thAll>5,th.join(','));

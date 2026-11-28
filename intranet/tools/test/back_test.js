@@ -98,6 +98,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
     ok(tag+'대표 전용 칸 쓰기 거절 0',(await P.evaluate(()=>window.__mockDenied.length))===0,await P.evaluate(()=>window.__mockDenied.join(',')));await P.close()}}
   await A0.close();await ctx.close()}
  ok('화면 오류·브라우저 대화상자(alert/confirm/prompt) 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
- const blk=HTML.slice(HTML.indexOf('// ===== 뒤로 가기 · 위치 표시'),HTML.indexOf('// ===== 연결 상태 · 연습 모드 원인'));
+ const blk0=HTML.slice(HTML.indexOf('// ===== 뒤로 가기 · 위치 표시'),HTML.indexOf('// ===== 연결 상태 · 연습 모드 원인'));const tlA=blk0.indexOf('// ===== 프로젝트 기록 타임라인'),tlZ=blk0.indexOf('// ===== 프로젝트 창 탭');
+ const blk=tlA>0&&tlZ>tlA?blk0.slice(0,tlA)+blk0.slice(tlZ):blk0; /* v0.99-54 B: 두 표지 사이에 들어온 기록 타임라인 묶음(한 줄 메모 저장이 있음 — timeline_test 가 따로 봄)은 빼고 뒤로 가기 코드만 */
  ok('뒤로 가기 코드에 alert/confirm/prompt/window.open/iframe 0건 · 저장소 쓰기 0건',blk.length>3000&&!/\b(alert|confirm|prompt)\s*\(|window\.open|<iframe/.test(blk)&&!/\.set\(|\.update\(|\.delete\(|put\(/.test(blk),blk.length+'자');
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();
