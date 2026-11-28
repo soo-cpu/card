@@ -1,4 +1,6 @@
 <!doctype html>
+<!-- 현장소통 화면 2026-11-27 v9 (서버 Code.gs v9과 짝, v7·v8 서버와도 동작 — 새 버튼만 '서버 v9 필요' 안내) · 공정 [완료](완료 날짜·되돌리기) · 결제 [입금 완료](날짜·되돌리기) · 공정표 엑셀(xlsx·csv)·표 붙여넣기 · 기존 현장 '공정표 추가/수정' · 고객 화면 진행률(완료 공정/전체)·완료 날짜·결제 상태 · 고객 화면 가벼운 자동 새로 고침 · 이전: -->
+<!-- 현장소통 화면 2026-11-26 v7 (서버 Code.gs v7과 짝, v6 서버와도 동작) · 사진 여러 장 한 번에(촬영 순) · 직원 원본 저장(uploadOrig) · 대표만 사진 지우기(숨김, 원본 남음) · 고객 화면 직원 정보 뺌 · 서버 주소 칸은 서버 없을 때 관리 화면에만 · 이전: -->
 <!-- 현장소통 2026-11-23 v3 · 관리 화면 직원 번호 입장(이름 고르기 → 6자리 · 이 기기 30일 기억 · 대표만 '직원 번호' 칸) · 이전 2026-11-23 v2 · 인트라넷 ‘고객 공유 페이지 열기’(프로젝트 번호로 찾기·자동 만들기·공정 날짜 맞춤 · 값은 # 뒤에서 읽고 바로 지움) · 현장 목록 검색 · 이전 2026-11-18 v1 (확인 번호·결제 일정·공정표·사진), 2026-11-06 v0 -->
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -203,6 +205,22 @@ footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
 .pd .pg img{width:100%;height:250px;object-fit:cover;display:block;border-radius:4px}
 .pd .cm{font-size:11.5px;color:#4a4038;padding-left:10px;border-left:2px solid #e3dace;margin-top:4px}
 .pd .brk{page-break-before:always}
+/* v9: 공정 완료 · 입금 완료 (손가락으로 누르기 쉽게) */
+.chk{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.chk:first-of-type{border-top:0}
+.chk .nm{font-weight:700;font-size:16px}
+.chk .dt{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+.chk .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chk .act input[type=date]{width:auto;padding:8px;font-size:15px;min-height:48px}
+.btn.done{min-height:52px;min-width:96px;font-size:17px;background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.undo{min-height:44px}
+.okb{display:inline-block;background:#e6f0e8;color:var(--ok);font-weight:700;border-radius:8px;padding:4px 10px;font-size:14px}
+.stg .d{font-size:11px;font-weight:600}
+.sraw{width:100%;min-height:120px;font-size:14px;font-family:ui-monospace,Menlo,monospace}
+.sedit{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:6px;align-items:center;margin-top:6px}
+.sedit input{padding:8px;font-size:15px}
+#schEdit,#abSch,#fSchImp,.sedit .btn,.sxpick{min-height:44px} /* v9 검토 반영: 손가락 크기 */
+@media(max-width:420px){.chk{grid-template-columns:1fr}.chk .act{justify-content:flex-start}.sedit{grid-template-columns:1fr 1fr;}.sedit input[data-en]{grid-column:1/-1}}
 </style>
 <script src="config.js"></script>
 </head><body>
@@ -216,11 +234,17 @@ footer b{color:var(--ink);font-weight:600;letter-spacing:.06em}
 const Q = new URLSearchParams(location.search);
 let CODE = (Q.get("s") || "").trim(); // v2: 인트라넷에서 자동으로 만든 현장으로 바꿀 수 있게 let
 const ADMIN = Q.has("admin");
-const API = (window.FIELD_API || "").trim();
+/* v7: 서버 주소는 config.js 가 먼저. 비어 있을 때만 대표가 관리 화면에서 한 번 넣은 주소(이 기기)를 씀 — 한 번 저장되면 다시 안 물음 */
+const API_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec$/;
+let API = (window.FIELD_API || "").trim();
+if (!API) { try { const u = (localStorage.getItem("field_api") || "").trim(); if (API_RE.test(u)) API = u; } catch (e) {} }
 const BASE = location.origin + location.pathname;
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const DEF_STAGES = ["철거","설비","전기","목공","타일","도장","마감"];
+const DEF_STAGES = ["철거","설비","목공","전기","타일","도배","마감"]; // v9: 서버 '설정' 탭 '기본 공정'이 오면 그것(DEFS)
+let DEFS = DEF_STAGES.slice();
+const setDefs = r => { if (r && Array.isArray(r.defStages) && r.defStages.length) DEFS = r.defStages.map(String); };
+const OLD9 = e => /알 수 없는 요청/.test(e && e.message || "") ? "현장소통 서버가 옛 버전이에요 (Code.gs v9 배포 필요)" : (e && e.message || "오류");
 const WD = "일월화수목금토";
 let PW = ""; try { PW = localStorage.getItem("field_pw") || ""; } catch (e) {}
 /* 직원 입장권 (2026-11-19): 인트라넷이 주소 맨 뒤 # 뒤에 붙여 준 5분짜리 입장권. 읽자마자 주소에서 지우고(서버·기록에 안 남음),
@@ -275,11 +299,12 @@ async function copy(text) {
   try { document.execCommand("copy"); toast("복사했어요. 카톡에 붙여 넣으세요"); } catch (e) { prompt("아래 내용을 길게 눌러 복사하세요", text); }
   ta.remove();
 }
-function pct(stages) {
+function pct(stages) { // v9: 완료한 공정 수 / 전체 공정 수
   if (!stages || !stages.length) return 0;
-  const v = stages.reduce((a, s) => a + (s.s === 2 ? 1 : s.s === 1 ? .5 : 0), 0);
-  return Math.round(v / stages.length * 100);
+  return Math.round(stages.filter(s => s.s === 2).length / stages.length * 100);
 }
+const doneN = stages => (stages || []).filter(s => s.s === 2).length;
+const md = d => d ? (+d.slice(5, 7)) + "." + (+d.slice(8, 10)) : "";
 const ST_TXT = ["대기", "진행 중", "완료"];
 function custUrl(code) { return BASE + "?s=" + code; }
 function kakaoText(site) {
@@ -355,7 +380,19 @@ const Local = (() => {
     editPost: d => { admin(d); const p = load().posts.find(x => x.id === d.id); if (!p) throw new Error("글을 찾을 수 없어요"); ["important", "hidden", "text", "kind"].forEach(k => { if (d[k] != null) p[k] = d[k]; }); save(); return {}; },
     editComment: d => { admin(d); const c = load().comments.find(x => x.id === d.id); if (c && d.hidden != null) c.hidden = d.hidden; save(); return {}; },
     savePdf: d => { admin(d); const s = site(d.s); s.pdfN = (s.pdfN == null ? -1 : s.pdfN) + 1; save(); return { name: "현장기록 " + s.name + " " + today() + " v" + s.pdfN + ".pdf", local: true }; },
-    folder: d => ({ url: "" })
+    folder: d => ({ url: "" }),
+    /* v9 미리보기: 서버와 같은 모양 (엑셀 파일은 서버 연결 뒤에만 — 미리보기는 붙여넣기만) */
+    prog: d => { const s = site(d.s); pinOk(s, d); return { rev: "", stages: s.stages, payments: s.payments || [] }; },
+    schedParse: d => {
+      admin(d); if (d.file) throw new Error("미리보기에서는 엑셀 파일을 못 읽어요 — 표를 복사해 붙여 넣어 주세요 (서버 연결 뒤엔 파일도 돼요)");
+      const y = String(d.start || today()).slice(0, 4), p2 = v => String(v).padStart(2, "0");
+      const dd = v => { v = String(v || "").trim(); let m = v.match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); if (m) return m[1] + "-" + p2(m[2]) + "-" + p2(m[3]); m = v.match(/^(\d{1,2})\s*[\/.\-월]\s*(\d{1,2})/); return m ? y + "-" + p2(m[1]) + "-" + p2(m[2]) : ""; };
+      const rows = String(d.text || "").split(/\r?\n/).map(l => l.split(/\t|,/)).filter(c => c[0] && c[0].trim() && !/^(공정|공종|작업|항목)/.test(c[0].trim())).slice(0, 30).map(c => { const a = dd(c[1]); return { n: c[0].trim().slice(0, 40), a, b: dd(c[2]) || a }; });
+      return { rows, warn: [], from: "text" };
+    },
+    schedSave: d => { admin(d); const s = site(d.s), key = v => String(v || "").replace(/\s+/g, "").toLowerCase(); s.stages = (d.stages || []).map(x => { const o = s.stages.find(y => key(y.n) === key(x.n)) || {}; return { n: x.n, s: o.s || 0, a: x.a || "", b: x.b || x.a || "", d: o.s === 2 ? o.d || "" : "" }; }); save(); return { stages: s.stages }; },
+    stageDone: d => { admin(d); const s = site(d.s), x = s.stages[d.i]; if (!x || x.n !== d.n) throw new Error("공정을 찾을 수 없어요"); if (d.undo) { x.s = 0; x.d = ""; } else { x.s = 2; x.d = d.date || today(); } save(); return { stages: s.stages }; },
+    payDone: d => { admin(d); const s = site(d.s); s.payments = s.payments || []; let x = s.payments.find(p => p.n === d.n); if (!x) { if (d.undo) throw new Error("결제 단계를 찾을 수 없어요"); x = { n: d.n, amt: 0, due: "", paid: false, date: "" }; s.payments.push(x); s.payments.sort((a, b) => (DEF_PAYS.indexOf(a.n) + 10) % 10 - (DEF_PAYS.indexOf(b.n) + 10) % 10); } if (d.undo) { x.paid = false; x.date = ""; } else { x.paid = true; x.date = d.date || today(); } save(); return { payments: s.payments }; }
   };
   /* 예시 사진: 공정별로 다른 색의 그림 (진짜 현장 사진 아님) */
   function sample(label, wall, floor, n) {
@@ -443,39 +480,101 @@ function lightbox(ids, i) {
   document.body.appendChild(el); show();
 }
 
+/* v7 (2026-11-26): 촬영 시각 — JPEG EXIF 촬영 시각(DateTimeOriginal, 없으면 DateTime), 없으면 파일 날짜(lastModified). 밀리초 */
+async function shotTime(file) {
+  const fb = Number(file && file.lastModified) || Date.now();
+  try {
+    const v = new DataView(await file.slice(0, 256 * 1024).arrayBuffer());
+    if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return fb;
+    let o = 2;
+    while (o + 10 < v.byteLength) {
+      const mk = v.getUint16(o), len = v.getUint16(o + 2);
+      if (mk === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) return exifTime(v, o + 10) || fb;
+      if ((mk & 0xFF00) !== 0xFF00 || mk === 0xFFDA || len < 2) break;
+      o += 2 + len;
+    }
+  } catch (e) {}
+  return fb;
+}
+function exifTime(v, t) { // t = TIFF 머리 위치. 못 읽으면 0
+  try {
+    const le = v.getUint16(t) === 0x4949, u16 = p => v.getUint16(p, le), u32 = p => v.getUint32(p, le);
+    const str = p => { let s = ""; for (let i = 0; i < 19; i++) s += String.fromCharCode(v.getUint8(p + i)); return s; };
+    const scan = (ifd, want) => { const r = {}, n = Math.min(u16(t + ifd), 300); for (let i = 0; i < n; i++) { const e = t + ifd + 2 + i * 12, tag = u16(e); if (want.includes(tag)) r[tag] = u32(e + 8); } return r; };
+    const i0 = scan(u32(t + 4), [0x8769, 0x0132]);
+    let s = "";
+    if (i0[0x8769]) { const ex = scan(i0[0x8769], [0x9003, 0x9004]); if (ex[0x9003]) s = str(t + ex[0x9003]); else if (ex[0x9004]) s = str(t + ex[0x9004]); }
+    if (!s && i0[0x0132]) s = str(t + i0[0x0132]);
+    const m = /^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/.exec(s);
+    if (!m || +m[1] < 2000) return 0;
+    const ms = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - 9 * 3600e3; // EXIF 시각은 시간대가 없어 한국 시각으로 봄
+    return isNaN(ms) ? 0 : ms;
+  } catch (e) { return 0; }
+}
 /* ============ 사진 고르기 칸 (글쓰기용) ============ */
+/* v7: 여러 장 한 번에 (직원 100장 · 고객 20장) · 촬영 시각 순으로 정렬 · 직원은 원본 파일도 갖고 있다가 올림 */
 function picker(box) {
-  const files = [];
+  const MAX = ADMIN ? 100 : 20;
+  const files = []; // { url: 화면용(긴 변 1600px), file: 원본, t: 촬영 시각, id: 올린 뒤 화면용 사진 ID, orig: 원본 올림 }
   const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true;
   const th = document.createElement("div"); th.className = "thumbs"; th.hidden = true;
-  const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn"; btn.textContent = "사진 추가";
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn"; btn.textContent = "사진 추가 (여러 장 가능)";
   btn.onclick = () => inp.click();
   inp.onchange = async () => {
-    for (const f of inp.files) { try { files.push(await compress(f)); } catch (e) { toast(e.message); } }
-    inp.value = ""; draw();
+    const list = Array.from(inp.files || []); inp.value = "";
+    const room = Math.max(0, MAX - files.length), n = Math.min(list.length, room);
+    if (list.length > room) toast("글 하나에 사진 " + MAX + "장까지예요 · " + n + "장만 넣었어요", 3500);
+    btn.disabled = true;
+    for (let i = 0; i < n; i++) {
+      btn.textContent = "사진 준비 중 " + (i + 1) + " / " + n;
+      try { const r = await Promise.all([compress(list[i]), shotTime(list[i])]); files.push({ url: r[0], file: list[i], t: r[1] }); } catch (e) { toast(e.message); }
+    }
+    files.sort((a, b) => a.t - b.t); // 촬영 날짜 순
+    btn.disabled = false; draw();
   };
   function draw() {
-    th.hidden = !files.length; btn.textContent = files.length ? "사진 추가 (" + files.length + "장)" : "사진 추가";
-    th.innerHTML = files.map((u, i) => '<div><img src="' + u + '" alt=""><button type="button" data-i="' + i + '" aria-label="빼기">×</button></div>').join("");
+    th.hidden = !files.length; btn.textContent = files.length ? "사진 추가 (" + files.length + "장 · 찍은 순서대로)" : "사진 추가 (여러 장 가능)";
+    th.innerHTML = files.map((x, i) => '<div><img src="' + x.url + '" alt=""><button type="button" data-i="' + i + '" aria-label="빼기">×</button></div>').join("");
   }
-  th.onclick = e => { const i = e.target.dataset.i; if (i != null) { files.splice(+i, 1); draw(); } };
+  th.onclick = e => { const i = e.target.dataset.i; if (i != null && !btn.disabled) { files.splice(+i, 1); draw(); } };
   box.append(btn, inp, th);
   return { files, clear() { files.length = 0; draw(); } };
 }
+let ORIG_OFF = false; // 서버가 v7 전(uploadOrig 없음)이면 원본 올리기를 건너뜀
+const ORIG_MAX = 25 * 1024 * 1024;
+function readUrl(file) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error("원본을 읽지 못했어요")); r.readAsDataURL(file); }); }
+/* 화면용 사진(upload) → 직원이면 원본(uploadOrig, 현장 원본 폴더). 이미 올린 장은 다시 안 올림(다시 눌러도 겹치지 않게) */
 async function uploadAll(list, st, admin) {
-  const ids = [];
+  const ids = []; let miss = 0;
   for (let i = 0; i < list.length; i++) {
-    st.textContent = "사진 올리는 중 " + (i + 1) + " / " + list.length;
-    const r = await call("upload", Object.assign({ s: CODE, data: list[i] }, admin ? { pw: PW } : {}));
-    ids.push(r.fileId); PHOTO[r.fileId] = list[i];
+    const x = list[i];
+    if (!x.id) {
+      st.textContent = "사진 올리는 중 " + (i + 1) + " / " + list.length;
+      const r = await call("upload", Object.assign({ s: CODE, data: x.url, taken: x.t }, admin ? { pw: PW } : {}));
+      x.id = r.fileId; PHOTO[r.fileId] = x.url;
+    }
+    ids.push(x.id);
+    if (admin && API && !ORIG_OFF && x.file && !x.orig) {
+      if (x.file.size > ORIG_MAX) { miss++; continue; }
+      st.textContent = "원본 올리는 중 " + (i + 1) + " / " + list.length;
+      for (let k = 0; k < 2 && !x.orig; k++) {
+        try { await call("uploadOrig", { s: CODE, pw: PW, id: x.id, data: await readUrl(x.file), name: x.file.name || "" }); x.orig = true; }
+        catch (e) { if (/알 수 없는 요청/.test(e.message)) { ORIG_OFF = true; break; } if (/형식 오류|너무 커요|찾을 수 없어요/.test(e.message)) break; }
+      }
+      if (!x.orig && !ORIG_OFF) miss++;
+    }
   }
-  return ids;
+  return { ids, miss };
 }
 
 /* ============ 화면: 현장 (고객 · 관리 공통) ============ */
 async function openSite() {
   const app = $("#app");
-  try { D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE }); }
+  try {
+    D = await call(ADMIN ? "adminSite" : "site", ADMIN ? { s: CODE, pw: PW } : { s: CODE });
+    if (ADMIN) setDefs(D);
+    if (!ADMIN) custSafe(D); // v7: 옛 서버(v6)가 보내도 고객 화면에는 직원 이름·연락처를 안 씀
+  }
   catch (e) {
     if (ADMIN && TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return openSite(); $("#bar").innerHTML = ""; loginView(TK_END); return; }
     if (ADMIN && /비밀번호|잠겼/.test(e.message)) { logout(); return; }
@@ -483,6 +582,14 @@ async function openSite() {
     app.innerHTML = '<div class="gate"><div>' + esc(e.message) + '</div></div>'; return;
   }
   renderSite();
+}
+/* v7 (2026-11-26): 고객 화면 — 담당 직원 이름·연락처 빼고, 회사 글·댓글 작성자는 '홈퍼니싱' (서버 v7 도 같은 값을 보냄) */
+const CO_NAME = "홈퍼니싱", CO_TEL = "1566-5904";
+function custSafe(d) {
+  if (!d || !d.site) return;
+  d.site.manager = ""; d.site.phone = "";
+  (d.posts || []).forEach(p => { if (p.by !== "c") p.author = CO_NAME; });
+  (d.comments || []).forEach(c => { if (c.by !== "c") c.author = CO_NAME; });
 }
 function renderSite() {
   const s = D.site, app = $("#app"), p = pct(s.stages);
@@ -496,17 +603,19 @@ function renderSite() {
   let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>ártico studio · 현장 소통</span></div>';
   h += '<section class="card"><div class="kicker">현장 소통</div><h1>' + esc(s.name) + '</h1>';
   h += '<div class="meta">' + [s.address && esc(s.address), (s.start || s.end) && ("공사 기간 " + fmtDate(s.start) + " ~ " + fmtDate(s.end))].filter(Boolean).join(" · ") + '</div>';
-  h += '<div class="prog"><div class="top"><span class="lbl">공정 진행률</span><span class="pct">' + p + '%</span></div><div class="bar"><i style="width:' + p + '%"></i></div>';
+  h += '<div class="prog"><div class="top"><span class="lbl">공정 진행률 · 완료 <b id="dn">' + doneN(s.stages) + '</b> / ' + s.stages.length + ' 공정</span><span class="pct">' + p + '%</span></div><div class="bar"><i style="width:' + p + '%"></i></div>';
   h += '<ul class="stages" id="stg">' + s.stages.map((x, i) => ADMIN
-    ? '<li><button type="button" class="stg s' + x.s + '" data-i="' + i + '">' + esc(x.n) + ' · ' + ST_TXT[x.s] + '</button></li>'
-    : '<li class="stg s' + x.s + '">' + esc(x.n) + '</li>').join("") + '</ul>';
-  h += ADMIN ? '<div class="legend">단계를 누르면 대기 → 진행 중 → 완료로 바뀌어요.</div><button class="btn pri sm" id="stgSave" hidden style="margin-top:8px">진행률 저장</button>'
+    ? '<li class="stg s' + x.s + '">' + esc(x.n) + ' · ' + ST_TXT[x.s] + (x.s === 2 && x.d ? ' <span class="d">' + md(x.d) + '</span>' : '') + '</li>' // v9 검토 반영: 보기만 (바꾸기는 아래 [완료]·[되돌리기]로만)
+    : '<li class="stg s' + x.s + '">' + esc(x.n) + (x.s === 2 && x.d ? ' <span class="d">' + md(x.d) + '</span>' : '') + '</li>').join("") + '</ul>';
+  h += ADMIN ? '<div class="legend">공정 상태는 아래 ‘공정 완료 체크’의 [완료]·[되돌리기]로 바꿔요.</div>'
              : '<div class="legend">● 완료 &nbsp; ◐ 진행 중 &nbsp; ○ 대기</div>';
   h += '</div>';
-  if (s.manager || s.phone) {
+  if (ADMIN && (s.manager || s.phone)) {
     h += '<div class="mgr"><div class="who"><small>현장 담당</small><strong>' + esc(s.manager) + '</strong>' + (s.phone ? ' <span class="meta">' + esc(s.phone) + '</span>' : '') + '</div>';
     if (tel) h += '<a class="btn" href="tel:' + tel + '">전화</a><a class="btn" href="sms:' + tel + '">문자</a>';
     h += '</div>';
+  } else if (!ADMIN) { // v7: 고객에게는 회사 대표 번호만
+    h += '<div class="mgr"><div class="who"><small>현장 문의</small><strong>' + CO_NAME + '</strong> <span class="meta">' + CO_TEL + '</span></div><a class="btn" href="tel:' + CO_TEL.replace(/[^0-9]/g, "") + '">전화</a></div>';
   }
   h += '</section>';
   h += schedHtml(s) + payHtml(s) + galHtml(posts);
@@ -527,6 +636,21 @@ function renderSite() {
   bindSite();
   watchPhotos(app);
   if (ADMIN) adminBar();
+  else autoPoll();
+}
+/* v9: 고객 화면 가벼운 자동 새로 고침 — 화면이 보일 때만 1분마다 공정·결제만 확인(prog), 바뀌었으면 다시 그림. 30분 뒤 멈춤 */
+let POLL = null, POLL_N = 0, POLL_VIS = false, POLL_OFF = false;
+function autoPoll() {
+  if (!API || !D || !D.site || !D.site.rev || POLL || POLL_OFF) return; // 서버 v9 전이면 안 함 · 확인 번호 오류로 멈췄으면 다시 안 함
+  const tick = async () => {
+    if (POLL_OFF || document.hidden || document.querySelector(".modal")) return;
+    if (++POLL_N > 30) { clearInterval(POLL); POLL = null; return; }
+    const ae = document.activeElement; if (ae && /TEXTAREA|INPUT/.test(ae.tagName) && ae.value) return; // 글 쓰는 중엔 안 건드림
+    try { const r = await call("prog", { s: CODE }); if (r.rev && D && D.site && r.rev !== D.site.rev) refresh(); }
+    catch (e) { if (/^PIN:/.test(e.message)) { POLL_OFF = true; clearInterval(POLL); POLL = null; } } // v9 검토 반영: 확인 번호가 바뀌면 바로 멈춤 (틀린 번호를 계속 보내 잠기지 않게)
+  };
+  POLL = setInterval(tick, 60000);
+  if (!POLL_VIS) { POLL_VIS = true; document.addEventListener("visibilitychange", () => { if (document.hidden || POLL_OFF) return; POLL_N = Math.min(POLL_N, 20); if (!POLL) POLL = setInterval(tick, 60000); tick(); }); } // v9 검토 반영: 한 번만 붙임
 }
 /* ---- 고객 공유 (2026-11-18 v1) ---- */
 const DEF_PAYS = ["계약금", "중도금", "잔금"];
@@ -542,20 +666,50 @@ function pinGate(msg) {
     $("#app").innerHTML = '<div class="loading">확인 중…</div>'; openSite();
   };
 }
+const rng = x => fmtDate(x.a || "") + (x.b && x.b !== x.a ? " ~ " + fmtDate(x.b).slice(x.a && x.b.slice(0, 4) === x.a.slice(0, 4) ? 5 : 0) : "");
 function schedHtml(s) {
-  const rows = (s.stages || []).filter(x => x.a || x.b);
+  if (ADMIN) return schedAdminHtml(s);
+  const rows = (s.stages || []).filter(x => x.a || x.b || x.s === 2);
   if (!rows.length) return "";
-  return '<section class="card"><h2>공정표</h2><div class="sched">' + rows.map(x => '<div class="r"><b>' + esc(x.n) + '</b><small>' + fmtDate(x.a || "") + (x.b && x.b !== x.a ? " ~ " + fmtDate(x.b).slice(5) : "") + '</small><span class="stg s' + x.s + '" style="font-size:12px;padding:2px 9px">' + ST_TXT[x.s] + '</span></div>').join("") + '</div><div class="legend">날씨·자재 사정으로 바뀔 수 있어요. 바뀌면 담당자가 알려 드려요.</div></section>';
+  return '<section class="card"><h2>공정표</h2><div class="sched">' + rows.map(x => '<div class="r"><b>' + esc(x.n) + '</b><small>' + (rng(x) || "-") + '</small><span class="stg s' + x.s + '" style="font-size:12px;padding:2px 9px">' + (x.s === 2 ? "완료" + (x.d ? " " + md(x.d) : "") : ST_TXT[x.s]) + '</span></div>').join("") + '</div><div class="legend">완료 ' + doneN(s.stages) + ' / ' + s.stages.length + ' 공정 · 날씨·자재 사정으로 바뀔 수 있어요. 바뀌면 담당자가 알려 드려요.</div></section>';
+}
+/* v9: 직원 — 공정마다 큰 [완료] (날짜 기본 오늘, 고칠 수 있음) · 완료한 공정은 [되돌리기] */
+function schedAdminHtml(s) {
+  const st = s.stages || [];
+  let h = '<section class="card" id="chkS"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">공정 완료 체크</h2><button class="btn sm" id="schEdit">공정표 추가/수정</button></div>';
+  if (!st.length) return h + '<div class="empty">공정이 없어요. ‘공정표 추가/수정’에서 엑셀 표를 붙여 넣거나 파일을 올려 주세요.</div></section>';
+  h += '<div class="meta">완료 ' + doneN(st) + ' / ' + st.length + ' 공정 · 누르면 고객 화면에 바로 보여요</div>';
+  st.forEach((x, i) => {
+    h += '<div class="chk"><div><div class="nm">' + esc(x.n) + '</div><div class="dt">' + (rng(x) || "일정 없음") + '</div></div><div class="act">';
+    if (x.s === 2) h += '<span class="okb">완료 ' + (x.d ? fmtDate(x.d).slice(5) : "") + '</span><button class="btn undo" data-undo="' + i + '">되돌리기</button>';
+    else h += '<input type="date" data-dd="' + i + '" value="' + today() + '" aria-label="' + esc(x.n) + ' 완료 날짜"><button class="btn done" data-done="' + i + '">완료</button>';
+    h += '</div></div>';
+  });
+  return h + '<div class="legend">날짜를 바꾸고 누르면 그 날짜로 남아요. 잘못 눌렀으면 ‘되돌리기’.</div></section>';
 }
 function payHtml(s) {
-  const ps = (s.payments || []).filter(x => x.amt || x.due);
+  if (ADMIN) return payAdminHtml(s);
+  const ps = (s.payments || []).filter(x => x.amt || x.due || x.paid);
   if (!ps.length) return "";
   const t = today(), tot = ps.reduce((a, x) => a + (Number(x.amt) || 0), 0), paid = ps.filter(x => x.paid).reduce((a, x) => a + (Number(x.amt) || 0), 0);
-  const st = x => x.paid ? '<span class="pst ok">받음' + (x.date ? " " + fmtDate(x.date).slice(5) : "") + '</span>' : (x.due && x.due < t ? '<span class="pst late">예정일 지남</span>' : '<span class="pst due">예정</span>');
+  const st = x => x.paid ? '<span class="pst ok">완료' + (x.date ? " " + fmtDate(x.date).slice(5) : "") + '</span>' : (x.due && x.due < t ? '<span class="pst late">예정일 지남</span>' : '<span class="pst due">예정</span>');
   return '<section class="card"><h2>결제 일정</h2><table class="pays"><thead><tr><th>구분</th><th>예정일</th><th class="n">금액</th><th>상태</th></tr></thead><tbody>'
     + ps.map(x => '<tr><td>' + esc(x.n) + '</td><td>' + (x.due ? fmtDate(x.due).slice(x.due.slice(0, 4) === t.slice(0, 4) ? 5 : 2) : "-") + '</td><td class="n">' + (x.amt ? won(x.amt) : "-") + '</td><td>' + st(x) + '</td></tr>').join("")
     + '</tbody><tfoot><tr><td colspan="2">합계</td><td class="n">' + won(tot) + '</td><td></td></tr></tfoot></table>'
     + '<div class="legend">받은 금액 ' + won(paid) + ' · 남은 금액 ' + won(tot - paid) + ' · 계약서 기준이며, 추가 공사가 생기면 따로 알려 드려요.</div></section>';
+}
+/* v9: 직원 — 계약금·중도금·잔금마다 큰 [입금 완료] (날짜 기본 오늘) · 완료는 [되돌리기]. 금액·예정일은 '현장 정보'에서 */
+function payAdminHtml(s) {
+  const have = (s.payments || []).slice(), ps = have.concat(DEF_PAYS.filter(n => !have.some(x => x.n === n)).map(n => ({ n, amt: 0, due: "", paid: false, date: "", ghost: 1 })));
+  const t = today();
+  let h = '<section class="card" id="chkP"><h2>결제 단계</h2><div class="meta">금액·예정일은 ‘현장 정보·결제·확인 번호’에서 고쳐요 · 고객 화면에 보여요</div>';
+  ps.forEach(x => {
+    h += '<div class="chk"><div><div class="nm">' + esc(x.n) + '</div><div class="dt">' + (x.amt ? won(x.amt) : "금액 없음") + ' · 예정 ' + (x.due ? fmtDate(x.due).slice(5) : "-") + (!x.paid && x.due && x.due < t ? ' <span class="pst late">예정일 지남</span>' : '') + '</div></div><div class="act">';
+    if (x.paid) h += '<span class="okb">입금 완료 ' + (x.date ? fmtDate(x.date).slice(5) : "") + '</span><button class="btn undo" data-payundo="' + esc(x.n) + '">되돌리기</button>';
+    else h += '<input type="date" data-pdd="' + esc(x.n) + '" value="' + t + '" aria-label="' + esc(x.n) + ' 입금 날짜"><button class="btn done" data-pay="' + esc(x.n) + '">입금 완료</button>';
+    h += '</div></div>';
+  });
+  return h + '</section>';
 }
 function phaseOf(x) { return x.kind === "시공 전" || x.kind === "시공 후" ? x.kind : "시공 중"; }
 function galIds(ph) { return D.posts.filter(x => !x.hidden && x.by === "a" && (x.photos || []).length && phaseOf(x) === ph).sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt)).flatMap(x => x.photos); }
@@ -584,7 +738,9 @@ function postHtml(x) {
   if (x.photos && x.photos.length) h += '<div class="pics' + (x.photos.length === 1 ? " one" : "") + '">' + x.photos.map((id, i) => '<button type="button" class="ld" data-pid="' + esc(id) + '" data-post="' + x.id + '" data-i="' + i + '" aria-label="사진 크게 보기"></button>').join("") + '</div>';
   if (cs.length) h += '<div class="cmts">' + cs.map(c => '<div class="cmt ' + c.by + (c.hidden ? " hid" : "") + '"><div class="b"><b>' + esc(c.author || (c.by === "a" ? "홈퍼니싱" : "고객")) + '</b>' + esc(c.text) + '<small>' + esc(fmtDate((c.createdAt || "").slice(5, 16))) + '</small>' + (c.isNew ? ' <span class="tag n">새 글</span>' : '') + '</div>' + (ADMIN ? '<button class="btn sm ghost" data-hc="' + c.id + '" data-v="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? "보이기" : "숨기기") + '</button>' : '') + '</div>').join("") + '</div>';
   h += '<form class="cform" data-post="' + x.id + '"><input type="text" placeholder="' + (ADMIN ? "답글 달기" : "댓글 달기") + '" maxlength="1000" aria-label="댓글"><button class="btn sm pri">등록</button></form>';
-  if (ADMIN) h += '<div class="tools"><button class="btn sm" data-imp="' + x.id + '" data-v="' + (x.important ? 0 : 1) + '">' + (x.important ? "중요 해제" : "중요 표시") + '</button><button class="btn sm" data-edit="' + x.id + '">내용 고치기</button><button class="btn sm" data-hide="' + x.id + '" data-v="' + (x.hidden ? 0 : 1) + '">' + (x.hidden ? "다시 보이기" : "숨기기") + '</button></div>';
+  if (ADMIN) h += '<div class="tools"><button class="btn sm" data-imp="' + x.id + '" data-v="' + (x.important ? 0 : 1) + '">' + (x.important ? "중요 해제" : "중요 표시") + '</button><button class="btn sm" data-edit="' + x.id + '">내용 고치기</button><button class="btn sm" data-hide="' + x.id + '" data-v="' + (x.hidden ? 0 : 1) + '">' + (x.hidden ? "다시 보이기" : "숨기기") + '</button>'
+    + (isOwner() && (x.photos || []).length ? '<button class="btn sm" data-phdel="' + x.id + '">사진 지우기 (대표)</button>' : '') // v7: 대표만 · 드라이브 원본은 남음
+    + (isOwner() && (x.hiddenPhotos || []).length ? '<button class="btn sm" data-phback="' + x.id + '">지운 사진 ' + x.hiddenPhotos.length + '장 되살리기</button>' : '') + '</div>';
   return h + '</article>';
 }
 function footerHtml() {
@@ -608,11 +764,13 @@ function writeBox(box) {
     try {
       const author = $("#wAuthor").value.trim();
       if (!ADMIN) { NAME = author; try { localStorage.setItem("field_name", author); } catch (e) {} }
-      const photos = await uploadAll(pk.files, st, ADMIN);
+      const up = await uploadAll(pk.files, st, ADMIN), photos = up.ids;
       st.textContent = "저장 중…";
       if (ADMIN) await call("adminPost", { s: CODE, pw: PW, date: $("#wDate").value, stage: $("#wStage").value, kind: $("#wKindA").value, author, text, important: $("#wImp").checked, photos });
       else await call("post", { s: CODE, text, photos, author, kind: ($(".chip.on", box) || {}).textContent });
-      pk.clear(); toast("올렸어요"); await refresh();
+      pk.clear();
+      toast(up.miss ? "올렸어요 · 원본 " + up.miss + "장은 못 올렸어요 (화면용 사진은 올라감)" : ADMIN && photos.length && ORIG_OFF && API ? "올렸어요 · 서버가 v7 전이라 원본은 아직 따로 저장 안 돼요" : "올렸어요", up.miss || ORIG_OFF ? 4500 : 2200);
+      await refresh();
     } catch (e) { if (!ADMIN && /^PIN:/.test(e.message)) return openSite(); st.className = "status err"; st.textContent = e.message + " — 다시 눌러 주세요"; btn.disabled = false; }
   };
 }
@@ -628,13 +786,36 @@ function bindSite() {
     if (t.id === "pdfBtn") return makePdf();
     if (!ADMIN) return;
     try {
-      if (t.dataset.i != null && t.classList.contains("stg")) { const x = D.site.stages[+t.dataset.i]; x.s = (x.s + 1) % 3; t.className = "stg s" + x.s; t.textContent = x.n + " · " + ST_TXT[x.s]; $("#stgSave").hidden = false; const p = pct(D.site.stages); $(".pct").textContent = p + "%"; $(".prog .bar i").style.width = p + "%"; return; }
-      if (t.id === "stgSave") { t.disabled = true; await call("updateSite", { s: CODE, pw: PW, fields: { stages: D.site.stages } }); toast("진행률을 저장했어요"); t.hidden = true; t.disabled = false; return; }
+      if (t.dataset.done != null || t.dataset.undo != null) { // v9: 공정 [완료] · 되돌리기
+        const i = +(t.dataset.done != null ? t.dataset.done : t.dataset.undo), x = D.site.stages[i], undo = t.dataset.undo != null;
+        if (!x) return;
+        if (undo && !confirm(x.n + " 완료를 되돌릴까요?")) return;
+        const dEl = app.querySelector('[data-dd="' + i + '"]'), date = dEl ? dEl.value : "";
+        t.disabled = true;
+        await call("stageDone", { s: CODE, pw: PW, i, n: x.n, date, undo });
+        toast(undo ? x.n + " 완료를 되돌렸어요" : x.n + " 완료 · " + fmtDate(date || today()).slice(5)); return refresh();
+      }
+      if (t.dataset.pay != null || t.dataset.payundo != null) { // v9: [입금 완료] · 되돌리기
+        const undo = t.dataset.payundo != null, n = undo ? t.dataset.payundo : t.dataset.pay;
+        if (undo && !confirm(n + " 입금 완료를 되돌릴까요?")) return;
+        const dEl = [...app.querySelectorAll("[data-pdd]")].find(el => el.dataset.pdd === n), date = dEl ? dEl.value : "";
+        t.disabled = true;
+        await call("payDone", { s: CODE, pw: PW, n, date, undo });
+        toast(undo ? n + " 입금 완료를 되돌렸어요" : n + " 입금 완료 · " + fmtDate(date || today()).slice(5)); return refresh();
+      }
+      if (t.id === "schEdit") return schedForm(D.site);
       if (t.dataset.imp) { await call("editPost", { s: CODE, pw: PW, id: t.dataset.imp, important: t.dataset.v === "1" }); return refresh(); }
       if (t.dataset.hide) { if (t.dataset.v === "1" && !confirm("이 글을 고객 화면에서 숨길까요? (지워지지 않고 관리 화면에는 남아요)")) return; await call("editPost", { s: CODE, pw: PW, id: t.dataset.hide, hidden: t.dataset.v === "1" }); return refresh(); }
       if (t.dataset.hc) { await call("editComment", { s: CODE, pw: PW, id: t.dataset.hc, hidden: t.dataset.v === "1" }); return refresh(); }
       if (t.dataset.edit) { const p = D.posts.find(x => x.id === t.dataset.edit); editText(p); return; }
-    } catch (err) { toast(err.message); }
+      if (t.dataset.phdel) { const p = D.posts.find(x => x.id === t.dataset.phdel); if (p) photoDel(p); return; }
+      if (t.dataset.phback) {
+        const p = D.posts.find(x => x.id === t.dataset.phback); if (!p || !isOwner()) return;
+        t.disabled = true;
+        for (const id of p.hiddenPhotos || []) await call("hidePhoto", { s: CODE, pw: PW, id, hidden: false });
+        toast("사진을 되살렸어요"); return refresh();
+      }
+    } catch (err) { t.disabled = false; toast(/알 수 없는 요청/.test(err.message) ? "현장소통 서버가 옛 버전이에요 (Code.gs v9 배포 필요)" : err.message, 3500); }
   };
   app.onsubmit = async e => {
     const f = e.target.closest(".cform"); if (!f) return; e.preventDefault();
@@ -644,6 +825,26 @@ function bindSite() {
       await call("comment", Object.assign({ s: CODE, postId: f.dataset.post, text }, ADMIN ? { pw: PW, author: D.site.manager || "홈퍼니싱" } : { author: NAME || "고객" }));
       await refresh();
     } catch (err) { if (!ADMIN && /^PIN:/.test(err.message)) return openSite(); toast(err.message); b.disabled = false; }
+  };
+}
+/* v7: 사진 지우기 (대표만) — 고객·직원 화면에서만 빠지고 드라이브 원본·화면용 파일은 그대로. '되살리기'로 돌릴 수 있음 */
+async function photoDel(p) {
+  if (!isOwner()) { toast("대표만 지울 수 있어요"); return; }
+  try { await loadAllPhotos(p.photos || []); } catch (e) {}
+  const sel = new Set();
+  const m = modal('<h2>사진 지우기 (대표)</h2><div class="meta">지울 사진을 눌러 고르세요. 고객·직원 화면에서만 빠지고, 드라이브 원본은 그대로 남아요. 나중에 \'되살리기\'로 돌릴 수 있어요.</div>'
+    + '<div class="thumbs" id="pdG">' + p.photos.map(id => '<div data-pick="' + esc(id) + '" style="cursor:pointer">' + (PHOTO[id] ? '<img src="' + PHOTO[id] + '" alt="">' : '') + '</div>').join("") + '</div>'
+    + '<div class="status err" id="pdSt"></div><div class="row"><button class="btn" data-close>취소</button><button class="btn pri" id="pdGo" disabled>고른 사진 지우기</button></div>');
+  $("#pdG", m).onclick = e => {
+    const d = e.target.closest("[data-pick]"); if (!d) return; const id = d.dataset.pick;
+    if (sel.has(id)) sel.delete(id); else sel.add(id);
+    d.style.outline = sel.has(id) ? "3px solid var(--imp)" : ""; d.style.opacity = sel.has(id) ? ".6" : "";
+    $("#pdGo", m).disabled = !sel.size; $("#pdGo", m).textContent = sel.size ? "고른 사진 " + sel.size + "장 지우기" : "고른 사진 지우기";
+  };
+  $("#pdGo", m).onclick = async () => {
+    const b = $("#pdGo", m); b.disabled = true;
+    try { for (const id of sel) await call("hidePhoto", { s: CODE, pw: PW, id, hidden: true }); m.remove(); toast(sel.size + "장 지웠어요 · 드라이브 원본은 남아 있어요", 3000); refresh(); }
+    catch (e) { $("#pdSt", m).textContent = /알 수 없는 요청/.test(e.message) ? "현장소통 서버가 옛 버전이에요 (Code.gs v7 배포 필요)" : e.message; b.disabled = false; }
   };
 }
 function editText(p) {
@@ -663,8 +864,22 @@ function loginView(msg) {
   $("#app").innerHTML = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><section class="card" style="max-width:420px;margin:28px auto 0"><h2>관리 화면</h2><div class="meta">회사 직원만 들어갈 수 있어요.</div>'
     + '<button type="button" class="btn pri big" id="lgStaff" style="margin-top:14px;min-height:60px;font-size:18px">직원 번호로 들어가기</button><div class="meta" style="margin-top:6px">이름을 고르고 6자리 번호 · 이 기기는 30일 동안 기억해요</div>'
     + '<div class="lgsep">대표 전용</div><form id="lf"><label class="f">관리 비밀번호</label><input type="password" id="lp" autocomplete="current-password"><button class="btn big" style="margin-top:12px">들어가기</button><div class="status err" id="ls">' + esc(msg || "") + '</div></form>'
-    + '<div class="meta" style="margin-top:12px">인트라넷 \'관리 화면 열기\'(임시 열쇠)로 오면 번호 없이 바로 열려요.</div></section>';
+    + '<div class="meta" style="margin-top:12px">인트라넷 \'관리 화면 열기\'(임시 열쇠)로 오면 번호 없이 바로 열려요.</div>'
+    + (API ? '' : '<div class="lgsep">서버 연결 (대표만 · 한 번만)</div><form id="cf"><label class="f">현장소통 서버 주소 (…/exec)</label><input type="text" id="cU" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec"><label class="f">관리 비밀번호</label><input type="password" id="cP" autocomplete="current-password"><button class="btn big" style="margin-top:12px">연결하고 들어가기</button><div class="status err" id="cS"></div></form>')
+    + '</section>';
   $("#lgStaff").onclick = () => staffPick();
+  if (!API) $("#cf").onsubmit = async e => { // v7: 서버 주소 칸은 서버가 없을 때 관리 화면에만 · 대표 비밀번호가 맞아야 저장
+    e.preventDefault(); const u = $("#cU").value.trim(), pw = $("#cP").value.trim();
+    if (!API_RE.test(u)) { $("#cS").textContent = "주소 모양이 맞지 않아요 (https://script.google.com/macros/s/…/exec)"; return; }
+    if (!pw) { $("#cS").textContent = "관리 비밀번호를 넣어 주세요"; return; }
+    $("#cS").textContent = "확인 중…";
+    try {
+      const res = await fetch(u, { method: "POST", body: JSON.stringify({ a: "login", pw }), headers: { "Content-Type": "text/plain;charset=utf-8" } });
+      const r = await res.json(); if (!r.ok) throw new Error(r.error || "확인 실패");
+      try { localStorage.setItem("field_api", u); localStorage.setItem("field_pw", pw); } catch (x) {}
+      API = u; PW = pw; $("#pv").hidden = true; toast("서버를 연결했어요 · 이 기기는 다시 묻지 않아요", 3000); route();
+    } catch (x) { $("#cS").textContent = "연결하지 못했어요: " + String(x.message || x).slice(0, 80); }
+  };
   $("#lf").onsubmit = async e => {
     e.preventDefault(); const pw = $("#lp").value.trim(); if (!pw) return;
     try { await call("login", { pw }); if (TK) { TK = ""; try { sessionStorage.removeItem("field_tk"); } catch (x) {} } PW = pw; try { localStorage.setItem("field_pw", pw); } catch (x) {} route(); } catch (x) { $("#ls").textContent = x.message; }
@@ -779,11 +994,12 @@ async function pinPanel() {
 /* ============ 관리 화면 (계속) ============ */
 function adminBar() {
   const s = D.site;
-  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><a class="btn sm" href="?admin">← 현장 목록</a><button class="btn sm pri" id="abCopy">고객 주소 복사</button><button class="btn sm" id="abView">고객 화면 보기</button><button class="btn sm" id="abEdit">현장 정보·결제·확인 번호</button><button class="btn sm" id="abImp">드라이브에서 사진 불러오기</button>' + (API ? '<button class="btn sm" id="abFolder">사진 폴더</button>' : '') + '</div>';
+  $("#bar").innerHTML = '<div class="adminbar"><span>관리 모드</span><a class="btn sm" href="?admin">← 현장 목록</a><button class="btn sm pri" id="abCopy">고객 주소 복사</button><button class="btn sm" id="abView">고객 화면 보기</button><button class="btn sm" id="abEdit">현장 정보·결제·확인 번호</button><button class="btn sm" id="abSch">공정표 추가/수정</button><button class="btn sm" id="abImp">드라이브에서 사진 불러오기</button>' + (API ? '<button class="btn sm" id="abFolder">사진 폴더</button>' : '') + '</div>';
   $("#abImp").onclick = () => importForm(s);
   $("#abCopy").onclick = () => shareModal(s);
   $("#abView").onclick = () => window.open(custUrl(s.code), "_blank");
   $("#abEdit").onclick = () => siteForm(s);
+  $("#abSch").onclick = () => schedForm(s);
   if (API) $("#abFolder").onclick = async () => { try { const r = await call("folder", { s: CODE, pw: PW }); window.open(r.url, "_blank"); } catch (e) { toast(e.message); } };
 }
 function shareModal(s, fresh) {
@@ -794,7 +1010,7 @@ function shareModal(s, fresh) {
 }
 function siteForm(s, pre) {
   const isNew = !s;
-  s = s || Object.assign({ name: "", cust: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEF_STAGES.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
+  s = s || Object.assign({ name: "", cust: "", manager: "", phone: "", address: "", start: today(), end: "", stages: DEFS.map(n => ({ n, s: 0 })), payments: DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" })), pin: "", proj: "" }, pre || {});
   let stages = s.stages.map(x => Object.assign({}, x));
   let pays = (s.payments && s.payments.length ? s.payments : DEF_PAYS.map(n => ({ n, amt: 0, due: "", paid: false, date: "" }))).map(x => Object.assign({}, x));
   const m = modal('<h2>' + (isNew ? "현장 추가" : "현장 정보") + '</h2>'
@@ -806,7 +1022,7 @@ function siteForm(s, pre) {
     + '<div class="row"><div><label class="f">착공일</label><input type="date" id="fS" value="' + esc(s.start) + '"></div><div><label class="f">준공 예정일</label><input type="date" id="fE" value="' + esc(s.end) + '"></div></div>'
     + '<label class="f">🔒 고객 확인 번호 — 고객 휴대폰 번호 뒷자리 4자리 (비우면 주소만으로 열림)</label><input type="tel" id="fPin" inputmode="numeric" maxlength="4" value="' + esc(s.pin || "") + '" placeholder="예: 1234" autocomplete="off">'
     + '<label class="f">공정 단계 (누르면 빼기)</label><div class="chips" id="fSt"></div><div class="row"><input type="text" id="fAdd" placeholder="단계 추가 (예: 샷시)"><button class="btn" id="fAddB" style="flex:none">추가</button></div>'
-    + '<label class="f">공정표 — 단계별 시작일·끝일 (비워도 됨, 고객 화면 \'공정표\'에 보임)</label><div id="fSch"></div>'
+    + '<label class="f">공정표 — 단계별 시작일·끝일 (비워도 됨, 고객 화면 \'공정표\'에 보임)</label><button type="button" class="btn sm" id="fSchImp">엑셀 공정표 올리기 · 표 붙여넣기</button><div id="fSch"></div>'
     + '<label class="f">결제 일정 (고객 화면에 보임 · 계약 금액만, 원가·마진은 넣지 마세요)</label><div class="meta" style="display:grid;grid-template-columns:1.1fr 1.3fr 1.2fr auto;gap:6px"><span>구분</span><span>금액(원)</span><span>예정일</span><span>받음</span></div><div id="fPay"></div><button class="btn sm" id="fPayAdd" style="margin-top:6px">+ 결제 줄 추가</button>'
     + '<div class="status err" id="fErr"></div><div class="row" style="margin-top:10px"><button class="btn" data-close>취소</button><button class="btn pri" id="fGo">' + (isNew ? "만들기" : "저장") + '</button></div>');
   const draw = () => $("#fSt", m).innerHTML = stages.map((x, i) => '<button type="button" class="chip on" data-i="' + i + '">' + esc(x.n) + ' ×</button>').join("") || '<span class="meta">단계를 추가해 주세요</span>';
@@ -821,6 +1037,11 @@ function siteForm(s, pre) {
     m.querySelectorAll("[data-pp]").forEach(el => { const x = pays[+el.dataset.pp]; if (el.checked && !x.paid) x.date = today(); x.paid = el.checked; });
   };
   draw(); drawSch(); drawPay();
+  $("#fSchImp", m).onclick = () => { sync(); schedForm({ start: $("#fS", m).value, stages }, rows => { // v9: 읽은 공정표로 단계·날짜 채움 (같은 이름 단계의 진행 상태는 그대로)
+    const key = v => String(v || "").replace(/\s+/g, "").toLowerCase();
+    stages = rows.map(x => { const o = stages.find(y => key(y.n) === key(x.n)) || {}; return Object.assign({}, o, { n: x.n, a: x.a, b: x.b, s: o.s || 0 }); });
+    draw(); drawSch();
+  }); };
   $("#fSt", m).onclick = e => { const i = e.target.dataset.i; if (i != null) { sync(); stages.splice(+i, 1); draw(); drawSch(); } };
   $("#fAddB", m).onclick = () => { const v = $("#fAdd", m).value.trim(); if (v) { sync(); stages.push({ n: v, s: 0 }); $("#fAdd", m).value = ""; draw(); drawSch(); } };
   $("#fPayAdd", m).onclick = () => { sync(); pays.push({ n: "추가 결제", amt: 0, due: "", paid: false, date: "" }); drawPay(); };
@@ -839,8 +1060,62 @@ function siteForm(s, pre) {
         let on = false; try { const c = await call("adminSite", { s: r.code, pw: PW }); on = !!c.pinOn; } catch (x) {} // 서버가 실제로 번호를 저장했는지 (옛 서버면 false)
         shareModal(Object.assign({ code: r.code }, f, { pin: "", pinOn: on }), true); listView();
       }
-      else { await call("updateSite", { s: CODE, pw: PW, fields: f }); m.remove(); toast("저장했어요"); refresh(); }
-    } catch (e) { $("#fErr", m).textContent = e.message; $("#fGo", m).disabled = false; }
+      else { await call("updateSite", { s: CODE, pw: PW, fields: f, rev: s.rev || "" }); m.remove(); toast("저장했어요"); refresh(); } // v9: rev = 불러온 때 값 (그 사이 다른 기기가 바꾸면 서버가 거절)
+    } catch (e) {
+      if (/다른 기기에서 바뀌었어요/.test(e.message)) { m.remove(); toast(e.message + " — 최신 내용으로 다시 불러왔어요. 고친 내용을 한 번 더 넣어 주세요", 5000); refresh(); return; }
+      $("#fErr", m).textContent = e.message; $("#fGo", m).disabled = false;
+    }
+  };
+}
+/* v9: 공정표 추가/수정 — 엑셀(xlsx)·CSV 파일 또는 엑셀에서 복사한 표 붙여넣기 → 미리 보고 고친 뒤 저장.
+   onDone 이 있으면(현장 추가 창) 저장하지 않고 그 창에 넘김. 칸: 공정 · 시작일 · 종료일 (11/28 · 2026-11-28 · 11월 28일 모두 됨) */
+function schedForm(s, onDone) {
+  let rows = ((s && s.stages) || []).map(x => ({ n: x.n, a: x.a || "", b: x.b || "" }));
+  const m = modal('<h2>공정표 ' + (rows.length ? "수정" : "추가") + '</h2>'
+    + '<div class="meta">엑셀에서 공정표 칸(공정 · 시작일 · 종료일)을 복사해 붙여 넣거나, 파일(xlsx·csv)을 골라 주세요. 읽은 뒤 아래에서 고칠 수 있어요.</div>'
+    + '<textarea class="sraw" id="sxT" placeholder="공정\t시작일\t종료일\n철거\t11/28\t11/29\n설비\t11/30\t12/1"></textarea>'
+    + '<div class="row" style="margin-top:8px"><label class="btn sxpick" style="flex:1">파일 고르기 (xlsx·csv)<input type="file" id="sxF" accept=".xlsx,.csv,.txt,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden></label><button class="btn pri" id="sxRead" style="flex:1">표 읽기</button></div>'
+    + '<div class="status" id="sxSt"></div><label class="f">공정 · 시작일 · 종료일</label><div id="sxRows"></div><button class="btn sm" id="sxAdd" style="margin-top:6px">+ 공정 줄 추가</button>'
+    + '<div class="status err" id="sxErr"></div><div class="row" style="margin-top:10px"><button class="btn" data-close>취소</button><button class="btn pri" id="sxGo">' + (onDone ? "이대로 채우기" : "저장") + '</button></div>');
+  const draw = () => $("#sxRows", m).innerHTML = rows.map((x, i) => '<div class="sedit"><input type="text" data-en="' + i + '" value="' + esc(x.n) + '" maxlength="40" aria-label="공정"><input type="date" data-ea="' + i + '" value="' + esc(x.a) + '" aria-label="시작일"><input type="date" data-eb="' + i + '" value="' + esc(x.b) + '" aria-label="종료일"><button type="button" class="btn sm ghost" data-ex="' + i + '" aria-label="줄 빼기">×</button></div>').join("") || '<div class="meta">아직 공정이 없어요.</div>';
+  const sync = () => {
+    m.querySelectorAll("[data-en]").forEach(el => rows[+el.dataset.en].n = el.value.trim());
+    m.querySelectorAll("[data-ea]").forEach(el => rows[+el.dataset.ea].a = el.value);
+    m.querySelectorAll("[data-eb]").forEach(el => rows[+el.dataset.eb].b = el.value);
+  };
+  draw();
+  let file = null;
+  $("#sxF", m).onchange = e => { file = e.target.files[0] || null; $("#sxSt", m).textContent = file ? file.name + " — ‘표 읽기’를 눌러 주세요" : ""; };
+  $("#sxRows", m).onclick = e => { const i = e.target.dataset && e.target.dataset.ex; if (i != null) { sync(); rows.splice(+i, 1); draw(); } };
+  $("#sxAdd", m).onclick = () => { sync(); rows.push({ n: "", a: "", b: "" }); draw(); };
+  $("#sxRead", m).onclick = async () => {
+    const st = $("#sxSt", m), b = $("#sxRead", m), text = $("#sxT", m).value;
+    if (!file && !text.trim()) { st.className = "status err"; st.textContent = "표를 붙여 넣거나 파일을 골라 주세요"; return; }
+    if (file && file.size > 5 * 1024 * 1024) { st.className = "status err"; st.textContent = "파일이 너무 커요 (5MB까지)"; return; }
+    b.disabled = true; st.className = "status"; st.textContent = "읽는 중…";
+    try {
+      const d = { pw: PW, start: (s && s.start) || "" };
+      if (s && s.code) d.s = s.code;
+      if (file) { d.file = await readUrl(file); d.fileName = file.name; } else d.text = text;
+      const r = await call("schedParse", d);
+      if (!r.rows.length) throw new Error((r.warn || [])[0] || "공정 줄을 찾지 못했어요");
+      rows = r.rows.map(x => ({ n: x.n, a: x.a || "", b: x.b || "" })); draw();
+      st.textContent = r.rows.length + "개 공정을 읽었어요" + ((r.warn || []).length ? " · 확인: " + r.warn.slice(0, 3).join(" / ") : "");
+      file = null; $("#sxF", m).value = "";
+    } catch (e) { st.className = "status err"; st.textContent = OLD9(e); }
+    b.disabled = false;
+  };
+  $("#sxGo", m).onclick = async () => {
+    sync();
+    const list = rows.filter(x => x.n);
+    if (!list.length) { $("#sxErr", m).textContent = "공정을 하나 이상 넣어 주세요"; return; }
+    const bad = list.find(x => x.a && x.b && x.b < x.a); if (bad) { $("#sxErr", m).textContent = bad.n + ": 종료일이 시작일보다 앞이에요"; return; }
+    if (onDone) { onDone(list); m.remove(); return; }
+    $("#sxGo", m).disabled = true;
+    try {
+      const r = await call("schedSave", { s: s.code, pw: PW, stages: list });
+      m.remove(); toast(r.same ? "바뀐 것이 없어요" : "공정표를 저장했어요 (" + r.stages.length + "개 공정)"); refresh();
+    } catch (e) { $("#sxErr", m).textContent = OLD9(e); $("#sxGo", m).disabled = false; }
   };
 }
 /* 드라이브 현장 폴더에서 사진 불러오기 (원본은 읽기만) */
@@ -867,7 +1142,7 @@ async function listView() {
   $("#abOut").onclick = logout;
   if (isOwner()) $("#abPin").onclick = pinPanel; // v3: 대표(관리 비밀번호)만 · 서버도 대표만 받음
   let r;
-  try { r = await call("sites", { pw: PW }); } catch (e) { if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return listView(); $("#bar").innerHTML = ""; loginView(TK_END); return; } if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
+  try { r = await call("sites", { pw: PW }); setDefs(r); } catch (e) { if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); if (PW) return listView(); $("#bar").innerHTML = ""; loginView(TK_END); return; } if (/비밀번호|잠겼/.test(e.message)) return logout(); app.innerHTML = '<div class="gate">' + esc(e.message) + '</div>'; return; }
   const list = r.sites.sort((a, b) => (b.newCount - a.newCount) || (b.createdAt || "").localeCompare(a.createdAt || ""));
   let h = '<div class="brandbar"><b>HOME FURNISHING</b><span>현장 소통 · 관리</span></div><h1>현장 목록</h1><div class="meta">고객이 글·사진을 올리면 \'새 글\'이 붙어요.</div>';
   h += '<button class="btn pri big" id="addS" style="margin-top:12px">+ 현장 추가</button><div class="meta" style="margin-top:4px">인트라넷 프로젝트(계약 단계부터)는 ‘고객 공유 페이지 열기’를 누르면 자동으로 생겨요 · 이 버튼은 예외용</div>';
@@ -902,7 +1177,7 @@ async function makePdf() {
     const nPh = posts.reduce((a, p) => a + (p.photos || []).length, 0);
     const p = pct(s.stages);
     let h = '<div class="pd"><div class="cover"><div class="top">HOME FURNISHING · ártico studio</div><div class="k">CONSTRUCTION RECORD</div><h1>' + esc(s.name) + '</h1><div class="sub">현장 기록</div>'
-      + '<dl><dt>공사 기간</dt><dd>' + fmtDate(s.start) + ' ~ ' + fmtDate(s.end) + '</dd><dt>현장 담당</dt><dd>' + esc(s.manager) + (s.phone ? ' (' + esc(s.phone) + ')' : '') + '</dd>' + (s.address ? '<dt>주소</dt><dd>' + esc(s.address) + '</dd>' : '') + '<dt>기록</dt><dd>' + days.length + '일 · 글 ' + posts.length + '건 · 사진 ' + nPh + '장</dd><dt>작성일</dt><dd>' + fmtDate(today()) + '</dd></dl>'
+      + '<dl><dt>공사 기간</dt><dd>' + fmtDate(s.start) + ' ~ ' + fmtDate(s.end) + '</dd><dt>' + (ADMIN ? '현장 담당' : '현장 문의') + '</dt><dd>' + (ADMIN ? esc(s.manager) + (s.phone ? ' (' + esc(s.phone) + ')' : '') : CO_NAME + ' (' + CO_TEL + ')') + '</dd>' + (s.address ? '<dt>주소</dt><dd>' + esc(s.address) + '</dd>' : '') + '<dt>기록</dt><dd>' + days.length + '일 · 글 ' + posts.length + '건 · 사진 ' + nPh + '장</dd><dt>작성일</dt><dd>' + fmtDate(today()) + '</dd></dl>'
       + '<div class="ft">공간을 설계하는 홈퍼니싱 · 취향을 디자인하는 아르띠꼬 · 상담 1566-5904<br>ⓒ HOME FURNISHING CO. all rights reserved.</div></div>';
     h += '<div class="sec brk"><h2>공정 요약</h2><table><tr><th style="width:40%">단계</th><th>상태</th><th>기록된 날</th></tr>' + s.stages.map(x => {
       const ds = [...new Set(posts.filter(q => q.stage === x.n).map(q => q.date))].sort();
