@@ -1767,7 +1767,7 @@ const zoomFit=()=>Math.max(.25,Math.min(1,(vwNow()-4)/1100));
 function zoomGet(){const v=parseFloat(lsGet(ZK())||"");return isFinite(v)&&v>0?v:(document.body.classList.contains("pcview")?zoomFit():1)}
 function zoomSet(z,save){const pc=document.body.classList.contains("pcview");z=Math.max(pc?.25:.5,Math.min(3,Math.round(z*100)/100));const app=document.querySelector(".app");if(app)app.style.zoom=(isMob()||pc)&&z!==1?String(z):"";if(save)lsSet(ZK(),String(z));const zr=document.getElementById("zoomReset");if(zr){const base=pc?zoomFit():1;zr.hidden=Math.abs(z-base)<.02;zr.textContent=pc?"화면 폭 맞춤":"원래 크기 ("+Math.round(z*100)+"%)"}return z}
 let pinch=null;
-document.addEventListener("touchstart",e=>{if(e.touches.length!==2||!isMob()&&!document.body.classList.contains("pcview"))return;if(e.target.closest&&e.target.closest("canvas,#layer .veil"))return;const [a,b]=e.touches;pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,z:zoomGet(),cx:(a.clientX+b.clientX)/2,cy:(a.clientY+b.clientY)/2,sx:window.scrollX,sy:window.scrollY}},{passive:true});
+document.addEventListener("touchstart",e=>{if(e.touches.length!==2||!isMob()&&!document.body.classList.contains("pcview"))return;if(e.target.closest&&e.target.closest("canvas,#layer .veil,#saScroll"))return;const [a,b]=e.touches;pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,z:zoomGet(),cx:(a.clientX+b.clientX)/2,cy:(a.clientY+b.clientY)/2,sx:window.scrollX,sy:window.scrollY}},{passive:true});
 document.addEventListener("touchmove",e=>{if(!pinch||e.touches.length!==2)return;e.preventDefault();const [a,b]=e.touches;const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1;const z0=pinch.z,z=zoomSet(z0*d/pinch.d,false);pinch.cur=z;const k=z/z0;window.scrollTo((pinch.sx+pinch.cx)*k-pinch.cx,(pinch.sy+pinch.cy)*k-pinch.cy)},{passive:false});
 document.addEventListener("touchend",e=>{if(!pinch||e.touches.length>=2)return;if(pinch.cur)zoomSet(pinch.cur,true);pinch=null},{passive:true});
 function pcvApply(on){document.body.classList.toggle("pcview",!!on);const b=document.getElementById("pcvBtn");if(b){b.setAttribute("aria-pressed",on?"true":"false");b.textContent=on?"휴대폰 보기":"전체 보기"}zoomSet(zoomGet(),false)}
@@ -2011,6 +2011,134 @@ function renderCal(){calInit();const today=todayStr();if(!calDay)calDay=today;co
   else{const first=calDay.slice(0,8)+"01",fd=new Date(first+"T00:00:00");const start=calAdd(first,-((fd.getDay()+6)%7));const cells=[];for(let i=0;i<42;i++)cells.push(calAdd(start,i));
     body=`<h2 style="margin:6px 0">${esc(calDay.slice(0,4))}년 ${num(calDay.slice(5,7))}월</h2><div class="calgrid">${"월화수목금토일".split("").map(w=>`<div class="calhd">${w}</div>`).join("")}${cells.map(ds=>{const ev=L.filter(e=>calOn(e,ds));const out=ds.slice(0,7)!==calDay.slice(0,7);return `<div class="calcell${out?" calout":""}${ds===today?" caltoday":""}"><button type="button" class="callink" data-calday="${ds}">${num(ds.slice(8))}</button>${ev.slice(0,3).map(calChip).join("")}${ev.length>3?`<button type="button" class="callink" data-calday="${ds}">+${ev.length-3}</button>`:""}</div>`}).join("")}</div>`}
   return head+body+`<div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`}
+// ===== v0.99-55 C · 현장 일정 (전체 현장 일정 한 화면) — 다음 지시 2026-11-28 v11 C =====
+// 읽기 전용 보기: 각 프로젝트 공정표(sched)·공정 진행률(progLog)을 그대로 그림 — 따로 입력하지 않음. 새 저장 칸·입력 칸 없음, 저장 요청 없음, 금액 없음
+// 보는 범위: 각자 원래 볼 수 있는 프로젝트만(이름이 가려진 줄·지워진 줄 제외). 보기 설정(보기·기간·배율)만 이 기기에 기억(localStorage)
+// 휴대폰도 PC 와 같은 막대 화면(카드로 바꾸지 않음): 일정 상자 안에서만 가로 스크롤 · − 100% + 버튼 · 상자 안 두 손가락 확대·축소 · 왼쪽 현장 이름 열 고정
+const SA_LS="hf-sa",SA_NAME=170,SA_DW={2:56,4:30,8:22},SA_BACK={2:0,4:7,8:14},SA_LANE=28; // 날짜 칸 너비(px) · 4주·8주 보기는 지난 1주·2주부터 보여 줌(막 지난 늦은 공정이 보이게)
+let SA=(()=>{let o={};try{o=JSON.parse(lsGet(SA_LS)||"{}")||{}}catch(e){}return {view:o.view==="month"?"month":"week",weeks:[2,4,8].includes(o.weeks)?o.weeks:4,z:isFinite(o.z)&&o.z>0?+o.z:0,anchor:"",mgr:"",part:"",all:false,sx:0,jump:true}})();
+const saSave=()=>lsSet(SA_LS,JSON.stringify({view:SA.view,weeks:SA.weeks,z:SA.z}));
+const saToday=()=>kday(new Date().toISOString());
+const saDay=v=>{const s=String(v||"").slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(Date.parse(s+"T00:00:00Z"))?s:""};
+const saDiff=(a,b)=>Math.round((Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00:00:00Z"))/864e5);
+const saAdd=(s,n)=>new Date(Date.parse(s+"T00:00:00Z")+n*864e5).toISOString().slice(0,10);
+const saDow=s=>new Date(s+"T00:00:00Z").getUTCDay();
+const saMon=s=>saAdd(s,-((saDow(s)+6)%7)); // 그 주 월요일
+const saMd=s=>num(s.slice(5,7))+"/"+num(s.slice(8,10));
+const saZ=()=>SA.z||(isMob()?.75:1);
+const saStart=()=>saAdd(saMon(SA.anchor||saToday()),-SA_BACK[SA.weeks]); // 주간 막대의 첫 날 (월요일)
+// 늦은 공정 판정 — 대표 현황판(E · ceoCount)과 현장 일정(C)이 같이 씀: 공정표의 공정별 마지막 끝 날짜가 T(오늘)보다 앞인데 그 공정 진행률이 100% 가 아님.
+// 끝난 단계(준공·사후관리·종료·미계약 종료)와 전체 진행률 100% 현장은 없음. → [[공정, 끝 날짜], …] 끝 날짜 빠른 순
+function saLateProcs(p,T){const sc=(Array.isArray(p&&p.sched)?p.sched:[]).filter(x=>x&&x.proc&&x.start);if(!sc.length||CEO_DONE.includes(p.stage))return [];
+  const last={};sc.forEach(x=>{const e=String(x.end||x.start);if(!last[x.proc]||last[x.proc]<e)last[x.proc]=e});let st=null;try{st=pgState(p)}catch(e){}
+  if(st&&st.all>=100)return [];return Object.entries(last).filter(([proc,e])=>e<T&&!(st&&st.cur[proc]&&st.cur[proc].pct>=100)).sort((a,b)=>a[1].localeCompare(b[1]))}
+// 내가 볼 수 있는 프로젝트 (퇴근 일지의 '맞춘 현장'과 같은 기준)
+function saVisible(){return (S.projects||[]).filter(p=>p&&p.id&&!p.__masked&&!p.__deleted&&!p.__gone&&!p.trashed&&rowMine("projects",p)&&canSeeRow("projects",p))}
+const saMgrs=p=>[...new Set([p.mgr].concat((S.sites||[]).filter(s=>s&&s.pno&&s.pno===p.no).map(s=>s.mgr)).map(x=>String(x||"").trim()).filter(Boolean))]; // 프로젝트 담당 + 현장 담당
+const saSched=p=>(Array.isArray(p.sched)?p.sched:[]).map(x=>{if(!x||!x.proc)return null;const s=saDay(x.start);if(!s)return null;let e=saDay(x.end)||s;if(e<s)e=s;return {proc:String(x.proc),start:s,end:e}}).filter(Boolean).sort((a,b)=>a.start.localeCompare(b.start)||a.end.localeCompare(b.end));
+const saTitle=p=>String((p&&(p.title||p.custName||p.no))||"(이름 없음)");
+function saRows(){const T=saToday(),base=saVisible().filter(p=>SA.all||!CEO_DONE.includes(p.stage));
+  const mgrs=[...new Set(base.flatMap(saMgrs))].sort((a,b)=>a.localeCompare(b,"ko"));if(SA.mgr&&!mgrs.includes(SA.mgr))SA.mgr="";
+  const L=base.filter(p=>(!SA.mgr||saMgrs(p).includes(SA.mgr))&&(!SA.part||ceoPartOf(p.cat)===SA.part));const rows=[],none=[];
+  L.forEach(p=>{const sc=saSched(p);if(!sc.length){if(!CEO_DONE.includes(p.stage))none.push(p);return}let st=null;try{st=pgState(p)}catch(e){}const late=new Set(saLateProcs(p,T).map(x=>x[0]));
+    rows.push({p,mgrs:saMgrs(p),nlate:late.size,first:sc[0].start,last:sc.reduce((m,x)=>x.end>m?x.end:m,sc[0].end),items:sc.map(x=>{const c=st&&st.cur[x.proc];return Object.assign({pct:c?c.pct:null,late:late.has(x.proc)&&x.end<T},x)})})});
+  rows.sort((a,b)=>a.first.localeCompare(b.first)||String(a.p.no||"").localeCompare(String(b.p.no||"")));none.sort((a,b)=>String(b.no||"").localeCompare(String(a.no||"")));
+  return {T,rows,none,mgrs,late:rows.reduce((n,r)=>n+r.nlate,0)}}
+const saTip=x=>x.proc+" · "+saMd(x.start)+(x.end!==x.start?"~"+saMd(x.end):"")+(x.pct!=null?" · 진행 "+x.pct+"%":"")+(x.late?" · 늦음(끝 날짜 지남)":"");
+// ① 주간 막대: 세로 = 현장, 가로 = 날짜
+function saGantt(D){const T=D.T,N=SA.weeks*7,DW=SA_DW[SA.weeks],s0=saStart(),s1=saAdd(s0,N-1),ti=saDiff(s0,T),W="일월화수목금토",days=[],ms=[];
+  for(let i=0;i<N;i++){const d=saAdd(s0,i);days.push(d);const k=d.slice(0,7);if(!ms.length||ms[ms.length-1].k!==k)ms.push({k,n:1});else ms[ms.length-1].n++}
+  const now=ti>=0&&ti<N?`<i class="sa-now" style="left:${ti*DW+DW/2-1}px"></i>`:"",tw=`width:${N*DW}px;background-size:${DW}px 100%,${7*DW}px 100%`;
+  const hd=`<div class="sa-row sa-hd"><div class="sa-name sa-corner">현장 · 담당</div><div class="sa-hdt" style="width:${N*DW}px"><div class="sa-ms">${ms.map(m=>`<span style="width:${m.n*DW}px">${m.n*DW>=40?esc(num(m.k.slice(5))+"월"):""}</span>`).join("")}</div><div class="sa-ds">${days.map(d=>{const w=saDow(d);return `<span class="${w===0||w===6?"wk":""}${d===T?" td":""}" style="width:${DW}px">${num(d.slice(8))}${DW>=28?`<small>${W[w]}</small>`:""}</span>`}).join("")}</div></div></div>`;
+  const body=D.rows.map(r=>{const p=r.p,lanes=[];
+    const bars=r.items.filter(x=>x.end>=s0&&x.start<=s1).map(x=>{const a=Math.max(0,saDiff(s0,x.start)),b=Math.min(N-1,saDiff(s0,x.end));let ln=lanes.findIndex(e=>e<a);if(ln<0){ln=lanes.length;lanes.push(b)}else lanes[ln]=b;
+      return `<button type="button" class="sa-bar${x.late?" late":""}${x.pct>=100?" done":""}" data-sa="open" data-id="${esc(p.id)}" data-proc="${esc(x.proc)}" title="${esc(saTip(x))}" aria-label="${esc(saTitle(p)+" · "+saTip(x))}" style="left:${a*DW+1}px;width:${(b-a+1)*DW-2}px;top:${8+ln*SA_LANE}px;background:${gjColor(x.proc)}">${x.late?"! ":""}${esc(x.proc)}${x.pct!=null?" "+x.pct+"%":""}</button>`}).join("");
+    return `<div class="sa-row" data-sarow="${esc(p.id)}"><button type="button" class="sa-name" data-sa="open" data-id="${esc(p.id)}"><b>${esc(saTitle(p))}</b><small>${r.nlate?`<span class="sa-latep">늦음 ${r.nlate}</span> `:""}${esc((r.mgrs.join("·")||"담당 없음")+(p.stage?" · "+p.stage:""))}</small></button><div class="sa-track" style="${tw};height:${Math.max(46,16+Math.max(1,lanes.length)*SA_LANE)}px">${now}${bars||`<button type="button" class="sa-out" data-sa="goto" data-d="${r.last<s0?r.last:r.first}">이 기간에 공정 없음 · 공정표 ${esc(saMd(r.first))}~${esc(saMd(r.last))} 보기</button>`}</div></div>`}).join("");
+  return `<div class="sa-gantt" style="width:${SA_NAME+N*DW}px">${hd}${body}</div>`}
+// ② 한 달 달력: 날짜 칸에 그날 공정이 있는 현장
+const saOn=(D,ds)=>D.rows.map(r=>{const it=r.items.filter(x=>x.start<=ds&&ds<=x.end);return it.length?{r,it}:null}).filter(Boolean);
+const saChip=(e,big)=>{const p=e.r.p,procs=[...new Set(e.it.map(x=>x.proc))],late=e.it.some(x=>x.late);return `<button type="button" class="sa-chip${late?" late":""}${big?" big":""}" data-sa="open" data-id="${esc(p.id)}" style="border-left-color:${gjColor(p.id)}" title="${esc(saTitle(p)+" · "+e.it.map(saTip).join(", "))}"><b>${late?"! ":""}${esc(saTitle(p))}</b><small>${esc(procs.join("·"))}${big&&e.r.mgrs.length?" · 담당 "+esc(e.r.mgrs.join("·")):""}</small></button>`};
+function saMonth(D){const T=D.T,a=SA.anchor||T,ym=a.slice(0,7),first=ym+"-01",s0=saMon(first);let n=42;while(n>28&&saAdd(s0,n-7).slice(0,7)!==ym)n-=7;const cells=[];for(let i=0;i<n;i++)cells.push(saAdd(s0,i));
+  return `<div class="sa-month">${"월화수목금토일".split("").map(w=>`<div class="sa-mh">${w}</div>`).join("")}${cells.map(ds=>{const L=saOn(D,ds);return `<div class="sa-cell${ds.slice(0,7)!==ym?" out":""}${ds===T?" td":""}" data-saday="${ds}"><button type="button" class="sa-dn" data-sa="day" data-d="${ds}" aria-label="${esc(saMd(ds))} 공정 ${L.length}곳">${num(ds.slice(8))}</button>${L.slice(0,3).map(e=>saChip(e)).join("")}${L.length>3?`<button type="button" class="sa-more" data-sa="day" data-d="${ds}">+${L.length-3}</button>`:""}</div>`}).join("")}</div>`}
+function saInner(){const D=saRows(),T=D.T,a=SA.anchor||T,wk=SA.view==="week",z=saZ();let rng;
+  if(wk){const s0=saStart(),s1=saAdd(s0,SA.weeks*7-1);rng=num(s0.slice(0,4))+"년 "+num(s0.slice(5,7))+"월 "+num(s0.slice(8))+"일 ~ "+num(s1.slice(5,7))+"월 "+num(s1.slice(8))+"일"}else rng=num(a.slice(0,4))+"년 "+num(a.slice(5,7))+"월";
+  const sel=(k,v,opts,lab)=>`<select data-saf="${k}" aria-label="${lab}">${opts.map(o=>`<option value="${esc(o[0])}"${String(o[0])===String(v)?" selected":""}>${esc(o[1])}</option>`).join("")}</select>`;
+  return `<div class="head"><div><h1>현장 일정</h1><p>진행 중인 모든 현장의 공정을 한 화면에 · 날짜는 각 프로젝트 공정표에서 자동으로 가져와요 (여기서는 보기만) · 막대나 현장 이름을 누르면 그 프로젝트가 열려요</p></div></div>
+  <div class="sa-tools"><div class="sa-seg" role="group" aria-label="보기"><button type="button" data-sa="view" data-v="week" aria-pressed="${wk}">주간 막대</button><button type="button" data-sa="view" data-v="month" aria-pressed="${!wk}">한 달 달력</button></div>
+   <button type="button" class="btn" data-sa="prev" aria-label="이전">‹ 이전</button><button type="button" class="btn" data-sa="today">오늘</button><button type="button" class="btn" data-sa="next" aria-label="다음">다음 ›</button>
+   ${wk?sel("weeks",SA.weeks,[[2,"2주"],[4,"4주"],[8,"8주"]],"기간"):""}
+   ${sel("mgr",SA.mgr,[["","담당자 전체"]].concat(D.mgrs.map(m=>[m,m])),"담당자")}
+   ${sel("part",SA.part,[["","파트 전체"]].concat(CEO_PARTS.map(x=>[x[0],x[1]])).concat([["etc","그 밖·구분 없음"]]),"파트")}
+   <label class="sa-chk"><input type="checkbox" data-saf="all"${SA.all?" checked":""}> 끝난 현장도 보기</label>
+   <span class="sa-zoomer" role="group" aria-label="확대·축소"><button type="button" class="btn" data-sa="zout" aria-label="축소">−</button><button type="button" class="btn" data-sa="zreset" id="saZl" aria-label="배율 (누르면 원래 크기)">${Math.round(z*100)}%</button><button type="button" class="btn" data-sa="zin" aria-label="확대">＋</button></span></div>
+  <p class="sa-sum"><b id="saRng">${esc(rng)}</b> · 현장 <b>${D.rows.length}</b>곳${D.late?` · <span class="sa-latetxt">늦은 공정 ${D.late}개</span>`:""}${D.none.length?` · 공정표 없음 ${D.none.length}곳`:""}</p>
+  ${D.rows.length?`<div class="sa-scroll" id="saScroll" data-view="${SA.view}" tabindex="0" aria-label="현장 일정 ${wk?"주간 막대":"한 달 달력"} (가로로 밀어 보세요)"><div class="sa-zoom" id="saZoom" style="zoom:${z}">${wk?saGantt(D):saMonth(D)}</div></div>
+  <p class="hint sa-legend"><span class="sa-lg now"></span>오늘 <span class="sa-lg late"></span>빨간 테두리 = 끝 날짜가 지났는데 100%가 아닌 공정 <span class="sa-lg done"></span>흐린 막대 = 100% 끝난 공정 · 휴대폰은 상자 안에서 옆으로 밀고, 두 손가락이나 − ＋ 로 크기를 바꿔요</p>`
+  :`<div class="empty">${SA.mgr||SA.part?"고른 조건에 맞는":"진행 중인"} 현장 가운데 공정표가 들어 있는 곳이 없어요 · 프로젝트를 열어 공정표를 올리면 여기에 자동으로 보여요</div>`}
+  ${D.none.length?`<section class="card sa-none"><h2 style="margin:0 0 4px">공정표 없음 <small class="muted">${D.none.length}곳</small></h2><p class="hint" style="margin:0 0 8px">진행 중인데 공정표가 아직 없는 현장이에요 · 눌러서 프로젝트를 열고 공정표(엑셀·PDF·사진)를 올리면 위에 자동으로 그려져요</p><div class="chips">${D.none.map(p=>`<button type="button" class="btn" data-sa="open" data-id="${esc(p.id)}">${esc(saTitle(p))}<small class="muted"> · ${esc((saMgrs(p).join("·")||"담당 없음")+(p.stage?" · "+p.stage:""))}</small></button>`).join("")}</div></section>`:""}
+  <div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`}
+function renderSchedAll(){setTimeout(saAfter,0);return `<div id="saRoot">${saInner()}</div>`}
+function saDraw(){const r=document.getElementById("saRoot");if(!r)return;r.innerHTML=saInner();saAfter()}
+// 그린 뒤: 가로 위치 되살리기 (자료가 바뀌어 화면이 다시 그려져도 보던 자리 그대로) · 처음·'오늘'·기간 바꿈 때는 오늘이 보이는 자리로
+function saAfter(){const sc=document.getElementById("saScroll");if(!sc)return;
+  if(SA.jump){SA.jump=false;let x=0;if(SA.view==="week"){const T=saToday(),ti=saDiff(saStart(),T);if(ti>0&&ti<SA.weeks*7)x=Math.max(0,(ti-6)*SA_DW[SA.weeks]*saZ())}else{const c=sc.querySelector(".sa-cell.td");if(c)x=Math.max(0,c.offsetLeft*saZ()-40)}SA.sx=x}
+  sc.scrollLeft=SA.sx||0;sc.onscroll=()=>{SA.sx=sc.scrollLeft}}
+function saZoomSet(z,save,cx){z=Math.max(.4,Math.min(2,Math.round(z*100)/100));const z0=saZ(),sc=document.getElementById("saScroll"),el=document.getElementById("saZoom"),lb=document.getElementById("saZl");SA.z=z;
+  if(el)el.style.zoom=String(z);if(lb)lb.textContent=Math.round(z*100)+"%";if(sc&&z0>0){const c=cx==null?sc.clientWidth/2:cx;sc.scrollLeft=Math.max(0,(sc.scrollLeft+c)*z/z0-c);SA.sx=sc.scrollLeft}if(save)saSave();return z}
+function saOpen(id){if(!(S.projects||[]).some(x=>x.id===id)){toast("그 사이 없어졌거나 옮겨진 프로젝트예요");return}const v=document.getElementById("saVeil");if(v)v.remove();openSheet("projects",id);
+  setTimeout(()=>{try{const h=[...document.querySelectorAll("#layer h4")].find(e=>/공정표/.test(e.textContent||""));if(h&&h.scrollIntoView)h.scrollIntoView({block:"start"})}catch(e){}},350)}
+function saDayOpen(ds){const D=saRows(),L=saOn(D,ds),old=document.getElementById("saVeil");if(old)old.remove();const v=document.createElement("div");v.className="veil";v.id="saVeil";const ttl=num(ds.slice(5,7))+"월 "+num(ds.slice(8))+"일 ("+"일월화수목금토"[saDow(ds)]+") 공정";
+  v.innerHTML=`<div class="sheet sa-daysheet" role="dialog" aria-label="${esc(ttl)}" style="max-width:520px"><h3 style="margin:0;display:flex;justify-content:space-between;gap:8px;align-items:center">${esc(ttl)} <button type="button" class="btn" data-sa="close">닫기</button></h3>${L.length?L.map(e=>saChip(e,1)).join(""):`<div class="empty">이 날은 공정이 없어요</div>`}</div>`;document.body.appendChild(v)}
+function saNav(){const nv=document.getElementById("nav");if(!nv||nv.querySelector('a[href="#schedall"]'))return;const a=document.createElement("a");a.href="#schedall";if(route()==="schedall")a.setAttribute("aria-current","page");a.innerHTML="<span>현장 일정</span>";const c=nv.querySelector('a[href="#calendar"]')||nv.querySelector('a[href="#home"]');if(c)c.after(a);else nv.prepend(a)}
+document.addEventListener("click",e=>{if(e.target&&e.target.id==="saVeil"){e.target.remove();return}const t=e.target&&e.target.closest&&e.target.closest("[data-sa]");if(!t)return;const a=t.dataset.sa,T=saToday(),cur=SA.anchor||T;e.preventDefault();
+  if(a==="close"){const v=document.getElementById("saVeil");if(v)v.remove();return}
+  if(a==="open"){saOpen(t.dataset.id);return}
+  if(a==="day"){saDayOpen(t.dataset.d);return}
+  if(a==="zin"||a==="zout"){saZoomSet(saZ()+(a==="zin"?.1:-.1),true);return}
+  if(a==="zreset"){saZoomSet(isMob()?.75:1,false);SA.z=0;saSave();return}
+  if(a==="view"){if(SA.view===t.dataset.v)return;SA.view=t.dataset.v==="month"?"month":"week";SA.jump=true;saSave()}
+  else if(a==="today"){SA.anchor="";SA.jump=true}
+  else if(a==="goto"){SA.anchor=saDay(t.dataset.d)||"";SA.sx=0}
+  else if(a==="prev"||a==="next"){const k=a==="next"?1:-1;if(SA.view==="week")SA.anchor=saAdd(saMon(cur),k*7*SA.weeks/2);else{const y=+cur.slice(0,4),m=+cur.slice(5,7)-1+k;SA.anchor=new Date(Date.UTC(y,m,1)).toISOString().slice(0,10)}SA.sx=0}
+  else return;saDraw()});
+document.addEventListener("change",e=>{const t=e.target,k=t&&t.dataset&&t.dataset.saf;if(!k)return;
+  if(k==="weeks"){SA.weeks=[2,4,8].includes(+t.value)?+t.value:4;SA.jump=true;saSave()}else if(k==="mgr")SA.mgr=t.value;else if(k==="part")SA.part=t.value;else if(k==="all")SA.all=!!t.checked;else return;saDraw()});
+// 일정 상자 안 두 손가락 확대·축소 (화면 전체 배율을 바꾸는 기존 두 손가락 처리는 이 상자 안에서는 쉬게 함) · PC 는 Ctrl+휠
+let saPinch=null;const saBox=e=>e.target&&e.target.closest&&e.target.closest("#saScroll");
+document.addEventListener("touchstart",e=>{if(e.touches.length!==2)return;const sc=saBox(e);if(!sc)return;const [a,b]=e.touches;saPinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,z:saZ(),cx:(a.clientX+b.clientX)/2-sc.getBoundingClientRect().left}},{passive:true});
+document.addEventListener("touchmove",e=>{if(!saPinch||e.touches.length!==2)return;e.preventDefault();const [a,b]=e.touches;saZoomSet(saPinch.z*(Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1)/saPinch.d,false,saPinch.cx)},{passive:false});
+document.addEventListener("touchend",e=>{if(!saPinch||e.touches.length>=2)return;saPinch=null;saSave()},{passive:true});
+document.addEventListener("wheel",e=>{if(!e.ctrlKey||!saBox(e))return;e.preventDefault();saZoomSet(saZ()+(e.deltaY<0?.1:-.1),true)},{passive:false});
+(function(){const st=document.createElement("style");st.id="saCss";st.textContent=`
+#saRoot{min-width:0;max-width:100%;display:grid;gap:0}#saRoot>*{min-width:0}
+.sa-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 8px}.sa-tools select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);max-width:100%}
+.sa-seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.sa-seg button{border:0;background:var(--panel);color:var(--ink);padding:7px 12px;font:inherit;cursor:pointer}.sa-seg button[aria-pressed="true"]{background:#203864;color:#fff;font-weight:700}
+.sa-chk{display:inline-flex;align-items:center;gap:6px;font-size:14px}.sa-chk input{width:18px;height:18px}.sa-zoomer{display:inline-flex;gap:4px;margin-left:auto}.sa-zoomer .btn{min-width:40px;justify-content:center;text-align:center}
+.sa-sum{margin:0 0 8px;font-size:14px;color:var(--sub)}.sa-sum b{color:var(--ink)}.sa-latetxt{color:var(--bad);font-weight:700}.sa-latep{color:var(--bad);font-weight:700;border:1px solid var(--bad);border-radius:999px;padding:0 5px;background:var(--bad-bg)}
+.sa-scroll{max-width:100%;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.sa-gantt{font-size:13px}.sa-row{display:flex;border-top:1px solid var(--line)}.sa-row.sa-hd{border-top:0}
+.sa-name{all:unset;box-sizing:border-box;position:sticky;left:0;z-index:3;flex:0 0 ${SA_NAME}px;width:${SA_NAME}px;background:var(--panel);border-right:2px solid var(--line);padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
+.sa-name b{font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}.sa-name small{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-name:focus-visible,.sa-bar:focus-visible,.sa-chip:focus-visible{outline:3px solid var(--yellow);outline-offset:-3px}.sa-corner{cursor:default;font-weight:700;font-size:12px;color:var(--sub);z-index:4}
+.sa-hdt{flex:0 0 auto}.sa-ms,.sa-ds{display:flex}.sa-ms span{box-sizing:border-box;font-weight:700;font-size:12px;padding:3px 6px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden}
+.sa-ds span{box-sizing:border-box;text-align:center;font-size:11px;line-height:1.15;padding:2px 0 3px;border-left:1px solid var(--line);color:var(--ink)}.sa-ds span small{display:block;font-size:10px;color:var(--sub)}.sa-ds span.wk{background:var(--soft)}.sa-ds span.td{background:var(--yellow);color:#203864;font-weight:900}.sa-ds span.td small{color:#203864}
+.sa-track{position:relative;flex:0 0 auto;background-image:linear-gradient(to right,var(--line) 1px,transparent 1px),linear-gradient(to right,transparent 71.4%,rgba(128,128,128,.10) 71.4%)}
+.sa-now{position:absolute;top:0;bottom:0;width:2px;background:var(--yellow);box-shadow:0 0 0 1px rgba(32,56,100,.35);z-index:1;pointer-events:none}
+.sa-bar{all:unset;box-sizing:border-box;position:absolute;height:22px;line-height:22px;border-radius:5px;color:#fff;font-size:12px;font-weight:700;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;z-index:2}
+.sa-bar.done{opacity:.5}.sa-bar.late{border:2px solid #D50000;line-height:18px;box-shadow:inset 0 0 0 1.5px #fff}
+.sa-out{all:unset;position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--sub);text-decoration:underline;cursor:pointer;white-space:nowrap;padding:8px 0}
+.sa-month{display:grid;grid-template-columns:repeat(7,128px);gap:2px;padding:4px;width:max-content}.sa-mh{font-size:12px;color:var(--sub);text-align:center;padding:4px 0}
+.sa-cell{min-height:104px;border:1px solid var(--line);border-radius:8px;padding:4px;min-width:0;overflow:hidden;background:var(--panel)}.sa-cell.out{opacity:.45}.sa-cell.td{outline:2px solid var(--yellow)}
+.sa-dn,.sa-more{all:unset;cursor:pointer;font-weight:700;font-size:13px;padding:2px 6px;border-radius:6px;color:var(--ink)}.sa-more{color:var(--navy);text-decoration:underline;font-size:12px}
+.sa-chip{all:unset;box-sizing:border-box;display:block;width:100%;border:1px solid var(--line);border-left:6px solid #546E7A;background:var(--soft);border-radius:6px;padding:2px 5px;margin:2px 0;font-size:12px;cursor:pointer;color:var(--ink);overflow:hidden}
+.sa-chip b,.sa-chip small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sa-chip small{font-size:11px;color:var(--sub)}.sa-chip.late{border-top-color:#D50000;border-right-color:#D50000;border-bottom-color:#D50000;border-width:2px 2px 2px 6px}
+.sa-chip.big{padding:10px 12px;font-size:15px;min-height:44px}.sa-chip.big b,.sa-chip.big small{white-space:normal}.sa-chip.big small{font-size:13px}
+.sa-legend{margin:6px 0 14px;line-height:1.9}.sa-lg{display:inline-block;width:18px;height:12px;border-radius:3px;vertical-align:-1px;margin:0 4px 0 10px;background:#00838F}.sa-lg.now{width:3px;background:var(--yellow);box-shadow:0 0 0 1px rgba(32,56,100,.35);margin-left:0}.sa-lg.late{border:2px solid #D50000;box-sizing:border-box}.sa-lg.done{opacity:.5}
+.sa-none .btn small{font-weight:400}
+@media (max-width:860px){
+  body:not(.navall):not(.pcview) .nav>a[href="#schedall"]{display:flex!important}
+  .sa-tools .btn,.sa-tools select,.sa-seg button,.sa-none .btn,.sa-daysheet .btn{min-height:44px}.sa-chk{min-height:44px}.sa-zoomer{margin-left:0}.sa-zoomer .btn{min-width:48px}}`;document.head.appendChild(st)})();
+// ===== v0.99-55 C 끝 =====
 // 공정표 → 공용 캘린더 (2026-11-05 지시 · 2026-11-13 3번에서 바꿈): 공정표 파일을 읽어 '공정 | 시작 | 끝' 확인 창 → '캘린더에 등록'을 눌러야 들어감 (추측으로 바로 넣지 않음)
 // 엑셀: 날짜 머리 줄(11/2·2026-11-02·날짜 칸·1~31)과 간트 막대(색칠 칸·■ 같은 표시)를 직접 읽음 / PDF·사진(또는 엑셀을 못 읽으면): 페이지 AI(sample)로 읽어 같은 확인 창
 // 다시 첨부하면 기존 등록과 맞춰 갱신: 같은 공정은 같은 일정 문서를 고침(두 번 등록 안 함) · 그대로면 쓰지 않음 · 사람이 캘린더에서 고친 일정은 물어봄 · 없어진 공정은 지우지 않고 숨김(gjOff)
@@ -3885,7 +4013,7 @@ async function resolveNames(){
 
 // ===== 화면 =====
 const onlyMine=()=>mode==="shared"&&!me.admin&&((myStaff()||{}).scope==="담당 건만"||isTeam(myStaff()));
-function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="vlog"&&mode==="shared")return h;/* 퇴근 일지: 대표=직원별 요약 · 직원=본인 것만 */if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(h==="fdash"&&me.admin)return h;/* 경영 대시보드는 대표만 (대표 지시 2026-11-13 5번) */if(["fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks"&&me.admin)return h;/* 빈칸 목록은 대표만 (5·11번) */if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="ceo"&&ceoOk())return h;/* v0.99-53 E 대표 현황판: 대표만 */if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
+function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="schedall")return h;/* v0.99-55 C 현장 일정: 전 직원 · 읽기 전용 */if(h==="vlog"&&mode==="shared")return h;/* 퇴근 일지: 대표=직원별 요약 · 직원=본인 것만 */if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(h==="fdash"&&me.admin)return h;/* 경영 대시보드는 대표만 (대표 지시 2026-11-13 5번) */if(["fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks"&&me.admin)return h;/* 빈칸 목록은 대표만 (5·11번) */if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="ceo"&&ceoOk())return h;/* v0.99-53 E 대표 현황판: 대표만 */if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
 function renderNav(){
   const r=route();
   const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||apVis().filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
@@ -3905,7 +4033,7 @@ function renderNav(){
     if(canFcost())h+=`<a href="#fcost" ${r==="fcost"?'aria-current="page"':""}><span>현장 원가 (주간)</span></a>`;
     h+=`<a href="#recv" ${r==="recv"?'aria-current="page"':""}><span>미수금</span></a>`;}
   if(!me.admin&&canSignPage())h+=`<a href="#mysign" ${r==="mysign"?'aria-current="page"':""}><span>내 사인 등록</span></a>`;
-  const nv=$("#nav");if(nv)nv.innerHTML=h;
+  const nv=$("#nav");if(nv)nv.innerHTML=h;try{saNav()}catch(e){} /* v0.99-55 C 현장 일정 메뉴 (홈·공용 캘린더 다음) */
 }
 const pjOf=no=>no?S.projects.find(p=>p.no===no):null;
 // 프로젝트 번호 겹침 막기 (2026-11-06 교문초 건): 프로젝트 카드뿐 아니라 견적·현장·A/S에 이미 적힌 번호도 사용 중으로 봄
@@ -5398,7 +5526,7 @@ function render(){try{siteAutoFix()}catch(e){}try{setTimeout(()=>{phRefresh();pg
   const banner=pvBar()+pracBanner()+(mode==="shared"&&!me.admin&&["home","projects","customers","quotes","sites"].includes(r)?syncNoteHTML():"");
   const focusQ=document.activeElement&&document.activeElement.id==="q",focusG=document.activeElement&&document.activeElement.id==="gs";
   document.body.classList.toggle("consulting",r==="consult"&&!!CS);document.body.classList.toggle("cs-cust",r==="consult"&&!!CS&&CS.cust);
-  $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="drvchg"?renderDrvchg():r==="ceo"?renderCeo():r==="preview"?renderPreview():r==="mysign"?renderMysign():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="vlog"?renderVlog():r==="goal"?renderGoal():r==="calendar"?renderCal():renderModule(r));
+  $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="drvchg"?renderDrvchg():r==="ceo"?renderCeo():r==="preview"?renderPreview():r==="mysign"?renderMysign():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="vlog"?renderVlog():r==="goal"?renderGoal():r==="calendar"?renderCal():r==="schedall"?renderSchedAll():renderModule(r));
   if(focusG){const g=$("#gs");if(g){g.focus();g.setSelectionRange(g.value.length,g.value.length)}}
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
 }
@@ -6127,8 +6255,7 @@ function ceoCount(){const now=Date.now(),at=new Date(now).toISOString(),T=kday(a
     if(CEO_ACTIVE.includes(p.stage))add(B.active,{c:"projects",id:p.id,t:nm(p),s:(p.no||"")+" · "+(p.stage||"")+(p.mgr?" · "+p.mgr:"")});
     const sc=(Array.isArray(p.sched)?p.sched:[]).filter(x=>x&&x.proc&&x.start);if(!sc.length||CEO_DONE.includes(p.stage))return;
     const td=sc.filter(x=>String(x.start)<=T&&T<=String(x.end||x.start));if(td.length)add(B.today,{c:"projects",id:p.id,t:nm(p),s:[...new Set(td.map(x=>x.proc))].join(" · ")});
-    const last={};sc.forEach(x=>{const e=String(x.end||x.start);if(!last[x.proc]||last[x.proc]<e)last[x.proc]=e});let st=null;try{st=pgState(p)}catch(e){}
-    if(st&&st.all>=100)return;const late=Object.entries(last).filter(([proc,e])=>e<T&&!(st&&st.cur[proc]&&st.cur[proc].pct>=100)).sort((a,b)=>a[1].localeCompare(b[1]));if(!late.length)return;
+    const late=saLateProcs(p,T);if(!late.length)return; /* v0.99-55 C: 늦은 공정 판정식을 공용 함수로 (현장 일정과 같은 기준) */
     const dd=e=>Math.max(1,Math.round((Date.parse(T)-Date.parse(e))/864e5));
     add(B.late,{c:"projects",id:p.id,t:nm(p),b:1,end:late[late.length-1][1],days:dd(late[0][1]),s:late.slice(0,4).map(([proc,e])=>proc+" "+e.slice(5).replace("-","/")+" 끝 예정 · "+dd(e)+"일 지남").join(", ")+(late.length>4?" 외 "+(late.length-4)+"개":"")})});
   // 2) 결재 대기 (대표 차례) · 그중 CEO_AP_SLOW_DAYS 일 넘은 것 = 미루는 결재
@@ -7732,6 +7859,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{vl:()=>VL&&JSON.parse(JSON.stringify(Object.assign({},VL,{ctl:null}))),vlv:()=>JSON.parse(JSON.stringify(VLV)),vlb:()=>JSON.parse(JSON.stringify(VLB)),vlbLoad:()=>vlbLoad(true),vlOpen,vlPjs:()=>vlPjs().map(p=>p.id),vlSens,vlMask,vlNoMoney,vlPrompt:t=>vlPrompt(t),vlMatch:n=>{const p=vlMatch(n,vlPjs());return p?p.id:null},vlDenied:()=>vlDenied,vlNoAI:()=>vlNoAI,vlLeft:n=>{if(VL)VL.left=n}});
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{gs:()=>gsLast,sc:()=>scLast,rf:()=>rfLast,rfNext,rfList,rfUntil,refCodeOf,scInfo,scTexts,gsNow,gsCfg,routeAuto:typeof routeAuto==="function"?routeAuto:null,fstKey,fstSignJs,fstSign,fstCan,hubShareHTML,fsData,fsSched,qaBuild,qaPlan,qaDoc,qaFileName,hfro,qaInit,qaP:()=>QA_P,qaSheet:()=>sheet&&{qa:sheet.qa,qe:sheet.qe,costPlain:!!sheet.costPlain},vat10,withVat,cpg:()=>CPG,cmaskNative:()=>CMASK_NATIVE,gnQr,gnUrl,gnCoupon,gnTelOf,gnCfg,gnDefaults,gnBtnHTML,gnOpen,gnMake,gnPaper,gn:()=>GN&&JSON.parse(JSON.stringify({f:GN.f,coupon:GN.coupon,pid:GN.pid,logged:GN.logged,last:GN.last||null})),gnCanvas:()=>GN?gnMake().canvas:null,gnDefaults,gnUnit,gnStatRows,gnStatPull,gnStatSees,keepLog:()=>KEEP_LOG}); // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{ceo:()=>CEO.snap&&JSON.parse(JSON.stringify(CEO.snap)),ceoSlotAt,ceoStale,ceoCount,ceoRecount,ceoPartOf,ceoAlerts:()=>ceoAlerts(),ceoRed:()=>ceoRed(()=>false)}); // v0.99-53 E 시험 손잡이
+  if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{sa:()=>JSON.parse(JSON.stringify(SA)),saRows:()=>{const D=saRows();return {T:D.T,late:D.late,mgrs:D.mgrs,none:D.none.map(p=>p.id),rows:D.rows.map(r=>({id:r.p.id,mgrs:r.mgrs,items:r.items}))}},saLateProcs:(id,T)=>saLateProcs((S.projects||[]).find(p=>p.id===id),T||saToday()),saZoomSet}); // v0.99-55 C 시험 손잡이
   if(me.admin)db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
   render();
 })();
