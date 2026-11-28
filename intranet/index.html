@@ -2222,6 +2222,8 @@ document.addEventListener("paste",e=>{const z=e.target.closest&&e.target.closest
 // 알림: 확정 뒤 새 버전·확정본 바뀜·확정 취소 → 그 프로젝트 담당(프로젝트·현장 담당)에게 인트라넷 알림(notify)만. 문자·메일 없음
 const SPP="work/all/spec",SPM="acct/_spec/s",SPD={},SP_DRAFT={},SP_UPL={},SP_OPEN={},SP_AUTO={};let spReady=false,spSubOn=false,spSubTry=0,spMir=null,spMirBusy=false,spFixN=0;
 const SP_CONF=["최윤수","이봄이","정진혁"];
+// 고객 화면(현장소통)으로 확정본 보내기 스위치: 현장소통 서버 Code.gs v10 · 화면 v10 이 배포된 뒤 true 로 (false 면 보내기·내리기 링크 대신 안내만, ‘현장 전달’ 기록도 안 남김)
+const SPEC_FIELD_LIVE=false;
 const SP_COLS=[["space","공간",20],["item","품목",30],["prod","제품명·색상",60],["vendor","업체",30],["note","비고",60]];
 const spWho=()=>me.admin?"최윤수":myName();
 const spOn=()=>!!db&&mode==="shared";
@@ -2234,8 +2236,12 @@ async function spMirror(){if(!me.admin||PV||!spOn()||spMirBusy||!spReady)return;
   try{if(!spMir){const m={};const g=await db.collection(SPM).get();g.docs.forEach(d=>{m[d.id]=d.data()});spMir=m}
     for(const id of Object.keys(SPD)){const o=raw(SPD[id]);if(!spMir[id]){await db.collection(SPM).doc(id).set(o);spMir[id]=o}else if(stableJs(spMir[id])!==stableJs(o)&&spFixN<30){spFixN++;await db.collection(SPP).doc(id).set(spMir[id])}}
     for(const id of Object.keys(spMir)){if(!SPD[id]&&spFixN<30){spFixN++;await db.collection(SPP).doc(id).set(spMir[id])}}}catch(e){}spMirBusy=false}
-function spState(pid){const V=[],A=[];for(const k in SPD){const d=SPD[k];if(!d||d.pid!==pid)continue;if(d.k==="ver"&&Number(d.ver)>0)V.push(d);else if(d.k==="act")A.push(d)}
-  V.sort((a,b)=>a.ver-b.ver);A.sort((a,b)=>String(a.at||"").localeCompare(String(b.at||"")));let cur=null;
+// 버전 줄 문서 이름은 {pid}__v{n}_{임의 꼬리} (옛 줄 {pid}__v{n} 도 그대로 읽음) — 두 사람이 같은 순간에 올려 번호가 겹쳐도 서로 덮어쓰지 않고, 읽을 때 (적힌 번호, 올린 시각) 순으로 뒤의 것을 다음 번호로 읽음
+// 기록 줄은 seq(쓸 때 그 프로젝트 기록 줄의 가장 큰 seq + 1) 순서가 먼저, 같으면 시각(at) — 기기 시계가 틀리거나 미래 시각으로 쓰인 줄이 나중 확정·취소를 막지 못함
+function spState(pid){const V=[],A=[];for(const k in SPD){const d=SPD[k];if(!d||d.pid!==pid)continue;if(d.k==="ver"&&Number(d.ver)>0)V.push(Object.assign({},d,{ver0:Number(d.ver)}));else if(d.k==="act")A.push(Object.assign({},d))}
+  V.sort((a,b)=>a.ver0-b.ver0||String(a.at||"").localeCompare(String(b.at||""))||String(a.id).localeCompare(String(b.id)));let pv=0;V.forEach(v=>{v.ver=Math.max(v.ver0,pv+1);pv=v.ver});
+  A.forEach(a=>{if(a.vid){const v=V.find(x=>x.id===a.vid);if(v)a.ver=v.ver}});
+  A.sort((a,b)=>(Number(a.seq)||0)-(Number(b.seq)||0)||String(a.at||"").localeCompare(String(b.at||"")));let cur=null;
   A.forEach(a=>{if(!SP_CONF.includes(a.byName))return;const v=V.find(x=>x.ver===Number(a.ver));if(a.act==="확정"&&v)cur={ver:v.ver,by:a.byName,at:a.at,v};else if(a.act==="확정 취소"&&cur&&cur.ver===Number(a.ver))cur=null});
   const last=V[V.length-1]||null,seen=cur?A.filter(a=>a.act==="고객 확인"&&Number(a.ver)===cur.ver&&a.seenAt).sort((a,b)=>String(a.seenAt).localeCompare(String(b.seenAt)))[0]:null;
   const sent=A.filter(a=>a.act==="현장 전달").pop()||null;
@@ -2250,23 +2256,24 @@ function spVerBody(v){const I=v.items||[],F=v.files||[];
   return `${v.note?`<div class="hint">바뀐 점: ${esc(v.note)}</div>`:""}${I.length?`<div class="tablebox sptbl"><table><thead><tr>${SP_COLS.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>${I.map(r=>`<tr>${SP_COLS.map(c=>`<td>${esc(r[c[0]]||"")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`:`<div class="hint">마감재 목록은 없어요 (파일만)</div>`}${F.length?`<div class="phgrid">${F.map(f=>spFileHTML(f)).join("")}</div>`:""}`}
 const spActTxt=a=>a.act==="고객 확인"?`고객 확인 v${a.ver} · ${a.seenAt||""} (현장소통에서 읽어 옴)`:a.act==="현장 전달"?`현장소통에 보내기 누름 v${a.ver}${a.cancel?" (확정 취소 알림)":""}`:`${a.act} v${a.ver}`;
 function spSendHTML(p,label){const code=fcCode(p.fieldCode),ok=/^P-\d{4}-\d{3}$/.test(p.no||"")&&(code||FS_AFTER.includes(p.stage));
+  if(!SPEC_FIELD_LIVE)return `<small class="muted" id="spSendOff">고객 화면 보내기는 현장소통 서버 v10 배포 뒤 열려요</small>`;
   if(!ok)return `<small class="muted">고객 화면(현장소통)에는 계약 단계부터 보낼 수 있어요</small>`;
-  return `<a class="btn pri" href="${FIELD_BASE}?admin${code?"&amp;s="+code:""}" data-fadm="1" data-fsp="${esc(p.id)}" data-fsm="spec" target="_blank" rel="noopener">${label}</a>`}
+  return `<a class="btn pri" href="${FIELD_BASE}?admin${code?"&amp;s="+code:""}" data-fadm="1" data-fsp="${esc(p.id)}" data-fsm="spec" target="_blank" rel="noopener">${label}</a><small class="muted" id="spPinHint" style="flex-basis:100%">현장소통 현장에 고객 확인 번호(고객 휴대폰 뒷 4자리)가 없으면 확정본이 올라가지 않아요 — 없으면 고객 확인 번호를 먼저 정해 주세요</small>`}
 function spCurHTML(p,st,full){const cur=st.cur,v=cur.v,last=st.last,pid=esc(p.id);
   const stale=!st.sent||Number(st.sent.ver)!==cur.ver||!!st.sent.cancel||String(st.sent.at)<String(cur.at);
   let h=`<div class="spcur" id="spCur" data-spver="${cur.ver}"><div class="sphead"><span class="pill ok">최신 확정본</span> <b class="spver">v${cur.ver}</b> <small>확정 ${esc(cur.by)} · ${esc(kstHM(cur.at))} · 올림 ${esc(v.byName||"")} ${esc(kstHM(v.at))}</small></div>`;
   if(st.changed)h+=`<div class="spwarn" id="spChanged"><span class="pill warn">확정 뒤 바뀜</span> 새 버전 v${last.ver} 이 올라왔어요 · 아직 확정 전이라 현장·고객 화면은 v${cur.ver} 그대로예요</div>`;
   h+=spVerBody(v);
   h+=`<div class="spcust" id="spCust">고객 확인: ${st.seenAt?`<b>${esc(st.seenAt)}</b> <span class="pill ok">확인했어요</span>`:`<span class="pill warn">고객이 아직 확인하지 않았어요</span>`}`;
-  if(full){h+=`<small class="muted" style="display:block;margin-top:2px">${stale?`<b>아직 이 확정본을 고객 화면(현장소통)에 보내지 않았어요</b> — 아래 버튼을 눌러야 고객 화면이 바뀌어요`:`현장소통에 보낸 기록: v${st.sent.ver} · ${esc(kstHM(st.sent.at))} ${esc(st.sent.byName||"")}`}</small>`;
-    h+=`<div class="chips" style="margin-top:6px">${spCanEdit()?spSendHTML(p,"고객 화면(현장소통)에 확정본 보내기")+`<button type="button" class="btn" data-spseen="${pid}">고객 확인 새로 고침</button>`:""}${spCanConfirm()?`<button type="button" class="btn" data-spundo="${cur.ver}">확정 취소</button>`:""}</div>`;
-    h+=`<small class="muted" style="display:block;margin-top:4px">고객이 고객 화면에서 ‘확인했어요’를 누르면 날짜가 현장소통에 기록돼요 · ‘고객 확인 새로 고침’이 그 날짜를 읽어 와요</small>`}
+  if(full){h+=`<small class="muted" style="display:block;margin-top:2px">${!SPEC_FIELD_LIVE?"":stale?`<b>아직 이 확정본을 고객 화면(현장소통)에 보내지 않았어요</b> — 아래 버튼을 눌러야 고객 화면이 바뀌어요`:`현장소통에 보낸 기록: v${st.sent.ver} · ${esc(kstHM(st.sent.at))} ${esc(st.sent.byName||"")}`}</small>`;
+    h+=`<div class="chips" style="margin-top:6px">${spCanEdit()?spSendHTML(p,"고객 화면(현장소통)에 확정본 보내기")+(SPEC_FIELD_LIVE?`<button type="button" class="btn" data-spseen="${pid}">고객 확인 새로 고침</button>`:""):""}${spCanConfirm()?`<button type="button" class="btn" data-spundo="${cur.ver}">확정 취소</button>`:""}</div>`;
+    if(SPEC_FIELD_LIVE)h+=`<small class="muted" style="display:block;margin-top:4px">고객이 고객 화면에서 ‘확인했어요’를 누르면 날짜가 현장소통에 기록돼요 · ‘고객 확인 새로 고침’이 그 날짜를 읽어 와요</small>`}
   return h+`</div></div>`}
 function spDyn(p,from){try{spListen()}catch(e){}
   if(!spOn())return `<span class="hint">연습 모드에서는 쓸 수 없어요 · claude.ai 인트라넷 링크로 열어 주세요</span>`;
   if(!spReady)return `<span class="hint">마감재·도면 기록을 불러오는 중…</span>`;
   const st=spState(p.id),full=from==="프로젝트",cur=st.cur,last=st.last;let h="";
-  if(cur){if(full&&!st.seenAt&&spCanEdit()&&!SP_AUTO[p.id+"|"+cur.ver]){SP_AUTO[p.id+"|"+cur.ver]=1;setTimeout(()=>{spSeenCheck(p.id,false).catch(()=>{})},1500)}
+  if(cur){if(SPEC_FIELD_LIVE&&full&&!st.seenAt&&spCanEdit()&&!SP_AUTO[p.id+"|"+cur.ver]){SP_AUTO[p.id+"|"+cur.ver]=1;setTimeout(()=>{spSeenCheck(p.id,false).catch(()=>{})},1500)}
     h+=spCurHTML(p,st,full)}
   else{const cancelled=st.A.filter(a=>a.act==="확정 취소"&&SP_CONF.includes(a.byName)).pop();
     h+=`<div class="hint spnone" id="spNone">아직 확정본이 없어요${full?"":" · 확정 전 자료는 프로젝트 화면에서 볼 수 있어요"} (현장 화면·고객 화면에는 확정본만 보여요)</div>`;
@@ -2301,7 +2308,7 @@ function spRefresh(){const hb=document.getElementById("spHub");if(hb){const p=(S
 function spSync(){const ed=document.getElementById("spEdit");if(!ed)return;const d=SP_DRAFT[ed.dataset.sppid];if(!d)return;ed.querySelectorAll(".sprow").forEach(row=>{const i=Number(row.dataset.spi),r=d.items[i];if(!r)return;row.querySelectorAll("[data-spf]").forEach(x=>{r[x.dataset.spf]=x.value})});const n=ed.querySelector("[data-spnote]");if(n)d.note=n.value}
 function spEdDraw(pid){spSync();const b=document.getElementById("spBox");if(!b||b.dataset.sppid!==pid)return;const p=(S.projects||[]).find(x=>x.id===pid),e=b.querySelector("#spEd");if(!p||!e)return;const h=spEdHTML(p);e.innerHTML=h;e.__h=h}
 function spDraftFrom(pid,v){const blank=()=>({space:"",item:"",prod:"",vendor:"",note:""});SP_DRAFT[pid]={items:v&&(v.items||[]).length?v.items.map(r=>Object.assign(blank(),r)):[blank(),blank(),blank()],files:v?(v.files||[]).map(spFileRow):[],note:""};spEdDraw(pid)}
-async function spAct(p,act,ver,extra){const id=newId("sa"),o=Object.assign({k:"act",pid:p.id,pno:p.no||"",act,ver:Number(ver)||0,at:nowISO(),by:me.id,byName:spWho()},extra||{});await db.collection(SPP).doc(id).set(o);SPD[id]=Object.assign({id},o);return o}
+async function spAct(p,act,ver,extra){const st=spState(p.id),v=st.V.find(x=>x.ver===Number(ver)),seq=st.A.reduce((m,a)=>Math.max(m,Number(a.seq)||0),0)+1;const id=newId("sa"),o=Object.assign({k:"act",pid:p.id,pno:p.no||"",act,ver:Number(ver)||0,seq,at:nowISO(),by:me.id,byName:spWho()},extra||{});if(v&&(act==="확정"||act==="확정 취소"))o.vid=v.id;await db.collection(SPP).doc(id).set(o);SPD[id]=Object.assign({id},o);return o}
 async function spNotify(p,text){try{const who=spWho(),to=[...new Set([p.mgr].concat((S.sites||[]).filter(s=>s.pno&&s.pno===p.no).map(s=>s.mgr)).filter(Boolean))].filter(n=>n!==who);if(!to.length||!db)return;
   await db.collection("notify").doc(newId("spn")).set({to,kind:"확정본 변경",name:((p.no||"")+" "+(p.title||"")).trim().slice(0,80),work:String(text).slice(0,200),pno:p.no||"",by:me.id,at:nowISO(),readBy:{}})}catch(e){}}
 async function spUpload(pid,list){const p=(S.projects||[]).find(x=>x.id===pid),d=SP_DRAFT[pid];if(!p||!d)return;if(!spCanEdit()){toast("올릴 권한이 없어요 (보기만 할 수 있어요)");return}
@@ -2322,21 +2329,20 @@ async function spUpload(pid,list){const p=(S.projects||[]).find(x=>x.id===pid),d
 async function spSave(pid){const p=(S.projects||[]).find(x=>x.id===pid),d=SP_DRAFT[pid];if(!p||!d||d.busy)return;if(!spCanEdit()){toast("올릴 권한이 없어요 (보기만 할 수 있어요)");return}spSync();
   const items=spClean(d.items),files=(d.files||[]).slice(0,20).map(spFileRow);if(!items.length&&!files.length){toast("마감재를 한 줄 이상 적거나 파일을 올려 주세요");return}
   if((SP_UPL[pid]||[]).length){toast("파일을 올리는 중이에요 · 끝난 뒤에 눌러 주세요");return}d.busy=true;const st0=spState(pid);
-  try{const row={k:"ver",pid,pno:p.no||"",items,files,note:String(d.note||"").replace(/[\u0000-\u001F]/g," ").trim().slice(0,120),at:nowISO(),by:me.id,byName:spWho()};let n=(st0.last?st0.last.ver:0)+1,done=0;
-    for(let i=0;i<10&&!done;i++){const ref=db.collection(SPP).doc(pid+"__v"+n);let ex=false;try{const g=await ref.get();ex=!!(g&&g.exists)}catch(e){}if(ex){n++;continue}/* 같은 번호를 남이 먼저 썼으면 다음 번호로 (덮어쓰지 않음) */const o=Object.assign({ver:n},row);await ref.set(o);SPD[pid+"__v"+n]=Object.assign({id:pid+"__v"+n},o);done=n}
-    if(!done)throw new Error("버전 번호를 정하지 못했어요");delete SP_DRAFT[pid];toast("v"+done+" 로 올렸어요"+(spCanConfirm()?" · ‘확정’을 눌러야 최신 확정본이 돼요":" · 확정은 대표·이봄이 실장·정진혁 실장이 해요"));
+  try{const row={k:"ver",pid,pno:p.no||"",items,files,note:String(d.note||"").replace(/[\u0000-\u001F]/g," ").trim().slice(0,120),at:nowISO(),by:me.id,byName:spWho()};const n=(st0.last?st0.last.ver:0)+1,rid=new Uint32Array(2);crypto.getRandomValues(rid);const id=pid+"__v"+n+"_"+rid[0].toString(36)+rid[1].toString(36),o=Object.assign({ver:n},row);/* 문서 이름에 임의 꼬리 → 같은 순간에 둘이 올려도 서로 다른 문서 (덮어쓰기 없음). 번호가 겹치면 읽을 때 뒤의 것이 다음 번호 */
+    await db.collection(SPP).doc(id).set(o);SPD[id]=Object.assign({id},o);const done=(spState(pid).V.find(x=>x.id===id)||{ver:n}).ver;delete SP_DRAFT[pid];toast("v"+done+" 로 올렸어요"+(spCanConfirm()?" · ‘확정’을 눌러야 최신 확정본이 돼요":" · 확정은 대표·이봄이 실장·정진혁 실장이 해요"));
     if(st0.cur)spNotify(p,"확정 뒤 새 버전 v"+done+" 이 올라왔어요 (올림 "+spWho()+") · 아직 확정 전 — 현장은 확정본 v"+st0.cur.ver+" 그대로");
     try{knock("열람",{what:"마감재·도면 올림",target:(p.no||"")+" v"+done})}catch(e){}spEdDraw(pid);spRefresh()}
   catch(e){d.busy=false;toast("올리지 못했어요 · 다시 눌러 주세요"+(e&&e.message?" ("+String(e.message).slice(0,40)+")":""))}}
 async function spConfirm(pid,ver){const p=(S.projects||[]).find(x=>x.id===pid);if(!p)return;if(!spCanConfirm()){toast("확정은 대표·이봄이 실장·정진혁 실장만 할 수 있어요");return}ver=Number(ver);
   const st=spState(pid);if(!st.V.some(v=>v.ver===ver))return;if(st.cur&&st.cur.ver===ver){toast("이미 확정된 버전이에요");return}
   if(!await okAsk("v"+ver+" 을 최신 확정본으로 확정할까요?\n현장 화면·고객 화면에는 확정본만 보여요."+(st.cur?"\n(지금 확정본 v"+st.cur.ver+" 은 ‘지난 버전’으로 보관돼요)":""),"확정"))return;
-  try{await spAct(p,"확정",ver);toast("v"+ver+" 을 확정했어요 · 고객 화면은 ‘현장소통에 확정본 보내기’를 눌러야 바뀌어요");
+  try{await spAct(p,"확정",ver);toast("v"+ver+" 을 확정했어요"+(SPEC_FIELD_LIVE?" · 고객 화면은 ‘현장소통에 확정본 보내기’를 눌러야 바뀌어요":""));
     spNotify(p,st.cur?"확정본이 바뀌었어요: v"+st.cur.ver+" → v"+ver+" (확정 "+spWho()+")":"확정본 v"+ver+" 이 확정됐어요 (확정 "+spWho()+")");try{knock("열람",{what:"마감재·도면 확정",target:(p.no||"")+" v"+ver})}catch(e){}spRefresh()}
   catch(e){toast("확정을 저장하지 못했어요")}}
 async function spUnconfirm(pid,ver){const p=(S.projects||[]).find(x=>x.id===pid);if(!p)return;if(!spCanConfirm()){toast("확정 취소는 대표·이봄이 실장·정진혁 실장만 할 수 있어요");return}ver=Number(ver);const st=spState(pid);if(!st.cur||st.cur.ver!==ver)return;
   if(!await okAsk("v"+ver+" 확정을 취소할까요?\n취소하면 확정본이 없는 상태가 돼요 (버전·기록은 지우지 않아요).\n다시 확정하려면 버전에서 ‘확정’을 눌러요.","확정 취소","그대로 두기"))return;
-  try{await spAct(p,"확정 취소",ver);toast("확정을 취소했어요 · 고객 화면에서도 내리려면 ‘현장소통에서도 확정본 내리기’를 눌러 주세요");spNotify(p,"확정본 v"+ver+" 확정이 취소됐어요 (취소 "+spWho()+") · 지금은 확정본이 없어요");spRefresh()}catch(e){toast("저장하지 못했어요")}}
+  try{await spAct(p,"확정 취소",ver);toast("확정을 취소했어요"+(SPEC_FIELD_LIVE?" · 고객 화면에서도 내리려면 ‘현장소통에서도 확정본 내리기’를 눌러 주세요":""));spNotify(p,"확정본 v"+ver+" 확정이 취소됐어요 (취소 "+spWho()+") · 지금은 확정본이 없어요");spRefresh()}catch(e){toast("저장하지 못했어요")}}
 // 고객 '확인했어요' 날짜 읽기: 현장소통 서버(Code.gs v10)가 드라이브에 남긴 표시 파일 '확정본고객확인 P-…-… vN 날짜 시각.txt' 제목을 내 구글 드라이브 연결로 찾아 기록 줄로 덧붙임
 async function spSeenCheck(pid,loud){const p=(S.projects||[]).find(x=>x.id===pid);if(!p||!spCanEdit()||!/^P-\d{4}-\d{3}$/.test(p.no||""))return 0;if(!spState(pid).cur){if(loud)toast("확정본이 없어요");return 0}let n=0;
   try{const o=await pdCall("search_files",{query:`title contains '확정본고객확인' and title contains '${p.no}' and trashed = false`,pageSize:30,excludeContentSnippets:true});
@@ -2345,7 +2351,7 @@ async function spSeenCheck(pid,loud){const p=(S.projects||[]).find(x=>x.id===pid
     if(loud)toast(n?"고객 확인 날짜를 읽어 왔어요":spState(pid).seenAt?"이미 읽어 온 그대로예요":"아직 고객 확인 기록이 없어요 (고객이 ‘확인했어요’를 누르면 생겨요)");if(n)spRefresh()}
   catch(e){if(loud)toast("확인 기록을 읽지 못했어요 · claude.ai 구글 드라이브 연결을 확인해 주세요 (현장소통 관리 화면에서도 볼 수 있어요)")}return n}
 // 현장소통으로 보낼 값 (주소 # 뒤 d= 안에만): 확정본 버전·확정한 사람·시각 + 마감재(공간·품목·제품명·색상 — 업체·비고는 고객 화면에 안 보냄) + 드라이브 파일 번호. 확정본이 없고 취소 기록이 있으면 '내리기'
-function spPayload(p){if(!spOn()||!spReady)return null;const st=spState(p.id);
+function spPayload(p){if(!SPEC_FIELD_LIVE||!spOn()||!spReady)return null;const st=spState(p.id);
   if(st.cur){const v=st.cur.v,it=(v.items||[]).slice(0,80).map(r=>[fsStr(r.space,20),fsStr(r.item,30),fsStr(r.prod,60)]);
     const fl=(v.files||[]).map(f=>{const m=/^(dv|dr)_([A-Za-z0-9_-]{10,})$/.exec(String(f.id||""));return m?{i:m[2],n:fsStr(f.name,80),t:m[1]==="dv"?"i":"p"}:null}).filter(Boolean).slice(0,20);
     return {ver:st.cur.ver,by:fsStr(st.cur.by,20),at:String(st.cur.at||"").slice(0,19),it,fl}}
@@ -2362,7 +2368,7 @@ document.addEventListener("input",e=>{if(e.target&&e.target.closest&&e.target.cl
 document.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.spin)return;const fs=[...(t.files||[])];t.value="";if(fs.length)spUpload(t.dataset.spin,fs)});
 document.addEventListener("toggle",e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.spopen)return;const b=t.closest&&t.closest("#spBox");if(b)SP_OPEN[b.dataset.sppid+"|"+t.dataset.spopen]=t.open?1:0},true);
 // 보내기를 누른 기록 (확정본이 고객 화면에 갔는지 직원이 알 수 있게 — 누른 것만 적음, 현장소통이 받았는지는 고객 화면에서 확인)
-document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest('a[data-fsm="spec"]');if(!a||!spCanEdit())return;const p=(S.projects||[]).find(x=>x.id===a.dataset.fsp);if(!p)return;const sp=spPayload(p);if(!sp)return;
+document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest('a[data-fsm="spec"]');if(!a||!SPEC_FIELD_LIVE||!spCanEdit())return;const p=(S.projects||[]).find(x=>x.id===a.dataset.fsp);if(!p)return;const sp=spPayload(p);if(!sp)return;
   setTimeout(()=>{spAct(p,"현장 전달",sp.ver,sp.cancel?{cancel:1}:{}).then(()=>spRefresh()).catch(()=>{})},800)});
 // 다른 화면(대표 현황판 E · 타임라인 B)이 쓰는 함수
 // v11SpecSummary() → [{pid,name,part,ver,confirmedBy,confirmedAt,custSeenAt,changedAfterConfirm,pno,cat,lastVer}] — 마감재·도면을 한 번이라도 올린, 내가 볼 수 있는 프로젝트마다 한 줄
@@ -7838,7 +7844,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   try{workListen()}catch(e){}
   if(!me.admin){try{ordListen()}catch(e){}}else{setTimeout(()=>{try{ordMdCheck()}catch(e){}},8000);setInterval(()=>{try{ordMdCheck()}catch(e){}},31*6e4)}
   db.collection("cgrant").onSnapshot(s=>{GRANTS=s.docs.map(x=>Object.assign({id:x.id},x.data()));render();queueSync()},()=>{});
-  if(window.__MOCKUSER)window.__hfT={smsOpen,aieOpen,aie:()=>AIE&&JSON.parse(JSON.stringify(AIE)),aieAge:ms=>{if(AIE&&AIE.sentAt)AIE.sentAt-=ms},aieReset:()=>{AIE=null;aieDraw()},openQ:(i,tab)=>{qOpenTab=tab||"";sheet=null;openSheet("quotes",i)},qe:()=>sheet&&{tab:sheet.qtab,pno:(sheet.data||{}).pno,qe:(sheet.qe||[]).map(l=>[l.space,l.name,l.q,l.unit,l.price])},aptName,telFmt,busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()},pc:id=>pcGet(id),pcXlPick:id=>pcXlPick(S.projects.find(x=>x.id===id)),qxGap,qxGen,gjXl:(wb,h)=>gjXlParse(wb,h),cal:()=>(CAL.all||[]).slice(),gj:()=>GJ&&JSON.parse(JSON.stringify(GJ)),phList:id=>phList(S.projects.find(x=>x.id===id)),spState:pid=>JSON.parse(JSON.stringify(spState(pid))),spPayload:pid=>spPayload(S.projects.find(x=>x.id===pid)),spUpload,spCan:()=>({edit:spCanEdit(),confirm:spCanConfirm()}),fsData,pd:()=>PD&&{cur:PD.cur,folders:PD.folders.map(f=>({id:f.id,name:f.name,src:f.src})),files:PD.files,busy:PD.busy,msg:PD.msg},nav:()=>NAV.map(e=>e.k),navBack:()=>navBack(),navDirty:()=>navDirty(),navRet:()=>navRet&&navRet.from,drvs:()=>DRVS&&DRVS.items,myhr:()=>MYHR,subs:()=>Object.assign({},SUBSTAT),workAt:()=>WORK_AT,gemTok:()=>GEMTOK,gemIssue:()=>gemIssue(true),gemDbg:async()=>{const r={on:gemOn(),api:rdApi(),LD:GEMTOK_LD,admin:me.admin,mode,PV:!!PV,st:S.staff.map(x=>x.uid)};try{r.tok=(await gemTokLoad()).length;r.t=await gemMyTicket()}catch(e){r.err=String(e&&e.message||e)}return r},gemHtmlAs:(id,m)=>{const o=mode;mode=m;try{return gemHTML(S.projects.find(x=>x.id===id),id)}finally{mode=o}}}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
+  if(window.__MOCKUSER)window.__hfT={smsOpen,aieOpen,aie:()=>AIE&&JSON.parse(JSON.stringify(AIE)),aieAge:ms=>{if(AIE&&AIE.sentAt)AIE.sentAt-=ms},aieReset:()=>{AIE=null;aieDraw()},openQ:(i,tab)=>{qOpenTab=tab||"";sheet=null;openSheet("quotes",i)},qe:()=>sheet&&{tab:sheet.qtab,pno:(sheet.data||{}).pno,qe:(sheet.qe||[]).map(l=>[l.space,l.name,l.q,l.unit,l.price])},aptName,telFmt,busy:()=>syncBusy,workSync,isoSync,pnoUsed,nextCustCode,put,rmCascade,trashRestoreOne,once,S:()=>S,gone:()=>Object.keys(WGONE),sheet:()=>sheet&&{col:sheet.col,id:sheet.id},open:(c,i)=>{sheet=null;openSheet(c,i)},closeSheet:()=>{sheet=null;drawSheet()},pc:id=>pcGet(id),pcXlPick:id=>pcXlPick(S.projects.find(x=>x.id===id)),qxGap,qxGen,gjXl:(wb,h)=>gjXlParse(wb,h),cal:()=>(CAL.all||[]).slice(),gj:()=>GJ&&JSON.parse(JSON.stringify(GJ)),phList:id=>phList(S.projects.find(x=>x.id===id)),spState:pid=>JSON.parse(JSON.stringify(spState(pid))),spPayload:pid=>spPayload(S.projects.find(x=>x.id===pid)),spUpload,spCan:()=>({edit:spCanEdit(),confirm:spCanConfirm(),live:SPEC_FIELD_LIVE}),fsData,pd:()=>PD&&{cur:PD.cur,folders:PD.folders.map(f=>({id:f.id,name:f.name,src:f.src})),files:PD.files,busy:PD.busy,msg:PD.msg},nav:()=>NAV.map(e=>e.k),navBack:()=>navBack(),navDirty:()=>navDirty(),navRet:()=>navRet&&navRet.from,drvs:()=>DRVS&&DRVS.items,myhr:()=>MYHR,subs:()=>Object.assign({},SUBSTAT),workAt:()=>WORK_AT,gemTok:()=>GEMTOK,gemIssue:()=>gemIssue(true),gemDbg:async()=>{const r={on:gemOn(),api:rdApi(),LD:GEMTOK_LD,admin:me.admin,mode,PV:!!PV,st:S.staff.map(x=>x.uid)};try{r.tok=(await gemTokLoad()).length;r.t=await gemMyTicket()}catch(e){r.err=String(e&&e.message||e)}return r},gemHtmlAs:(id,m)=>{const o=mode;mode=m;try{return gemHTML(S.projects.find(x=>x.id===id),id)}finally{mode=o}}}; // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{phUpload:(...a)=>phUpload(...a),phList:p=>phList(p),pjRaw:r=>pjRaw(r),phSrc:id=>phSrc(id),phBlobSize:async id=>(await phBlob(id)).size});
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{vl:()=>VL&&JSON.parse(JSON.stringify(Object.assign({},VL,{ctl:null}))),vlv:()=>JSON.parse(JSON.stringify(VLV)),vlb:()=>JSON.parse(JSON.stringify(VLB)),vlbLoad:()=>vlbLoad(true),vlOpen,vlPjs:()=>vlPjs().map(p=>p.id),vlSens,vlMask,vlNoMoney,vlPrompt:t=>vlPrompt(t),vlMatch:n=>{const p=vlMatch(n,vlPjs());return p?p.id:null},vlDenied:()=>vlDenied,vlNoAI:()=>vlNoAI,vlLeft:n=>{if(VL)VL.left=n}});
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{gs:()=>gsLast,sc:()=>scLast,rf:()=>rfLast,rfNext,rfList,rfUntil,refCodeOf,scInfo,scTexts,gsNow,gsCfg,routeAuto:typeof routeAuto==="function"?routeAuto:null,fstKey,fstSignJs,fstSign,fstCan,hubShareHTML,fsData,fsSched,qaBuild,qaPlan,qaDoc,qaFileName,hfro,qaInit,qaP:()=>QA_P,qaSheet:()=>sheet&&{qa:sheet.qa,qe:sheet.qe,costPlain:!!sheet.costPlain},vat10,withVat,cpg:()=>CPG,cmaskNative:()=>CMASK_NATIVE,gnQr,gnUrl,gnCoupon,gnTelOf,gnCfg,gnDefaults,gnBtnHTML,gnOpen,gnMake,gnPaper,gn:()=>GN&&JSON.parse(JSON.stringify({f:GN.f,coupon:GN.coupon,pid:GN.pid,logged:GN.logged,last:GN.last||null})),gnCanvas:()=>GN?gnMake().canvas:null,gnDefaults,gnUnit,gnStatRows,gnStatPull,gnStatSees,keepLog:()=>KEEP_LOG}); // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음

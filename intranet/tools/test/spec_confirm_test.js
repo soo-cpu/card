@@ -8,6 +8,9 @@
 const {chromium}=require('playwright');const fs=require('fs'),path=require('path');
 const ROOT=path.join(__dirname,'../../..');
 const HTML=fs.readFileSync(process.argv[2]||path.join(ROOT,'intranet/index.html'),'utf8');const MOCK=fs.readFileSync(__dirname+'/mock.js','utf8');
+const HTML_LIVE=HTML.replace('const SPEC_FIELD_LIVE=false;','const SPEC_FIELD_LIVE=true;'); // 현장소통 보내기 스위치를 켠 파일 (기본은 꺼짐 — /off 로 엶)
+// 버전 줄 문서 이름: {pid}__v{n}_{임의 꼬리} (옛 이름 {pid}__v{n} 도 읽음)
+const vkey=(d,n,pre)=>Object.keys(d).find(k=>k===(pre||'work/all/spec/')+'p1__v'+n||k.startsWith((pre||'work/all/spec/')+'p1__v'+n+'_'));const vd=(d,n,pre)=>d[vkey(d,n,pre)];
 const FIELD=fs.readFileSync(path.join(ROOT,'field/index.html'),'utf8');
 const makeServer=require('./gs_field_harness.js');
 const RULES=[["hr","owner","owner"],["catalog","view","owner"],["acct","owner","owner"],["acct/{self}","interact","interact"],["config","view","owner"],["knock","owner","owner"],["knock/{self}","interact","interact"],["access","owner","owner"],["access/{self}","interact","interact"],["devok","interact","owner"],["members","owner","owner"],["members/{self}","interact","owner"],["creq","owner","owner"],["creq/{self}","interact","interact"],["cgrant","interact","owner"],["cpriv","owner","owner"],["ppriv","owner","owner"],["cshare","owner","owner"],["cshare/{self}","interact","interact"],["ccost","owner","owner"],["fin","owner","owner"],["fincf","owner","owner"],["customers","owner","owner"],["projects","owner","owner"],["quotes","owner","owner"],["sites","owner","owner"],["reports","owner","owner"],["activity","owner","owner"],["mine","owner","owner"],["mine/{self}","interact","interact"],["seal","owner","owner"],["certs","owner","owner"],["work","interact","interact"]].map(([path,read,write])=>({path,read,write}));
@@ -30,7 +33,7 @@ const DRIVE=`window.__mcpLog=[];window.__MOCKMCP={callTool:async(sv,tool,inp)=>{
 
 async function part1(b){
   const ctx=await b.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Seoul'});
-  await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':HTML}));
+  await ctx.route('http://hf.test/**',r=>r.fulfill({contentType:'text/html',body:r.request().url().includes('seed')?'<html></html>':r.request().url().includes('/off')?HTML:HTML_LIVE}));
   await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
   const seed=await ctx.newPage();await seed.goto('http://hf.test/seed');await seed.evaluate(([s,r])=>{localStorage.setItem('mockdb',JSON.stringify(s));localStorage.setItem('mockrules',JSON.stringify(r));localStorage.removeItem('mockdrive')},[SEED,RULES]);
   const errs=[],dialogs=[];
@@ -63,8 +66,8 @@ async function part1(b){
     return {assets:(window.__mockUploads||[]).length,files:[...document.querySelectorAll('#spEdit .spfile')].length}});
   ok('올리기 1: 그림·PDF 는 새 버전 칸에 붙고(2개) 글 파일은 거절 · 저장 공간(assets) 0',up1.files===2&&up1.assets===0,JSON.stringify(up1));
   await B.locator('#spEdit [data-spsave]').click();await wait(1800);
-  let d=await D();const v1=d['work/all/spec/p1__v1'];
-  ok('올리기 2: 공용 작업 칸 work/all/spec/p1__v1 에 버전 1 (마감재 2줄 · 파일 2 · 올린 사람 이봄이)',!!v1&&v1.k==='ver'&&v1.ver===1&&v1.items.length===2&&v1.files.length===2&&v1.byName==='이봄이'&&v1.pno==='P-2611-901',JSON.stringify(v1));
+  let d=await D();const v1=vd(d,1);
+  ok('올리기 2: 공용 작업 칸 work/all/spec/p1__v1_… 에 버전 1 (마감재 2줄 · 파일 2 · 올린 사람 이봄이)',!!v1&&v1.k==='ver'&&v1.ver===1&&v1.items.length===2&&v1.files.length===2&&v1.byName==='이봄이'&&v1.pno==='P-2611-901',JSON.stringify(v1));
   ok('올리기 3: 그림은 드라이브 보기용(dv_) · PDF 는 드라이브(dr_) · 둘 다 드라이브 원본 있음',!!v1&&/^dv_/.test(v1.files[0].id)&&/^dr_/.test(v1.files[1].id)&&v1.files.every(f=>f.drive&&f.drive.id),JSON.stringify(v1&&v1.files));
   ok('올리기 4: 버전 줄에 돈 정보 없음 (계약 금액·원가·성과금)',!!v1&&!/33000000|20202020|contractAmt|estCost|perf/.test(JSON.stringify(v1)));
   const v1json=JSON.stringify(v1);
@@ -90,9 +93,9 @@ async function part1(b){
   ok('버전 1: 새 버전 칸은 바로 앞 버전 내용으로 미리 채워짐 (2줄 · 파일 2)',pre.rows===2&&/포세린/.test(pre.first)&&pre.files===2,JSON.stringify(pre));
   await fill(B,[['욕실','벽 타일','포세린 600각 라이트베이지','시험타일상사','색 변경'],['거실','마루','강마루 내추럴 오크','시험마루','']],'욕실 타일 색 변경');
   await B.locator('#spEdit [data-spsave]').click();await wait(2000);
-  d=await D();const v2=d['work/all/spec/p1__v2'];
+  d=await D();const v2=vd(d,2);
   ok('버전 2: 새로 올리면 버전이 자동으로 2',!!v2&&v2.ver===2&&/라이트베이지/.test(JSON.stringify(v2.items))&&v2.note==='욕실 타일 색 변경',JSON.stringify(v2));
-  ok('버전 3: v1 줄은 그대로 (덧붙이기만 — 고치지 않음)',JSON.stringify(d['work/all/spec/p1__v1'])===v1json);
+  ok('버전 3: v1 줄은 그대로 (덧붙이기만 — 고치지 않음)',JSON.stringify(vd(d,1))===v1json);
   noti=Object.keys(d).filter(k=>k.startsWith('notify/')).map(k=>d[k]).filter(n=>n.kind==='확정본 변경');
   const n2=noti.find(n=>/새 버전 v2/.test(n.work));
   ok('알림 1: 확정 뒤 새 버전 → 현장 담당(정진혁)에게 ‘확정 뒤 새 버전’ 알림 (올린 이봄이 본인 제외)',!!n2&&n2.to.includes('정진혁')&&!n2.to.includes('이봄이'),JSON.stringify(noti));
@@ -119,24 +122,28 @@ async function part1(b){
   // --- 채진아가 저장소에 직접 '확정' 줄을 써도 인정 안 됨
   await C.evaluate(async()=>{const db=await window.claude.use('db');await db.collection('work/all/spec').doc('sa_forged').set({k:'act',pid:'p1',pno:'P-2611-901',act:'확정',ver:1,at:new Date(Date.now()+60000).toISOString(),by:'u_cja',byName:'채진아'})});await wait(1500);
   x=await box(J.isClosed()?A:A);ok('권한 4: 확정 권한 없는 이름(채진아)으로 쓰인 ‘확정’ 줄은 무시 — 확정본 v3 그대로',x.curVer==='3',JSON.stringify(x.cur));
+  // --- 기기 시계가 미래인 '확정' 줄(확정 권한 이름)이 있어도 나중에 누른 취소가 이김 (저장 순서 seq)
+  await C.evaluate(async()=>{const db=await window.claude.use('db');await db.collection('work/all/spec').doc('sa_future').set({k:'act',pid:'p1',pno:'P-2611-901',act:'확정',ver:3,at:new Date(Date.now()+3600e3).toISOString(),by:'u_bom',byName:'이봄이'})});await wait(1500);
   // --- 확정 취소 → 다시 확정 (기록 줄로 남음)
   await openP(J);await J.locator('#spBox [data-spundo="3"]').click();await yes(J);
   x=await box(J);ok('확정 취소 1: 정진혁이 v3 확정 취소 → 확정본 없음 · v3 은 ‘확정 전’으로 · 버전은 그대로',x.none&&x.pendVer==='3',JSON.stringify(x));
-  d=await D();ok('확정 취소 2: 취소도 기록 줄로 남고(확정 취소) 버전 줄 3개 그대로',specDocs(d).map(k=>d[k]).some(o=>o.act==='확정 취소'&&o.ver===3&&o.byName==='정진혁')&&['p1__v1','p1__v2','p1__v3'].every(k=>!!d['work/all/spec/'+k]));
+  ok('확정 취소 1-2: 미래 시각으로 적힌 확정 줄이 있어도 취소가 됨 (저장 순서가 이김)',x.none&&!x.cur,JSON.stringify(x.cur));
+  d=await D();ok('확정 취소 2: 취소도 기록 줄로 남고(확정 취소) 버전 줄 3개 그대로',specDocs(d).map(k=>d[k]).some(o=>o.act==='확정 취소'&&o.ver===3&&o.byName==='정진혁')&&[1,2,3].every(n=>!!vd(d,n)));
   await openP(J,'sites','s1');x=await box(J);ok('현장 화면 2: 확정 취소 뒤 현장 화면에는 아무 버전도 안 보임',x.none&&!/인조대리석/.test(x.text),JSON.stringify(x));
   await openP(J);await J.locator('#spBox [data-spok="3"]').click();await yes(J);
   await openP(B,'sites','s1');x=await box(B);
   ok('현장 화면 3: 현장 화면에는 최신 확정본(v3)만 — 지난 버전·새 버전 쓰기·확정 버튼 없음',x.curVer==='3'&&/인조대리석 화이트/.test(x.cur)&&!x.past&&!x.pend&&!x.newBtn&&!x.okBtn&&!x.undoBtn&&!x.send&&x.delBtn===0,JSON.stringify(x));
   // --- 대표 사본으로 되살림: 공용 칸에서 버전 줄이 사라져도 대표 화면이 되돌림
   d=await D();const mir=Object.keys(d).filter(k=>k.startsWith('acct/_spec/s/'));
-  ok('보관 1: 대표 화면이 대표 전용 칸(acct/_spec/s)에 같은 줄을 사본으로 둠',['p1__v1','p1__v2','p1__v3'].every(k=>JSON.stringify(d['acct/_spec/s/'+k])===JSON.stringify(d['work/all/spec/'+k])),mir.length);
-  await seed.evaluate(()=>{const D=JSON.parse(localStorage.getItem('mockdb'));delete D['work/all/spec/p1__v1'];localStorage.setItem('mockdb',JSON.stringify(D));new BroadcastChannel('mockdb').postMessage('work/all/spec/p1__v1')});await wait(3500);
-  d=await D();ok('보관 2: 공용 칸에서 v1 줄이 사라져도 대표 화면이 사본으로 되살림 (삭제 불가)',JSON.stringify(d['work/all/spec/p1__v1'])===v1json,JSON.stringify(d['work/all/spec/p1__v1']||null).slice(0,80));
+  ok('보관 1: 대표 화면이 대표 전용 칸(acct/_spec/s)에 같은 줄을 사본으로 둠',[1,2,3].every(n=>!!vd(d,n,'acct/_spec/s/')&&JSON.stringify(vd(d,n,'acct/_spec/s/'))===JSON.stringify(vd(d,n))),mir.length);
+  await seed.evaluate(k=>{const D=JSON.parse(localStorage.getItem('mockdb'));delete D[k];localStorage.setItem('mockdb',JSON.stringify(D));new BroadcastChannel('mockdb').postMessage(k)},vkey(d,1));await wait(3500);
+  d=await D();ok('보관 2: 공용 칸에서 v1 줄이 사라져도 대표 화면이 사본으로 되살림 (삭제 불가)',JSON.stringify(vd(d,1))===v1json,JSON.stringify(vd(d,1)||null).slice(0,80));
   // --- 현장소통으로 보내는 값
   await openP(B);
   const pay=await B.evaluate(()=>{const s=window.__hfT.spPayload('p1');const raw=window.__hfT.fsData('p1','spec');const bin=atob(raw.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((raw.length+3)%4));const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return {s,o:JSON.parse(new TextDecoder().decode(u)),a:(()=>{const a=document.querySelector('#spBox a[data-fsm="spec"]');return a?{href:a.getAttribute('href'),fadm:a.dataset.fadm,fsp:a.dataset.fsp}:null})()}});
   ok('전달 1: 보내는 값 = 최신 확정본(v3) · 확정한 사람·시각 · 마감재 3줄(공간·품목·제품명·색상) · 드라이브 파일 2',pay.o.m==='spec'&&pay.o.proj==='P-2611-901'&&pay.o.spec.ver===3&&pay.o.spec.by==='정진혁'&&pay.o.spec.it.length===3&&pay.o.spec.it.every(r=>r.length===3)&&pay.o.spec.fl.length===2&&pay.o.spec.fl[0].t==='i'&&pay.o.spec.fl[1].t==='p',JSON.stringify(pay.o));
   ok('전달 2: 보내는 값에 업체·비고·금액·원가·전체 전화번호·열쇠 없음',!/시험타일상사|시험마루|33000000|20202020|010-?1234-?5678|k_test_key/.test(JSON.stringify(pay.o)),JSON.stringify(pay.o).slice(0,300));
+  ok('전달 3-2: 보내기 옆에 ‘고객 확인 번호를 먼저 정해 주세요’ 안내',await B.evaluate(()=>/고객 확인 번호를 먼저 정해 주세요/.test((document.getElementById('spPinHint')||{}).innerText||'')));
   ok('전달 3: ‘고객 화면(현장소통)에 확정본 보내기’ = 기존 직원 열쇠 입장권 링크(data-fadm) · 쿼리에는 admin·s 만',!!pay.a&&pay.a.fadm==='1'&&pay.a.fsp==='p1'&&/^https:\/\/soo-cpu\.github\.io\/card\/field\/\?admin&s=AbCdEfGhIjKlMnOpQrStUv12$/.test(pay.a.href),JSON.stringify(pay.a));
   const sent=await B.evaluate(async()=>{const a=document.querySelector('#spBox a[data-fsm="spec"]');a.addEventListener('click',e=>e.preventDefault());a.click();const h=a.getAttribute('href');await new Promise(r=>setTimeout(r,2200));return {k:/#k=\d{13}\./.test(h),d:/&d=[A-Za-z0-9_-]{20,}/.test(h),after:a.getAttribute('href'),txt:document.querySelector('#spCust')?document.querySelector('#spCust').innerText:''}});
   ok('전달 4: 누르면 입장권(k)·값(d)은 # 뒤에만 붙고 곧 지워짐 · ‘보낸 기록 v3’ 가 남음',sent.k&&sent.d&&!/#/.test(sent.after)&&/현장소통에 보낸 기록: v3/.test(sent.txt.replace(/\s+/g,' ')),JSON.stringify(sent).slice(0,300));
@@ -151,7 +158,7 @@ async function part1(b){
   ok('요약 2: v11SpecSummary — 확정본 v3 · 고객 확인 날짜 · 확정 뒤 바뀜 false',sum.length===1&&sum[0].ver===3&&sum[0].custSeenAt==='2026-11-29 14:32'&&sum[0].changedAfterConfirm===false&&sum[0].confirmedBy==='정진혁',JSON.stringify(sum));
   const keys=sum[0]?Object.keys(sum[0]):[];ok('요약 3: 약속한 칸 이름 (pid·name·part·ver·confirmedBy·confirmedAt·custSeenAt·changedAfterConfirm)',['pid','name','part','ver','confirmedBy','confirmedAt','custSeenAt','changedAfterConfirm'].every(k=>keys.includes(k)),keys.join());
   const ev=await A.evaluate(()=>window.v11SpecEvents('p1'));
-  ok('타임라인: v11SpecEvents(pid) — {t,kind:spec,text,who} 시간순 · 올림 3 · 확정 4 · 확정 취소 1 · 고객 확인 1 · 채진아 가짜 줄 없음',ev.every(e=>e.kind==='spec'&&e.t&&e.text&&'who' in e)&&ev.filter(e=>/올림/.test(e.text)).length===3&&ev.filter(e=>/ 확정 v/.test(e.text)).length===4&&ev.filter(e=>/확정 취소/.test(e.text)).length===1&&ev.filter(e=>/고객 확인/.test(e.text)).length===1&&!ev.some(e=>e.who==='채진아')&&ev.map(e=>e.t).join()===ev.map(e=>e.t).slice().sort().join(),JSON.stringify(ev.map(e=>[e.text,e.who])));
+  ok('타임라인: v11SpecEvents(pid) — {t,kind:spec,text,who} 시간순 · 올림 3 · 확정 4 · 확정 취소 1 · 고객 확인 1 · 채진아 가짜 줄 없음',ev.every(e=>e.kind==='spec'&&e.t&&e.text&&'who' in e)&&ev.filter(e=>/올림/.test(e.text)).length===3&&ev.filter(e=>/ 확정 v/.test(e.text)).length===5 /* 미래 시각 시험 줄 1개 포함 */&&ev.filter(e=>/확정 취소/.test(e.text)).length===1&&ev.filter(e=>/고객 확인/.test(e.text)).length===1&&!ev.some(e=>e.who==='채진아')&&ev.map(e=>e.t).join()===ev.map(e=>e.t).slice().sort().join(),JSON.stringify(ev.map(e=>[e.text,e.who])));
   // --- 다른 프로젝트(관공서) · 새 확정 뒤 고객 확인은 다시
   await B.locator('#spBox [data-spnew]').click();await wait(400);await fill(B,[['욕실','벽 타일','포세린 600각 화이트','시험타일상사',''],['거실','마루','강마루 내추럴 오크','시험마루',''],['주방','상판','인조대리석 화이트','시험상판','']],'타일 화이트로');
   await B.locator('#spEdit [data-spsave]').click();await wait(1500);await B.locator('#spBox [data-spok="4"]').click();await yes(B);
@@ -160,6 +167,23 @@ async function part1(b){
   d=await D();const all=specDocs(d).map(k=>JSON.stringify(d[k])).join('');
   ok('돈 정보: 마감재·도면 저장 줄 어디에도 계약 금액·원가 없음',!/33000000|20202020|77000000/.test(all));
   ok('드라이브: 파일은 프로젝트 번호 폴더에 (그림 원본 1 · 보기용 1 · PDF 1) · assets 올림 0',await B.evaluate(()=>{const dv=JSON.parse(localStorage.getItem('mockdrive')||'{}');const pf=Object.values(dv).find(f=>/folder/.test(f.mime)&&/^P-2611-901/.test(f.title));const L=Object.values(dv).filter(f=>pf&&f.parentId===pf.id);return !!pf&&L.length===3&&L.filter(f=>/보기용/.test(f.title)).length===1&&L.filter(f=>/pdf/.test(f.mime)).length===1&&(window.__mockUploads||[]).length===0}));
+  // --- 같은 순간에 두 사람이 올려도 덮어쓰지 않음: 같은 번호(v5)로 쓰인 두 줄 → 둘 다 남고 읽을 때 v5·v6
+  await B.evaluate(async()=>{const db=await window.claude.use('db');const mk=(who,at,prod)=>({k:'ver',pid:'p1',pno:'P-2611-901',ver:5,items:[{space:'욕실',item:'벽 타일',prod,vendor:'',note:''}],files:[],note:'',at,by:'u_x',byName:who});
+    await db.collection('work/all/spec').doc('p1__v5_aaaa11').set(mk('정진혁','2026-12-01T01:00:00.000Z','동시 올림 A'));await db.collection('work/all/spec').doc('p1__v5_bbbb22').set(mk('이봄이','2026-12-01T01:00:00.500Z','동시 올림 B'))});await wait(1500);
+  const race=await B.evaluate(()=>window.__hfT.spState('p1').V.map(v=>[v.ver,v.ver0,v.byName,(v.items[0]||{}).prod]));
+  ok('동시 올림: 같은 번호로 쓰인 두 줄이 둘 다 남고 v5·v6 으로 읽힘 (덮어쓰기 없음)',race.length===6&&race[4][0]===5&&race[4][3]==='동시 올림 A'&&race[5][0]===6&&race[5][3]==='동시 올림 B'&&race.map(r=>r[0]).join()==='1,2,3,4,5,6',JSON.stringify(race));
+  await B.locator('#spBox [data-spok="6"]').click();await yes(B);x=await box(B);d=await D();const a6=specDocs(d).map(k=>d[k]).filter(o=>o.act==='확정').pop();
+  ok('동시 올림: 뒤의 것(v6) 확정 → 그 문서(vid)에 확정이 붙음',x.curVer==='6'&&/동시 올림 B/.test(x.cur)&&Object.values(d).some(o=>o&&o.act==='확정'&&o.vid==='p1__v5_bbbb22'&&o.seq>0),JSON.stringify(a6));
+  await B.locator('#spBox [data-spnew]').click();await wait(400);await B.locator('#spEdit [data-spsave]').click();await wait(1500);d=await D();
+  ok('문서 이름: 새 버전은 p1__v7_임의꼬리 (같은 이름으로 다시 쓰지 않음) · 옛 이름 줄(p1__v5_…)도 그대로',Object.keys(d).filter(k=>/^work\/all\/spec\/p1__v7_[a-z0-9]{6,}$/.test(k)).length===1&&!!d['work/all/spec/p1__v5_aaaa11']&&!!d['work/all/spec/p1__v5_bbbb22']);
+  // --- 현장소통 보내기 스위치가 꺼진 기본 파일: 보내기 링크 대신 안내만 · '현장 전달' 기록 안 남김
+  const nSent=specDocs(d).map(k=>d[k]).filter(o=>o.act==='현장 전달').length;
+  const OFF=await ctx.newPage();OFF.on('pageerror',e=>errs.push('off: '+e.message));OFF.on('dialog',dl=>{dialogs.push('off '+dl.type());dl.dismiss().catch(()=>{})});await OFF.addInitScript(`window.__SUBPOLL=2500;window.__MOCKUSER=${JSON.stringify(USERS.bom)};`+DRIVE+MOCK);await OFF.goto('http://hf.test/off/');await wait(9000);await openP(OFF);
+  const off=await OFF.evaluate(()=>{const b=document.getElementById('spBox');return {live:window.__hfT.spCan().live,send:!!b.querySelector('a[data-fsm="spec"]'),offMsg:(b.querySelector('#spSendOff')||{}).innerText||'',seenBtn:!!b.querySelector('[data-spseen]'),pay:window.__hfT.spPayload('p1'),fs:window.__hfT.fsData('p1','spec'),cur:!!b.querySelector('#spCur'),txt:b.innerText}});
+  ok('보내기 스위치(기본 꺼짐): 확정본은 보이고, 보내기 링크 대신 ‘현장소통 서버 v10 배포 뒤 열려요’ 안내만',off.live===false&&off.cur&&!off.send&&/현장소통 서버 v10 배포 뒤 열려요/.test(off.offMsg)&&!off.seenBtn&&!/아직 이 확정본을 고객 화면/.test(off.txt),JSON.stringify(off).slice(0,300));
+  ok('보내기 스위치(기본 꺼짐): 보낼 값도 만들지 않음 · ‘현장 전달’ 기록이 늘지 않음',off.pay===null&&off.fs===''&&await (async()=>{const d9=await D();return specDocs(d9).map(k=>d9[k]).filter(o=>o.act==='현장 전달').length===nSent})(),JSON.stringify([off.pay,off.fs,nSent]));
+  ok('보내기 스위치: 소스 기본값은 false',/const SPEC_FIELD_LIVE=false;/.test(HTML));
+  await OFF.close();
   // --- 휴대폰 크기: 버튼 44px
   const M=await open('bom',8000,{width:390,height:800});await openP(M);await M.locator('#spBox [data-spnew]').click();await wait(500);
   const hts=await M.evaluate(()=>[...document.querySelectorAll('#spBox button,#spBox a.btn,#spBox label.btn,#spBox summary')].filter(e=>e.offsetParent).map(e=>[e.innerText.trim().slice(0,14),Math.round(e.getBoundingClientRect().height)]));
@@ -175,14 +199,16 @@ async function part1(b){
 }
 
 // ===== 2부·3부 공통: 가짜 서버에 현장 하나 + 드라이브 파일(인트라넷 첨부 › 프로젝트 폴더 안 그림·PDF, 글 파일, 폴더 밖 PDF)
-const PW='pw-test-77',KEY='k'.repeat(40),ATT='1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor';
+const PW='pw-test-77',KEY='k'.repeat(40),ATT='1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor',SHARED='0AJ-UqRUzUqsGUk9PVA';
 function serverWithSite(){const S=makeServer({props:{FIELD_STAFF_KEY:KEY}});S.setPw(PW);
   const r=S.post({a:'projSite',pw:PW,proj:'P-2611-901',name:'시험 현장 욕실',cust:'홍길동',pin:'5678',manager:'이봄이 실장'});
   const Dv=S.ctx.DriveApp,root=Dv.getFolderById(ATT),pf=root.createFolder('P-2611-901 시험 현장 욕실');
   const blob=(n,mime,size)=>({_name:n,getContentType:()=>mime,getBytes:()=>new Array(size).fill(1)});
   const F={img:pf.createFile(blob('보기용 타일.jpg','image/jpeg',5000)).getId(),pdf:pf.createFile(blob('평면도.pdf','application/pdf',9000)).getId(),txt:pf.createFile(blob('메모.txt','text/plain',10)).getId(),
     out:Dv.getFolderById('otherfolder_abcdefgh').createFile(blob('다른 폴더 서류.pdf','application/pdf',100)).getId()};
-  const tk=()=>'T:'+S.post({a:'ticket',k:S.ticket(KEY,{who:'이봄이'})}).token;
+  // 같은 공유 드라이브(최상위 0AJ-UqRUzUqsGUk9PVA) 안이지만 '인트라넷 첨부' 밖: 단가표 폴더의 PDF
+  S.st.drive.items[ATT].parent=SHARED;const price=Dv.getFolderById(SHARED).createFolder('단가표');F.price=price.createFile(blob('2026 단가표.pdf','application/pdf',300)).getId();F.top=Dv.getFolderById(SHARED).createFile(blob('계약서.pdf','application/pdf',300)).getId();
+  const tk=who=>'T:'+S.post({a:'ticket',k:S.ticket(KEY,{who:who||'이봄이'})}).token;
   const spec=(ver,by,extra)=>Object.assign({ver,by:by||'정진혁',at:'2026-11-28T05:02:11',it:[['욕실','벽 타일','포세린 600각 라이트베이지','시험타일상사','줄눈 2mm'],['거실','마루','강마루 내추럴 오크']],fl:[{i:F.img,n:'욕실 타일 시안.jpg',t:'i'},{i:F.pdf,n:'평면도 v1.pdf',t:'p'}]},extra||{});
   return {S,code:r.code,F,tk,spec,rows:n=>S.rowsOf(n)}}
 
@@ -200,6 +226,24 @@ async function part2(){
   ok('서버 7: 마감재는 공간·품목·제품명·색상 3칸만 저장 (업체·비고는 받지 않음)',JSON.parse(L[0][7]).every(a=>a.length===3)&&!/시험타일상사|줄눈/.test(L[0][7]),L[0][7]);
   ok('서버 8: 기존 ‘현장’ 탭 줄은 그대로 · 탭은 더해지기만',JSON.stringify(X.rows('현장'))===siteRow0&&tabs0.every(t=>Object.keys(S.st.sheets).includes(t)));
   r=S.post({a:'specPush',pw:T,s:code,proj:'P-2611-999',spec:X.spec(3)});ok('서버 8-2: 현장 코드와 프로젝트 번호가 서로 다르면 거절 (다른 프로젝트 현장에 안 올라감)',!r.ok&&/다른 프로젝트/.test(r.error)&&X.rows('확정 마감재·도면').length===1,JSON.stringify(r));
+  // 검토 반려 1: 첨부 폴더 밖 · 같은 공유 드라이브 안 파일은 거절 (설정에 드라이브 최상위 ID 가 들어가 있어도)
+  r=S.post({a:'specPush',pw:T,s:code,spec:X.spec(3,'정진혁',{fl:[{i:F.img,n:'욕실 타일 시안.jpg'},{i:F.pdf,n:'평면도 v1.pdf'},{i:F.price,n:'2026 단가표.pdf'},{i:F.top,n:'계약서.pdf'}]})});
+  ok('서버 8-3: 같은 공유 드라이브 안이라도 ‘인트라넷 첨부’ 밖 파일(단가표·계약서)은 거절',r.ok&&r.files===2&&r.skipped.length===2&&r.skipped.every(x=>/폴더 밖/.test(x)),JSON.stringify(r));
+  {const sh=S.st.sheets['설정'];sh.rows.push(['확정본 파일 상위 폴더ID',ATT+','+SHARED,'시험: 드라이브 최상위를 잘못 넣음']);
+   r=S.post({a:'specPush',pw:T,s:code,spec:X.spec(3,'정진혁',{fl:[{i:F.img,n:'욕실 타일 시안.jpg'},{i:F.pdf,n:'평면도 v1.pdf'},{i:F.price,n:'2026 단가표.pdf'}]})});
+   ok('서버 8-4: ‘설정’ 탭에 공유 드라이브 최상위 ID 가 적혀 있어도 무시 (단가표 여전히 거절)',r.ok&&r.files===2&&r.skipped.length===1&&S.ctx.specRoots_(null).join()===ATT,JSON.stringify(r)+S.ctx.specRoots_(null));
+   sh.rows[sh.rows.length-1][1]=SHARED;ok('서버 8-5: 설정 값이 드라이브 최상위뿐이면 기본(인트라넷 첨부)만 씀',S.ctx.specRoots_(null).join()===ATT);sh.rows.pop()}
+  ok('서버 8-6: 기본 허용 폴더 = 인트라넷 첨부 하나 (공유 드라이브 최상위 없음) · 현장 사진 폴더·원본 폴더는 따로 허용 안 함',S.ctx.SPEC_ROOT_DEF===ATT&&S.ctx.specRoots_(['c','','','','','','','','','otherfolder_abcdefgh','','','','','','','','','otherfolder_abcdefgh']).join()===ATT);
+  r=S.post({a:'specFile',s:code,pin:'5678',id:F.price});ok('서버 8-7: 고객이 단가표 파일 번호로 요청해도 거절',!r.ok&&/찾을 수 없어요/.test(r.error));
+  // 검토 2: 보낸 사람(출입증 이름)이 확정 권한자가 아니면 거절 — by 글자만 믿지 않음
+  r=S.post({a:'specPush',pw:X.tk('채진아'),s:code,spec:X.spec(4,'최윤수')});ok('서버 8-8: 채진아 출입증 + by 최윤수 → 거절 (실제 보낸 사람을 봄)',!r.ok&&/대표·이봄이 실장·정진혁 실장만/.test(r.error)&&X.rows('확정 마감재·도면').length===1,JSON.stringify(r));
+  r=S.post({a:'specPush',pw:X.tk('채진아'),s:code,spec:{cancel:1}});ok('서버 8-9: 채진아 출입증으로는 내리기도 못 함',!r.ok&&S.post({a:'site',s:code,pin:'5678'}).spec.ver===3);
+  // 검토 3: 확인 번호가 없는 현장에는 올리지 않음
+  {const n0=S.post({a:'projSite',pw:PW,proj:'P-2611-955',name:'확인 번호 없는 현장'});r=S.post({a:'specPush',pw:T,s:n0.code,spec:X.spec(1)});
+   ok('서버 8-10: 고객 확인 번호가 없는 현장 → 확정본 거절 + ‘고객 확인 번호를 먼저 정해 주세요’',!r.ok&&/고객 확인 번호를 먼저 정해 주세요/.test(r.error)&&!X.rows('확정 마감재·도면').some(x=>x[1]===n0.code),JSON.stringify(r));
+   const sh=S.st.sheets['확정 마감재·도면'];sh.rows.push(['2026-11-28 10:00:00',n0.code,'1','확정','정진혁','','이봄이','[["욕실","타일","몰래 들어간 줄"]]','[]']);
+   const c0=S.post({a:'site',s:n0.code}),k0=S.post({a:'specSeen',s:n0.code,ver:1});
+   ok('서버 8-11: (방어) 번호 없는 현장에 확정본 줄이 있어도 고객에게 안 나가고 ‘확인했어요’도 기록 안 됨',c0.ok&&c0.spec===null&&!k0.ok&&!X.rows('고객 확인 기록').some(x=>x[1]===n0.code),JSON.stringify([c0.spec,k0]));sh.rows.pop()}
   r=S.post({a:'specPush',pw:T,s:code,spec:X.spec(3)});ok('서버 9: 같은 확정본을 다시 보내면 줄을 더하지 않음',r.ok&&r.same===true&&X.rows('확정 마감재·도면').length===1,JSON.stringify(r));
   // 고객 화면 응답
   r=S.post({a:'site',s:code});ok('서버 10: 고객 — 확인 번호 없이는 확정본 못 봄 (PIN 요구)',!r.ok&&/^PIN:/.test(r.error)&&!/포세린/.test(JSON.stringify(r)),JSON.stringify(r));
@@ -237,6 +281,13 @@ async function part2(){
   r=S.post({a:'specFile',s:code,pin:'5678',id:F.img});ok('서버 33: 확정본이 없으면 파일도 안 나감',!r.ok);
   r=S.post({a:'specPush',pw:T,s:code,spec:X.spec(4,'최윤수')});ok('서버 34: 다시 확정(v4) → 고객 확인 기록(v4)이 그대로 이어짐',r.ok&&S.post({a:'site',s:code,pin:'5678'}).spec.seenAt!=='');
   const logs=X.rows('기록').map(x=>x[1]);ok('서버 35: ‘기록’ 탭에 확정본 받음·고객 확인·내림이 남음',['확정본 받음','확정본 고객 확인','확정본 내림'].every(k=>logs.includes(k)),logs.join());
+  // 검토 5: 글·댓글 숨기기는 기록에 남음 · 같은 프로젝트 번호 현장 추가는 있는 현장을 돌려줌
+  {const pid=S.post({a:'adminPost',pw:T,s:code,text:'숨길 글',date:'2026-11-28',kind:'공정'}).id||X.rows('글').slice(-1)[0][0];const cm=S.post({a:'comment',s:code,pin:'5678',postId:pid,text:'고객 댓글',name:'고객'});const cid=X.rows('댓글').slice(-1)[0][0];
+   S.post({a:'editPost',pw:T,s:code,id:pid,hidden:true});S.post({a:'editComment',pw:T,s:code,id:cid,hidden:true});const lg=X.rows('기록');
+   ok('서버 35-2: 글·댓글 숨기기 → ‘기록’ 탭에 누가·무엇을 (글 숨김 · 댓글 숨김 · 이봄이)',lg.some(x=>x[1]==='글 숨김'&&x[3]==='이봄이'&&x[4].includes(pid))&&lg.some(x=>x[1]==='댓글 숨김'&&x[3]==='이봄이'&&x[4].includes(cid))&&X.rows('글').some(x=>x[0]===pid&&x[11]==='Y'),JSON.stringify(lg.slice(-2))+JSON.stringify(cm));
+   const n1=X.rows('현장').length,a1=S.post({a:'addSite',pw:T,name:'같은 프로젝트 또 추가',proj:'P-2611-901',pin:'1111'});
+   ok('서버 35-3: addSite — 같은 프로젝트 번호 현장이 있으면 그 현장을 돌려줌 (새 줄 없음 · 기존 줄 그대로)',a1.ok&&a1.code===code&&a1.exists===true&&X.rows('현장').length===n1&&X.rows('현장').find(x=>x[0]===code)[16]==='5678',JSON.stringify(a1));
+   const a2=S.post({a:'addSite',pw:T,name:'번호 없는 새 현장',pin:''});ok('서버 35-4: 프로젝트 번호가 없는 현장 추가는 예전처럼 새로 만듦',a2.ok&&a2.code!==code&&!a2.exists&&X.rows('현장').length===n1+1)}
   // 옛 화면이 보내는 요청은 그대로 (prog·site 모양)
   r=S.post({a:'prog',s:code,pin:'5678'});ok('서버 36: 기존 요청(prog·projSite)은 그대로 동작',r.ok&&Array.isArray(r.stages)&&S.post({a:'projSite',pw:T,proj:'P-2611-901'}).code===code);
   // setup 두 번 (새 탭·새 설정 줄만 더하고 다시 돌려도 같음)
@@ -253,13 +304,13 @@ async function part2(){
 }
 
 async function part3(b){
-  const errs=[];const X=serverWithSite(),{S,code}=X;S.post({a:'specPush',pw:PW,s:code,spec:X.spec(3)});
+  const errs=[],dlg=[];const X=serverWithSite(),{S,code}=X;S.post({a:'specPush',pw:PW,s:code,spec:X.spec(3)});
   const enc=o=>Buffer.from(JSON.stringify(o)).toString('base64url');
   const fieldCtx=async(Sv)=>{const ctx=await b.newContext({viewport:{width:420,height:820},timezoneId:'Asia/Seoul'});
     await ctx.route('http://f.test/field/**',r=>{const u=r.request().url();if(/config\.js/.test(u))return r.fulfill({contentType:'application/javascript',body:'window.FIELD_API="http://api.test/exec";'});if(/\/field\/(\?|#|$)/.test(u))return r.fulfill({contentType:'text/html',body:FIELD});return r.abort()});
     await ctx.route(/fonts\.|cdnjs|jsdelivr|unpkg/,r=>r.abort());
     await ctx.route('http://api.test/**',r=>{const req=r.request();r.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(Sv.post(req.postData()||'{}'))})});return ctx};
-  const fopen=async(ctx,url,ms)=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push(e.message));p.on('dialog',d=>{errs.push('dialog '+d.type());d.dismiss().catch(()=>{})});await p.goto(url);await wait(ms||1500);return p};
+  let PAGES=0;const fopen=async(ctx,url,ms)=>{PAGES++;const p=await ctx.newPage();p.on('pageerror',e=>errs.push(e.message));p.on('dialog',d=>{dlg.push(d.type()+': '+String(d.message()).slice(0,40));d.dismiss().catch(()=>{})});await p.goto(url);await wait(ms||1500);return p};
   const st=p=>p.evaluate(()=>{const s=document.getElementById('spec');return {url:location.href,pinGate:!!document.getElementById('pinIn'),body:document.body.innerText.replace(/\s+/g,' '),spec:s?s.innerText.replace(/\s+/g,' '):'',ver:s?s.dataset.ver:'',rows:s?s.querySelectorAll('tbody tr').length:0,imgs:s?s.querySelectorAll('.sf img').length:0,pdfs:s?s.querySelectorAll('[data-sfpdf]').length:0,
     okBtn:(()=>{const x=document.getElementById('specOk');return x?Math.round(x.getBoundingClientRect().height):0})(),seen:(document.getElementById('specSeen')||{}).innerText||'',old:!!document.getElementById('specOld'),none:!!document.getElementById('specNone'),toast:[...document.querySelectorAll('.toast')].map(t=>t.textContent).join('|'),wide:document.documentElement.scrollWidth<=innerWidth+2}});
   let ctx=await fieldCtx(S);
@@ -299,6 +350,13 @@ async function part3(b){
   // 예전 값(# d= auto)도 그대로
   const A4=await fopen(ctx,'http://f.test/field/?admin#k='+S.ticket(KEY,{who:'정진혁'})+'&d='+enc({v:1,m:'auto',proj:'P-2611-901',name:'시험 현장 욕실'}),3000);x=await st(A4);
   ok('화면 17: 예전 값(고객 공유 페이지 열기 · auto)은 그대로 — 같은 현장이 열림',new RegExp('s='+code+'$').test(x.url)&&/시험 현장 욕실/.test(x.body));
+  // 확인 번호가 없는 현장: 서버가 거절 → 화면에 '고객 확인 번호를 먼저 정해 주세요'
+  {const n0=S.post({a:'projSite',pw:PW,proj:'P-2611-955',name:'확인 번호 없는 현장'});const dN={v:1,m:'spec',proj:'P-2611-955',name:'확인 번호 없는 현장',spec:{ver:1,by:'정진혁',at:'2026-11-29T01:00:00',it:[['주방','상판','인조대리석']],fl:[]}};
+   const N=await fopen(ctx,'http://f.test/field/?admin#k='+S.ticket(KEY,{who:'정진혁'})+'&d='+enc(dN),3500);x=await st(N);
+   ok('화면 17-2: 확인 번호 없는 현장에 보내면 — 올라가지 않고 ‘고객 확인 번호를 먼저 정해 주세요’ 안내 (알림 + 확정본 칸)',/고객 확인 번호를 먼저 정해 주세요/.test(x.toast)&&x.none&&/고객 확인 번호를 먼저 정해 주세요/.test(x.body)&&!X.rows('확정 마감재·도면').some(r=>r[1]===n0.code),x.toast+' / '+x.body.slice(0,200));
+   const NC=await fopen(ctx,'http://f.test/field/?s='+n0.code,2500);x=await st(NC);ok('화면 17-3: 그 현장 고객 화면에는 확정본 칸·‘확인했어요’ 없음',!x.spec&&!x.okBtn&&/확인 번호 없는 현장/.test(x.body))}
+  {const CJ=await fopen(ctx,'http://f.test/field/?admin&s='+code+'#k='+S.ticket(KEY,{who:'채진아'})+'&d='+enc(d5),3500);x=await st(CJ);const L2=X.rows('확정 마감재·도면');
+   ok('화면 17-4: 채진아 출입증으로 보내면 거절 안내 · 서버 줄 그대로',/대표·이봄이 실장·정진혁 실장만/.test(x.toast)&&L2.length===L.length+1,x.toast)}
   await ctx.close();
   // 옛 서버(v9): 확정본 요청을 모름 · 응답에 spec 없음 → 안내만, 화면은 그대로
   const Y=serverWithSite();const OLD={post:raw=>{const q=typeof raw==='string'?JSON.parse(raw):raw;if(/^spec/.test(q.a||''))return {ok:false,error:'알 수 없는 요청'};const r=Y.S.post(q);delete r.spec;return r}};
@@ -308,7 +366,8 @@ async function part3(b){
   const O2=await fopen(ctx,'http://f.test/field/?s='+Y.code,800);await O2.fill('#pinIn','5678');await O2.locator('#pf button').first().click();await wait(2200);x=await st(O2);
   ok('화면 19: 옛 서버 + 고객 화면 — 확정본 칸 없이 예전처럼 열림',/시험 현장 욕실/.test(x.body)&&!x.spec&&!x.old&&!/확정 마감재/.test(x.body));
   await ctx.close();
-  ok('화면 20: 화면 오류·브라우저 대화상자 없음',errs.length===0,errs.slice(0,4).join(' | '));
+  ok('화면 20: 화면 오류 없음',errs.length===0,errs.slice(0,4).join(' | '));
+  ok('화면 20-2: 실제 브라우저 대화상자(alert·confirm·prompt · dialog 이벤트) 0번 — 고객·직원 화면 '+PAGES+'번 여는 동안',dlg.length===0&&PAGES>=10,dlg.join(' | '));
   const V9=(FIELD.match(/confirm\(|prompt\(|window\.open\(|alert\(/g)||[]).length;
   ok('화면 21: 소스 — 머리말 v10 · 새 confirm/prompt/alert/window.open 없음 (v9 원본 6개 그대로) · 확정본 구간에 iframe·innerHTML 에 서버 글 그대로 넣기 없음',/현장소통 화면 2026-11-28 v10/.test(FIELD)&&V9===6&&(()=>{const seg=FIELD.slice(FIELD.indexOf('function specHtml()'),FIELD.indexOf('function schedHtml(s)'));return seg.length>1500&&!/<iframe|confirm\(|alert\(|prompt\(|window\.open/.test(seg)})(),V9);
 }
