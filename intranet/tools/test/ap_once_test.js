@@ -41,7 +41,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));const R=[];const ok=(n,v,x)=>{R.
  const paperBoxes=html=>{const m=html.replace(/<style[\s\S]*?<\/style>/g,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');return m};
 
  const A=await open('admin',14000);
- ok('버전 v0.99-52',/APP_VER="v0\.99-52 \(대표 지시 2026-11-28 대표 결재 한 번에/.test(HTML));
+ ok('버전 기록에 v0.99-52 설명 남음 (v0.99-53부터는 맨 앞이 아님)',/v0\.99-52 \(대표 지시 2026-11-28 대표 결재 한 번에/.test(HTML));
  let d0=await D();const BEFORE=JSON.parse(JSON.stringify(d0));
 
  // ───────── ⑦ 직원 화면 (대표가 승인하기 전, 대표 칸 차례인 문서) ─────────
