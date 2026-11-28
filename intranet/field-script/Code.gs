@@ -1,7 +1,7 @@
 
 /**
  * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
- * 현장소통 Code.gs 2026-11-27 v9 (이전: '현장소통 Code.gs 2026-11-26 v8', '2026-11-26 v7', '2026-11-25 v6', '2026-11-23 v5', '2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
+ * 현장소통 Code.gs 2026-11-28 v10 (이전: '현장소통 Code.gs 2026-11-27 v9', '2026-11-26 v8', '2026-11-26 v7', '2026-11-25 v6', '2026-11-23 v5', '2026-11-23 v4', '2026-11-23 v3', '2026-11-19 v2', '2026-11-18 v1', '2 현장소통 Code.gs.txt' = v0)
  * 화면: https://soo-cpu.github.io/card/field/
  * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
  * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
@@ -77,6 +77,20 @@
  *  - xlsx 는 Utilities.unzip 으로 서버에서 읽음 (드라이브 변환·새 권한 없음). 옛 .xls 는 안 받음 (xlsx·csv·붙여넣기로)
  *  - 새 탭 '공정·결제 기록' (누르기 기록, 지우지 않음) · '설정' 탭 '기본 공정' 줄 (철거,설비,목공,전기,타일,도배,마감 — 대표가 고침)
  *  - 응답에 progress {done,total,pct} (완료 공정 수 / 전체)
+ *
+ * v10에서 더한 것 (2026-11-28 · 다음 지시 2026-11-28 v11 · A 마감재·도면 '확정본')
+ *  - 인트라넷에서 '확정'한 최신 확정본만 받아 보관하고(확정 전 버전은 오지 않음), 고객 화면·직원 화면 모두 확정본만 보여 줌
+ *  - 새 탭 2개만 더함 (기존 탭·칸·행은 그대로, setup 을 여러 번 돌려도 같음. setup 없이도 처음 쓸 때 탭이 생김)
+ *    '확정 마감재·도면': 받은 시각 · 현장코드 · 버전 · 상태(확정/확정 취소) · 확정한 사람 · 확정 시각 · 보낸 사람 · 마감재(JSON) · 파일(JSON) — 덧붙이기만, 마지막 줄이 지금 확정본
+ *    '고객 확인 기록': 시각 · 현장코드 · 버전 · 확인 날짜 · 표시 파일ID — 덧붙이기만 (되돌리기 없음)
+ *  - 새 요청: specPush(직원 출입증·관리 비밀번호만 — 인트라넷 '현장소통에 확정본 보내기') · specFile(확정본 파일 한 개, 고객은 확인 번호) · specSeen(고객만 — '확인했어요', 날짜·버전 기록)
+ *    site·adminSite 응답에 spec {ver, at, items[[공간,품목,제품명·색상]], files[{id,name,kind}], seenAt} — 고객 응답에는 확정한 직원 이름 없음, 확인 번호 통과 뒤에만
+ *  - 고객에게 나가는 마감재 칸은 공간·품목·제품명·색상 3칸만 (업체·비고·금액은 인트라넷이 보내지도 않고 서버도 받지 않음)
+ *  - 파일은 복사하지 않음: 인트라넷이 드라이브(인트라넷 첨부 › 프로젝트 폴더)에 올린 파일 번호만 받아, 볼 때 읽어서 보냄 (이미지·PDF만, 허용 폴더 안에 있는 파일만)
+ *    허용 폴더 = '설정' 탭 '확정본 파일 상위 폴더ID'(쉼표로 여러 개) · '현장 원본 폴더ID' · 그 현장 폴더
+ *  - 확정한 사람 이름은 최윤수·이봄이·정진혁만 받음 (인트라넷 확정 권한과 같음). 더 옛 버전은 받지 않음. 같은 내용을 다시 보내면 줄을 더하지 않음
+ *  - 고객 '확인했어요': 지금 확정본 버전에만, 한 번 누르면 되돌릴 수 없음. 확정본 버전이 바뀌면 새 버전에 다시 확인
+ *    누르면 드라이브 '확정본 고객 확인 기록' 폴더에 표시 파일 '확정본고객확인 P-…-… vN 날짜 시각.txt' 를 남김 → 인트라넷 '고객 확인 새로 고침'이 제목으로 읽어 감 (실패해도 시트 기록은 남음)
  */
 
 var TAB = {
@@ -90,7 +104,9 @@ var TAB = {
   hist:     ['옛 값', ['시각','현장코드','칸','옛 값','누가','까닭']],   // v3: 고치기 전 값 (지우지 않음)
   pins:     ['직원 번호', ['이름','번호 해시','상태','틀린 횟수','바꾼 때','세대','잠긴 때']],          // v5: 번호는 해시만
   devs:     ['기억 기기', ['직원','토큰 해시','만든 때','만료','기기 요약','상태','마지막 사용']],     // v5: 토큰은 해시만
-  marks:    ['공정·결제 기록', ['시각','현장코드','구분','항목','동작','날짜','누가']]                // v9: [완료]·[입금 완료]·되돌림 (지우지 않음)
+  marks:    ['공정·결제 기록', ['시각','현장코드','구분','항목','동작','날짜','누가']],               // v9: [완료]·[입금 완료]·되돌림 (지우지 않음)
+  specs:    ['확정 마감재·도면', ['받은 시각','현장코드','버전','상태','확정한 사람','확정 시각','보낸 사람','마감재(JSON)','파일(JSON)']],   // v10: 덧붙이기만 — 마지막 줄이 지금 확정본
+  specseen: ['고객 확인 기록', ['시각','현장코드','버전','확인 날짜','표시 파일ID']]                  // v10: 고객 '확인했어요' (되돌리기 없음)
 };
 // v7: 관리 비밀번호는 코드·시트·드라이브 파일에 두지 않는다 — 스크립트 속성 ADMIN_PW 에만 (대표가 직접 넣음)
 var SHEET_ID = '1Mx45YBU5_Dy7a9i9pAn89VLA40PRJdMGAHTvmc0zpHI';   // 현장소통 데이터 2026-11-06 v0
@@ -103,7 +119,7 @@ var PHASES = ['시공 전', '시공 중', '시공 후'];
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.a === 'img') return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
-  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 9 });
+  return out_({ ok: true, msg: '현장소통 서버 동작 중', v: 10 });
 }
 
 function doPost(e) {
@@ -683,6 +699,81 @@ function withSite_(code, fn) {
   var lock = LockService.getScriptLock(); lock.waitLock(20000);
   try { var r = site_(code); return fn(r); } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
 }
+/* ---------- v10: 확정 마감재·도면 (인트라넷에서 확정한 최신 확정본만) ---------- */
+var SPEC_CONF = ['최윤수', '이봄이', '정진혁'];   // 인트라넷 확정 권한과 같은 이름만 받음
+var SPEC_ROOT_DEF = '1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor,0AJ-UqRUzUqsGUk9PVA';   // 인트라넷 첨부(프로젝트 번호 폴더가 있는 곳). '설정' 탭 '확정본 파일 상위 폴더ID' 로 바꿈
+var SPEC_FILE_MAX = 15 * 1024 * 1024, SPEC_PDF_SEND = 8 * 1024 * 1024;
+var SEEN_FOLDER = '확정본 고객 확인 기록';
+function specJson_(v) { try { var a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch (x) { return []; } }
+function specItems_(a) {
+  if (!Array.isArray(a)) return [];
+  return a.slice(0, 80).map(function (r) { r = Array.isArray(r) ? r : []; return [clean_(r[0], 20), clean_(r[1], 30), clean_(r[2], 60)]; })   // 공간 · 품목 · 제품명·색상 (그 밖의 칸은 받지 않음)
+          .filter(function (r) { return r[0] || r[1] || r[2]; });
+}
+function specRoots_(r) {
+  var ids = String(setting_('확정본 파일 상위 폴더ID') || SPEC_ROOT_DEF).split(',').concat([setting_('현장 원본 폴더ID'), r && r[9], r && r[18]]);
+  return ids.map(function (x) { return String(x || '').trim(); }).filter(function (x) { return /^[A-Za-z0-9_-]{5,80}$/.test(x); });
+}
+/* 파일의 부모를 6단계까지 올라가며 허용 폴더 안에 있는지 */
+function underRoot_(file, roots) {
+  var it = file.getParents(), depth = 0;
+  while (it && it.hasNext() && depth < 6) {
+    var f = it.next();
+    if (roots.indexOf(f.getId()) >= 0) return true;
+    it = f.getParents(); depth++;
+  }
+  return false;
+}
+/* 인트라넷이 보낸 파일 번호 목록 → 확인한 것만 [{id,name,mime,size}] (이미지·PDF · 15MB까지 · 허용 폴더 안). 나머지는 skipped 에 이름과 까닭 */
+function specFiles_(list, r) {
+  var ok = [], skipped = [], roots = specRoots_(r), seen = {};
+  (Array.isArray(list) ? list : []).slice(0, 20).forEach(function (x) {
+    x = x || {};
+    var id = String(x.i || ''), name = clean_(x.n, 80);
+    if (!/^[A-Za-z0-9_-]{5,80}$/.test(id) || seen[id]) return;
+    seen[id] = 1;
+    try {
+      var f = DriveApp.getFileById(id), mime = String(f.getMimeType() || '');
+      if (!/^image\/(jpeg|png|webp|gif)$/.test(mime) && mime !== 'application/pdf') { skipped.push((name || '파일') + ' (이미지·PDF 아님)'); return; }
+      if (f.getSize() > SPEC_FILE_MAX) { skipped.push((name || '파일') + ' (15MB 넘음)'); return; }
+      if (!underRoot_(f, roots)) { skipped.push((name || '파일') + ' (인트라넷 첨부 폴더 밖)'); return; }
+      ok.push({ id: id, name: name || clean_(f.getName(), 80), mime: mime, size: f.getSize() });
+    } catch (e) { skipped.push((name || '파일') + ' (드라이브에서 못 읽음)'); }
+  });
+  return { ok: ok, skipped: skipped };
+}
+/* 그 현장의 지금 확정본 (마지막 줄이 '확정'일 때만). 없으면 null */
+function specCur_(code) {
+  var L = rows_('specs').filter(function (x) { return x[1] === code; }), x = L[L.length - 1];
+  if (!x || x[3] !== '확정') return null;
+  return { ver: Number(x[2]) || 0, by: x[4], at: x[5], recvAt: x[0], sentBy: x[6], itemsJson: x[7] || '[]', filesJson: x[8] || '[]' };
+}
+function specSeenOf_(code, ver) {
+  var x = rows_('specseen').filter(function (s) { return s[1] === code && Number(s[2]) === Number(ver); })[0];
+  return x ? { at: x[0], day: x[3] } : null;
+}
+/* 화면에 주는 확정본. 고객(isAdmin 아님)에게는 확정한 직원 이름·보낸 사람을 넣지 않음 */
+function specOut_(code, isAdmin) {
+  var c = specCur_(code);
+  if (!c) return null;
+  var seen = specSeenOf_(code, c.ver);
+  var o = { ver: c.ver, at: c.at, items: specItems_(specJson_(c.itemsJson)),
+            files: specJson_(c.filesJson).map(function (f) { return { id: String(f.id || ''), name: clean_(f.name, 80), kind: f.mime === 'application/pdf' ? 'pdf' : 'img' }; }),
+            seenAt: seen ? seen.at : '' };
+  if (isAdmin) { o.by = c.by; o.sentBy = c.sentBy; o.recvAt = c.recvAt; }
+  return o;
+}
+/* 고객 확인 표시 파일 (제목에 프로젝트 번호·버전·날짜 — 고객 이름·전화 없음). 인트라넷이 제목으로 찾아 읽음. 잠금 안에서 부름 */
+function seenMark_(r, ver, when) {
+  var proj = projOf_(r);
+  if (!proj) return '';
+  var root = DriveApp.getFolderById(specRoots_(null)[0]);
+  var it = root.getFoldersByName(SEEN_FOLDER), f = it.hasNext() ? it.next() : root.createFolder(SEEN_FOLDER);
+  var t = String(when).replace(/[^0-9]/g, '');
+  var title = '확정본고객확인 ' + proj + ' v' + ver + ' ' + String(when).slice(0, 10) + ' ' + t.slice(8, 12) + '.txt';
+  var body = '고객이 현장소통 고객 화면에서 확정 마감재·도면 v' + ver + ' 을 확인했습니다.\n확인 시각: ' + when + '\n프로젝트: ' + proj + '\n(인트라넷이 고객 확인 날짜를 읽어 가는 표시 파일입니다. 지우지 마세요.)';
+  return f.createFile(Utilities.newBlob(body, 'text/plain', title)).getId();
+}
 function findIdx_(list, req) {
   var i = req.i == null || req.i === '' ? -1 : Number(req.i), n = clean_(req.n, 40);
   if (n) {
@@ -705,7 +796,7 @@ var ACTIONS = {
     var r = site_(req.s);
     pinOk_(r, req);
     var b = bundle_(r[0], false);
-    return { site: siteCust_(r), posts: b.posts, comments: b.comments, pinOn: !!String(r[16] || '').trim() };   // v7: 직원 정보 없음
+    return { site: siteCust_(r), posts: b.posts, comments: b.comments, pinOn: !!String(r[16] || '').trim(), spec: specOut_(r[0], false) };   // v7: 직원 정보 없음 · v10: 확정 마감재·도면(확정본만, 확인 번호 통과 뒤)
   },
   photo: function (req) {
     var isAdmin = false, who = '';
@@ -991,7 +1082,7 @@ var ACTIONS = {
     var r = site_(req.s), b = bundle_(r[0], true, r[11], isOwnerReq_(who, req));   // v8
     setCell_('sites', r._row, 11, now_());
     var s = sitePublic_(r), x = adminExtra_(r); s.pin = x.pin; s.proj = x.proj; s.cust = x.cust;
-    return { site: s, posts: b.posts, comments: b.comments, pinOn: !!x.pin, defStages: defStages_(), payStages: PAY_STAGES };   // v9
+    return { site: s, posts: b.posts, comments: b.comments, pinOn: !!x.pin, defStages: defStages_(), payStages: PAY_STAGES, spec: specOut_(r[0], true) };   // v9 · v10: 직원 화면도 확정본만
   },
   /* v3: 인트라넷 '고객 공유 페이지 열기' — proj 로 찾기/만들기, 공정표 날짜 맞추기 (s 가 오면 그 현장) */
   projSite: function (req) {
@@ -1252,6 +1343,84 @@ var ACTIONS = {
     });
     if (!res.same) { mark_(res.code, '결제', res.x.n, undo ? '입금 되돌림' : '입금 완료', day, who); log_(undo ? '입금 되돌림' : '입금 완료', res.code, who, res.x.n + (day ? ' ' + day : '')); }
     return { payments: res.ps, same: !!res.same };
+  },
+  /* v10 직원: 인트라넷에서 확정한 최신 확정본 받기 (s 또는 proj). spec = {ver, by, at, it:[[공간,품목,제품명·색상]], fl:[{i:드라이브 파일ID, n:이름}]} 또는 {cancel:1} (확정 취소 → 확정본 내림)
+     줄은 덧붙이기만. 같은 버전·같은 내용이면 더하지 않음. 더 옛 버전은 거절 */
+  specPush: function (req) {
+    var who = admin_(req);
+    var proj = /^P-\d{4}-\d{3}$/.test(String(req.proj || '')) ? String(req.proj) : '';
+    var r = req.s ? site_(req.s) : (proj ? rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] : null);
+    if (!r) throw new Error('현장을 찾을 수 없어요 (인트라넷에서 ‘고객 공유 페이지 열기’를 먼저 눌러 주세요)');
+    if (proj && projOf_(r) && projOf_(r) !== proj) throw new Error('이 현장은 다른 프로젝트(' + projOf_(r) + ')예요. 확정본을 올리지 않았어요');   // 다른 프로젝트 현장에 잘못 올리지 않게
+    var sp = req.spec && typeof req.spec === 'object' ? req.spec : null;
+    if (!sp) throw new Error('확정본 내용이 없어요 (인트라넷에서 다시 보내 주세요)');
+    var code = r[0], lock;
+    if (sp.cancel) {
+      lock = LockService.getScriptLock(); lock.waitLock(20000);
+      try {
+        var c0 = specCur_(code);
+        if (!c0) return { cancelled: false, same: true, ver: 0 };
+        append_('specs', [now_(), code, c0.ver, '확정 취소', '', '', who, '[]', '[]']);
+      } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
+      log_('확정본 내림', code, who, 'v' + c0.ver + ' 확정 취소');
+      return { cancelled: true, ver: 0 };
+    }
+    var ver = Math.floor(Number(sp.ver));
+    if (!(ver >= 1 && ver <= 9999)) throw new Error('확정본 버전을 확인해 주세요');
+    var by = clean_(sp.by, 20);
+    if (SPEC_CONF.indexOf(by) < 0) throw new Error('확정 권한이 없는 이름이에요 (확정은 대표·이봄이 실장·정진혁 실장만)');
+    var at = clean_(sp.at, 25), items = specItems_(sp.it);
+    var fl = specFiles_(sp.fl, r);   // 드라이브 확인은 잠금 밖에서 (느릴 수 있음)
+    if (!items.length && !fl.ok.length) throw new Error('확정본 내용이 비어 있어요' + (fl.skipped.length ? ' (못 받은 파일: ' + fl.skipped.join(', ').slice(0, 200) + ')' : ''));
+    var ij = JSON.stringify(items), fj = JSON.stringify(fl.ok), same = false;
+    if (ij.length > 45000) throw new Error('마감재 목록이 너무 길어요');
+    lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      var c = specCur_(code);
+      if (c && c.ver > ver) throw new Error('더 새 확정본(v' + c.ver + ')이 이미 올라와 있어요 (인트라넷을 새로 고친 뒤 다시 보내 주세요)');
+      if (c && c.ver === ver && c.itemsJson === ij && c.filesJson === fj && c.by === by) same = true;
+      else append_('specs', [now_(), code, ver, '확정', by, at, who, ij, fj]);
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
+    if (!same) log_('확정본 받음', code, who, 'v' + ver + ' · 확정 ' + by + ' · 마감재 ' + items.length + '줄 · 파일 ' + fl.ok.length + '개' + (fl.skipped.length ? ' · 못 받은 파일 ' + fl.skipped.length + '개' : ''));
+    return { ver: ver, items: items.length, files: fl.ok.length, skipped: fl.skipped, same: same };
+  },
+  /* v10 고객·직원: 지금 확정본에 든 파일 한 개 (이미지는 화면용 크기, PDF 는 8MB까지). 확정본에 없는 파일 번호는 거절 */
+  specFile: function (req) {
+    var isAdmin = false;
+    if (req.pw) { admin_(req); isAdmin = true; }
+    var r = site_(req.s);
+    if (!isAdmin) { pinOk_(r, req); rate_(r[0], 'sf', 200); }
+    var c = specCur_(r[0]), id = String(req.id || '');
+    var f = c ? specJson_(c.filesJson).filter(function (x) { return x && x.id === id; })[0] : null;
+    if (!f) throw new Error('파일을 찾을 수 없어요 (화면을 새로 고쳐 주세요)');
+    if (f.mime !== 'application/pdf') return { data: photoData_(id), name: f.name, kind: 'img' };
+    var file = DriveApp.getFileById(id);
+    if (file.getSize() > SPEC_PDF_SEND) throw new Error('파일이 커서 여기서는 열 수 없어요 (담당자에게 요청해 주세요)');
+    return { data: 'data:application/pdf;base64,' + Utilities.base64Encode(file.getBlob().getBytes()), name: f.name, kind: 'pdf' };
+  },
+  /* v10 고객만: '확인했어요' — 지금 확정본 버전(ver)에 확인 날짜를 남김. 되돌리기 없음. 이미 눌렀으면 처음 날짜 그대로 */
+  specSeen: function (req) {
+    if (req.pw) throw new Error('고객 화면에서만 누를 수 있어요');
+    var r = site_(req.s);
+    pinOk_(r, req);
+    rate_(r[0], 'ss', 30);
+    var ver = Math.floor(Number(req.ver)), res, fresh = false, mark = '';
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      var c = specCur_(r[0]);
+      if (!c) throw new Error('확정본이 아직 없어요 (화면을 새로 고쳐 주세요)');
+      if (c.ver !== ver) throw new Error('확정본이 바뀌었어요. 화면을 새로 고친 뒤 다시 확인해 주세요');
+      var seen = specSeenOf_(r[0], ver);
+      if (seen) res = { seenAt: seen.at, ver: ver, already: true };
+      else {
+        var when = now_();
+        try { mark = seenMark_(r, ver, when); } catch (x) { mark = ''; }   // 표시 파일을 못 만들어도 확인 기록은 남김
+        append_('specseen', [when, r[0], ver, when.slice(0, 10), mark]);
+        res = { seenAt: when, ver: ver, already: false }; fresh = true;
+      }
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
+    if (fresh) log_('확정본 고객 확인', r[0], '고객', 'v' + ver + (mark ? '' : ' · 표시 파일 못 만듦(인트라넷은 현장소통 화면에서 확인)'));
+    return res;
   }
 };
 
@@ -1267,7 +1436,8 @@ function setup() {
   if (!setting_('사진 폴더ID')) append_('settings', ['사진 폴더ID', root_().getId(), '현장별 폴더가 이 안에 생김']);
   seedTest_();
   rows_('sites').forEach(function (r) { siteFolder_(r); });
-  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v9 · 공정 완료 날짜·입금 완료·공정·결제 기록 탭)');
+  if (!rows_('settings').some(function (x) { return x[0] === '확정본 파일 상위 폴더ID'; })) append_('settings', ['확정본 파일 상위 폴더ID', SPEC_ROOT_DEF, 'v10: 인트라넷이 마감재·도면 파일을 올리는 드라이브 폴더 ID (쉼표로 여러 개). 이 안의 이미지·PDF만 고객 화면에 보여 줌 · 맨 앞 폴더에 ‘확정본 고객 확인 기록’ 폴더가 생김']);
+  log_('설치', '', '관리', '탭·설정·시험 현장 준비 (v10 · 확정 마감재·도면 · 고객 확인 기록 탭)');
   importProjects();   // v6: '인트라넷 가져오기' 탭 (없거나 비면 아무것도 안 함)
 }
 

@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- 현장소통 화면 2026-11-28 v10 (서버 Code.gs v10과 짝, v9 서버와도 동작 — 확정본 칸만 '서버 v10 필요' 안내) · 확정 마감재·도면: 인트라넷에서 확정한 최신 확정본만(마감재 목록 공간·품목·제품명·색상 + 도면 이미지·PDF) 고객 화면·직원 화면에 · 고객 큰 '확인했어요'(날짜·버전 기록, 되돌리기 없음, 버전이 바뀌면 다시) · 인트라넷 '현장소통에 확정본 보내기'(# 뒤 d= 의 spec) → specPush · 이전: -->
 <!-- 현장소통 화면 2026-11-27 v9 (서버 Code.gs v9과 짝, v7·v8 서버와도 동작 — 새 버튼만 '서버 v9 필요' 안내) · 공정 [완료](완료 날짜·되돌리기) · 결제 [입금 완료](날짜·되돌리기) · 공정표 엑셀(xlsx·csv)·표 붙여넣기 · 기존 현장 '공정표 추가/수정' · 고객 화면 진행률(완료 공정/전체)·완료 날짜·결제 상태 · 고객 화면 가벼운 자동 새로 고침 · 이전: -->
 <!-- 현장소통 화면 2026-11-26 v7 (서버 Code.gs v7과 짝, v6 서버와도 동작) · 사진 여러 장 한 번에(촬영 순) · 직원 원본 저장(uploadOrig) · 대표만 사진 지우기(숨김, 원본 남음) · 고객 화면 직원 정보 뺌 · 서버 주소 칸은 서버 없을 때 관리 화면에만 · 이전: -->
 <!-- 현장소통 2026-11-23 v3 · 관리 화면 직원 번호 입장(이름 고르기 → 6자리 · 이 기기 30일 기억 · 대표만 '직원 번호' 칸) · 이전 2026-11-23 v2 · 인트라넷 ‘고객 공유 페이지 열기’(프로젝트 번호로 찾기·자동 만들기·공정 날짜 맞춤 · 값은 # 뒤에서 읽고 바로 지움) · 현장 목록 검색 · 이전 2026-11-18 v1 (확인 번호·결제 일정·공정표·사진), 2026-11-06 v0 -->
@@ -57,6 +58,12 @@ h2{font-size:16px;margin:0 0 10px;font-weight:700}
 .stg.s2::before{background:currentColor}
 button.stg{cursor:pointer;min-height:34px}
 .legend{font-size:12px;color:var(--sub);margin-top:8px}
+/* v10: 확정 마감재·도면 */
+.spec{border:2px solid var(--pt2)}.spec h2 .ver{font-size:14px;color:var(--pt2);margin-left:6px}
+.spec table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}.spec td,.spec th{padding:8px 6px;border-top:1px solid var(--line);text-align:left;vertical-align:top;word-break:break-all}.spec th{font-size:12px;color:var(--sub);font-weight:600;border-top:0}
+.spec .sfs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:12px}.spec .sf{border:1px solid var(--line);border-radius:10px;background:var(--bg,#f6f6f4);min-height:96px;padding:0;overflow:hidden;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:stretch;justify-content:center}
+.spec .sf img{width:100%;height:96px;object-fit:cover;display:block}.spec .sf span{font-size:12px;padding:6px;word-break:break-all;text-align:center}.spec .sf b{display:block;font-size:13px;color:var(--pt2)}
+.spec .seen{margin-top:14px;padding:12px;border-radius:10px;background:var(--bg,#f6f6f4);font-size:15px}.spec .seen.ok{font-weight:700}.spec #specOk{margin-top:14px;min-height:56px;font-size:18px}
 .imp{border-color:#efcdbf;background:var(--impbg)}
 .imp h2{color:var(--imp)}
 .imp ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
@@ -257,14 +264,22 @@ const fDay = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : "";
 const fStr = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001F]/g, " ").trim().slice(0, n);
 function autoRead(b64) {
   try {
-    if (!/^[A-Za-z0-9_-]{4,20000}$/.test(b64)) return null;
+    if (!/^[A-Za-z0-9_-]{4,60000}$/.test(b64)) return null; // v10: 확정본 마감재 목록이 같이 와서 길이 한도를 넓힘
     const bin = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64.length + 3) % 4)), u = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
     const o = JSON.parse(new TextDecoder().decode(u)); if (!o || typeof o !== "object") return null;
-    const m = ["auto", "new", "sch"].includes(o.m) ? o.m : ""; if (!m) return null;
+    const m = ["auto", "new", "sch", "spec"].includes(o.m) ? o.m : ""; if (!m) return null; // v10: spec = 인트라넷 확정본 보내기
     const r = { m, proj: /^P-\d{4}-\d{3}$/.test(String(o.proj || "")) ? String(o.proj) : "", name: fStr(o.name, 60), cust: fStr(o.cust, 30), pin: /^\d{4}$/.test(String(o.pin || "")) ? String(o.pin) : "", manager: fStr(o.mgr, 30), start: fDay(o.start), end: fDay(o.end),
       sch: (Array.isArray(o.sch) ? o.sch : []).slice(0, 30).map(x => ({ n: fStr(x && x.n, 40), a: fDay(x && x.a), b: fDay(x && x.b) })).filter(x => x.n && x.a).map(x => Object.assign(x, { b: x.b && x.b >= x.a ? x.b : x.a })) };
-    if (m === "auto" && !r.proj) return null;
+    if ((m === "auto" || m === "spec") && !r.proj) return null;
+    if (m === "spec") { // v10: 확정본 값 — 모양만 다듬고 판단(권한·파일 확인)은 서버가
+      const x = o.spec && typeof o.spec === "object" ? o.spec : null; if (!x) return null;
+      if (x.cancel) r.spec = { cancel: 1 };
+      else r.spec = { ver: Math.floor(Number(x.ver)) || 0, by: fStr(x.by, 20), at: fStr(x.at, 25),
+        it: (Array.isArray(x.it) ? x.it : []).slice(0, 80).map(a => [fStr(a && a[0], 20), fStr(a && a[1], 30), fStr(a && a[2], 60)]),
+        fl: (Array.isArray(x.fl) ? x.fl : []).slice(0, 20).map(f => ({ i: /^[A-Za-z0-9_-]{10,80}$/.test(String(f && f.i || "")) ? String(f.i) : "", n: fStr(f && f.n, 80) })).filter(f => f.i) };
+      if (!r.spec.cancel && !(r.spec.ver >= 1)) return null;
+    }
     return r;
   } catch (e) { return null; }
 }
@@ -618,7 +633,7 @@ function renderSite() {
     h += '<div class="mgr"><div class="who"><small>현장 문의</small><strong>' + CO_NAME + '</strong> <span class="meta">' + CO_TEL + '</span></div><a class="btn" href="tel:' + CO_TEL.replace(/[^0-9]/g, "") + '">전화</a></div>';
   }
   h += '</section>';
-  h += schedHtml(s) + payHtml(s) + galHtml(posts);
+  h += specHtml() + schedHtml(s) + payHtml(s) + galHtml(posts); // v10: 확정 마감재·도면 (확정본만)
   if (imp.length) {
     h += '<section class="card imp"><h2>중요 사항 ' + imp.length + '건</h2><ul>' + imp.map(x => '<li data-go="' + x.id + '"><small>' + fmtDay(x.date) + (x.stage ? " · " + esc(x.stage) : "") + '</small><span>' + esc(x.text) + '</span></li>').join("") + '</ul></section>';
   }
@@ -634,6 +649,7 @@ function renderSite() {
   app.innerHTML = h;
   writeBox($("#write"));
   bindSite();
+  specBind(app); // v10
   watchPhotos(app);
   if (ADMIN) adminBar();
   else autoPoll();
@@ -667,6 +683,63 @@ function pinGate(msg) {
   };
 }
 const rng = x => fmtDate(x.a || "") + (x.b && x.b !== x.a ? " ~ " + fmtDate(x.b).slice(x.a && x.b.slice(0, 4) === x.a.slice(0, 4) ? 5 : 0) : "");
+/* v10: 확정 마감재·도면 — 인트라넷에서 확정한 최신 확정본만. 고객은 큰 '확인했어요'(되돌리기 없음), 직원은 고객 확인 날짜 보기 */
+const SPEC_IMG = {}; // 파일 id -> dataURL (이 화면에서 기억)
+function specHtml() {
+  const sp = D && D.spec;
+  if (!sp || !sp.ver) {
+    if (!ADMIN) return "";
+    if (API && D && !("spec" in D)) return '<section class="card" id="specOld"><h2>확정 마감재·도면</h2><div class="meta">현장소통 서버가 옛 버전이에요 (Code.gs v10 배포 뒤에 확정본이 여기에 보여요).</div></section>';
+    return '<section class="card" id="specNone"><h2>확정 마감재·도면</h2><div class="meta">아직 확정본이 없어요. 인트라넷 프로젝트 화면 ‘마감재·도면’에서 확정한 뒤 ‘고객 화면(현장소통)에 확정본 보내기’를 누르면 여기와 고객 화면에 보여요.</div></section>';
+  }
+  const items = Array.isArray(sp.items) ? sp.items : [], files = Array.isArray(sp.files) ? sp.files : [], day = String(sp.at || "").slice(0, 10);
+  let h = '<section class="card spec" id="spec" data-ver="' + esc(sp.ver) + '"><h2>확정 마감재·도면<span class="ver">v' + esc(sp.ver) + '</span></h2>';
+  h += '<div class="meta">' + (/^\d{4}-\d{2}-\d{2}$/.test(day) ? "확정일 " + fmtDate(day) + " · " : "") + (ADMIN && sp.by ? "확정 " + esc(sp.by) + " · " : "") + '아래 내용대로 시공합니다.</div>';
+  if (items.length) h += '<table><thead><tr><th>공간</th><th>품목</th><th>제품명·색상</th></tr></thead><tbody>' + items.map(r => '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td></tr>').join("") + '</tbody></table>';
+  if (files.length) h += '<div class="sfs">' + files.map(f => f.kind === "pdf"
+    ? '<button type="button" class="sf" data-sfpdf="' + esc(f.id) + '"><span><b>PDF 도면 열기</b>' + esc(f.name) + '</span></button>'
+    : '<button type="button" class="sf" data-sfimg="' + esc(f.id) + '" aria-label="' + esc(f.name) + ' 크게 보기"><span>' + esc(f.name) + '<br>불러오는 중…</span></button>').join("") + '</div>';
+  if (ADMIN) h += '<div class="seen' + (sp.seenAt ? " ok" : "") + '" id="specSeen">' + (sp.seenAt ? "고객 확인 " + esc(String(sp.seenAt).slice(0, 16)) : "고객이 아직 ‘확인했어요’를 누르지 않았어요") + '</div><div class="legend">확정본은 인트라넷에서만 바꿔요 (새 버전을 확정하고 다시 보내면 고객이 새 버전을 다시 확인해요).</div>';
+  else if (sp.seenAt) h += '<div class="seen ok" id="specSeen">' + fmtDate(String(sp.seenAt).slice(0, 10)) + ' 에 확인하셨습니다.</div>';
+  else h += '<button type="button" class="btn big pri" id="specOk">확인했어요</button><div class="legend">마감재·도면 내용을 보시고 맞으면 눌러 주세요. 누른 날짜가 기록되고, 내용이 바뀌면 다시 확인을 부탁드려요.</div>';
+  return h + '</section>';
+}
+async function specLoad(root) {
+  for (const b of root.querySelectorAll("[data-sfimg]")) {
+    const id = b.dataset.sfimg;
+    try {
+      if (!SPEC_IMG[id]) { const r = await call("specFile", ADMIN ? { s: CODE, pw: PW, id } : { s: CODE, id }); SPEC_IMG[id] = String(r.data || ""); }
+      if (!/^data:image\//.test(SPEC_IMG[id]) || !b.isConnected) continue;
+      const im = new Image(); im.alt = "확정 도면"; im.src = SPEC_IMG[id]; b.innerHTML = ""; b.appendChild(im);
+    } catch (e) { const sp = b.querySelector("span"); if (sp) sp.innerHTML = sp.innerHTML.replace("불러오는 중…", "못 불러왔어요"); }
+  }
+}
+function specBind(root) {
+  const sec = root.querySelector("#spec"); if (!sec) return;
+  specLoad(sec);
+  sec.addEventListener("click", async e => {
+    const im = e.target.closest("[data-sfimg]"), pd = e.target.closest("[data-sfpdf]");
+    if (im && SPEC_IMG[im.dataset.sfimg]) { modal('<img src="' + SPEC_IMG[im.dataset.sfimg] + '" alt="확정 도면" style="width:100%;border-radius:8px"><div class="row" style="margin-top:10px"><button class="btn" data-close>닫기</button></div>'); return; }
+    if (pd) {
+      if (pd.disabled) return; pd.disabled = true; const lab = pd.querySelector("b"), t0 = lab.textContent; lab.textContent = "불러오는 중…";
+      try {
+        const r = await call("specFile", ADMIN ? { s: CODE, pw: PW, id: pd.dataset.sfpdf } : { s: CODE, id: pd.dataset.sfpdf });
+        const m0 = /^data:application\/pdf;base64,(.*)$/.exec(String(r.data || "")); if (!m0) throw new Error("파일 형식 오류");
+        const bin = atob(m0[1]), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([u], { type: "application/pdf" }));
+        modal('<h2>도면 PDF</h2><div class="meta" style="margin-bottom:12px">' + esc(r.name || "도면") + '</div><div class="row"><a class="btn pri" href="' + url + '" target="_blank" rel="noopener" download="' + esc(r.name || "도면.pdf") + '">열기 · 내려받기</a><button class="btn" data-close>닫기</button></div>');
+      } catch (err) { toast(err.message, 3500); }
+      lab.textContent = t0; pd.disabled = false; return;
+    }
+    if (e.target.id === "specOk") {
+      const ver = Number(sec.dataset.ver);
+      if (!await askBox("확정 마감재·도면 v" + ver, "내용을 확인하셨나요? 확인한 날짜가 기록되고 되돌릴 수 없어요.", "확인했어요")) return;
+      const b = e.target; b.disabled = true;
+      try { const r = await call("specSeen", { s: CODE, ver }); if (D && D.spec) D.spec.seenAt = r.seenAt || nowStr(); toast("확인해 주셔서 감사합니다. 날짜를 기록했어요.", 3000); const y = scrollY; renderSite(); scrollTo(0, y); }
+      catch (err) { b.disabled = false; if (/바뀌었어요|아직 없어요/.test(err.message)) { toast(err.message, 3500); refresh(); } else if (/^PIN:/.test(err.message)) refresh(); else toast(err.message, 3500); }
+    }
+  });
+}
 function schedHtml(s) {
   if (ADMIN) return schedAdminHtml(s);
   const rows = (s.stages || []).filter(x => x.a || x.b || x.s === 2);
@@ -1241,7 +1314,7 @@ async function ticketIn() {
 /* v2: 인트라넷 ‘고객 공유 페이지 열기’ — 프로젝트 번호로 현장 찾기 · 없으면 자동으로 만들기 · 공정표 날짜 맞추기 → 그 현장 관리 화면 */
 async function autoOpen() {
   const A = AUTO; AUTO = null;
-  $("#app").innerHTML = '<div class="loading">' + (A.m === "auto" && !CODE ? "인트라넷 프로젝트 " + esc(A.proj) + " 현장 찾는 중…" : "공정 날짜 맞추는 중…") + '</div>';
+  $("#app").innerHTML = '<div class="loading">' + (A.m === "spec" ? "확정 마감재·도면을 고객 화면에 올리는 중…" : A.m === "auto" && !CODE ? "인트라넷 프로젝트 " + esc(A.proj) + " 현장 찾는 중…" : "공정 날짜 맞추는 중…") + '</div>';
   let r;
   try {
     r = await call("projSite", { pw: PW, s: CODE || "", proj: A.proj, name: A.name, cust: A.cust, pin: A.pin, manager: A.manager, start: A.start, end: A.end, stages: A.sch });
@@ -1253,8 +1326,20 @@ async function autoOpen() {
   }
   CODE = String(r.code || "");
   try { history.replaceState(null, "", BASE + "?admin&s=" + encodeURIComponent(CODE)); } catch (x) {}
+  let specMsg = ""; // v10: 인트라넷 확정본(또는 확정 취소) → 서버에 저장한 뒤 그 현장 화면을 엶
+  if (A.m === "spec" && A.spec) {
+    try {
+      const q = await call("specPush", { pw: PW, s: CODE, proj: A.proj, spec: A.spec });
+      if (A.spec.cancel) specMsg = q.cancelled ? "확정 취소를 반영했어요 · 고객 화면에서 확정본을 내렸어요" : "고객 화면에 올라간 확정본이 없어요";
+      else specMsg = (q.same ? "같은 확정본 v" + q.ver + " 이 이미 올라가 있어요" : "확정본 v" + q.ver + " 을 고객 화면에 올렸어요 (마감재 " + q.items + "줄 · 파일 " + q.files + "개)") + ((q.skipped || []).length ? " · 못 올린 파일 " + q.skipped.length + "개: " + q.skipped.join(", ").slice(0, 120) : "");
+    } catch (e) {
+      if (TK && /입장권|비밀번호/.test(e.message)) { tkDrop(); AUTO = A; if (PW) return route(); $("#bar").innerHTML = ""; loginView(TK_END); return; }
+      specMsg = /알 수 없는 요청/.test(e.message) ? "현장소통 서버가 옛 버전이에요 (Code.gs v10 배포 필요) · 확정본은 아직 고객 화면에 안 올라갔어요" : "확정본을 올리지 못했어요: " + String(e.message || "").slice(0, 120);
+    }
+  }
   await openSite();
   if (!D) return;
+  if (specMsg) { if (r.created) shareModal(Object.assign({}, D.site, { pinOn: !!r.pinOn }), true); toast(specMsg, 5000); const sc = $("#spec"); if (sc && !r.created) sc.scrollIntoView({ block: "start" }); return; }
   if (r.created) shareModal(Object.assign({}, D.site, { pinOn: !!r.pinOn }), true);
   else toast(r.sched ? "인트라넷 공정표 날짜로 공정 " + r.sched + "단계를 맞췄어요" : (A.m === "auto" ? "이미 만든 현장을 열었어요" : "공정 날짜가 이미 같아요"), 3000);
 }
@@ -1262,7 +1347,7 @@ function route() {
   if (ADMIN) {
     if (TICKET) { ticketIn(); return; }
     if (!PW) return loginView();
-    if (AUTO && (AUTO.m === "auto" || AUTO.m === "sch")) return autoOpen();
+    if (AUTO && (AUTO.m === "auto" || AUTO.m === "sch" || AUTO.m === "spec")) return autoOpen(); // v10: spec
     if (CODE) return openSite();
     listView().then(ok => { // 인트라넷 '고객 공유 페이지 만들기'(계약 전)에서 # 뒤로 넘어온 값으로 '현장 추가' 창 채우기
       const A = AUTO; if (!ok || !A || A.m !== "new") return; AUTO = null;
