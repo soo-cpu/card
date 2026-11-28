@@ -170,7 +170,7 @@ async function part1(b){
   ok('화면 오류 없음',errs.length===0,errs.slice(0,5).join(' | '));
   const src=HTML.slice(HTML.indexOf("// ===== v0.99-52 마감재·도면"),HTML.indexOf("// ===== 공정 진행률 (대표 지시 2026-11-13 4번"));
   ok('코드: 마감재·도면 블록에 .delete( · alert( · confirm( · prompt( · window.open · iframe · assets 올리기 없음',src.length>5000&&!/\.delete\(|[^A-Za-z.]alert\(|[^A-Za-z.]confirm\(|prompt\(|window\.open|<iframe|upAsset\(|assets\.upload/.test(src));
-  ok('버전 표시 v0.99-52',/const APP_VER="v0\.99-52 \(/.test(HTML));
+  ok('버전 표시 v0.99-52 이상(A 설명 남음)',/const APP_VER="v0\.99-5[2-9] \(/.test(HTML)&&/v0\.99-52: \(다음 지시 2026-11-28 v11 · A|APP_VER="v0\.99-52 \(/.test(HTML));
   await ctx.close();
 }
 
