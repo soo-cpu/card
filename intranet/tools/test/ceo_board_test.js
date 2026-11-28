@@ -85,7 +85,14 @@ const SNAP="acct/_ceo/snap/cur";
  ok('3 늦은 공정 내용: 주거=목공(철거 100%·오늘 타일은 아님) · 관공서=전기 · 준공·100% 현장은 빠짐',P.res.late.L[0].id==='p1'&&/목공/.test(P.res.late.L[0].s)&&!/철거|타일/.test(P.res.late.L[0].s)&&/3일 지남/.test(P.res.late.L[0].s)&&P.gov.late.L[0].id==='p4'&&/전기/.test(P.gov.late.L[0].s),[P.res.late.L,P.gov.late.L]);
  ok('3 화면 숫자 = 스냅숏',await tile(A,'res','active')==='3건'&&await tile(A,'res','late')==='1곳'&&await tile(A,'res','ap')==='1건'&&await tile(A,'res','recv')==='550만원'&&await tile(A,'res','due')==='1,320만원'&&await tile(A,'gov','recv')==='2,200만원'&&await tile(A,'gov','active')==='2건',[await tile(A,'res','active'),await tile(A,'res','recv'),await tile(A,'res','due'),await tile(A,'gov','recv')]);
  ok('3 늦은 공정 칸은 빨간색',await A.evaluate(()=>document.querySelector('[data-ceolist="res|late"]').classList.contains('bad')&&getComputedStyle(document.querySelector('[data-ceolist="res|late"] b')).color!==getComputedStyle(document.querySelector('[data-ceolist="res|active"] b')).color));
- ok('3 확정본(A 묶음 · 올린 것 없음)은 0건 · 사진·메모는 기존 자료로',await tile(A,'res','spec')==='0건'&&snap.tlSrc==='기존'&&snap.specReady===true&&snap.parts.res.spec.n===0&&await tile(A,'res','tl')==='사진 1 · 메모 2',[await tile(A,'res','spec'),snap.specReady,await tile(A,'res','tl')]);
+ // (v0.99-54) A 확정본·B 타임라인이 인트라넷에 들어온 뒤: 확정본 요약은 0건, 사진·메모는 B 타임라인(진짜 v11TimelineToday)에서 옴 — 숫자는 기존 자료로 셀 때와 같음
+ ok('3 확정본(A · 올린 것 없음)은 0건 · 사진·메모는 B 타임라인에서 (사진 1 · 메모 2) · 덜 센 표시 없음',await tile(A,'res','spec')==='0건'&&snap.tlSrc==='B'&&snap.specReady===true&&snap.partial===undefined&&snap.parts.res.spec.n===0&&await tile(A,'res','tl')==='사진 1 · 메모 2',[await tile(A,'res','spec'),await tile(A,'res','tl'),snap.tlSrc,snap.specReady,snap.partial]);
+ {const tl=await A.evaluate(()=>window.v11TimelineToday().map(e=>[e.pid,e.kind,e.n||0,!!e.t,e.who]));
+  ok('3 진짜 B 함수 모양: p1 메모(정진혁)·현장 일지(시각 없음)·사진 1장 — 그 밖의 프로젝트는 없음',JSON.stringify(tl.slice().sort())===JSON.stringify([["p1","메모",0,true,"정진혁"],["p1","사진",1,true,"정진혁"],["p1","일지",0,false,""]].sort()),tl);
+  t=await A.locator('[data-ceopart="res"] .ceo-lines').innerText().catch(()=>'');ok('3 파트 카드 ‘오늘’ 미리 보기: 최근 한 줄 + 줄 수(오늘 3줄)',/오늘 3줄 · 한빛아파트 욕실/.test(t)&&t.split('\n').filter(l=>/^오늘/.test(l.trim())).length===1,t);
+  // C(현장 일정)가 늦은 공정 판정을 saLateProcs 로 뺀 뒤에도 현황판 숫자가 그대로인지
+  const lp=await A.evaluate(([T])=>{const h=window.__hfT,o={};["p1","p3","p4","p5","p8"].forEach(id=>{o[id]=h.saLateProcs(id,T)});o.rows=h.saRows().late;return o},[T]);
+  ok('3 늦은 공정 공용 함수(saLateProcs): p1=목공만 · p4=전기 · 준공(p3)·앞날(p5)·100%(p8)는 없음 · 현장 일정 화면의 늦은 공정 수 = 현황판 합',JSON.stringify([lp.p1,lp.p4,lp.p3,lp.p5,lp.p8])===JSON.stringify([[["목공",D(-3)]],[["전기",D(-2)]],[],[],[]])&&lp.rows===P.res.late.n+P.gov.late.n+P.etc.late.n&&P.res.late.L[0].end===D(-3)&&P.res.late.L[0].days===3,lp)}
  const S3=snap.staff;const sf=nm=>S3.find(x=>x.name===nm);
  ok('3 직원 줄 3명: 정진혁 오늘 2건(프로젝트 수정·견적 등록)·기록 1·사진 1·요청 접수 1 끝남 1 / 이봄이 형 확인 필요 1 / 채진아 오늘 1건',S3.length===3&&sf('정진혁').work.n===2&&sf('정진혁').memo===1&&sf('정진혁').photo===1&&sf('정진혁').fb.wait===1&&sf('정진혁').fb.done===1&&sf('이봄이').fb.ask===1&&sf('이봄이').work.n===0&&sf('채진아').work.n===1,S3.map(x=>[x.name,x.work.n,x.memo,x.photo,x.fb.wait,x.fb.ask,x.fb.done]));
  ok('3 직원 줄 화면: 세 사람 이름 · 요청 상태',await A.locator('.ceo-srow').count()===3&&/형 확인 필요 1/.test(await A.locator('[data-ceostaff="이봄이"]').innerText())&&/오늘 2건/.test(await A.locator('[data-ceostaff="정진혁"]').innerText()));
@@ -151,7 +158,8 @@ const SNAP="acct/_ceo/snap/cur";
  ok('10 방금 센 스냅숏(가짜 77건) → 다시 세지 않고 저장된 숫자 그대로',sc.at===freshAt&&sc.parts.res.active.n===77&&await tile(C,'res','active')==='77건',[sc.at,await tile(C,'res','active')]);
 
  // ───────── 11. A(확정본)·B(타임라인) 요약이 있으면 씀 ─────────
- // A 는 진짜 함수(v11SpecSummary — 화면 코드가 만듦)와 맞물려 봄: 공용 작업 칸 work/all/spec 에 버전 줄·기록 줄을 넣음. B(타임라인)는 아직 없어 가짜로
+ // A 는 진짜 함수(v11SpecSummary — 화면 코드가 만듦)와 맞물려 봄: 공용 작업 칸 work/all/spec 에 버전 줄·기록 줄을 넣음.
+ // B 도 먼저 진짜 함수(v11TimelineToday)와 맞물려 봄: 관공서 p4 에 오늘 사진 2장(같은 사람 → 한 줄 · n 2)·결정 한 줄을 넣음. 그 다음 시험용 값으로 바꿔 ‘다시 세기’(B 제작자 판 방식)
  const sv=(pid,pno,ver)=>({k:"ver",pid,pno,ver,at:iso(NOW-(4-ver)*36e5),by:"u_bom",byName:"이봄이",items:[{space:"욕실",part:"벽",name:"시험 타일"}],files:[]});
  const sa=(pid,pno,act,ver,byName,x)=>Object.assign({k:"act",pid,pno,act,ver,at:iso(NOW-36e5+ver*1000+(act==="고객 확인"?5000:0)),by:"u_x",byName},x||{});
  const SPEC={"work/all/spec/p1__v1":sv("p1","P-2611-901",1),"work/all/spec/p1__v2":sv("p1","P-2611-901",2),"work/all/spec/p1__a1":sa("p1","P-2611-901","확정",1,"정진혁"), // 주거: v1 확정 · 고객 안 봄 · 그 뒤 v2 올라옴(확정 뒤 바뀜)
@@ -159,14 +167,21 @@ const SNAP="acct/_ceo/snap/cur";
   "work/all/spec/p2__v1":sv("p2","P-2611-902",1), // 주거: 올리기만 하고 확정 전 → 안 셈
   "work/all/spec/p6__v1":sv("p6","P-2611-906",1),"work/all/spec/p6__a1":sa("p6","P-2611-906","확정",1,"최윤수")}; // 일반공사: A 는 part '관공서'로 주지만 현황판은 구분(cat)으로 '그 밖'
  const pre=`window.v11TimelineToday=[{pid:"p4",name:"교문초등학교 도서관",t:"09:10",kind:"사진",text:"전기 배관",who:"이봄이"},{pid:"p4",name:"교문초등학교 도서관",t:"10:20",kind:"메모",text:"자재 도착",who:"이봄이"}];`;
- const Wd=await world(SPEC);const Dp=await Wd.open('admin',15000,pre);const sd=(await Wd.DB())[SNAP];
+ const ph4=i=>({id:"ph4"+i,fid:"as_y"+i,name:"b"+i+".jpg",type:"image/jpeg",d:T,at:iso(NOW-i*1000),by:"u_bom",byName:"이봄이",from:"현장 일지"});
+ const P4X={"projects/p4":Object.assign({},SEED["projects/p4"],{photos:[ph4(1),ph4(2),Object.assign(ph4(3),{name:"도면.pdf",type:"application/pdf"})],plog:[{at:NOWI,type:"결정",text:"전기 배관 위치 확정",name:"이봄이"}]})};
+ const Wd=await world(Object.assign({},SPEC,P4X));const Dp=await Wd.open('admin',15000);const sd0=(await Wd.DB())[SNAP];
+ const rtl=await Dp.evaluate(()=>window.v11TimelineToday().filter(e=>e.pid==="p4").map(e=>[e.kind,e.n||0,e.who,/^\d{4}-/.test(e.t)]));
+ ok('11 진짜 B 함수(v11TimelineToday): p4 사진 한 줄(2장 · PDF 는 장수에 안 셈)·결정 한 줄',JSON.stringify(rtl.slice().sort())===JSON.stringify([["결정",0,"이봄이",true],["사진",2,"이봄이",true]]),rtl);
+ ok('11 진짜 B 함수와 맞물린 현황판: 관공서 사진 2(장수) · 메모 1(결정) · 주거 사진 1 · 메모 2 그대로',sd0.tlSrc==='B'&&sd0.parts.gov.tl.photo===2&&sd0.parts.gov.tl.memo===1&&sd0.parts.gov.tl.n===2&&sd0.parts.res.tl.photo===1&&sd0.parts.res.tl.memo===2&&await tile(Dp,'gov','tl')==='사진 2 · 메모 1',[sd0.tlSrc,sd0.parts.gov.tl,sd0.parts.res.tl]);
+ ok('11 직원별 ‘사진’ 수는 사진만(이봄이 2 — PDF 1개는 안 셈) · 기록 1',(sd0.staff.find(x=>x.name==='이봄이')||{}).photo===2&&(sd0.staff.find(x=>x.name==='이봄이')||{}).memo===1,sd0.staff.map(x=>[x.name,x.memo,x.photo]));
+ await Dp.evaluate(pre);await Dp.evaluate(()=>window.__hfT.ceoRecount('manual'));await wait(2500);const sd=(await Wd.DB())[SNAP];
  const real=await Dp.evaluate(()=>window.v11SpecSummary().map(e=>[e.pid,e.part,e.ver,!!e.confirmedAt,!!e.custSeenAt,e.changedAfterConfirm]));
  ok('11 진짜 A 함수 모양: p1 확정 v1·고객 안 봄·확정 뒤 바뀜 / p4 고객 봄 / p2 확정 없음(ver 0) / p6 part 관공서',JSON.stringify(real.sort())===JSON.stringify([["p1","주거",1,true,false,true],["p2","주거",0,false,false,false],["p4","관공서",1,true,true,false],["p6","관공서",1,true,false,false]]),real);
  ok('11 A 요약(진짜 함수): 확정됐는데 고객이 안 본 것만 — 주거 1 · 관공서 0(고객이 봄) · 확정 전 것은 안 셈',sd.specReady===true&&sd.parts.res.spec.n===1&&sd.parts.res.spec.L[0].id==='p1'&&sd.parts.gov.spec.n===0&&/확정 뒤 바뀜/.test(sd.parts.res.spec.L[0].s)&&/정진혁/.test(sd.parts.res.spec.L[0].s)&&await tile(Dp,'res','spec')==='1건'&&await tile(Dp,'gov','spec')==='0건',[sd.specReady,sd.parts.res.spec,await tile(Dp,'res','spec')]);
  ok('11 A 가 관공서로 준 일반공사 현장은 현황판 구분(cat)대로 ‘그 밖’에 셈',sd.parts.etc.spec.n===1&&sd.parts.etc.spec.L[0].id==='p6',sd.parts.etc.spec);
  await Dp.locator('[data-ceolist="res|spec"]').click();await wait(400);t=await Dp.locator('#ceoVeil').innerText();ok('11 확정본 숫자 → 목록(한빛아파트 욕실 · 확정 뒤 바뀜) → 그 프로젝트 열림',/한빛아파트 욕실/.test(t)&&/확정 뒤 바뀜/.test(t),t.slice(0,200));
  await Dp.locator('#ceoVeil [data-ceoopen="projects|p1"]').click();await wait(1200);ok('11 목록 줄 → 프로젝트 p1',await Dp.evaluate(()=>{const s=window.__hfT.sheet();return !!s&&s.id==='p1'}));
- ok('11 B 타임라인: 관공서 사진 1 · 메모 1 (기존 자료 대신)',sd.tlSrc==='B'&&sd.parts.gov.tl.photo===1&&sd.parts.gov.tl.memo===1&&sd.parts.res.tl.n===0&&await tile(Dp,'gov','tl')==='사진 1 · 메모 1',[sd.tlSrc,sd.parts.gov.tl]);
+ ok('11 B 타임라인(시험용 값으로 바꿔 다시 셈): 관공서 사진 1 · 메모 1',sd.by==='manual'&&sd.tlSrc==='B'&&sd.parts.gov.tl.photo===1&&sd.parts.gov.tl.memo===1&&sd.parts.res.tl.n===0&&await tile(Dp,'gov','tl')==='사진 1 · 메모 1',[sd.tlSrc,sd.parts.gov.tl]);
 
  // ───────── 12. 휴대폰 390px: 세로 쌓임 · 가로 넘침 없음 ─────────
  const Wm=await world(null,{width:390,height:844});const M=await Wm.open('admin',15000);
@@ -182,6 +197,44 @@ const SNAP="acct/_ceo/snap/cur";
  ok('12 휴대폰: 목록 창도 화면 안',vg.r<=391&&vg.sw<=392,vg);await M.locator('#ceoVeil [data-ceoclose]').click();
  await A.setViewportSize({width:1280,height:900});await go(A,'#ceo',900);await A.screenshot({path:OUT+'/ceo_board_pc.png',fullPage:true});
  const pc=await A.evaluate(()=>[...document.querySelectorAll('.ceo-part')].map(e=>Math.round(e.getBoundingClientRect().top)));ok('12 PC: 파트 카드 2개가 나란히',pc.length===2&&pc[0]===pc[1],pc);
+
+ // ───────── 13. 검토 권고 반영 ─────────
+ // 13-1 덜 센 채 저장된 스냅숏(방금 센 것이라 기준 시각으로는 새것)은 자료가 다 오면 한 번 더 셈
+ {const half=(x)=>{const s=fake(iso(Date.now()));Object.assign(s,x);return s};
+  const Wp=await world({[SNAP]:half({partial:1})});const Pp=await Wp.open('admin',16000);const sp=(await Wp.DB())[SNAP];
+  ok('13 덜 센 표시(partial)가 있는 새 스냅숏(가짜 77건) → 자료가 다 오면 다시 세어 저장(표시 없어짐)',sp.parts.res.active.n===3&&sp.partial===undefined&&sp.by==='auto'&&await tile(Pp,'res','active')==='3건',[sp.parts.res.active.n,sp.partial,sp.by]);
+  const at1=sp.at;await wait(7000);ok('13 다시 센 뒤에는 그대로(되풀이해 세지 않음)',(await Wp.DB())[SNAP].at===at1);await Pp.close();
+  const Wq=await world({[SNAP]:half({specReady:false})});const Pq=await Wq.open('admin',16000);const sq=(await Wq.DB())[SNAP];
+  ok('13 ‘준비 중’(specReady=false)으로 저장된 새 스냅숏 → 확정본 자료가 오면 다시 세어 저장',sq.parts.res.active.n===3&&sq.specReady===true&&await tile(Pq,'res','spec')==='0건',[sq.parts.res.active.n,sq.specReady]);await Pq.close()}
+ // 13-2 지운 줄·숨긴 줄·휴지통 줄은 안 셈 · 13-5 고친 사람 칸 없이 사본 표시만 있는 줄 · 13-6 급여 결재
+ {const dead=(id,x)=>Object.assign({},SEED["projects/p1"],{no:"P-2611-9"+id,title:"지운 현장 "+id,plog:[],photos:[],pays:[{step:"잔금",amt:"990000",due:D(3)}]},x);
+  const X={"projects/p91":dead("91",{__deleted:true}),"projects/p92":dead("92",{__gone:true}),"projects/p93":dead("93",{trashed:true}),
+   "approvals/a91":ap("u_jjh","지운 결재",{pno:"P-2611-901",__deleted:true,history:[{at:iso(NOW-5*864e5),by:"u_cja",act:"검토"}]}),
+   "feedback/f91":{body:"지운 요청",kind:"불편해요",status:"형 확인 필요",createdBy:"u_bom",createdAt:NOWI,__deleted:true},
+   "quotes/q91":{qno:"P-2611-902-2",pno:"P-2611-902",name:"사본 표시만",staff:"이봄이",status:"본견적 진행",d:T,amount:1,items:[],createdBy:"u_bom",createdAt:T0,updatedAt:T0,__by:"u_jjh",__at:NOWI}, // 고친 사람 칸 없음 · 사본 표시(정진혁 · 오늘) → 정진혁 오늘 수정
+   "quotes/q92":{qno:"P-2611-902-3",pno:"P-2611-902",name:"남이 고침",staff:"이봄이",status:"본견적 진행",d:T,amount:1,items:[],createdBy:"u_bom",createdAt:T0,updatedAt:NOWI,__by:"u_jjh",__at:T0},   // 오늘 고쳐졌지만 정진혁 사본 표시는 옛날 → 정진혁 것으로 세지 않음
+   "approvals/a92":ap("u_cja","11월 급여 지급의 건 9,876,543원",{kind:"기안품의서 (본사)",pno:"본사",amount:9876543,hqlines:[{item:"급여",detail:"11월 급여",amount:9876543}],history:[{at:iso(NOW-4*864e5),by:"u_cja",act:"기안"}]})};
+  const We=await world(X);const E=await We.open('admin',16000);const se=(await We.DB())[SNAP],J=JSON.stringify(se);
+  ok('13 지운 줄(__deleted)·숨긴 줄(__gone)·휴지통 줄은 안 셈: 주거 진행 3 · 늦음 1 · 결재 1 · 입금 예정 1,320만 그대로',JSON.stringify(num(se.parts.res))===JSON.stringify([3,1,1,1,1,5500000,1,13200000,1,1,1,2])&&!/지운 현장|지운 결재|지운 요청/.test(J)&&se.staff.find(x=>x.name==='이봄이').fb.ask===1,num(se.parts.res));
+  const jw=se.staff.find(x=>x.name==='정진혁').work;
+  ok('13 고친 사람 칸 없이 사본 표시(__by)만 있는 줄: 그 사본 시각(__at)이 오늘이면 그 사람 오늘 수정(3건) · 옛날이면 안 셈',jw.n===3&&jw.L.some(w=>w.t==='사본 표시만'&&/수정/.test(w.s))&&!jw.L.some(w=>w.t==='남이 고침'),jw);
+  const sal=se.parts.etc.ap.L.find(x=>x.id==='a92');
+  ok('13 급여 결재(대표 차례): 줄 제목은 ‘급여 결재’만 · 금액·원래 제목 없음 · 건수에는 셈(그 밖 2건 · 미룸 2)',!!sal&&sal.t==='급여 결재'&&!/9,?876,?543|11월 급여/.test(JSON.stringify(sal))&&se.parts.etc.ap.n===2&&se.parts.etc.ap.slow===2,se.parts.etc.ap);
+  ok('13 스냅숏 어디에도 급여 금액·급여 결재 원래 제목 없음',!/9,?876,?543|11월 급여/.test(J));
+  t=await E.locator('#ceoAlert').innerText().catch(()=>'');ok('13 맨 위 알림 줄: ‘급여 결재’로만 (금액 없음)',/급여 결재/.test(t)&&/미루는 결재 3건/.test(t)&&!/9,?876,?543|11월 급여/.test(t),t);
+  const rd=await E.evaluate(()=>window.__hfT.ceoRed().map(x=>x.title+' '+x.sub).join(' / '));ok('13 ‘대표 확인’ 목록 줄에도 금액·원래 제목 없음',/급여 결재/.test(rd)&&!/9,?876,?543|11월 급여/.test(rd),rd);
+  await E.locator('[data-ceolist="etc|ap"]').click();await wait(400);t=await E.locator('#ceoVeil').innerText();ok('13 목록 창 줄: ‘급여 결재’ · 금액 없음 · 다른 결재(법인카드 대금 120,000원)는 그대로',/급여 결재/.test(t)&&!/9,?876,?543|11월 급여/.test(t)&&/법인카드 대금/.test(t)&&/120,000원/.test(t),t.slice(0,300));
+  await E.locator('#ceoVeil [data-ceoopen="approvals|a92"]').click();await wait(1200);ok('13 그 줄을 누르면 급여 결재 서류가 열림(금액은 서류 안에서)',await E.evaluate(()=>{const s=window.__hfT.sheet();return !!s&&s.col==='approvals'&&s.id==='a92'}));await E.close()}
+ // 13-3 44px (휴대폰): 알림 줄 안 현장·결재 링크 · ‘그 밖·구분 없음’ 칩 · 목록 창 ‘닫기’
+ {await go(M,'#ceo',900);const hs=await M.evaluate(()=>{const h=q=>[...document.querySelectorAll(q)].map(e=>Math.round(e.getBoundingClientRect().height));return {al:h('#ceoAlert button'),chip:h('.ceo-chip'),over:[...document.querySelectorAll('#view *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1}).length}});
+  ok('13 휴대폰: 알림 줄 링크·‘그 밖’ 칩 높이 44px 이상 · 가로 넘침 없음',hs.al.length>=3&&hs.al.every(x=>x>=44)&&hs.chip.length>=4&&hs.chip.every(x=>x>=44)&&hs.over===0,hs);
+  await M.locator('[data-ceolist="etc|ap"]').click();await wait(400);const ch=await M.evaluate(()=>{const r=document.querySelector('#ceoVeil [data-ceoclose]').getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)]});
+  ok('13 휴대폰: 목록 창 ‘닫기’ 44px 이상',ch[0]>=44&&ch[1]>=44,ch);await M.locator('#ceoVeil [data-ceoclose]').click()}
+ // 13-4 320px: ‘오늘 현장 사진·메모’ 값이 말줄임으로 잘리지 않음(줄바꿈)
+ {const Ws=await world(null,{width:320,height:640});const Sm=await Ws.open('admin',15000);
+  const g=await Sm.evaluate(()=>{const b=document.querySelector('[data-ceolist="res|tl"] b'),cs=getComputedStyle(b);return {txt:b.innerText.trim().replace(/\s+/g,' '),sw:b.scrollWidth,cw:b.clientWidth,ws:cs.whiteSpace,to:cs.textOverflow,h:Math.round(b.getBoundingClientRect().height),docw:document.documentElement.scrollWidth,iw:innerWidth,over:[...document.querySelectorAll('#view *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1}).length}});
+  ok('13 320px: ‘사진 1 · 메모 2’ 가 잘리지 않고 다 보임(줄바꿈 · 말줄임 없음) · 가로 넘침 없음',g.txt==='사진 1 · 메모 2'&&g.sw<=g.cw+1&&g.ws==='normal'&&g.to!=='ellipsis'&&g.docw<=g.iw+2&&g.over===0,g);
+  await Sm.screenshot({path:OUT+'/ceo_board_320.png',fullPage:true});await Sm.close()}
 
  ok('공통: 화면 오류 없음',errs.length===0,errs);ok('공통: alert·prompt 창 없음',dialogs.filter(d=>!/ confirm /.test(d)).length===0,dialogs);
  await b.close();console.log(`결과: 통과 ${R.filter(Boolean).length} / 실패 ${R.filter(x=>!x).length}`);process.exit(R.every(Boolean)?0:1)})().catch(e=>{console.error(e);process.exit(1)});

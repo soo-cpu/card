@@ -6311,7 +6311,10 @@ const CEO_ACTIVE=["문의","상담","디자인","견적","계약","시공"]; // 
 const CEO_DONE=["준공","사후관리","종료","미계약 종료"];       // 공정이 끝난 단계 — 늦은 공정으로 세지 않음
 const CEO_WORK_COLS=["projects","quotes","sites","customers","reports","approvals","as","manuals","notices","feedback"];
 const CEO_PATH="acct/_ceo/snap",CEO_FIRST_KEY="hf-ceo-first";
-let CEO={snap:null,loaded:false,on:false,busy:false,landed:false,t0:0,tries:0};
+let CEO={snap:null,loaded:false,on:false,busy:false,landed:false,t0:0,tries:0,fix:0,fixTry:0};
+const CEO_UP={}; // 실시간으로 한 번이라도 내려온 묶음 (projects·approvals …) — 덜 온 채로 센 스냅숏을 가려내려고
+const ceoLive=r=>!!r&&!r.__deleted&&!r.__gone&&!r.trashed; // 지운 줄·숨긴 줄·휴지통 줄은 세지 않음
+const ceoDataUp=()=>mode!=="shared"||!db||!!(CEO_UP.projects&&CEO_UP.approvals);
 const ceoOk=()=>!!(me.admin&&!PV);
 const ceoPartOf=cat=>{const c=String(cat||"").trim();const p=CEO_PARTS.find(x=>x[3].includes(c));return p?p[0]:"etc"};
 const ceoPartName=k=>{const p=CEO_PARTS.find(x=>x[0]===k);return p?p[1]:"그 밖·구분 없음"};
@@ -6325,6 +6328,10 @@ const ceoMoney=n=>{n=Math.round(num(n));if(!n)return "0원";const a=Math.abs(n),
 function ceoExt(name){let v;try{v=window[name]}catch(e){}if(typeof v==="function"){try{v=v()}catch(e){v=null}}return Array.isArray(v)?v:null}
 // A 묶음이 같은 화면에 있으면 그 자료(확정본 기록)가 내려왔는지 — 아직이면 0건으로 잘못 세지 않게 기다림 (A 묶음이 없으면 true)
 const ceoSpecUp=()=>{try{return typeof spReady==="undefined"||!!spReady}catch(e){return true}};
+const ceoAllUp=()=>ceoDataUp()&&ceoSpecUp();
+// 덜 온 채로 저장된 스냅숏('준비 중'·프로젝트·결재가 아직 안 내려온 때 센 것)인데 이제 자료가 다 왔으면 → 다음 8시·18시를 기다리지 않고 한 번 더 셈 (한 화면에서 3번까지)
+const ceoHalf=s=>!!s&&(!!s.partial||s.specReady===false)&&ceoAllUp()&&CEO.fix<3;
+const ceoSalAp=a=>{try{return apSal(a)}catch(e){return false}}; // 급여 결재 (기존 판정 함수) — 현황판 줄에는 제목 '급여 결재'만, 금액 없음
 const ceoBoss=a=>["최윤수","신혜현","대표"].includes(curApprover(a)||"대표"); // 지금 차례가 대표 (신혜현 칸도 최윤수 계정으로 승인)
 const ceoPending=a=>!!a&&["결재 대기","결재 진행"].includes(a.status||"결재 대기");
 const ceoApSince=a=>((a.history||[]).slice(-1)[0]||{}).at||a.updatedAt||a.createdAt||"";
@@ -6332,9 +6339,10 @@ const ceoApSince=a=>((a.history||[]).slice(-1)[0]||{}).at||a.updatedAt||a.create
 function ceoCount(){const now=Date.now(),at=new Date(now).toISOString(),T=kday(at);
   const mk=()=>({active:{n:0,L:[]},today:{n:0,L:[]},late:{n:0,L:[]},ap:{n:0,slow:0,L:[]},recv:{n:0,sum:0,L:[]},due:{n:0,sum:0,over:0,overSum:0,L:[]},tl:{n:0,photo:0,memo:0,L:[]},spec:{n:0,L:[]}});
   const P={res:mk(),gov:mk(),etc:mk()};const add=(box,row)=>{box.n++;if(box.L.length<CEO_LMAX)box.L.push(row)};
-  const nm=p=>String((p&&(p.title||p.custName||p.no))||"(이름 없음)").slice(0,40),pk=p=>ceoPartOf(p&&p.cat),byId=id=>(S.projects||[]).find(x=>x.id===id);
+  const PJ=(S.projects||[]).filter(ceoLive),gonePj=id=>(S.projects||[]).some(x=>x&&x.id===id&&!ceoLive(x));
+  const nm=p=>String((p&&(p.title||p.custName||p.no))||"(이름 없음)").slice(0,40),pk=p=>ceoPartOf(p&&p.cat),byId=id=>PJ.find(x=>x.id===id);
   // 1) 프로젝트: 진행 중 · 오늘 공정 · 늦어진 공정 (공정표 sched 의 공정별 마지막 끝 날짜가 지났는데 그 공정 진행률이 100% 가 아님)
-  (S.projects||[]).forEach(p=>{const B=P[pk(p)];
+  PJ.forEach(p=>{const B=P[pk(p)];
     if(CEO_ACTIVE.includes(p.stage))add(B.active,{c:"projects",id:p.id,t:nm(p),s:(p.no||"")+" · "+(p.stage||"")+(p.mgr?" · "+p.mgr:"")});
     const sc=(Array.isArray(p.sched)?p.sched:[]).filter(x=>x&&x.proc&&x.start);if(!sc.length||CEO_DONE.includes(p.stage))return;
     const td=sc.filter(x=>String(x.start)<=T&&T<=String(x.end||x.start));if(td.length)add(B.today,{c:"projects",id:p.id,t:nm(p),s:[...new Set(td.map(x=>x.proc))].join(" · ")});
@@ -6342,35 +6350,37 @@ function ceoCount(){const now=Date.now(),at=new Date(now).toISOString(),T=kday(a
     const dd=e=>Math.max(1,Math.round((Date.parse(T)-Date.parse(e))/864e5));
     add(B.late,{c:"projects",id:p.id,t:nm(p),b:1,end:late[late.length-1][1],days:dd(late[0][1]),s:late.slice(0,4).map(([proc,e])=>proc+" "+e.slice(5).replace("-","/")+" 끝 예정 · "+dd(e)+"일 지남").join(", ")+(late.length>4?" 외 "+(late.length-4)+"개":"")})});
   // 2) 결재 대기 (대표 차례) · 그중 CEO_AP_SLOW_DAYS 일 넘은 것 = 미루는 결재
-  (S.approvals||[]).filter(a=>ceoPending(a)&&ceoBoss(a)).forEach(a=>{const p=pjOf(a.pno),B=P[p?pk(p):"etc"],t0=new Date(ceoApSince(a)||now).getTime(),hrs=Math.max(0,Math.floor((now-(isNaN(t0)?now:t0))/36e5)),slow=hrs>=CEO_AP_SLOW_DAYS*24;if(slow)B.ap.slow++;
-    add(B.ap,Object.assign({c:"approvals",id:a.id,t:String((a.kind||"")+" · "+(a.title||"")).slice(0,60),s:"기안 "+who(a.createdBy)+(num(a.amount)?" · "+won(num(a.amount)):"")+" · "+(hrs>=24?Math.floor(hrs/24)+"일째":hrs+"시간째")+" 대기"+(a.pno?" · "+a.pno:"")},slow?{b:1,slow:1}:{}))});
+  (S.approvals||[]).filter(a=>ceoLive(a)&&ceoPending(a)&&ceoBoss(a)).forEach(a=>{const p0=pjOf(a.pno),p=p0&&ceoLive(p0)?p0:null,sal=ceoSalAp(a),B=P[p?pk(p):"etc"],t0=new Date(ceoApSince(a)||now).getTime(),hrs=Math.max(0,Math.floor((now-(isNaN(t0)?now:t0))/36e5)),slow=hrs>=CEO_AP_SLOW_DAYS*24;if(slow)B.ap.slow++;
+    add(B.ap,Object.assign({c:"approvals",id:a.id,t:sal?"급여 결재":String((a.kind||"")+" · "+(a.title||"")).slice(0,60),s:"기안 "+who(a.createdBy)+(!sal&&num(a.amount)?" · "+won(num(a.amount)):"")+" · "+(hrs>=24?Math.floor(hrs/24)+"일째":hrs+"시간째")+" 대기"+(a.pno?" · "+a.pno:"")},slow?{b:1,slow:1}:{}))});
   // 3) 미수금: 캐시플로우 엑셀 그날 시트의 미수금 표 (미수금 화면과 같은 표 · 업체명으로 프로젝트를 찾아 파트를 정함, 못 찾으면 구분 없음)
-  let recvDay="",recvTotal=null;try{const A=arNow();if(A){recvDay=A.d;recvTotal=arTotal(A);(A.ar.rows||[]).forEach(r=>{const left=num(r.left);if(!left)return;let lp=null;try{lp=arLink(r.name,r.mon).p}catch(e){}const B=P[lp?pk(lp):"etc"];B.recv.sum+=left;add(B.recv,{c:lp?"projects":"",id:lp?lp.id:"",t:String(r.name||"").slice(0,40),s:won(left)+(lp?" · "+(lp.no||""):" · 프로젝트 미연결")})})}}catch(e){}
+  let recvDay="",recvTotal=null;try{const A=arNow();if(A){recvDay=A.d;recvTotal=arTotal(A);(A.ar.rows||[]).forEach(r=>{const left=num(r.left);if(!left)return;let lp=null;try{lp=arLink(r.name,r.mon).p}catch(e){}if(lp&&!ceoLive(lp))lp=null;const B=P[lp?pk(lp):"etc"];B.recv.sum+=left;add(B.recv,{c:lp?"projects":"",id:lp?lp.id:"",t:String(r.name||"").slice(0,40),s:won(left)+(lp?" · "+(lp.no||""):" · 프로젝트 미연결")})})}}catch(e){}
   // 4) 입금 예정: 프로젝트 수금 일정(pays)에서 아직 덜 받은 단계 — 오늘부터 CEO_DUE_DAYS 일 안 · 예정일이 지난 것은 '기한 지남'으로 따로
-  try{const lim=kday(new Date(now+CEO_DUE_DAYS*864e5).toISOString());recvList().forEach(r=>{const B=P[pk(r.p)];r.steps.forEach(st=>{if(!(st.left>0)||!st.due)return;const due=String(st.due).slice(0,10);
+  try{const lim=kday(new Date(now+CEO_DUE_DAYS*864e5).toISOString());recvList().forEach(r=>{if(!ceoLive(r.p))return;const B=P[pk(r.p)];r.steps.forEach(st=>{if(!(st.left>0)||!st.due)return;const due=String(st.due).slice(0,10);
       if(due<T){B.due.over++;B.due.overSum+=st.left;if(B.due.L.length<CEO_LMAX)B.due.L.push({c:"projects",id:r.p.id,t:nm(r.p),b:1,s:(st.step||"")+" "+won(st.left)+" · 예정 "+due.slice(5).replace("-","/")+" · 기한 지남"})}
       else if(due<=lim){B.due.sum+=st.left;add(B.due,{c:"projects",id:r.p.id,t:nm(r.p),s:(st.step||"")+" "+won(st.left)+" · 예정 "+due.slice(5).replace("-","/")})}})})}catch(e){}
   // 5) 오늘 올라온 현장 사진·메모: B 타임라인이 있으면 그것, 없으면 기존 자료(현장 사진 · 프로젝트 기록 · 현장 일지)
   const TL=ceoExt("v11TimelineToday");let tlSrc="기존";
-  if(TL){tlSrc="B";TL.forEach(e=>{if(!e)return;const p=byId(e.pid),B=P[p?pk(p):"etc"],ph=/사진|photo/i.test(String(e.kind||""));if(ph)B.tl.photo+=Math.max(1,Math.floor(Number(e.n))||1);else B.tl.memo++;const tt=/^\d{4}-/.test(String(e.t||""))?khm(e.t):String(e.t||"");
+  if(TL){tlSrc="B";TL.forEach(e=>{if(!e||gonePj(e.pid))return;const p=byId(e.pid),B=P[p?pk(p):"etc"],ph=/사진|photo/i.test(String(e.kind||""));if(ph)B.tl.photo+=Math.max(1,Math.floor(Number(e.n))||1);else B.tl.memo++;const tt=/^\d{4}-/.test(String(e.t||""))?khm(e.t):String(e.t||"");
       add(B.tl,{c:p?"projects":"",id:p?p.id:"",t:String(e.name||(p?nm(p):"")||"현장").slice(0,40),s:[tt,e.kind,String(e.text||"").slice(0,60),e.who].filter(Boolean).join(" · ")})})}
-  else (S.projects||[]).forEach(p=>{let ph=0,mm=0;try{ph=phList(p).filter(e=>phImg(e)&&(e.d||kday(e.at))===T).length}catch(e){}
-      mm+=(p.plog||[]).filter(x=>x&&kday(x.at)===T).length;(S.sites||[]).filter(s=>s.pno&&s.pno===p.no).forEach(s=>{mm+=(s.logs||[]).filter(l=>l&&String(l.d||"").slice(0,10)===T).length});
+  else PJ.forEach(p=>{let ph=0,mm=0;try{ph=phList(p).filter(e=>phImg(e)&&(e.d||kday(e.at))===T).length}catch(e){}
+      mm+=(p.plog||[]).filter(x=>x&&kday(x.at)===T).length;(S.sites||[]).filter(s=>ceoLive(s)&&s.pno&&s.pno===p.no).forEach(s=>{mm+=(s.logs||[]).filter(l=>l&&String(l.d||"").slice(0,10)===T).length});
       if(!ph&&!mm)return;const B=P[pk(p)];B.tl.photo+=ph;B.tl.memo+=mm;add(B.tl,{c:"projects",id:p.id,t:nm(p),s:[ph?"사진 "+ph+"장":"",mm?"메모·일지 "+mm+"건":""].filter(Boolean).join(" · ")})});
   // 6) 고객 확인 안 된 확정본: A 요약이 있을 때만 (확정은 됐는데 고객이 아직 안 봄 · 확정 뒤 바뀐 것 표시)
   const SP=ceoExt("v11SpecSummary"),specReady=!!SP&&ceoSpecUp(); /* A 묶음(마감재·도면 확정본)이 자료를 다 받은 뒤에만 센 것으로 봄 · 파트는 A 가 준 part 가 아니라 pid 로 찾은 프로젝트 구분(cat)으로 다시 나눔 */
-  if(SP)SP.forEach(e=>{if(!e||!e.confirmedAt||e.custSeenAt)return;const p=byId(e.pid),k=p?pk(p):/관공|학교/.test(String(e.part||""))?"gov":/주거/.test(String(e.part||""))?"res":"etc";
+  if(SP)SP.forEach(e=>{if(!e||!e.confirmedAt||e.custSeenAt||gonePj(e.pid))return;const p=byId(e.pid),k=p?pk(p):/관공|학교/.test(String(e.part||""))?"gov":/주거/.test(String(e.part||""))?"res":"etc";
     add(P[k].spec,Object.assign({c:p?"projects":"",id:p?p.id:"",t:String(e.name||(p?nm(p):"")||"현장").slice(0,40),s:[e.ver,"확정 "+(ceoKst(e.confirmedAt)||String(e.confirmedAt).slice(0,10)),e.confirmedBy,e.changedAfterConfirm?"확정 뒤 바뀜":""].filter(Boolean).join(" · ")},e.changedAfterConfirm?{b:1}:{}))});
   // 7) 직원별: 오늘 등록·수정한 일 (각 줄의 만든 사람·고친 사람 칸) · 오늘 남긴 프로젝트 기록·사진 · 개선 요청('불편해요') 처리 상태
   const staff=CEO_STAFF.map(name=>{const s=staffByName(name)||{},u=s.uid||"";const W=[];let memo=0,photo=0;const fb={wait:0,doing:0,ask:0,done:0,hold:0,L:[]};
-    if(u){CEO_WORK_COLS.forEach(col=>(S[col]||[]).forEach(r=>{if(!r)return;const tt=String(r.title||r.name||r.custName||r.qno||r.site||r.content||r.body||r.no||r.d||"").slice(0,40);
+    if(u){CEO_WORK_COLS.forEach(col=>(S[col]||[]).forEach(r=>{if(!ceoLive(r))return;const tt=col==="approvals"&&ceoSalAp(r)?"급여 결재":String(r.title||r.name||r.custName||r.qno||r.site||r.content||r.body||r.no||r.d||"").slice(0,40);
         if(r.createdBy===u&&r.createdAt&&kday(r.createdAt)===T)W.push({c:col,id:r.id,t:tt,s:((MOD[col]||{}).nav||col)+" · 등록 "+khm(r.createdAt),at:r.createdAt});
-        else{const by=r.updatedBy||r.__by,ua=r.updatedAt||r.__at;if(by===u&&ua&&kday(ua)===T)W.push({c:col,id:r.id,t:tt,s:((MOD[col]||{}).nav||col)+" · 수정 "+khm(ua),at:ua})}}));
-      (S.projects||[]).forEach(p=>{memo+=(p.plog||[]).filter(x=>x&&x.name===name&&kday(x.at)===T).length;photo+=(p.photos||[]).filter(e=>e&&(e.by===u||e.byName===name)&&(e.d||kday(e.at))===T).length});
-      (S.feedback||[]).filter(x=>x&&x.createdBy===u).forEach(x=>{const st=x.status||"접수",k=st==="접수"?"wait":st==="진행 중"?"doing":st==="형 확인 필요"?"ask":st==="보류"?"hold":"done";fb[k]++;if(k!=="done"&&fb.L.length<10)fb.L.push(Object.assign({c:"feedback",id:x.id,t:String(x.body||"").slice(0,50),s:st+" · "+String(x.createdAt||"").slice(0,10)},k==="ask"?{b:1}:{}))})}
+        else{const by=r.updatedBy||r.__by,ua=r.updatedBy?(r.updatedAt||r.__at):(r.__at||r.updatedAt);/* 고친 사람 칸(updatedBy)이 없고 사본 표시(__by)만 있으면 그 사본을 저장한 시각(__at)으로 */if(by===u&&ua&&kday(ua)===T)W.push({c:col,id:r.id,t:tt,s:((MOD[col]||{}).nav||col)+" · 수정 "+khm(ua),at:ua})}}));
+      PJ.forEach(p=>{memo+=(p.plog||[]).filter(x=>x&&x.name===name&&kday(x.at)===T).length;photo+=(p.photos||[]).filter(e=>{if(!e||e.hid)return false;try{return !!phImg(e)}catch(x){return true}}).filter(e=>(e.by===u||e.byName===name)&&(e.d||kday(e.at))===T).length});
+      (S.feedback||[]).filter(x=>ceoLive(x)&&x.createdBy===u).forEach(x=>{const st=x.status||"접수",k=st==="접수"?"wait":st==="진행 중"?"doing":st==="형 확인 필요"?"ask":st==="보류"?"hold":"done";fb[k]++;if(k!=="done"&&fb.L.length<10)fb.L.push(Object.assign({c:"feedback",id:x.id,t:String(x.body||"").slice(0,50),s:st+" · "+String(x.createdAt||"").slice(0,10)},k==="ask"?{b:1}:{}))})}
     W.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
     return {name,pos:s.pos||s.title||"",linked:!!u,work:{n:W.length,L:W.slice(0,CEO_LMAX).map(x=>({c:x.c,id:x.id,t:x.t,s:x.s}))},memo,photo,fb}});
-  return {v:1,at,slot:ceoSlotAt(now),day:T,by:"auto",parts:P,staff,recvDay,recvTotal,tlSrc,specReady}}
+  const out={v:1,at,slot:ceoSlotAt(now),day:T,by:"auto",parts:P,staff,recvDay,recvTotal,tlSrc,specReady};
+  if(!ceoDataUp()||(!!SP&&!specReady))out.partial=1; /* 프로젝트·결재·확정본 자료가 덜 온 채로 셈 → 자료가 오면 ceoAuto 가 한 번 더 셈 */
+  return out}
 // 저장된 스냅숏 읽기 (실시간 구독은 쓰지 않음 — 화면당 구독 수를 아낌 · 대표 한 사람만 보는 칸)
 async function ceoLoad(){try{const g=await db.doc(CEO_PATH+"/cur").get();const d=g&&g.exists?g.data():null;if(d&&d.parts&&(!CEO.snap||String(d.at||"")>String(CEO.snap.at||"")))CEO.snap=d}catch(e){}CEO.loaded=true}
 const ceoRedraw=()=>{try{if(route()==="ceo")render();else{renderNav();redDraw()}}catch(e){}};
@@ -6379,16 +6389,18 @@ function ceoInit(){if(CEO.on||!db||!ceoOk()||mode!=="shared"||!me.id)return;CEO.
   ceoLoad().then(ceoRedraw);setTimeout(ceoAuto,6000);setInterval(ceoAuto,5*6e4)}
 // 기준 시각(8시·18시)이 지났는지 보고, 지났으면 다시 세어 저장 (자료가 내려올 시간을 6초 준 뒤 · 다른 기기가 먼저 셌으면 그 숫자를 씀)
 async function ceoAuto(){if(!db||!ceoOk()||mode!=="shared"||CEO.busy||Date.now()-CEO.t0<5500)return;
-  if(!CEO.loaded||!cfgLoaded||!finReady||!ceoSpecUp()||!(S.staff||[]).length){if(CEO.tries++<10)setTimeout(ceoAuto,2500);if(CEO.tries<=10)return} /* 저장된 숫자·기본 자료가 아직 안 내려옴 → 조금 뒤 다시 (열 번까지, 그래도 없으면 있는 자료로) */
-  if(!ceoStale(CEO.snap))return;
-  await ceoRecount("auto")}
+  if(!CEO.loaded||!cfgLoaded||!finReady||!ceoAllUp()||!(S.staff||[]).length){if(CEO.tries++<10)setTimeout(ceoAuto,2500);if(CEO.tries<=10)return} /* 저장된 숫자·기본 자료가 아직 안 내려옴 → 조금 뒤 다시 (열 번까지, 그래도 없으면 있는 자료로) */
+  const half=ceoHalf(CEO.snap);if(!ceoStale(CEO.snap)&&!half){if(CEO.snap&&(CEO.snap.partial||CEO.snap.specReady===false)&&!ceoAllUp()&&CEO.fixTry++<24)setTimeout(ceoAuto,5000);return} /* 덜 온 채로 센 숫자면 5초마다(2분까지) 자료가 다 왔는지 다시 봄 · 그 뒤로는 5분마다 */
+  await ceoRecount(half&&!ceoStale(CEO.snap)?"fix":"auto")}
 async function ceoRecount(by){if(!ceoOk()||CEO.busy)return;CEO.busy=true;ceoRedraw();
-  try{if(by==="auto"&&db&&mode==="shared"){await ceoLoad();if(!ceoStale(CEO.snap))return}
+  try{if(by!=="manual"&&db&&mode==="shared"){await ceoLoad();if(!ceoStale(CEO.snap)&&!ceoHalf(CEO.snap))return}
+    if(by==="fix")CEO.fix++;
     const s=ceoCount();s.by=by==="manual"?"manual":"auto";s.byName=me.name||"대표";
     if(db&&mode==="shared"){try{await db.collection(CEO_PATH).doc("cur").set(s)}catch(e){s.unsaved=1;toast("현황판 숫자를 저장하지 못했어요 (화면에는 보여요)")}}
     CEO.snap=s;if(by==="manual"){toast("지금 자료로 다시 셌어요");try{knock("열람",{what:"대표 현황판 다시 세기"})}catch(e){}}}
   catch(e){toast("현황판 숫자를 세지 못했어요 · "+String((e&&e.message)||"").slice(0,40))}
-  finally{CEO.busy=false;ceoRedraw()}}
+  finally{CEO.busy=false;ceoRedraw();
+    if(CEO.snap&&CEO.snap.partial&&db&&mode==="shared")setTimeout(ceoAuto,5000)}}
 // 대표의 첫 화면: 주소에 메뉴가 없이 들어오면 현황판부터 (기존 홈은 메뉴 '홈'·현황판 위 버튼으로 한 번에) · 이 기기에서 '기존 홈 먼저'를 고르면 그대로 홈
 function ceoLand(){if(CEO.landed||!ceoOk()||mode!=="shared"||!me.id)return;CEO.landed=true;const h=location.hash||"";
   if((h===""||h==="#")&&lsGet(CEO_FIRST_KEY)!=="home"){try{history.replaceState(history.state,"","#ceo");navCurHash=navHashNow()}catch(e){}}}
@@ -6403,7 +6415,7 @@ function ceoRed(ack){if(!ceoOk())return [];const s=CEO.snap;if(!s)return [];cons
   A.late.forEach(x=>{const k=("ceolate-"+x.id+"-"+(x.end||"")).replace(/[^A-Za-z0-9_\-:.]/g,"_");if(ack(k))return;L.push({k,top:1,kind:"공정 늦음",title:x.t+" · "+x.s,sub:"대표 현황판 "+base+" · 공정 진행률을 100%로 올리거나 공정표 날짜를 고치면 빠져요",at:x.end||s.day,open:["projects",x.id]})});
   if(A.slow.length)L.push({k:"",top:1,kind:"결재 대기",title:"["+CEO_AP_SLOW_DAYS+"일 넘음] 대표 차례 결재 "+A.slow.length+"건이 미뤄지고 있어요",sub:A.slow.slice(0,3).map(x=>x.t).join(" / ")+(A.slow.length>3?" 외 "+(A.slow.length-3)+"건":"")+" · 대표 현황판 "+base,at:s.at,go:"#approvals"});
   return L}
-function ceoNavHTML(r){if(!ceoOk())return "";let n=0;try{const A=ceoAlerts();n=A.late.length+A.slow.length}catch(e){}
+function ceoNavHTML(r){if(!ceoOk())return "";ceoCss();let n=0;try{const A=ceoAlerts();n=A.late.length+A.slow.length}catch(e){}
   return `<a href="#ceo" ${r==="ceo"?'aria-current="page"':""}><span>대표 현황판</span>${n?`<span class="cnt" style="background:#c62828;color:#fff">${n}</span>`:""}</a>`}
 function ceoCss(){if(document.getElementById("ceoCss"))return;const st=document.createElement("style");st.id="ceoCss";st.textContent=`
 .ceo-parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
@@ -6415,6 +6427,7 @@ function ceoCss(){if(document.getElementById("ceoCss"))return;const st=document.
 .ceo-n span{font-size:12px;color:var(--sub)}.ceo-n small{font-size:11px;color:var(--sub);min-height:15px}
 .ceo-n b{font-size:19px;line-height:1.25;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}
 .ceo-n.zero b{color:var(--sub);font-weight:700}
+.ceo-n.ceo-w b{white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
 .ceo-n.bad{border-color:var(--bad);background:var(--bad-bg)}.ceo-n.bad b,.ceo-n.bad span,.ceo-n.bad small{color:var(--bad)}
 .ceo-alert{border:2px solid var(--bad);background:var(--bad-bg);color:var(--bad);border-radius:12px;padding:10px 12px;display:grid;gap:4px;margin:10px 0;font-size:14px}
 .ceo-alert b{font-size:15px}.ceo-alert button{all:unset;cursor:pointer;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
@@ -6430,6 +6443,7 @@ function ceoCss(){if(document.getElementById("ceoCss"))return;const st=document.
 .ceo-list .item.bad .t b{color:var(--bad)}
 @media (max-width:860px){.ceo-parts{grid-template-columns:minmax(0,1fr);gap:10px;margin:10px 0}.ceo-part{padding:10px 12px}.ceo-srow{grid-template-columns:minmax(0,1fr)}
   body:not(.navall):not(.pcview) .nav>a[href="#ceo"]{display:flex!important}
+  .ceo-alert button{display:inline-flex;align-items:center;min-height:44px;min-width:44px}.ceo-chip{box-sizing:border-box;display:inline-flex;align-items:center;min-height:44px}#ceoVeil [data-ceoclose]{min-height:44px;min-width:44px}
   body.pcview .ceo-parts{grid-template-columns:repeat(2,minmax(0,1fr))}body.pcview .ceo-srow{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr)}}`;document.head.appendChild(st)}
 function ceoTile(pk,key,label,val,sub,cls){return `<button type="button" class="ceo-n ${cls||""}" data-ceolist="${pk}|${key}" aria-label="${esc(label+" "+val+(sub?" · "+sub:""))} · 목록 보기"><span>${esc(label)}</span><b>${esc(val)}</b><small>${esc(sub||"")}</small></button>`}
 function ceoPartHTML(s,k){const P=CEO_PARTS.find(x=>x[0]===k),B=s.parts[k];const z=n=>n?"":"zero";
@@ -6441,7 +6455,7 @@ function ceoPartHTML(s,k){const P=CEO_PARTS.find(x=>x[0]===k),B=s.parts[k];const
    ${ceoTile(k,"ap","결재 대기 (형 차례)",B.ap.n+"건",B.ap.slow?CEO_AP_SLOW_DAYS+"일 넘음 "+B.ap.slow+"건":B.ap.n?"미룬 것 없음":"",B.ap.slow?"bad":z(B.ap.n))}
    ${ceoTile(k,"recv","미수금 합계",ceoMoney(B.recv.sum),B.recv.n?B.recv.n+"줄"+(s.recvDay?" · "+s.recvDay.slice(5).replace("-","/")+" 엑셀":""):(s.recvDay?"미수 없음":"미수금 표 없음"),z(B.recv.sum))}
    ${ceoTile(k,"due","입금 예정 ("+CEO_DUE_DAYS+"일 안)",ceoMoney(B.due.sum),(B.due.n?B.due.n+"건":"예정 없음")+(B.due.over?" · 기한 지남 "+B.due.over+"건":""),B.due.over?"bad":z(B.due.sum))}
-   ${ceoTile(k,"tl","오늘 현장 사진·메모",tl,s.tlSrc==="B"?"현장 타임라인":"현장 사진·기록·일지",z(B.tl.n))}
+   ${ceoTile(k,"tl","오늘 현장 사진·메모",tl,s.tlSrc==="B"?"현장 타임라인":"현장 사진·기록·일지",z(B.tl.n)+" ceo-w")}
    ${ceoTile(k,"spec","고객 확인 안 된 확정본",s.specReady?B.spec.n+"건":"준비 중",s.specReady?(B.spec.n?"고객이 아직 안 봄":"모두 확인"):"마감재 확정본 연결 전",s.specReady&&B.spec.n?"bad":"zero")}</div>
    ${B.late.n||B.tl.n?`<div class="ceo-lines">${B.late.L.slice(0,3).map(x=>`<div class="bad">늦음 · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}${B.tl.L.slice(0,1).map(x=>`<div>오늘${B.tl.L.length>1?" "+B.tl.L.length+"줄":""} · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}</div>`:""}</section>`}
 function ceoEtcHTML(s){const B=s.parts.etc;if(!B)return "";const any=B.active.n||B.today.n||B.late.n||B.ap.n||B.recv.n||B.due.n||B.due.over||B.tl.n||B.spec.n;if(!any)return "";
@@ -6460,7 +6474,7 @@ function ceoDrvHTML(){let all=[];try{dcInit();all=dcItems().filter(i=>dcOk(i,DC.
    ${show.length?`<div class="list">${show.map(dcRow).join("")}</div>${(un.length?un:all).length>show.length?`<p class="hint">${un.length?"확인 안 한 것":"최근 것"} ${show.length}건만 보여요 · 나머지는 ‘전체 보기’에서</p>`:""}`:`<div class="empty">아직 모은 변경이 없어요 · ‘지금 새로고침’을 눌러 보세요</div>`}</section>`}
 function renderCeo(){if(!ceoOk())return `<div class="empty">대표 전용 메뉴예요</div>`;ceoCss();ceoInit();const s=ceoSnapNow(),first=lsGet(CEO_FIRST_KEY)!=="home";
   const stale=!!s&&mode==="shared"&&!!db&&ceoStale(s);
-  const head=`<div class="head"><div><h1>대표 현황판</h1><p id="ceoBase">${s?`<b>${esc(ceoKst(s.slot))} 기준</b> · ${esc(ceoKst(s.at))}에 ${s.by==="manual"?"다시 셈":"셈"}${stale||CEO.busy?" · 새 기준 시각이 지나 다시 세는 중…":""}`:"숫자를 세는 중…"} <span class="muted">· 아침 8시·저녁 6시에 숫자가 바뀌어요 (저장된 자료만 셈)</span></p></div>
+  const head=`<div class="head"><div><h1>대표 현황판</h1><p id="ceoBase">${s?`<b>${esc(ceoKst(s.slot))} 기준</b> · ${esc(ceoKst(s.at))}에 ${s.by==="manual"?"다시 셈":"셈"}${stale||CEO.busy?" · 새 기준 시각이 지나 다시 세는 중…":s.partial?" · 자료가 덜 내려온 채로 셈 — 다 오면 자동으로 다시 세요":""}`:"숫자를 세는 중…"} <span class="muted">· 아침 8시·저녁 6시에 숫자가 바뀌어요 (저장된 자료만 셈)</span></p></div>
    <div class="tools"><button type="button" class="btn pri" data-ceorecount="1" ${CEO.busy?"disabled":""}>${CEO.busy?"세는 중…":"지금 다시 세기"}</button><a class="btn" href="#home">기존 홈 보기</a></div></div>`;
   if(!s)return head+`<section class="card"><p class="muted">프로젝트·결재·미수금 자료를 불러와 세고 있어요. 잠시만 기다려 주세요.</p></section>`+ceoDrvHTML()+`<div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`;
   const A=ceoAlerts(s);
@@ -8038,7 +8052,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   cols.filter(col=>!(mode==="shared"&&!me.admin&&(ISO.includes(col)||col==="activity"))).forEach(col=>{db.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(col==="customers"){S.customers.forEach(r=>{if((r.tel||r.addr)&&me.admin)r.__leak={tel:r.tel||"",addr:r.addr||""}});overlayRows("customers");queueSync()}
     if(col==="projects"){S.projects.forEach(r=>{if(r.estCost!==undefined&&r.estCost!==""&&me.admin)r.__leakCost=r.estCost});overlayRows("projects");queueSync()}
-    if(col==="hr"||col==="quotes"||col==="staff"||col==="approvals")queueSync();if(col==="staff"){listenCsh();if(!me.admin)listenPriv()}if(col==="staff"){listenAcct();listenDevs();syncMembers();if(me.admin)setTimeout(()=>{smsCardsLoad().catch(()=>{})},6000);try{listenPrac()}catch(e){}}if(col==="config")cfgLoaded=true;render();resolveNames()},()=>{})});
+    if(col==="hr"||col==="quotes"||col==="staff"||col==="approvals")queueSync();if(col==="staff"){listenCsh();if(!me.admin)listenPriv()}if(col==="staff"){listenAcct();listenDevs();syncMembers();if(me.admin)setTimeout(()=>{smsCardsLoad().catch(()=>{})},6000);try{listenPrac()}catch(e){}}if(col==="config")cfgLoaded=true;CEO_UP[col]=1;render();resolveNames()},()=>{})});
   listenAcct();listenAdminSec();listenPriv();listenFin();finListen();listenSeal();
   try{workListen()}catch(e){}
   if(!me.admin){try{ordListen()}catch(e){}}else{setTimeout(()=>{try{ordMdCheck()}catch(e){}},8000);setInterval(()=>{try{ordMdCheck()}catch(e){}},31*6e4)}
