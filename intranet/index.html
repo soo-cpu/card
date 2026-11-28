@@ -6112,6 +6112,8 @@ const ceoKst=iso=>{const t=new Date(iso||"");if(isNaN(t))return "";const k=new D
 const ceoMoney=n=>{n=Math.round(num(n));if(!n)return "0원";const a=Math.abs(n),sg=n<0?"-":"";if(a>=1e8){const m=Math.round((a%1e8)/1e4);return sg+Math.floor(a/1e8)+"억"+(m?" "+m.toLocaleString("ko-KR")+"만":"")+"원"}if(a>=1e4)return sg+Math.round(a/1e4).toLocaleString("ko-KR")+"만원";return sg+a.toLocaleString("ko-KR")+"원"};
 // A·B 묶음이 내놓는 요약 (있을 때만 · 함수든 배열이든) — 여기서 만들지 않음
 function ceoExt(name){let v;try{v=window[name]}catch(e){}if(typeof v==="function"){try{v=v()}catch(e){v=null}}return Array.isArray(v)?v:null}
+// A 묶음이 같은 화면에 있으면 그 자료(확정본 기록)가 내려왔는지 — 아직이면 0건으로 잘못 세지 않게 기다림 (A 묶음이 없으면 true)
+const ceoSpecUp=()=>{try{return typeof spReady==="undefined"||!!spReady}catch(e){return true}};
 const ceoBoss=a=>["최윤수","신혜현","대표"].includes(curApprover(a)||"대표"); // 지금 차례가 대표 (신혜현 칸도 최윤수 계정으로 승인)
 const ceoPending=a=>!!a&&["결재 대기","결재 진행"].includes(a.status||"결재 대기");
 const ceoApSince=a=>((a.history||[]).slice(-1)[0]||{}).at||a.updatedAt||a.createdAt||"";
@@ -6146,7 +6148,7 @@ function ceoCount(){const now=Date.now(),at=new Date(now).toISOString(),T=kday(a
       mm+=(p.plog||[]).filter(x=>x&&kday(x.at)===T).length;(S.sites||[]).filter(s=>s.pno&&s.pno===p.no).forEach(s=>{mm+=(s.logs||[]).filter(l=>l&&String(l.d||"").slice(0,10)===T).length});
       if(!ph&&!mm)return;const B=P[pk(p)];B.tl.photo+=ph;B.tl.memo+=mm;add(B.tl,{c:"projects",id:p.id,t:nm(p),s:[ph?"사진 "+ph+"장":"",mm?"메모·일지 "+mm+"건":""].filter(Boolean).join(" · ")})});
   // 6) 고객 확인 안 된 확정본: A 요약이 있을 때만 (확정은 됐는데 고객이 아직 안 봄 · 확정 뒤 바뀐 것 표시)
-  const SP=ceoExt("v11SpecSummary"),specReady=!!SP;
+  const SP=ceoExt("v11SpecSummary"),specReady=!!SP&&ceoSpecUp(); /* A 묶음(마감재·도면 확정본)이 자료를 다 받은 뒤에만 센 것으로 봄 · 파트는 A 가 준 part 가 아니라 pid 로 찾은 프로젝트 구분(cat)으로 다시 나눔 */
   if(SP)SP.forEach(e=>{if(!e||!e.confirmedAt||e.custSeenAt)return;const p=byId(e.pid),k=p?pk(p):/관공|학교/.test(String(e.part||""))?"gov":/주거/.test(String(e.part||""))?"res":"etc";
     add(P[k].spec,Object.assign({c:p?"projects":"",id:p?p.id:"",t:String(e.name||(p?nm(p):"")||"현장").slice(0,40),s:[e.ver,"확정 "+(ceoKst(e.confirmedAt)||String(e.confirmedAt).slice(0,10)),e.confirmedBy,e.changedAfterConfirm?"확정 뒤 바뀜":""].filter(Boolean).join(" · ")},e.changedAfterConfirm?{b:1}:{}))});
   // 7) 직원별: 오늘 등록·수정한 일 (각 줄의 만든 사람·고친 사람 칸) · 오늘 남긴 프로젝트 기록·사진 · 개선 요청('불편해요') 처리 상태
@@ -6163,10 +6165,11 @@ function ceoCount(){const now=Date.now(),at=new Date(now).toISOString(),T=kday(a
 async function ceoLoad(){try{const g=await db.doc(CEO_PATH+"/cur").get();const d=g&&g.exists?g.data():null;if(d&&d.parts&&(!CEO.snap||String(d.at||"")>String(CEO.snap.at||"")))CEO.snap=d}catch(e){}CEO.loaded=true}
 const ceoRedraw=()=>{try{if(route()==="ceo")render();else{renderNav();redDraw()}}catch(e){}};
 function ceoInit(){if(CEO.on||!db||!ceoOk()||mode!=="shared"||!me.id)return;CEO.on=true;CEO.t0=Date.now();
+  try{ceoExt("v11SpecSummary")}catch(e){} /* A 묶음의 확정본 자료 받기를 미리 시작 */
   ceoLoad().then(ceoRedraw);setTimeout(ceoAuto,6000);setInterval(ceoAuto,5*6e4)}
 // 기준 시각(8시·18시)이 지났는지 보고, 지났으면 다시 세어 저장 (자료가 내려올 시간을 6초 준 뒤 · 다른 기기가 먼저 셌으면 그 숫자를 씀)
 async function ceoAuto(){if(!db||!ceoOk()||mode!=="shared"||CEO.busy||Date.now()-CEO.t0<5500)return;
-  if(!CEO.loaded||!cfgLoaded||!finReady||!(S.staff||[]).length){if(CEO.tries++<10)setTimeout(ceoAuto,2500);if(CEO.tries<=10)return} /* 저장된 숫자·기본 자료가 아직 안 내려옴 → 조금 뒤 다시 (열 번까지, 그래도 없으면 있는 자료로) */
+  if(!CEO.loaded||!cfgLoaded||!finReady||!ceoSpecUp()||!(S.staff||[]).length){if(CEO.tries++<10)setTimeout(ceoAuto,2500);if(CEO.tries<=10)return} /* 저장된 숫자·기본 자료가 아직 안 내려옴 → 조금 뒤 다시 (열 번까지, 그래도 없으면 있는 자료로) */
   if(!ceoStale(CEO.snap))return;
   await ceoRecount("auto")}
 async function ceoRecount(by){if(!ceoOk()||CEO.busy)return;CEO.busy=true;ceoRedraw();
