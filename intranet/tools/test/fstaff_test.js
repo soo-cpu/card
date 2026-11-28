@@ -41,7 +41,7 @@ function part1(){ // ===== 1부: 서버 (Code.gs) =====
   ok('서버 8: 없는 출입증·빈 값은 거절 (비밀번호 확인으로 넘어감)',[ 'T:'+'0'.repeat(64),'T:','T:null','' ].every(pw=>S.post({a:'sites',pw}).ok===false));
   delete S.st.cache.pwfail;
   ok('서버 9: 비밀번호 로그인 그대로',S.post({a:'login',pw:'pw-test-77'}).ok&&S.post({a:'login',pw:'pw-test-78'}).error==='비밀번호가 맞지 않아요');
-  delete S.st.cache.pwfail;for(let i=0;i<10;i++)S.post({a:'login',pw:'T:'+String(i).repeat(40)});
+  delete S.st.cache.pwfail;for(let i=0;i<10;i++)S.post({a:'login',pw:i%2?'T:'+String(i).repeat(40):'wrong-pw-'+i}); /* 서버 v9(드라이브본)부터 출입증 모양(T:)은 비밀번호 틀린 횟수로 세지 않음 → 틀린 비밀번호를 섞어 10번 채움 */for(let i=0;i<5;i++)S.post({a:'login',pw:'wrong-more-'+i});
   ok('서버 10: 틀린 값 10번(가짜 출입증 포함) → 잠금 그대로, 맞는 비밀번호도 15분 막힘',/잠겼/.test(S.post({a:'login',pw:'pw-test-77'}).error||''));
   ok('서버 11: 잠금 중에도 살아 있는 출입증은 통과(비밀번호 추측과 무관)',S.post({a:'sites',pw:'T:'+r1.token}).ok);
   delete S.st.cache.pwfail;

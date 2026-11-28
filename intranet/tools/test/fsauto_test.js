@@ -47,7 +47,7 @@ function part1(){ // ===== 1부: 서버 =====
   const before=S.rowsOf('현장')[0][7];const h0=S.rowsOf('옛 값').length;
   const r3=S.post({a:'projSite',pw:PW,proj:'P-2611-901',stages:[{n:'철거',a:'2026-11-05',b:'2026-11-07'},{n:'타일',a:'2026-11-11',b:'2026-11-16'},{n:'도장',a:'2026-11-18',b:'2026-11-18'}]});
   const now=JSON.parse(S.rowsOf('현장')[0][7]);const hist=S.rowsOf('옛 값');
-  ok('서버 6: 공정표 날짜로 고침 — 같은 이름 단계의 진행 상태 이어받음 · 새 단계는 대기 · 공정표에 없지만 진행 중이던 단계(샷시)는 남김',r3.ok&&r3.code===r1.code&&JSON.stringify(now)===JSON.stringify([{n:'철거',s:2,a:'2026-11-05',b:'2026-11-07'},{n:'타일',s:1,a:'2026-11-11',b:'2026-11-16'},{n:'도장',s:0,a:'2026-11-18',b:'2026-11-18'},{n:'샷시',s:1,a:'',b:''}]),JSON.stringify(now));
+  ok('서버 6: 공정표 날짜로 고침 — 같은 이름 단계의 진행 상태 이어받음 · 새 단계는 대기 · 공정표에 없지만 진행 중이던 단계(샷시)는 남김',r3.ok&&r3.code===r1.code&&JSON.stringify(now.map(x=>({n:x.n,s:x.s,a:x.a,b:x.b})) /* 서버 v9 부터 단계마다 완료 날짜 d 가 더 있음 */)===JSON.stringify([{n:'철거',s:2,a:'2026-11-05',b:'2026-11-07'},{n:'타일',s:1,a:'2026-11-11',b:'2026-11-16'},{n:'도장',s:0,a:'2026-11-18',b:'2026-11-18'},{n:'샷시',s:1,a:'',b:''}]),JSON.stringify(now));
   ok('서버 7: 바꾸기 전 공정은 ‘옛 값’ 탭에 통째로 (관리 화면 고침도 옛 값 남김)',h0===1&&hist.length===2&&hist[1][1]===r1.code&&hist[1][2]==='공정(JSON)'&&hist[1][3]===before&&hist[1][4]==='정진혁'&&/인트라넷 공정표/.test(hist[1][5]),JSON.stringify(hist.map(h=>h.slice(1,3))));
   const c=S.post({a:'site',s:r1.code,pin:'5678'});
   ok('서버 8: 고객 화면 응답에 고객 이름·확인 번호·프로젝트 번호 없음 · 공정표는 나감',c.ok&&!/홍길동|5678|P-2611-901|인트라넷/.test(JSON.stringify(c))&&c.site.stages.length===4,JSON.stringify(c.site).slice(0,120));
@@ -207,5 +207,5 @@ function part1(){ // ===== 1부: 서버 =====
   const pre=await p.evaluate(()=>({n:(document.getElementById('fN')||{}).value,m:(document.getElementById('fM')||{}).value,s:(document.getElementById('fS')||{}).value,hash:location.hash,url:location.href}));
   ok('현장소통 16: 계약 전(new) → ‘현장 추가’ 창 미리 채움 (현장명·담당·착공) · # 지움 · 고객 이름 칸 있음',pre.n==='상담 중 현장'&&pre.m==='정진혁 실장'&&pre.s==='2026-12-01'&&pre.hash===''&&pre.url==='http://f.test/field/?admin'&&await p.locator('#fC').count()===1,JSON.stringify(pre));
   await p.close();await ctx.close()}
- ok('현장소통 화면: 오류·대화상자 0 · 값은 # 에서만 읽음(쿼리 name/proj 읽기 없음) · 새 alert/confirm/prompt/window.open 늘지 않음',!errs3.length&&/\(\?:\^#\|&\)d=/.test(FIELD)&&!/Q\.get\("(name|proj|manager)"/.test(FIELD)&&(FIELD.match(/confirm\(|prompt\(|window\.open\(|alert\(/g)||[]).length===4,errs3.slice(0,3).join('|')+' '+(FIELD.match(/confirm\(|prompt\(|window\.open\(|alert\(/g)||[]).length);
+ ok('현장소통 화면: 오류·대화상자 0 · 값은 # 에서만 읽음(쿼리 name/proj 읽기 없음) · 새 alert/confirm/prompt/window.open 늘지 않음',!errs3.length&&/\(\?:\^#\|&\)d=/.test(FIELD)&&!/Q\.get\("(name|proj|manager)"/.test(FIELD)&&(FIELD.match(/confirm\(|prompt\(|window\.open\(|alert\(/g)||[]).length===6 /* 화면 v9 원본(되돌리기 확인 2개 더함)이 6 — v10 은 늘리지 않음 */,errs3.slice(0,3).join('|')+' '+(FIELD.match(/confirm\(|prompt\(|window\.open\(|alert\(/g)||[]).length);
  await b.close();const bad=R.filter(v=>!v).length;console.log('\n결과: 통과 '+(R.length-bad)+' / 실패 '+bad);process.exit(bad?1:0)})();

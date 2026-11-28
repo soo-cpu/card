@@ -25,8 +25,8 @@ module.exports=function makeServer(opt){opt=opt||{};
   let fid=0;const items={};st.drive={items,fail:{}};
   const iter=a=>{let i=0;return {hasNext:()=>i<a.length,next:()=>a[i++]}};
   const kids=(id,kind)=>Object.keys(items).filter(k=>items[k].parent===id&&items[k].kind===kind);
-  const fileObj=id=>({getId:()=>id,getUrl:()=>'https://drive.test/x/'+id,getName:()=>items[id].name,getSize:()=>items[id].size||0,getMimeType:()=>items[id].mime||'',getDateCreated:()=>new Date(),getBlob:()=>Utilities.newBlob([],items[id].mime)});
-  function folderObj(id){if(!items[id])items[id]={kind:'folder',name:id,parent:''};return {getId:()=>id,getUrl:()=>'https://drive.test/f/'+id,getName:()=>items[id].name,
+  const fileObj=id=>({getParents:()=>iter(items[id].parent?[folderObj(items[id].parent)]:[]) /* v10(2026-11-28): 확정본 파일이 허용 폴더 안인지 확인용 */,getId:()=>id,getUrl:()=>'https://drive.test/x/'+id,getName:()=>items[id].name,getSize:()=>items[id].size||0,getMimeType:()=>items[id].mime||'',getDateCreated:()=>new Date(),getBlob:()=>Utilities.newBlob([],items[id].mime)});
+  function folderObj(id){if(!items[id])items[id]={kind:'folder',name:id,parent:''};return {getParents:()=>iter(items[id].parent?[folderObj(items[id].parent)]:[]),getId:()=>id,getUrl:()=>'https://drive.test/f/'+id,getName:()=>items[id].name,
     createFolder:x=>{if(st.drive.fail.folder)throw new Error('drive fail');const nid='folder'+(++fid);items[nid]={kind:'folder',name:String(x),parent:id};return folderObj(nid)},
     getFoldersByName:x=>iter(kids(id,'folder').filter(k=>items[k].name===String(x)).map(folderObj)),getFolders:()=>iter(kids(id,'folder').map(folderObj)),
     getFiles:()=>iter(kids(id,'file').map(fileObj)),
@@ -40,5 +40,5 @@ module.exports=function makeServer(opt){opt=opt||{};
   const post=o=>JSON.parse(ctx.doPost({postData:{contents:typeof o==='string'?o:JSON.stringify(o)}}).text);
   const rowsOf=n=>(st.sheets[n]?st.sheets[n].rows.slice(1):[]);
   return {post,st,ctx,rowsOf,advance:ms=>{st.now+=ms},setProp:(k,v)=>{if(v===undefined)delete st.props[k];else st.props[k]=v},
-    setPw:pw=>{post({a:'login',pw:'x-init'});const sh=st.sheets['설정'];const r=sh.rows.find(x=>x&&x[0]==='관리 비밀번호');r[1]=pw;delete st.cache.pwfail},
+    setPw:pw=>{st.props.ADMIN_PW=pw; /* v7(드라이브본)~: 관리 비밀번호는 스크립트 속성 ADMIN_PW 에서만 읽음 */try{post({a:'login',pw:'x-init'})}catch(e){}const sh=st.sheets['설정'];const r=sh&&sh.rows.find(x=>x&&x[0]==='관리 비밀번호');if(r)r[1]=pw;delete st.cache.pwfail},
     ticket:(key,o)=>{o=o||{};const b=x=>Buffer.from(x).toString('base64url');const msg=(o.ts||Date.now())+'.'+(o.who64||b(o.who||'정진혁'))+'.'+(o.nonce||crypto.randomBytes(16).toString('base64url'));return msg+'.'+crypto.createHmac('sha256',key).update(msg).digest('base64url')}}};

@@ -51,7 +51,7 @@ const R=[];const ok=(n,v,x)=>{R.push(v);console.log(v?'통과':'실패',n,x===un
  const p=await (await b.newContext()).newPage();await p.setContent('<script>'+HTML.slice(HTML.indexOf('function fcCode'),HTML.indexOf('function hubShareHTML'))+'<\/script>');
  const r=await p.evaluate(()=>[fcCode('AbCdEfGhIjKlMnOpQrStUv12'),fcCode(' https://x/field/?s=AbCdEfGhIjKlMnOpQrStUv12&z=1 '),fcCode('AbCd'),fcCode('<script>'),fcCode('?s=AbCdEfGhIjKlMnOpQrStUv12345'),fcCode('')]);
  ok('코드 읽기: 24자리·주소 전체 OK, 짧은 것·이상한 것·25자리 이상 거절',JSON.stringify(r)===JSON.stringify(['AbCdEfGhIjKlMnOpQrStUv12','AbCdEfGhIjKlMnOpQrStUv12','','','','']),JSON.stringify(r));
- { const P2=await (await b.newContext()).newPage();await P2.setContent('<script>const S={staff:[]},esc=x=>String(x);'+HTML.slice(HTML.indexOf('const FIELD_BASE='),HTML.indexOf('async function fcCopy'))+'<\/script>');
+ { const P2=await (await b.newContext()).newPage();await P2.setContent('<script>const S={staff:[]},me={admin:false} /* v0.99-51 부터 hubShareHTML 이 me.admin 을 봄 */,esc=x=>String(x);'+HTML.slice(HTML.indexOf('const FIELD_BASE='),HTML.indexOf('async function fcCopy'))+'<\/script>');
   const h=await P2.evaluate(()=>hubShareHTML({no:'P-2611-905',title:'',custName:'홍길동',custTel:'010-9999-8888',mgr:'정진혁'},{title:'',custName:'홍길동'}));
   ok('계약 전 프로젝트 → ‘만들기’ 주소는 ?admin 뿐 (값은 누를 때 # 뒤로) · 고객 이름·전화 없음',/href="https:\/\/soo-cpu\.github\.io\/card\/field\/\?admin"/.test(h)&&/data-fsm="new"/.test(h)&&!/name=|proj=|홍길동|%ED%99%8D|9999|8888/.test(h),h.slice(0,200)) }
  ok('화면 오류·브라우저 대화상자 0',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join(','));
