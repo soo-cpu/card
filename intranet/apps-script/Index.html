@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko"><head><base target="_top"><meta charset="utf-8">
+<title>홈퍼니싱 인트라넷</title>
+<style>
+:root{--navy:#1F4E79;--deep:#203864;--yellow:#FFC000;--gray:#F2F2F2;--lblue:#D1E3F3;--ink:#111;--sub:#5f6670;--line:#dde3ea;--ok:#1f7a4d;--bad:#c62828}
+*{box-sizing:border-box}body{margin:0;font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;font-size:15px;color:var(--ink);background:#fff;word-break:keep-all}
+header{background:var(--deep);color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header b{font-size:17px}header small{opacity:.75}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav button{background:transparent;color:#fff;border:0;padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer;opacity:.8}
+nav button.on{background:rgba(255,255,255,.15);opacity:1;box-shadow:inset 0 -3px 0 var(--yellow)}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 40px;display:grid;gap:14px}
+main>*{min-width:0}
+h1{font-size:21px;margin:0}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.f{display:grid;gap:4px;min-width:0}.f.w{grid-column:1/-1}
+label{font-size:12px;color:var(--sub);font-weight:700}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0;background:#fff}
+textarea{min-height:70px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+.btn.p{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}.btn.no{color:var(--bad);border-color:var(--bad)}
+.box{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;white-space:nowrap;font-weight:600}
+td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even) td{background:var(--gray)}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--lblue)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lines td{padding:4px}.lines input{padding:6px}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--gray)}
+.pill.w{background:#fff4d6;color:#8a5a00}.pill.ok{background:#e3f3ea;color:var(--ok)}.pill.no{background:#fde8e8;color:var(--bad)}
+.note{font-size:12px;color:#8a5a00;background:#fff4d6;border-radius:8px;padding:8px 10px}
+.muted{color:var(--sub);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.veil{position:fixed;inset:0;background:rgba(10,18,32,.45);display:grid;place-items:center;padding:16px}
+.sheet{background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:18px;display:grid;gap:12px}
+.sheet>*{min-width:0}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 16px;border-radius:10px}
+.qbar{position:sticky;bottom:0;background:var(--deep);color:#fff;border-radius:12px;padding:10px 14px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.qbar b{font-size:20px;font-variant-numeric:tabular-nums}.qbar small{opacity:.8}
+.cat{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cat summary{padding:10px 14px;background:var(--gray);cursor:pointer;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.it{display:grid;grid-template-columns:auto 1fr 90px 120px;gap:8px;align-items:center;padding:8px 14px;border-top:1px solid var(--line)}
+.it.off{opacity:.55}.it .nm small{display:block;color:var(--sub);font-size:12px}.it input[type=number]{padding:6px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:4px;color:var(--sub)}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;cursor:pointer}
+@media(max-width:560px){.it{grid-template-columns:auto 1fr 70px}.it .amt{grid-column:2/-1;text-align:right}}
+footer{color:var(--sub);font-size:12px;text-align:center}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><b>홈퍼니싱 인트라넷</b><small id="who">불러오는 중…</small>
+<nav id="nav"></nav></header>
+<main id="view"><p class="muted">불러오는 중…</p></main>
+<div id="layer"></div>
+<script>
+let B=null, AP=[], tab=(location.hash||'#quote').slice(1);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won=n=>Number(n)?Number(n).toLocaleString('ko-KR')+'원':'—';
+const num=v=>Number(String(v||'').replace(/[^\d.-]/g,''))||0;
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2800)}
+function call(fn,...a){return new Promise((ok,no)=>google.script.run.withSuccessHandler(ok).withFailureHandler(e=>{toast(e.message||'오류가 났어요');no(e)})[fn](...a))}
+function pill(s){return `<span class="pill ${s==='승인'?'ok':s==='반려'?'no':'w'}">${esc(s)}</span>`}
+
+async function boot(){
+  try{B=await call('getBoot')}catch(e){$('#view').innerHTML=`<div class="card"><b>열 수 없어요</b><p class="muted">${esc(e.message)}</p></div>`;$('#who').textContent='';return}
+  $('#who').textContent=B.me+(B.isOwner?' · 대표':'')+' · '+B.email;
+  render();
+}
+function render(){
+  const tabs=[['quote','견적'],['sites','현장'],['vendors','업체'],['forms','서식'],['new','결재 올리기'],['approvals',B.isOwner?'결재함 (전체)':'내 결재'],['staff','인사']];
+  $('#nav').innerHTML=tabs.map(([k,t])=>`<button class="${tab===k?'on':''}" data-tab="${k}">${t}</button>`).join('');
+  if(tab==='quote')viewQuote();else if(tab==='sites')viewSites();else if(tab==='vendors')viewVendors();else if(tab==='forms')viewForms();else if(tab==='new')viewNew();else if(tab==='approvals')viewApprovals();else viewStaff();
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;location.hash=tab;render()}});
+
+/* ---------- 결재 올리기 (본사 기안·품의서 칸 그대로) ---------- */
+function viewNew(){
+  $('#view').innerHTML=`<h1>결재 올리기</h1>
+  <div class="note">본사 「기안·품의서」와 같은 칸이에요. 계좌번호는 대표 전용 시트에 따로 저장되고, 직원 화면·메일에는 나오지 않아요.</div>
+  <div class="card grid">
+    <div class="f"><label>서류 종류</label><select id="kind">${B.kinds.map(k=>`<option>${k}</option>`).join('')}</select></div>
+    <div class="f"><label>현장 (현장코드)</label><select id="site"><option value="">현장 없음 (본사 경비 등)</option>${B.sites.map(s=>`<option value="${esc(s.현장코드)}">${esc(s.현장코드)} ${esc(s.현장명)}</option>`).join('')}<option value="__new">+ 새 현장 등록</option></select></div>
+    <div class="f w" id="siteNew" hidden><label>새 현장명 (등록하면 현장코드 S26-001 형식이 자동으로 붙어요)</label><div class="row"><input id="siteName" placeholder="예: 구리 롯데캐슬 101동"><button class="btn" id="siteAdd">등록</button></div></div>
+    <div class="f w"><label>제목</label><input id="title" placeholder="예: 타일 자재비 지급 건."></div>
+    <div id="payPart" class="f w" style="display:grid;gap:10px">
+      <div class="f"><label>1. 지출내역</label>
+        <div class="box"><table class="lines"><thead><tr><th>일자</th><th>구분</th><th>지출내역</th><th>공급가</th><th>부가세</th><th></th></tr></thead><tbody id="lines"></tbody>
+        <tfoot><tr><td colspan="3" style="text-align:right"><b>합계</b></td><td class="n" id="sumS">0</td><td class="n" id="sumV">0</td><td></td></tr></tfoot></table></div>
+        <div class="row"><button class="btn" id="addLine">+ 한 줄</button><span class="muted">부가세 칸을 비우면 공급가의 10%로 채워요</span></div></div>
+      <div class="grid">
+        <div class="f"><label>2. 업체명(연락처)</label><input id="vendor"></div>
+        <div class="f"><label>3. 금액(VAT포함)</label><input id="amount" readonly placeholder="지출내역 합계로 자동"></div>
+        <div class="f"><label>4. 지급요청일</label><input id="due" type="date"></div>
+        <div class="f"><label>5. 계좌번호 (대표만 봄)</label><input id="acct" autocomplete="off"></div>
+        <div class="f w"><label>6. 증빙자료 여부</label><input id="proof" placeholder="예: 견적서/세금계산서"></div>
+      </div>
+    </div>
+    <div id="leavePart" class="grid f w" hidden>
+      <div class="f"><label>휴가 구분</label><select id="lk"><option>연차</option><option>반차</option><option>병가</option><option>경조</option><option>공가</option><option>기타</option></select></div>
+      <div class="f"><label>일수</label><input id="ld" type="number" step="0.5" value="1"></div>
+      <div class="f"><label>시작일</label><input id="ls" type="date"></div>
+      <div class="f"><label>종료일</label><input id="le" type="date"></div>
+    </div>
+    <div class="f w"><label>증빙 파일 (견적서·세금계산서 사진·PDF, 파일당 10MB까지)</label><input id="files" type="file" multiple accept="image/*,application/pdf,.xls,.xlsx,.hwp,.doc,.docx"></div>
+    <div class="f w"><label>비고</label><textarea id="memo"></textarea></div>
+    <div class="f w row"><button class="btn p" id="send">결재 올리기 (대표에게 메일 알림)</button></div>
+  </div>`;
+  const lines=$('#lines');
+  const addLine=()=>{const tr=document.createElement('tr');tr.innerHTML=`<td><input data-c="일자" placeholder="10/29"></td><td><input data-c="구분" placeholder="타일자재"></td><td><input data-c="지출내역" placeholder="현장명-담당"></td><td><input data-c="공급가" inputmode="numeric"></td><td><input data-c="부가세" inputmode="numeric"></td><td><button class="btn" data-rm>✕</button></td>`;lines.appendChild(tr);sum()};
+  const sum=()=>{let s=0,v=0;lines.querySelectorAll('tr').forEach(tr=>{const g=c=>tr.querySelector(`[data-c="${c}"]`);const sp=num(g('공급가').value);let vv=g('부가세').value===''?Math.round(sp*0.1):num(g('부가세').value);s+=sp;v+=vv});$('#sumS').textContent=s.toLocaleString('ko-KR');$('#sumV').textContent=v.toLocaleString('ko-KR');$('#amount').value=s+v?(s+v).toLocaleString('ko-KR')+'원':''};
+  addLine();
+  $('#addLine').onclick=addLine;
+  lines.addEventListener('input',sum);
+  lines.addEventListener('click',e=>{if(e.target.matches('[data-rm]')){e.target.closest('tr').remove();sum()}});
+  const kind=()=>{const lv=$('#kind').value==='휴가신청서';$('#payPart').hidden=lv;$('#leavePart').hidden=!lv};
+  $('#kind').onchange=kind;
+  $('#site').onchange=()=>{$('#siteNew').hidden=$('#site').value!=='__new'};
+  $('#siteAdd').onclick=async()=>{const n=$('#siteName').value.trim();if(!n)return;const code=await call('addSite',n,'');B.sites.push({현장코드:code,현장명:n});toast('현장코드 '+code+' 등록');viewNew()};
+  $('#send').onclick=async()=>{
+    const btn=$('#send');if(btn.disabled)return;
+    const site=$('#site').value&&$('#site').value!=='__new'?B.sites.find(s=>s.현장코드===$('#site').value):null;
+    const rows=[...lines.querySelectorAll('tr')].map(tr=>{const o={};tr.querySelectorAll('[data-c]').forEach(i=>o[i.dataset.c]=i.value.trim());o.공급가=num(o.공급가);o.부가세=o.부가세===''?Math.round(o.공급가*0.1):num(o.부가세);return o});
+    const files=[];for(const f of $('#files').files){if(f.size>10*1024*1024){toast(f.name+' : 10MB가 넘어요');return}files.push({name:f.name,type:f.type,data:await b64(f)})}
+    const lv=$('#kind').value==='휴가신청서';
+    const f={종류:$('#kind').value,현장코드:site?site.현장코드:'',현장명:site?site.현장명:'',제목:$('#title').value.trim(),
+      지출내역:lv?[]:rows,업체명:$('#vendor').value.trim(),지급요청일:$('#due').value,계좌번호:$('#acct').value.trim(),증빙자료:$('#proof').value.trim(),
+      휴가구분:lv?$('#lk').value:'',휴가일수:lv?$('#ld').value:'',휴가시작:lv?$('#ls').value:'',휴가종료:lv?$('#le').value:'',비고:$('#memo').value.trim(),files};
+    btn.disabled=true;btn.textContent='올리는 중…';
+    try{const no=await call('submitApproval',f);toast('결재를 올렸어요 · 문서번호 '+no);tab='approvals';location.hash=tab;render()}
+    catch(e){btn.disabled=false;btn.textContent='결재 올리기 (대표에게 메일 알림)'}
+  };
+}
+function b64(f){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(String(fr.result).split(',')[1]);fr.readAsDataURL(f)})}
+
+/* ---------- 결재함 ---------- */
+async function viewApprovals(){
+  $('#view').innerHTML='<p class="muted">불러오는 중…</p>';
+  AP=await call('listApprovals');
+  const wait=AP.filter(a=>a.상태==='결재 대기').length;
+  const years=[...new Set(AP.map(a=>String(a.기안일자).slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
+  const kinds=[...new Set(AP.map(a=>a.종류))];
+  $('#view').innerHTML=`<h1>${B.isOwner?'결재함':'내 결재'} <span class="muted">대기 ${wait}건 · 전체 ${AP.length}건</span></h1>
+  ${AP.some(a=>a.상태==='과거 기록')?'<div class="note">‘과거 기록’은 공유드라이브 원본 기안품의서(2020~2026)에서 옮긴 것이에요. 원본 파일은 그대로 있고, 각 건의 ‘증빙 파일’에 원본 링크가 있어요.</div>':''}
+  ${AP.length?`<div class="grid"><div class="f w"><label>검색 (문서번호·현장·제목·업체·기안자)</label><input id="aq" placeholder="예: 동양아파트, 한샘, 25-03"></div>
+   <div class="f"><label>연도</label><select id="ay"><option value="">전체</option>${years.map(y=>`<option>${y}</option>`).join('')}</select></div>
+   <div class="f"><label>상태</label><select id="as"><option value="">전체</option>${['결재 대기','승인','반려','과거 기록'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+   <div class="f w"><label>종류</label><select id="ak"><option value="">전체</option>${kinds.map(k=>`<option>${esc(k)}</option>`).join('')}</select></div></div>
+  <div id="alist"></div>`:'<div class="card muted">아직 결재가 없어요. ‘결재 올리기’에서 첫 결재를 올려 주세요.</div>'}`;
+  if(!AP.length)return;
+  let lim=100;
+  const draw=()=>{
+    const q=$('#aq').value.trim().toLowerCase(),y=$('#ay').value,st=$('#as').value,k=$('#ak').value;
+    const L=AP.map((a,i)=>[a,i]).filter(([a])=>(!y||String(a.기안일자).startsWith(y))&&(!st||a.상태===st)&&(!k||a.종류===k)&&(!q||[a.문서번호,a.현장명,a.제목,a['업체명(연락처)'],a.기안자,a.비고].join(' ').toLowerCase().includes(q)));
+    const sum=L.reduce((s,[a])=>s+(Number(a['금액(VAT포함)'])||0),0);
+    $('#alist').innerHTML=`<p class="muted">${L.length}건 · 합계 ${won(sum)}</p><div class="box"><table><thead><tr><th>문서번호</th><th>종류</th><th>현장</th><th>제목</th><th>기안자</th><th>금액</th><th>기안일</th><th>상태</th></tr></thead><tbody>
+    ${L.slice(0,lim).map(([a,i])=>`<tr class="click" data-i="${i}"><td>${esc(a.문서번호)}</td><td>${esc(String(a.종류).replace('기안·품의',''))}</td><td>${esc(a.현장코드)} ${esc(a.현장명)}</td><td>${esc(a.제목)}</td><td>${esc(a.기안자)}</td><td class="n">${won(a['금액(VAT포함)'])}</td><td>${esc(a.기안일자)}</td><td>${pill(a.상태)}</td></tr>`).join('')}</tbody></table></div>
+    ${L.length>lim?`<div class="row"><button class="btn" id="amore">더 보기 (${L.length-lim}건 남음)</button></div>`:''}`;
+    if($('#amore'))$('#amore').onclick=()=>{lim+=100;draw()};
+  };
+  ['aq','ay','as','ak'].forEach(id=>$('#'+id).addEventListener(id==='aq'?'input':'change',()=>{lim=100;draw()}));
+  draw();
+  $('#view').onclick=e=>{const tr=e.target.closest('tr[data-i]');if(tr)openAp(AP[+tr.dataset.i])};
+}
+async function openAp(a){
+  const acct=B.isOwner?await call('getAccount',a.문서번호):'';
+  const lv=a.종류==='휴가신청서';
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet">
+   <div class="row" style="justify-content:space-between"><b>${esc(a.문서번호)} · ${esc(a.종류)}</b><button class="btn" id="x">닫기</button></div>
+   <div>${pill(a.상태)} <span class="muted">기안 ${esc(a.기안자)} · ${esc(a.기안일자)}${a.결재일시?' · 결재 '+esc(a.결재일시):''}</span></div>
+   <div class="grid">
+    <div class="f w"><label>현장</label><div>${esc(a.현장코드)} ${esc(a.현장명)||'—'}</div></div>
+    <div class="f w"><label>제목</label><div>${esc(a.제목)}</div></div>
+    ${lv?`<div class="f"><label>휴가</label><div>${esc(a.휴가구분)} ${esc(a.휴가일수)}일</div></div><div class="f"><label>기간</label><div>${esc(a.휴가시작)} ~ ${esc(a.휴가종료)}</div></div>`:
+    `<div class="f w"><label>1. 지출내역</label>${!(a.지출내역||[]).length?'<div>— (아래 비고 참고)</div>':''}<div class="box" ${!(a.지출내역||[]).length?'hidden':''}><table><thead><tr><th>일자</th><th>구분</th><th>지출내역</th><th>공급가</th><th>부가세</th></tr></thead><tbody>${(a.지출내역||[]).map(l=>`<tr><td>${esc(l.일자)}</td><td>${esc(l.구분)}</td><td>${esc(l.지출내역)}</td><td class="n">${won(l.공급가)}</td><td class="n">${won(l.부가세)}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="f"><label>2. 업체명(연락처)</label><div>${esc(a['업체명(연락처)'])||'—'}</div></div>
+    <div class="f"><label>3. 금액(VAT포함)</label><div>${won(a['금액(VAT포함)'])}</div></div>
+    <div class="f"><label>4. 지급요청일</label><div>${esc(a.지급요청일)||'—'}</div></div>
+    <div class="f"><label>5. 계좌번호</label><div>${B.isOwner?(esc(acct)||'—'):'대표만 볼 수 있어요'}</div></div>
+    <div class="f w"><label>6. 증빙자료</label><div>${esc(a.증빙자료)||'—'}</div></div>`}
+    <div class="f w"><label>증빙 파일</label><div>${String(a.증빙파일||'').split('\n').filter(Boolean).map((u,i)=>`<a href="${esc(u)}" target="_blank">파일 ${i+1}</a>`).join(' · ')||'—'}</div></div>
+    <div class="f w"><label>비고</label><div>${esc(a.비고)||'—'}</div></div>
+    ${a.결재의견?`<div class="f w"><label>결재 의견</label><div>${esc(a.결재의견)}</div></div>`:''}
+   </div>
+   ${B.isOwner&&a.상태==='결재 대기'?`<div class="f"><label>결재 의견</label><input id="note"></div><div class="row"><button class="btn ok" data-d="승인">승인</button><button class="btn no" data-d="반려">반려</button></div>`:''}
+  </div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{b.disabled=true;await call('decide',a.문서번호,b.dataset.d,$('#note').value);$('#layer').innerHTML='';toast(b.dataset.d+'했어요 · 결과 시트에 기록됨');viewApprovals()});
+}
+
+/* ---------- 인사 ---------- */
+const SF=[['이름','text'],['소속','sel',['','본사','현장','아르띠꼬 스튜디오']],['직급','text'],['직책','text'],['입사일','date'],['현직위승진일','date'],['입사구분','sel',['','신입','경력']],['입사시최종학력','text'],['연락처','text'],['회사이메일','email'],['담당업무','text'],['재직상태','sel',['재직','휴직','퇴사']],['권한','sel',['직원','대표']]];
+// 인사기록부 표 항목: 구분 → 열 이름 (기간/일자, 항목1~4)
+const HIST={'학력':['기간','교명','전공','학위','소재지'],'어학능력':['검정일','외국어명','등급','종합',''],'특허·자격·면허':['취득년월','종류 및 등급','','',''],'병역':['기간','군별','계급','병과','실역구분·사유'],'입사전경력':['기간','근무처','직위','직책',''],'발령사항':['일자','발령구분','직위·직책','소속','비고'],'교육사항':['기간','과정','사내·사외','성적',''],'상벌사항':['기간','상벌구분','사유','시행처','']};
+const SECF=[['주민등록번호','text'],['주소','text'],['혼인여부','sel',['','미혼','기혼']],['급여(연봉)','text'],['급여계좌','text'],['근로계약서 링크','url'],['인사기록 폴더 링크','url'],['비고','text']];
+async function viewStaff(){
+  const S=await call('listStaff');B.staff=S;
+  $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>인사 · 직원</h1>${B.isOwner?'<button class="btn p" id="addS">직원 등록</button>':''}</div>
+  <div class="note">연차는 입사일 기준 근로기준법(1년 미만 매월 1일·최대 11일 / 1년 이상 15일, 3년차부터 2년마다 +1일·최대 25일)으로 자동 계산하고, 승인된 휴가신청서(연차·반차)를 사용일수로 뺍니다. 주민번호·주소·급여·계좌·근로계약서는 대표 전용 시트에만 있어요. ${B.isOwner?'직원을 누르면 인사기록·연차 사용 내역·급여·인상 이력을 볼 수 있어요.':'내 이름을 누르면 내 연차 사용 내역이 보여요.'}</div>
+  <div class="box"><table><thead><tr><th>이름</th><th>소속</th><th>직급</th><th>직책</th><th>입사일</th><th>연락처</th><th>담당업무</th><th>연차 (발생/사용/잔여)</th><th>연차 기간</th><th>상태</th></tr></thead><tbody>
+  ${S.map((s,i)=>`<tr class="${B.isOwner||(s.회사이메일&&String(s.회사이메일).toLowerCase()===String(B.email).toLowerCase())?'click':''}" data-s="${i}"><td>${esc(s.이름)}</td><td>${esc(s.소속)}</td><td>${esc(s.직급)}</td><td>${esc(s.직책)}</td><td>${esc(s.입사일)}</td><td>${esc(s.연락처)}</td><td>${esc(s.담당업무)}</td><td class="n">${s.연차.발생===''?'—':`${s.연차.발생} / ${s.연차.사용} / <b>${s.연차.잔여}</b>일`}</td><td class="muted">${esc(s.연차.기간)}</td><td>${esc(s.재직상태)}</td></tr>`).join('')}</tbody></table></div>`;
+  if(B.isOwner){$('#addS').onclick=()=>editStaff({});$('#view').onclick=e=>{const tr=e.target.closest('tr[data-s]');if(tr)editStaff(S[+tr.dataset.s])}}
+  else $('#view').onclick=e=>{const tr=e.target.closest('tr.click[data-s]');if(tr)myLeave(S[+tr.dataset.s])};
+}
+async function editStaff(s){
+  const sec=s.직원ID?await call('getSecret',s.직원ID):{};
+  const hist=s.직원ID?await call('getHistory',s.직원ID):[];
+  const fld=(f,o,p)=>{const [k,t,opt]=f;const v=o[k]??'';return `<div class="f"><label>${k}</label>${t==='sel'?`<select data-${p}="${k}">${opt.map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-${p}="${k}" type="${t}" value="${esc(v)}">`}</div>`};
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet">
+   <div class="row" style="justify-content:space-between"><b>${esc(s.이름||'직원 등록')}</b><button class="btn" id="x">닫기</button></div>
+   <b>직원 시트 (직원 모두 봄)</b><div class="grid">${SF.map(f=>fld(f,s,'p')).join('')}<div class="f w"><label>회사이메일</label><span class="muted">이 이메일로 로그인해야 결재를 올릴 수 있어요</span></div></div>
+   <b>인사기록 (본사 인사기록부 표 항목 · 대표만 봄)</b><div id="hist" style="display:grid;gap:10px"></div>
+   ${s.직원ID?`<b>연차 사용 내역</b><div class="note">승인된 휴가신청서는 자동으로 들어와요. 인트라넷 전에 쓴 연차는 아래에서 직접 넣으세요. 연차·반차만 잔여 연차에서 빠져요.</div><div id="lv"></div>
+   <b>급여·인상 이력 (대표 전용 시트)</b><div class="note">새 연봉을 넣으면 바로 전 기록과 비교해 인상액·인상률을 자동 계산하고, 가장 최근 연봉이 아래 '급여(연봉)' 칸에도 들어가요. 월급여를 비우면 연봉÷12로 넣어요.</div><div id="pay"></div>`:''}
+   <b>민감정보 (대표 전용 시트)</b><div class="note">근로계약서는 공유드라이브 원본 파일의 링크만 붙여 넣으세요. 원본은 옮기지 않습니다.</div><div class="grid">${SECF.map(f=>fld(f,sec,'sec')).join('')}</div>
+   <div class="row"><button class="btn p" id="save">저장</button></div></div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';
+  drawHist(hist);
+  if(s.직원ID){drawLeave(s,true);drawPay(s)}
+  $('#save').onclick=async()=>{
+    const p={직원ID:s.직원ID||''};document.querySelectorAll('[data-p]').forEach(i=>p[i.dataset.p]=i.value.trim());
+    const id=await call('saveStaff',p);
+    const q={직원ID:id,이름:p.이름};document.querySelectorAll('[data-sec]').forEach(i=>q[i.dataset.sec]=i.value.trim());
+    await call('saveSecret',q);await call('saveHistory',id,readHist());$('#layer').innerHTML='';toast('저장했어요');viewStaff();
+  };
+}
+/* ---------- 연차 사용 · 급여 이력 ---------- */
+const wn=n=>n===''||n===undefined||n===null?'':Number(n).toLocaleString('ko-KR');
+async function myLeave(s){
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet"><div class="row" style="justify-content:space-between"><b>${esc(s.이름)} · 연차 사용 내역</b><button class="btn" id="x">닫기</button></div>
+   <div class="note">이번 연차 기간 ${esc(s.연차.기간)} · 발생 ${s.연차.발생}일 / 사용 ${s.연차.사용}일 / 잔여 <b>${s.연차.잔여}</b>일</div><div id="lv"></div></div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';drawLeave(s,false);
+}
+async function drawLeave(s,owner){
+  const box=$('#lv');box.innerHTML='<p class="muted">불러오는 중…</p>';const L=await call('listLeave',s.직원ID);
+  box.innerHTML=`<div class="box"><table><thead><tr><th>구분</th><th>시작일</th><th>종료일</th><th>일수</th><th>출처</th><th>메모</th>${owner?'<th></th>':''}</tr></thead><tbody>
+   ${L.length?L.map(l=>`<tr><td>${esc(l.구분)}</td><td>${esc(l.시작일)}</td><td>${esc(l.종료일)}</td><td class="n">${l.일수}</td><td class="muted">${esc(l.출처)}</td><td>${esc(l.메모)}</td>${owner?`<td>${l.기록ID?`<button class="btn no" data-dl="${esc(l.기록ID)}">삭제</button>`:''}</td>`:''}</tr>`).join(''):`<tr><td colspan="7" class="muted">아직 기록이 없어요</td></tr>`}</tbody></table></div>
+   ${owner?`<div class="grid" style="margin-top:8px"><div class="f"><label>구분</label><select id="lk">${['연차','반차','경조휴가','병가','기타'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="f"><label>일수</label><input id="ln" type="number" step="0.5" min="0.5" value="1"></div>
+   <div class="f"><label>시작일</label><input id="ls" type="date"></div><div class="f"><label>종료일</label><input id="le" type="date"></div><div class="f w"><label>메모</label><input id="lm"></div></div><div class="row"><button class="btn" id="la">연차 사용 추가</button></div>`:''}`;
+  if(!owner)return;
+  box.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{if(!confirm('이 기록을 지울까요?'))return;await call('deleteLeave',b.dataset.dl);toast('지웠어요');drawLeave(s,true)});
+  $('#la').onclick=async()=>{await call('saveLeave',{직원ID:s.직원ID,구분:$('#lk').value,일수:$('#ln').value,시작일:$('#ls').value,종료일:$('#le').value,메모:$('#lm').value.trim()});toast('추가했어요 (목록의 연차는 새로고침 후 반영)');drawLeave(s,true)};
+}
+async function drawPay(s){
+  const box=$('#pay');box.innerHTML='<p class="muted">불러오는 중…</p>';const P=await call('listPay',s.직원ID);
+  box.innerHTML=`<div class="box"><table><thead><tr><th>적용일</th><th>구분</th><th>연봉</th><th>월급여</th><th>인상액</th><th>인상률</th><th>사유</th><th></th></tr></thead><tbody>
+   ${P.length?P.map(p=>`<tr><td>${esc(p.적용일)}</td><td>${esc(p.구분)}</td><td class="n">${wn(p.연봉)}</td><td class="n">${wn(p.월급여)}</td><td class="n">${wn(p.인상액)}</td><td class="n">${p['인상률(%)']===''?'':esc(p['인상률(%)'])+'%'}</td><td>${esc(p.사유)}</td><td><button class="btn no" data-dp="${esc(p.이력ID)}">삭제</button></td></tr>`).join(''):`<tr><td colspan="8" class="muted">아직 기록이 없어요 (입사 연봉부터 넣어 주세요)</td></tr>`}</tbody></table></div>
+   <div class="grid" style="margin-top:8px"><div class="f"><label>적용일</label><input id="pd" type="date"></div><div class="f"><label>구분</label><select id="pk">${['입사','정기인상','수시인상','승진','조정','삭감'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+   <div class="f"><label>연봉 (원)</label><input id="py" inputmode="numeric" placeholder="예: 36000000"></div><div class="f"><label>월급여 (원, 비우면 연봉÷12)</label><input id="pm" inputmode="numeric"></div><div class="f w"><label>사유</label><input id="pr"></div></div>
+   <div class="row"><button class="btn" id="pa">급여 기록 추가</button></div>`;
+  box.querySelectorAll('[data-dp]').forEach(b=>b.onclick=async()=>{if(!confirm('이 급여 기록을 지울까요?'))return;await call('deletePay',b.dataset.dp);toast('지웠어요');drawPay(s);refreshSal(s)});
+  $('#pa').onclick=async()=>{await call('savePay',{직원ID:s.직원ID,적용일:$('#pd').value,구분:$('#pk').value,연봉:$('#py').value,월급여:$('#pm').value,사유:$('#pr').value.trim()});toast('추가했어요');drawPay(s);refreshSal(s)};
+}
+// 급여 기록이 바뀌면 민감정보의 '급여(연봉)' 칸도 최신 값으로 (저장 버튼이 옛 값으로 덮지 않게)
+async function refreshSal(s){const sec=await call('getSecret',s.직원ID);const i=document.querySelector('[data-sec="급여(연봉)"]');if(i)i.value=sec['급여(연봉)']||''}
+/* ---------- 현장 · 업체 · 서식 (공유드라이브 「0. 홈퍼니싱」에서 옮긴 목록, 원본은 링크만) ---------- */
+function listView(title,note,rows,cols,keyName){
+  $('#view').innerHTML=`<h1>${title} <span class="muted">${rows.length}</span></h1>${note?`<div class="note">${note}</div>`:''}
+  <div class="row"><input id="lq" placeholder="검색" style="flex:1"></div><div class="box"><table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody id="lb"></tbody></table></div>`;
+  const draw=q=>{$('#lb').innerHTML=rows.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q)).map(r=>`<tr>${cols.map(([k,,t])=>`<td>${t==='link'&&r[k]?`<a href="${esc(r[k])}" target="_blank">열기</a>`:esc(r[k])}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="muted">없음</td></tr>`};
+  draw('');$('#lq').oninput=e=>draw(e.target.value.trim().toLowerCase());
+}
+async function viewSites(){$('#view').innerHTML='<p class="muted">불러오는 중…</p>';const r=await call('listSites');
+  listView('현장',"현장코드(S26-001)로 견적·결재·사진을 묶어요. 폴더는 공유드라이브 원본 링크(읽기만).",r,[['현장코드','코드'],['현장명','현장명'],['발주처','발주처'],['연도','연도'],['구분','구분'],['상태','상태'],['폴더링크','폴더','link'],['메모','메모']])}
+async function viewVendors(){$('#view').innerHTML='<p class="muted">불러오는 중…</p>';const r=await call('listVendors');
+  listView('업체',"26년 기안품의서에서 뽑은 거래처 목록. 계좌번호는 넣지 않았어요(대표 전용 시트에서만).",r,[['업체코드','코드'],['업체명','업체명'],['분류','분류'],['주요품목','주요 품목'],['연락처','연락처'],['결재건수','결재 건수']])}
+async function viewForms(){$('#view').innerHTML='<p class="muted">불러오는 중…</p>';const r=await call('listForms');
+  listView('서식 자료실',"본사 서식 원본 링크. 원본은 고치지 말고 ‘사본 만들기’로 쓰세요.",r,[['분류','분류'],['서식명','서식명'],['링크','원본','link'],['결재종류','전자결재 종류']])}
+
+/* ---------- 견적 모듈 (상담견적 v.15 단가 계산과 같음) ---------- */
+let CAT=null, CUS=[], Q=null;
+const INSUL={pl_living:'wd_ins_lv',pl_room:'wd_ins_rm',pl_kitexp:'wd_ins_rm'};
+const QSTAT=['작성중','고객 제시','계약','보류'];
+const rnd=x=>x>=50000?Math.round(x/1000)*1000:Math.round(x/100)*100;
+function uPrice(p,mg){if(p.원가||p.실비||p.고정){if(p.실비)return p.원가;if(p.고정)return p.판매가;return Math.max(rnd(p.원가/(1-mg)),p.하한가||0)}return p.마진적용&&p.기준판매가?Math.max(rnd(p.기준판매가*(1-CAT.defaultMargin)/(1-mg)),p.하한가||0):p.판매가}
+function aQty(p){return p.기본수량==='py'?(+Q.평형||0):p.기본수량==='bath'?(+Q.욕실수||1):(+p.기본수량||1)}
+function qOf(p){const it=Q.items[p.키];return it&&it.q!==null&&it.q!==''&&it.q!==undefined?+it.q:aQty(p)}
+function mpct(m){return Math.round(m*100)+'%'}  // 직원 화면은 실제 마진율로 표시 (고객 상담 모드에는 어떤 마진 표기도 보내지 않음)
+function qCalc(){let sale=0,cost=0;const by={};CAT.items.forEach(p=>{const it=Q.items[p.키];if(!it||!it.on)return;const up=(+it.px>0)?+it.px:uPrice(p,+Q.마진기준);const a=Math.round(up*qOf(p));sale+=a;cost+=(p.원가||0)*qOf(p);by[p.공정]=(by[p.공정]||0)+a});
+  const disc=(+Q['할인(만원)']||0)*10000,net=Math.max(0,sale-disc),vat=Math.round(net*.1);return {sale,net,vat,total:net+vat,cost,by}}
+async function viewQuote(){
+  $('#view').innerHTML='<p class="muted">불러오는 중…</p>';
+  [CAT,CUS]=await Promise.all([CAT?Promise.resolve(CAT):call('getCatalog'),call('listCustomers')]);
+  const L=await call('listEstimates');
+  $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>견적</h1><button class="btn p" id="qNew">새 견적</button></div>
+  <div class="note">단가표: 상담견적 ${esc(CAT.source)} 기준 ${CAT.items.length}개 항목. 고객은 고객 목록에서 고르고, 없으면 그 자리에서 한 번만 등록해요. 이 화면은 직원용(원가·마진 표시) — 고객에게는 보여 주지 마세요.</div>
+  ${L.length?`<div class="box"><table><thead><tr><th>견적번호</th><th>버전</th><th>고객</th><th>현장코드</th><th>범위</th><th>합계(VAT포함)</th><th>원가·마진율</th><th>상태</th><th>작성</th></tr></thead><tbody>
+  ${L.map((e,i)=>`<tr class="click" data-q="${i}"><td>${esc(e.견적번호)}</td><td>${esc(e.버전)}차</td><td>${esc(e.고객코드)} ${esc(e.고객명)}</td><td>${esc(e.현장코드)||'—'}</td><td>${esc(e.공사범위)}</td><td class="n">${won(e['합계(VAT포함)'])}</td>${`<td class="n">${+e.원가합계?won(e.원가합계)+' · '+Math.round((e.공급가-e.원가합계)/e.공급가*100)+'%':'원가 미입력'}</td>`}<td>${pill2(e.상태)}</td><td class="muted">${esc(e.작성자)} ${esc(String(e.작성일시).slice(0,10))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card muted">아직 견적이 없어요. ‘새 견적’으로 시작하세요.</div>'}`;
+  $('#qNew').onclick=()=>{Q={견적번호:'',버전:0,고객코드:'',평형:'',욕실수:2,마진기준:CAT.defaultMargin,'할인(만원)':0,상태:'작성중',공사범위:'',메모:'',items:{}};qEditor()};
+  $('#view').onclick=async e=>{const tr=e.target.closest('tr[data-q]');if(!tr)return;const x=L[+tr.dataset.q];Q=await call('getEstimate',x.견적번호,x.버전);Q.마진기준=Q.마진기준||CAT.defaultMargin;qEditor()};
+}
+function pill2(s){return `<span class="pill ${s==='계약'?'ok':s==='보류'?'no':'w'}">${esc(s||'작성중')}</span>`}
+function applyPreset(name){Q.공사범위=name;Q.items={};const keys=CAT.presets[name];CAT.items.forEach(p=>{if(keys?keys.includes(p.키):p.기본체크)Q.items[p.키]={on:true,q:null}})}
+function toggle(p,on){if(on&&p.택1그룹)CAT.items.forEach(o=>{if(o.택1그룹===p.택1그룹&&o.키!==p.키&&Q.items[o.키])Q.items[o.키].on=false});
+  Q.items[p.키]=Object.assign(Q.items[p.키]||{q:null},{on});
+  const t=INSUL[p.키];if(t){if(on)Q.items[t]=Object.assign(Q.items[t]||{q:null},{on:true});else if(!Object.keys(INSUL).some(k=>INSUL[k]===t&&k!==p.키&&Q.items[k]&&Q.items[k].on)&&Q.items[t])Q.items[t].on=false}}
+function qEditor(){
+  const c=CUS.find(x=>x.고객코드===Q.고객코드);
+  const groups=CAT.order.map(g=>[g,CAT.items.filter(p=>p.공정===g)]).filter(x=>x[1].length);
+  $('#view').innerHTML=`<div class="row" style="justify-content:space-between"><h1>${Q.견적번호?esc(Q.견적번호)+' · '+esc(Q.버전)+'차':'새 견적'}</h1><button class="btn" id="qBack">목록</button></div>
+  <div class="card grid">
+    <div class="f w"><label>고객 (목록에서 선택 — 같은 고객을 두 번 등록하지 마세요)</label><div class="row"><select id="qCus" style="flex:1"><option value="">고객 선택</option>${CUS.map(x=>`<option value="${esc(x.고객코드)}" ${x.고객코드===Q.고객코드?'selected':''}>${esc(x.고객코드)} ${esc(x.고객명)} · ${esc(x.아파트명)} ${esc(x.동)} ${esc(x.평형)}평${x.연락처뒤4?' · '+esc(x.연락처뒤4):''}</option>`).join('')}</select><button class="btn" id="qAddCus">+ 새 고객</button></div></div>
+    <div class="f"><label>평형</label><input id="qPy" type="number" value="${esc(Q.평형)}"></div>
+    <div class="f"><label>욕실 수</label><input id="qBath" type="number" value="${esc(Q.욕실수)}"></div>
+    <div class="f"><label>마진율 (목표 28%)</label><select id="qMg">${CAT.margins.map(m=>`<option value="${m}" ${+Q.마진기준===m?'selected':''}>${mpct(m)}${m===CAT.defaultMargin?' (목표)':''}</option>`).join('')}</select></div>
+    <div class="f"><label>할인 (만원)</label><input id="qDisc" type="number" value="${esc(Q['할인(만원)'])}"></div>
+    <div class="f"><label>상태</label><select id="qSt">${QSTAT.map(x=>`<option ${x===Q.상태?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="f"><label>현장코드</label><div class="muted">${c&&c.현장코드?esc(c.현장코드):'계약 후 프로젝트를 만들면 붙어요'}</div></div>
+    <div class="f w"><label>공사 범위 (빠른 선택)</label><div class="row">${Object.keys(CAT.presets).map(n=>`<button class="chip" data-pre="${esc(n)}" ${Q.공사범위===n?'style="background:var(--navy);color:#fff"':''}>${esc(n)}</button>`).join('')}</div></div>
+  </div>
+  <div id="qCats" style="display:grid;gap:8px">${groups.map(([g,list])=>`<details class="cat" ${list.some(p=>Q.items[p.키]&&Q.items[p.키].on)?'open':''}><summary><span>${esc(g)}</span><span class="muted" data-gs="${esc(g)}"></span></summary>
+    ${list.map(p=>`<div class="it" data-k="${esc(p.키)}"><input type="checkbox" data-on="${esc(p.키)}"><div class="nm">${esc(p.품목)}${p.택1그룹?'<span class="tag">택1</span>':''}<small>${esc(p.설명)}${p.설명?' · ':''}${esc(p.단위)}</small></div><input type="number" step="0.5" data-qty="${esc(p.키)}" aria-label="수량"><div class="amt n"></div></div>`).join('')}</details>`).join('')}</div>
+  <div class="f"><label>메모</label><textarea id="qMemo">${esc(Q.메모)}</textarea></div>
+  <div class="qbar"><div><small>공급가</small> <b id="qNet">0</b> <small id="qVat"></small><br><small>합계(VAT포함)</small> <b id="qTot">0</b> <small id="qCost"></small></div>
+   <div class="row"><button class="btn" id="qSave">저장</button>${Q.견적번호?'<button class="btn p" id="qSaveV">새 버전으로 저장</button>':''}</div></div>`;
+  const sync=()=>{CAT.items.forEach(p=>{const row=$(`.it[data-k="${p.키}"]`);const it=Q.items[p.키],on=!!(it&&it.on);row.classList.toggle('off',!on);row.querySelector('[data-on]').checked=on;
+      const qi=row.querySelector('[data-qty]');if(document.activeElement!==qi)qi.value=on?qOf(p):'';qi.placeholder=String(aQty(p));
+      const up=(it&&+it.px>0)?+it.px:uPrice(p,+Q.마진기준);row.querySelector('.amt').textContent=on?Math.round(up*qOf(p)).toLocaleString('ko-KR')+'원':up.toLocaleString('ko-KR')+'원/'+p.단위});
+    const r=qCalc();document.querySelectorAll('[data-gs]').forEach(x=>x.textContent=r.by[x.dataset.gs]?won(r.by[x.dataset.gs]):'');
+    $('#qNet').textContent=won(r.net);$('#qVat').textContent='부가세 '+won(r.vat);$('#qTot').textContent=won(r.total);
+    if($('#qCost'))$('#qCost').textContent=r.cost?`· 원가 ${won(r.cost)} · 마진율 ${Math.round((r.net-r.cost)/r.net*100)}%`:'· 원가 미입력(단가표 원가 칸)'};
+  sync();
+  $('#qBack').onclick=viewQuote;
+  $('#qCus').onchange=()=>{Q.고객코드=$('#qCus').value;const x=CUS.find(c=>c.고객코드===Q.고객코드);if(x){if(x.평형)Q.평형=x.평형;if(x.욕실수)Q.욕실수=x.욕실수}qEditor()};
+  $('#qAddCus').onclick=addCustomer;
+  [['#qPy','평형'],['#qBath','욕실수'],['#qDisc','할인(만원)']].forEach(([id,k])=>$(id).oninput=e=>{Q[k]=e.target.value;sync()});
+  $('#qMg').onchange=e=>{Q.마진기준=+e.target.value;sync()};
+  $('#qSt').onchange=e=>Q.상태=e.target.value;$('#qMemo').oninput=e=>Q.메모=e.target.value;
+  document.querySelectorAll('[data-pre]').forEach(b=>b.onclick=()=>{applyPreset(b.dataset.pre);qEditor()});
+  $('#qCats').onchange=e=>{const k=e.target.dataset.on;if(k){toggle(CAT.items.find(p=>p.키===k),e.target.checked);sync()}};
+  $('#qCats').oninput=e=>{const k=e.target.dataset.qty;if(k){Q.items[k]=Object.assign(Q.items[k]||{on:true},{q:e.target.value===''?null:+e.target.value});if(e.target.value!=='')Q.items[k].on=true;sync()}};
+  const save=async nv=>{if(!Q.고객코드){toast('고객을 먼저 골라 주세요');return}const r=await call('saveEstimate',Q,nv);Q.견적번호=r.견적번호;Q.버전=r.버전;toast(`저장했어요 · ${r.견적번호} ${r.버전}차 · ${won(r.합계)}`);qEditor()};
+  $('#qSave').onclick=()=>save(false);if($('#qSaveV'))$('#qSaveV').onclick=()=>save(true);
+}
+function addCustomer(){
+  const F=[['고객명','고객명 (성만, 예: 김OO)'],['연락처뒤4','연락처 뒤 4자리'],['아파트명','아파트명'],['동','동'],['호수','호수 (고객용 화면엔 안 보임)'],['평형','평형'],['욕실수','욕실 수'],['문의경로','문의 경로']];
+  $('#layer').innerHTML=`<div class="veil"><div class="sheet"><div class="row" style="justify-content:space-between"><b>새 고객 등록</b><button class="btn" id="x">닫기</button></div>
+   <div class="note">전체 전화번호·주민번호·계좌번호는 적지 않아요. 고객명은 성만, 연락처는 뒤 4자리만.</div>
+   <div class="grid">${F.map(([k,l])=>`<div class="f"><label>${l}</label>${k==='문의경로'?`<select data-c="${k}">${['','오늘의집','소개','매장방문','유튜브','인스타그램','블로그','전화','기타'].map(o=>`<option>${o}</option>`).join('')}</select>`:`<input data-c="${k}" ${k==='평형'||k==='욕실수'?'type="number"':''}>`}</div>`).join('')}</div>
+   <div class="row"><button class="btn p" id="cs">등록하고 이 견적에 연결</button></div></div></div>`;
+  $('#x').onclick=()=>$('#layer').innerHTML='';
+  $('#cs').onclick=async()=>{const o={};document.querySelectorAll('[data-c]').forEach(i=>o[i.dataset.c]=i.value.trim());
+    const dup=CUS.find(c=>c.고객명===o.고객명&&c.연락처뒤4&&c.연락처뒤4==o.연락처뒤4);if(dup){toast('이미 등록된 고객이에요: '+dup.고객코드);Q.고객코드=dup.고객코드;$('#layer').innerHTML='';qEditor();return}
+    const code=await call('saveCustomer',o);CUS=await call('listCustomers');Q.고객코드=code;if(o.평형)Q.평형=o.평형;if(o.욕실수)Q.욕실수=o.욕실수;$('#layer').innerHTML='';toast('고객 등록 '+code);qEditor()};
+}
+
+function drawHist(list){
+  const box=$('#hist');
+  box.innerHTML=Object.keys(HIST).map(k=>{const cols=HIST[k];const rows=list.filter(x=>x.구분===k);
+    return `<div><div class="row" style="justify-content:space-between"><label>${k}</label><button class="btn" data-addh="${k}">+ 줄</button></div>
+    <div class="box"><table class="lines" data-k="${esc(k)}"><thead><tr>${cols.filter(Boolean).map(c=>`<th>${c}</th>`).join('')}<th></th></tr></thead><tbody>${rows.map(r=>histRow(k,r)).join('')}</tbody></table></div></div>`}).join('');
+  box.onclick=e=>{const a=e.target.closest('[data-addh]');if(a){box.querySelector(`table[data-k="${a.dataset.addh}"] tbody`).insertAdjacentHTML('beforeend',histRow(a.dataset.addh,{}));return}
+    if(e.target.matches('[data-rmh]'))e.target.closest('tr').remove()};
+}
+function histRow(k,r){const keys=['기간/일자','항목1','항목2','항목3','항목4'];return `<tr>${HIST[k].map((c,i)=>c?`<td><input data-h="${keys[i]}" value="${esc(r[keys[i]]||'')}" placeholder="${c}"></td>`:'').join('')}<td><button class="btn" data-rmh>✕</button></td></tr>`}
+function readHist(){const out=[];document.querySelectorAll('#hist table[data-k]').forEach(t=>t.querySelectorAll('tbody tr').forEach(tr=>{const o={구분:t.dataset.k};tr.querySelectorAll('[data-h]').forEach(i=>o[i.dataset.h]=i.value.trim());out.push(o)}));return out}
+boot();
+</script>
+<footer>ⓒ HOME FURNISHING CO. all rights reserved.</footer>
+</body></html>

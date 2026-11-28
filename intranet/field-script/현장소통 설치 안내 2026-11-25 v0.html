@@ -1,0 +1,1068 @@
+<title>현장소통 설치 안내</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 한 줄에 한 단계: 번호 동그라미 + 할 일 + 큰 '다 했어요' 버튼, 위에는 진행 막대. 회사 색(네이비·옐로) */
+:root{
+  --bg:#ffffff; --panel:#F2F2F2; --ink:#14202e; --sub:#5a6676; --line:#d6dee8;
+  --navy:#1F4E79; --deep:#203864; --yellow:#FFC000; --tint:#D1E3F3; --ok:#1e7a46; --okbg:#e2f3e9; --warn:#8a5a00; --warnbg:#fff4d6;
+  --font:"Noto Sans KR","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1622; --panel:#172234; --ink:#e7eef7; --sub:#9db0c6; --line:#2b3c57;
+  --navy:#7fb2e5; --deep:#a9c9ec; --tint:#1d3556; --ok:#72d3a1; --okbg:#173527; --warn:#ffd36b; --warnbg:#3a2f12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1622; --panel:#172234; --ink:#e7eef7; --sub:#9db0c6; --line:#2b3c57;
+  --navy:#7fb2e5; --deep:#a9c9ec; --tint:#1d3556; --ok:#72d3a1; --okbg:#173527; --warn:#ffd36b; --warnbg:#3a2f12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:760px;margin:0 auto;display:grid;gap:18px}
+h1{margin:0;font-size:26px;font-weight:900;text-wrap:balance;color:var(--deep)}
+.lead{margin:0;color:var(--sub);font-size:15px}
+.prog{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:10px 0;display:grid;gap:6px;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.prog b{font-size:15px}
+.bar{height:10px;border-radius:99px;background:var(--panel);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--yellow);transition:width .3s}
+.grp{margin:8px 0 0;font-size:13px;letter-spacing:.08em;color:var(--sub);font-weight:700}
+.step{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:16px;display:grid;gap:10px}
+.step.done{background:var(--okbg);border-color:transparent}
+.sh{display:flex;gap:12px;align-items:flex-start}
+.no{flex:0 0 36px;height:36px;border-radius:50%;background:var(--navy);color:var(--bg);display:grid;place-items:center;font-weight:900}
+.step.done .no{background:var(--ok)}
+.sh h2{margin:4px 0 0;font-size:18px;line-height:1.4}
+.step ol,.step ul{margin:0;padding-left:22px;display:grid;gap:6px}
+.step li b{color:var(--deep)}
+.note{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px}
+.tip{background:var(--tint);border-radius:10px;padding:10px 12px;font-size:14px}
+code,.kbd{font-family:var(--mono);font-size:14px;background:var(--panel);border-radius:6px;padding:1px 6px}
+.btn{appearance:none;border:2px solid var(--navy);background:var(--bg);color:var(--navy);font:inherit;font-weight:700;border-radius:12px;min-height:52px;padding:10px 16px;cursor:pointer;width:100%;font-size:17px}
+.btn.pri{background:var(--navy);color:var(--bg)}
+.btn.done{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.btn:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+textarea{width:100%;min-height:120px;font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel);color:var(--ink);resize:vertical}
+.small{font-size:13px;color:var(--sub)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--deep);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;max-width:calc(100% - 32px);z-index:20}
+.foot{text-align:center;color:var(--sub);font-size:12px;letter-spacing:.04em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>현장소통 설치 안내</h1>
+    <p class="lead">현장소통 Code.gs 2026-11-23 v5 · 안내 2026-11-25 v0 · 한 단계씩 하고 <b>‘다 했어요’</b>를 누르세요. 이 휴대폰에 진행 상태가 남아요.</p>
+  </div>
+  <div class="prog" aria-live="polite"><b id="progTxt">0 / 10 단계</b><div class="bar"><i id="progBar"></i></div></div>
+
+  <p class="grp">A. APPS SCRIPT (대표 계정 PC 권장)</p>
+
+  <section class="step" data-s="1">
+    <div class="sh"><span class="no">1</span><h2>Apps Script 열기</h2></div>
+    <ol>
+      <li>구글 드라이브에서 <b>현장소통 데이터 2026-11-06 v0</b> 시트를 엽니다.</li>
+      <li>메뉴 <b>확장 프로그램 › Apps Script</b>를 누릅니다.</li>
+    </ol>
+    <button class="btn" type="button" data-done="1">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="2">
+    <div class="sh"><span class="no">2</span><h2>열쇠·알림 메일 붙이기 (스크립트 속성)</h2></div>
+    <ol>
+      <li>인트라넷 <b>서식 자료실 › 현장소통 연결</b>에서 <b>직원 열쇠 만들기</b>(이미 있으면 <b>새로 만들기</b>) → <b>열쇠 복사</b>.</li>
+      <li>Apps Script 왼쪽 <b>톱니(프로젝트 설정)</b> › 맨 아래 <b>스크립트 속성</b> › <b>스크립트 속성 추가</b>.</li>
+      <li>속성 <code>FIELD_STAFF_KEY</code> · 값 = 방금 복사한 열쇠 (이미 있으면 값만 바꿈).</li>
+      <li>속성 <code>OWNER_EMAIL</code> · 값 = 새 기기 알림을 받을 대표님 메일.</li>
+      <li><b>스크립트 속성 저장</b>.</li>
+    </ol>
+    <p class="note"><code>PIN_SALT</code>는 직접 넣지 마세요. 4번 setup 때 저절로 생기고, 한 번 생기면 바꾸거나 지우면 안 돼요.</p>
+    <div class="row"><button class="btn" type="button" data-copy="FIELD_STAFF_KEY">‘FIELD_STAFF_KEY’ 글자 복사</button><button class="btn" type="button" data-copy="OWNER_EMAIL">‘OWNER_EMAIL’ 글자 복사</button></div>
+    <button class="btn" type="button" data-done="2">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="3">
+    <div class="sh"><span class="no">3</span><h2>Code.gs 바꾸고 메일 권한 넣기</h2></div>
+    <ol>
+      <li>왼쪽 <b>Code.gs</b>를 열고 안의 글을 <b>전부 지운 뒤</b> 아래 v5 코드를 붙여 넣고 <b>저장(디스크 모양)</b>. <b>Imagen.gs는 그대로</b> 둡니다.</li>
+      <li>톱니(프로젝트 설정)에서 <b>‘편집기에서 appsscript.json 매니페스트 파일 표시’</b>를 켭니다.</li>
+      <li>왼쪽에 생긴 <b>appsscript.json</b>을 열고 전부 지운 뒤 아래 내용을 붙여 넣고 저장.</li>
+    </ol>
+    <button class="btn pri" type="button" data-copyel="codeBox">Code.gs v5 전체 복사 (45,687자)</button>
+    <textarea id="codeBox" readonly aria-label="Code.gs v5 전체">/**
+ * 현장소통 (고객 현장 페이지) 서버 — Google Apps Script 웹앱
+ * 현장소통 Code.gs 2026-11-23 v5 (이전: &#x27;현장소통 Code.gs 2026-11-23 v4&#x27;, &#x27;2026-11-23 v3&#x27;, &#x27;2026-11-19 v2&#x27;, &#x27;2026-11-18 v1&#x27;, &#x27;2 현장소통 Code.gs.txt&#x27; = v0)
+ * 화면: https://soo-cpu.github.io/card/field/
+ * 저장: 이 스크립트가 붙은 구글 시트(글·공정·댓글) + 드라이브 현장별 폴더(사진, 월별 하위 폴더)
+ * 원본 데이터는 지우지 않는다: 숨기기만 하고, 시트 행은 남긴다.
+ *
+ * v1에서 더한 것 (다음 지시 2026-11-13 v3 · 3번 고객 공유 페이지)
+ *  - 결제 일정(계약금·중도금·잔금): &#x27;현장&#x27; 탭 16번째 칸 &#x27;결제(JSON)&#x27;
+ *  - 고객 확인 번호(전화 뒷번호 4자리): &#x27;현장&#x27; 탭 17번째 칸. 비어 있으면 예전처럼 주소만으로 열림
+ *    고객 화면의 site·photo·upload·post·comment 요청 모두 이 번호를 확인 (틀리면 5번까지, 15분 잠금)
+ *  - 공정표: 공정(JSON) 단계마다 시작일(a)·끝일(b) 보관
+ *  - 드라이브 폴더에서 사진 불러오기(importFolder): 원본은 읽기만 (복사·이동·이름 변경 안 함)
+ *  - 인트라넷 프로젝트 번호(proj)는 &#x27;메모&#x27; 칸에만 (고객 화면에는 안 나감)
+ *  - 고객 화면에 나가는 것: 현장명·담당자·연락처·주소·공사 기간·공정·결제 일정·글·사진·댓글
+ *    (원가·마진·메모·프로젝트 번호·확인 번호는 절대 안 나감)
+ *
+ * v2에서 더한 것 (대표 지시 2026-11-19 · 직원이 비밀번호 없이 관리 화면 열기)
+ *  - 직원 입장권(ticket): 인트라넷이 &#x27;직원 열쇠&#x27;로 서명한 5분짜리 입장권을 확인하고 6시간짜리 출입증(token)을 내줌
+ *    열쇠는 스크립트 속성 FIELD_STAFF_KEY 에만 (코드·시트·기록에 쓰지 않음). 속성이 없으면 입장권은 모두 거절
+ *    같은 입장권은 한 번만 (10분 동안 기억). 출입증은 캐시에만 있고 6시간 뒤 사라짐
+ *  - 관리 요청의 pw 자리에 &quot;T:출입증&quot;이 오면 비밀번호 대신 인정. 그 밖의 값은 예전 그대로 비밀번호 확인(10번 틀리면 15분 잠금)
+ *  - &#x27;기록&#x27; 탭의 &#x27;누가&#x27; 칸: 비밀번호로 들어오면 &#x27;관리&#x27;, 입장권으로 들어오면 직원 이름
+ *  - 고객 확인 번호(PIN)·횟수 제한·고객 화면 요청은 그대로
+ *
+ * v3에서 더한 것 (다음 지시 2026-11-23 v4 · B 고객 공유 페이지 개선)
+ *  - projSite: 인트라넷 프로젝트 번호(proj, P-YYMM-NNN)로 현장을 찾고, 없으면 만든다 (입장권 출입증 또는 관리 비밀번호만)
+ *    찾기·만들기는 한 잠금 안에서 해서 같은 proj 현장이 두 번 생기지 않음. 숨긴 현장은 찾지 않음. 지우는 것 없음
+ *  - &#x27;현장&#x27; 탭 18번째 칸 &#x27;고객 이름&#x27; (관리 화면·검색용. 고객 화면에는 안 나감)
+ *  - 인트라넷 공정표 날짜로 공정(JSON)을 고칠 때: 바꾸기 전 값을 &#x27;옛 값&#x27; 탭에 통째로 남기고 고침 (같으면 쓰지 않음)
+ *    진행 상태(대기·진행 중·완료)는 같은 이름 단계에서 그대로 이어받고, 공정표에 없는 단계는 진행이 있던 것만 남김
+ *  - sites 응답(관리 전용)에 고객 이름·확인 번호를 넣어 현장 목록 검색이 되게 함
+ *  - 단계 이름은 40자까지
+ *
+ * v4 (검토 반영 2026-11-23): 자동 생성 현장명이 비면 고정 글 &#x27;홈퍼니싱 현장&#x27; (현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호 안 씀)
+ *    확인 번호는 자르기 전 원래 값이 숫자 4자리일 때만 (긴 값을 앞 4자리로 저장하지 않음). 시트 칸·탭은 v3 와 같음 (setup 다시 안 해도 됨)
+ *
+ * v5에서 더한 것 (대표 지시 2026-11-23 · 직원별 고정 6자리 번호로 관리 화면 입장)
+ *  - 직원 번호: 대표가 직원마다 정하는 6자리. 서버에는 HMAC-SHA256(소금, 이름+번호) 해시만 (&#x27;직원 번호&#x27; 탭). 소금 = 스크립트 속성 PIN_SALT (없으면 setup 이 무작위로 만듦)
+ *    직원 이름 목록 = &#x27;설정&#x27; 탭 &#x27;직원 이름&#x27; 줄 (쉼표로 구분, 대표가 고침. 처음 값 정진혁,이봄이,채진아)
+ *  - 5번 틀리면 그 직원 &#x27;잠김&#x27; (시간이 지나도 안 풀림, 대표가 풀어 줌) · 전체 틀린 시도도 1시간에 20번까지 (잠금 안에서 셈)
+ *  - 번호가 맞으면 30일 기억 기기 토큰(기기 localStorage)을 주고, 서버는 토큰 해시만 &#x27;기억 기기&#x27; 탭에. 30일 안에는 토큰 → 6시간 출입증 (&quot;T:&quot; 구조 그대로)
+ *  - 새 기기로 들어오면 대표에게 메일 (스크립트 속성 OWNER_EMAIL, 없으면 기록만. 메일에 번호·토큰 없음) + &#x27;기록&#x27; 탭에 &#x27;새 기기&#x27;
+ *  - 대표(관리 비밀번호로 들어온 사람)만: 번호 정하기·바꾸기(그 직원 기억 기기 모두 무효)·잠금 풀기·즉시 차단(번호·기기·출입증 무효)·이름 추가·접속 기록 보기
+ *    직원 출입증(임시 열쇠·직원 번호)으로 온 요청은 이 동작들을 거절
+ *  - 기존 5분 입장권(FIELD_STAFF_KEY, 화면 이름 &#x27;임시 열쇠&#x27;)·관리 비밀번호·고객 확인 번호는 그대로. 지우는 행·칸 없음 (바뀐 값은 &#x27;옛 값&#x27; 탭)
+ */
+
+var TAB = {
+  sites:    [&#x27;현장&#x27;, [&#x27;코드&#x27;,&#x27;현장명&#x27;,&#x27;담당자&#x27;,&#x27;연락처&#x27;,&#x27;주소&#x27;,&#x27;착공일&#x27;,&#x27;준공예정일&#x27;,&#x27;공정(JSON)&#x27;,&#x27;상태&#x27;,&#x27;폴더ID&#x27;,&#x27;만든 시각&#x27;,&#x27;관리자 확인 시각&#x27;,&#x27;고객 최근 글&#x27;,&#x27;숨김&#x27;,&#x27;메모&#x27;,&#x27;결제(JSON)&#x27;,&#x27;고객 확인 번호&#x27;,&#x27;고객 이름&#x27;]],
+  posts:    [&#x27;글&#x27;,   [&#x27;글ID&#x27;,&#x27;현장코드&#x27;,&#x27;날짜&#x27;,&#x27;작성(회사/고객)&#x27;,&#x27;이름&#x27;,&#x27;공정&#x27;,&#x27;종류&#x27;,&#x27;내용&#x27;,&#x27;중요&#x27;,&#x27;사진ID(JSON)&#x27;,&#x27;작성 시각&#x27;,&#x27;숨김&#x27;,&#x27;고친 시각&#x27;]],
+  comments: [&#x27;댓글&#x27;, [&#x27;댓글ID&#x27;,&#x27;현장코드&#x27;,&#x27;글ID&#x27;,&#x27;작성(회사/고객)&#x27;,&#x27;이름&#x27;,&#x27;내용&#x27;,&#x27;작성 시각&#x27;,&#x27;숨김&#x27;]],
+  photos:   [&#x27;사진&#x27;, [&#x27;파일ID&#x27;,&#x27;현장코드&#x27;,&#x27;올린 시각&#x27;,&#x27;작성(회사/고객)&#x27;,&#x27;파일 이름&#x27;]],
+  pdfs:     [&#x27;PDF&#x27;,  [&#x27;파일ID&#x27;,&#x27;현장코드&#x27;,&#x27;파일 이름&#x27;,&#x27;만든 시각&#x27;]],
+  settings: [&#x27;설정&#x27;, [&#x27;항목&#x27;,&#x27;값&#x27;,&#x27;설명&#x27;]],
+  log:      [&#x27;기록&#x27;, [&#x27;시각&#x27;,&#x27;동작&#x27;,&#x27;현장코드&#x27;,&#x27;누가&#x27;,&#x27;내용&#x27;]],
+  hist:     [&#x27;옛 값&#x27;, [&#x27;시각&#x27;,&#x27;현장코드&#x27;,&#x27;칸&#x27;,&#x27;옛 값&#x27;,&#x27;누가&#x27;,&#x27;까닭&#x27;]],   // v3: 고치기 전 값 (지우지 않음)
+  pins:     [&#x27;직원 번호&#x27;, [&#x27;이름&#x27;,&#x27;번호 해시&#x27;,&#x27;상태&#x27;,&#x27;틀린 횟수&#x27;,&#x27;바꾼 때&#x27;,&#x27;세대&#x27;,&#x27;잠긴 때&#x27;]],          // v5: 번호는 해시만
+  devs:     [&#x27;기억 기기&#x27;, [&#x27;직원&#x27;,&#x27;토큰 해시&#x27;,&#x27;만든 때&#x27;,&#x27;만료&#x27;,&#x27;기기 요약&#x27;,&#x27;상태&#x27;,&#x27;마지막 사용&#x27;]]      // v5: 토큰은 해시만
+};
+var INIT_PW = &#x27;&#x27;;   // 비워 둠(저장소 공개). 설치 때 대표 드라이브 &#x27;현장소통 첫 비밀번호.txt&#x27;를 읽고, 없으면 무작위.
+var SHEET_ID = &#x27;1Mx45YBU5_Dy7a9i9pAn89VLA40PRJdMGAHTvmc0zpHI&#x27;;   // 현장소통 데이터 2026-11-06 v0
+var PHOTO_ROOT_ID = &#x27;1d2JMn10YKoZv9Ymjib1V9Fh5mictFqGL&#x27;;          // 현장소통 사진·기록
+var TEST_CODE = &#x27;WI7ijOiMEPHIOf4vjkqEPmG2&#x27;;
+var TEST_FOLDER_ID = &#x27;1lw72he2le5Y8tumh8wdacHqucWWiJhcs&#x27;;
+var SAMPLE_URL = &#x27;https://soo-cpu.github.io/card/field/sample/s&#x27;;
+var ROOT_NAME = &#x27;현장소통 사진·기록&#x27;;
+var PHASES = [&#x27;시공 전&#x27;, &#x27;시공 중&#x27;, &#x27;시공 후&#x27;];
+
+function doGet(e) {
+  if (e &amp;&amp; e.parameter &amp;&amp; e.parameter.a === &#x27;img&#x27;) return imgGen_(e.parameter);   // 시안 이미지 (Imagen.gs)
+  return out_({ ok: true, msg: &#x27;현장소통 서버 동작 중&#x27;, v: 5 });
+}
+
+function doPost(e) {
+  var req;
+  try { req = JSON.parse(e.postData.contents); } catch (x) { return out_({ ok: false, error: &#x27;요청 형식 오류&#x27; }); }
+  try {
+    var fn = ACTIONS[req.a];
+    if (!fn) return out_({ ok: false, error: &#x27;알 수 없는 요청&#x27; });
+    var r = fn(req) || {};
+    r.ok = true;
+    return out_(r);
+  } catch (x) {
+    return out_({ ok: false, error: String(x &amp;&amp; x.message || x) });
+  }
+}
+
+function out_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ---------- 시트 도우미 ---------- */
+var SS_;
+function ss_() { return SS_ || (SS_ = SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet()); }
+function sheet_(key) {
+  var ss = ss_();
+  var t = TAB[key], sh = ss.getSheetByName(t[0]);
+  if (!sh) {
+    sh = ss.insertSheet(t[0]);
+    sh.getRange(1, 1, 1, t[1].length).setValues([t[1]]).setFontWeight(&#x27;bold&#x27;).setBackground(&#x27;#F2F2F2&#x27;);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+/* v1: 예전 시트에 새 칸 머리글이 없으면 채운다 (기존 칸·행은 그대로) */
+function ensureCols_(key) {
+  var sh = sheet_(key), want = TAB[key][1];
+  var have = sh.getRange(1, 1, 1, want.length).getDisplayValues()[0];
+  for (var i = 0; i &lt; want.length; i++) {
+    if (!have[i]) sh.getRange(1, i + 1).setValue(want[i]).setFontWeight(&#x27;bold&#x27;).setBackground(&#x27;#F2F2F2&#x27;);
+  }
+}
+function rows_(key) {
+  var sh = sheet_(key), n = sh.getLastRow();
+  if (n &lt; 2) return [];
+  var w = TAB[key][1].length;
+  return sh.getRange(2, 1, n - 1, w).getDisplayValues().map(function (r, i) { r._row = i + 2; return r; });
+}
+function append_(key, arr) {
+  var sh = sheet_(key);
+  sh.getRange(sh.getLastRow() + 1, 1, 1, arr.length).setNumberFormat(&#x27;@&#x27;).setValues([arr.map(String)]);
+}
+function setCell_(key, row, col, val) {
+  sheet_(key).getRange(row, col + 1).setNumberFormat(&#x27;@&#x27;).setValue(String(val));
+}
+function now_() { return Utilities.formatDate(new Date(), &#x27;Asia/Seoul&#x27;, &#x27;yyyy-MM-dd HH:mm:ss&#x27;); }
+function today_() { return Utilities.formatDate(new Date(), &#x27;Asia/Seoul&#x27;, &#x27;yyyy-MM-dd&#x27;); }
+function id_(p) { return p + Utilities.getUuid().replace(/-/g, &#x27;&#x27;).slice(0, 12); }
+function log_(act, code, who, detail) { try { append_(&#x27;log&#x27;, [now_(), act, code || &#x27;&#x27;, who || &#x27;&#x27;, String(detail || &#x27;&#x27;).slice(0, 300)]); } catch (x) {} }
+/* v4: 확인 번호 — 원래 값(앞뒤 빈칸만 뺌)이 숫자 4자리면 그 값, 비었으면 &#x27;&#x27;, 그 밖은 null (자르지 않음) */
+function pin_(v) { var t = String(v == null ? &#x27;&#x27; : v).trim(); if (!t) return &#x27;&#x27;; return /^\d{4}$/.test(t) ? t : null; }
+function clean_(s, n) { return String(s == null ? &#x27;&#x27; : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, &#x27;&#x27;).slice(0, n || 2000).trim(); }
+function day_(s) { s = clean_(s, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : &#x27;&#x27;; }
+
+function setting_(k) {
+  var r = rows_(&#x27;settings&#x27;).filter(function (x) { return x[0] === k; })[0];
+  return r ? r[1] : &#x27;&#x27;;
+}
+function ensureSettings_() {
+  // 비밀번호는 코드에 두지 않는다(저장소 공개). 없으면 무작위로 만들어 &#x27;설정&#x27; 탭에 적는다.
+  if (!setting_(&#x27;관리 비밀번호&#x27;)) append_(&#x27;settings&#x27;, [&#x27;관리 비밀번호&#x27;, INIT_PW || firstPw_() || (&#x27;hf&#x27; + Utilities.getUuid().slice(0, 6)), &#x27;관리 화면 비밀번호. 이 칸을 고치면 바로 바뀜.&#x27;]);
+}
+
+/* 대표 드라이브 &#x27;현장소통 첫 비밀번호.txt&#x27; (설치 때 한 번 읽음) */
+function firstPw_() {
+  try { var it = DriveApp.getFilesByName(&#x27;현장소통 첫 비밀번호.txt&#x27;); return it.hasNext() ? it.next().getBlob().getDataAsString().trim().slice(0, 40) : &#x27;&#x27;; } catch (x) { return &#x27;&#x27;; }
+}
+
+/* 짐작할 수 없는 24자리 코드 */
+function newCode_() {
+  var abc = &#x27;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&#x27;, s = &#x27;&#x27;;
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, Utilities.getUuid() + Utilities.getUuid() + Date.now());
+  for (var i = 0; i &lt; 24; i++) s += abc.charAt(((bytes[i] + 256) % 256) % abc.length);
+  return s;
+}
+
+/* ---------- 권한 ---------- */
+/* 관리 권한 확인. 돌려주는 값 = 누가 (&#x27;관리&#x27; 또는 입장권으로 들어온 직원 이름) */
+function admin_(req) {
+  var cache = CacheService.getScriptCache();
+  var who = staffTok_(req, cache);
+  if (who) return who;   // v2: 직원 출입증 (아래 비밀번호 확인·잠금은 예전 그대로)
+  ensureSettings_();
+  var fails = Number(cache.get(&#x27;pwfail&#x27;) || 0);
+  if (fails &gt;= 10) throw new Error(&#x27;비밀번호를 여러 번 틀려 15분 동안 잠겼어요&#x27;);
+  if (!req.pw || String(req.pw) !== String(setting_(&#x27;관리 비밀번호&#x27;))) {
+    cache.put(&#x27;pwfail&#x27;, String(fails + 1), 900);
+    throw new Error(/^T:/.test(String(req.pw || &#x27;&#x27;)) ? &#x27;직원 입장권 시간이 끝났어요 (비밀번호가 맞지 않아요)&#x27; : &#x27;비밀번호가 맞지 않아요&#x27;);
+  }
+  return &#x27;관리&#x27;;
+}
+
+/* ---------- v2: 직원 입장권 ---------- */
+var TICKET_MS = 5 * 60 * 1000;   // 입장권은 만든 지 5분 안에만
+function b64u_(bytes) { return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, &#x27;&#x27;); }
+function sameStr_(a, b) {   // 길이가 같을 때 끝까지 비교 (앞에서 멈추지 않음)
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return false;
+  var d = 0;
+  for (var i = 0; i &lt; a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+function whoName_(w) {
+  try {
+    var n = clean_(Utilities.newBlob(Utilities.base64DecodeWebSafe(w + &#x27;===&#x27;.slice((w.length + 3) % 4))).getDataAsString(), 20);
+    return n.replace(/[^0-9A-Za-z가-힣 ]/g, &#x27;&#x27;) || &#x27;직원&#x27;;
+  } catch (x) { return &#x27;직원&#x27;; }
+}
+/* 입장권 &quot;시각.누구.한번값.서명&quot; 확인 — 서명 = HMAC-SHA256(열쇠, &quot;시각.누구.한번값&quot;) base64url. 틀리면 오류, 맞으면 { who, nonce } */
+function ticketCheck_(k, key, nowMs) {
+  if (!key) throw new Error(&#x27;직원 열쇠가 아직 연결되지 않았어요 (스크립트 속성 FIELD_STAFF_KEY)&#x27;);
+  var m = /^(\d{13})\.([A-Za-z0-9_-]{1,120})\.([A-Za-z0-9_-]{16,64})\.([A-Za-z0-9_-]{43})$/.exec(String(k || &#x27;&#x27;));
+  if (!m) throw new Error(&#x27;입장권 모양이 맞지 않아요&#x27;);
+  var sig = b64u_(Utilities.computeHmacSha256Signature(m[1] + &#x27;.&#x27; + m[2] + &#x27;.&#x27; + m[3], String(key)));
+  if (!sameStr_(sig, m[4])) throw new Error(&#x27;입장권이 맞지 않아요 (인트라넷에서 다시 열어 주세요)&#x27;);
+  if (Math.abs(nowMs - Number(m[1])) &gt; TICKET_MS) throw new Error(&#x27;입장권 시간이 지났어요 (인트라넷에서 다시 열어 주세요)&#x27;);
+  return { who: whoName_(m[2]), nonce: m[3] };
+}
+/* pw 자리에 &quot;T:출입증&quot;이 오고 그 출입증이 캐시에 살아 있으면 직원 이름, 아니면 &#x27;&#x27; */
+function staffTok_(req, cache) {
+  var pw = String(req &amp;&amp; req.pw || &#x27;&#x27;);
+  if (!/^T:[A-Za-z0-9]{32,80}$/.test(pw)) return &#x27;&#x27;;
+  var v = String(cache.get(&#x27;tks_&#x27; + pw.slice(2)) || &#x27;&#x27;);
+  if (!v) return &#x27;&#x27;;
+  var o = null;
+  if (v.charAt(0) === &#x27;{&#x27;) { try { o = JSON.parse(v); } catch (x) { return &#x27;&#x27;; } }
+  var who = o ? String(o.w || &#x27;&#x27;) : v;
+  if (!who) return &#x27;&#x27;;
+  var pr = pinRow_(who);   // v5: 즉시 차단된 직원은 어떤 출입증도 안 됨
+  if (pr &amp;&amp; pr[2] === &#x27;차단&#x27;) return &#x27;&#x27;;
+  if (o &amp;&amp; o.p &amp;&amp; (!pr || String(pr[5]) !== String(o.g))) return &#x27;&#x27;;   // 직원 번호 출입증: 번호를 바꾸거나 차단하면 끝
+  return who;
+}
+/* v5: 대표만 (관리 비밀번호로 온 요청). 직원 출입증(&quot;T:&quot;)은 거절 */
+function owner_(req) {
+  if (/^T:/.test(String(req &amp;&amp; req.pw || &#x27;&#x27;))) throw new Error(&#x27;대표만 할 수 있어요 (관리 비밀번호로 들어와 주세요)&#x27;);
+  var who = admin_(req);
+  if (who !== &#x27;관리&#x27;) throw new Error(&#x27;대표만 할 수 있어요 (관리 비밀번호로 들어와 주세요)&#x27;);
+  return who;
+}
+
+/* ---------- v5: 직원 번호 · 기억 기기 ---------- */
+var PIN_MAX_FAIL = 5, PIN_ALL_MAX = 20, PIN_ALL_TTL = 3600, DEV_DAYS = 30, SESSION_S = 21600;
+var STAFF_DEFAULT = &#x27;정진혁,이봄이,채진아&#x27;;
+function props_() { return PropertiesService.getScriptProperties(); }
+/* 소금(PIN_SALT): make 가 참이면 없을 때 무작위로 만듦 (setup·번호 정하기). 이미 있으면 절대 바꾸지 않음 */
+function salt_(make) {
+  var p = props_(), s = String(p.getProperty(&#x27;PIN_SALT&#x27;) || &#x27;&#x27;).trim();
+  if (!s &amp;&amp; make) { s = newCode_() + newCode_(); p.setProperty(&#x27;PIN_SALT&#x27;, s); }
+  if (!s) throw new Error(&#x27;직원 번호가 아직 준비되지 않았어요 (대표가 setup 을 한 번 실행해 주세요)&#x27;);
+  return s;
+}
+function mac_(msg) { return b64u_(Utilities.computeHmacSha256Signature(String(msg), salt_())); }
+function pinHash_(name, pin) { return mac_(&#x27;pin:&#x27; + name + &#x27;:&#x27; + pin); }
+function devHash_(tok) { return mac_(&#x27;dev:&#x27; + tok); }
+function newTok_() { return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, &#x27;&#x27;); }
+function validName_(n) { n = String(n == null ? &#x27;&#x27; : n).replace(/\s+/g, &#x27;&#x27;); return /^[가-힣A-Za-z]{2,10}$/.test(n) ? n : &#x27;&#x27;; }
+function staffNames_() {
+  var seen = {}, out = [];
+  String(setting_(&#x27;직원 이름&#x27;) || &#x27;&#x27;).split(/[,·\s]+/).forEach(function (x) { var n = validName_(x); if (n &amp;&amp; !seen[n] &amp;&amp; out.length &lt; 30) { seen[n] = 1; out.push(n); } });
+  return out;
+}
+function ensurePinSettings_() {
+  if (!rows_(&#x27;settings&#x27;).some(function (x) { return x[0] === &#x27;직원 이름&#x27;; })) append_(&#x27;settings&#x27;, [&#x27;직원 이름&#x27;, STAFF_DEFAULT, &#x27;현장소통 관리 화면에 직원 번호로 들어갈 수 있는 이름 (쉼표로 구분). 대표가 고침&#x27;]);
+}
+function pinRow_(name) { return name ? (rows_(&#x27;pins&#x27;).filter(function (x) { return x[0] === name; })[0] || null) : null; }
+function uaSum_(v) { return clean_(v, 40).replace(/[^0-9A-Za-z가-힣 ·\/().-]/g, &#x27;&#x27;).trim() || &#x27;알 수 없는 기기&#x27;; }
+function addDays_(n) { return Utilities.formatDate(new Date(Date.now() + n * 86400000), &#x27;Asia/Seoul&#x27;, &#x27;yyyy-MM-dd HH:mm:ss&#x27;); }
+/* 그 직원의 살아 있는 기억 기기를 모두 무효로 (행은 남기고 상태만) */
+function devKill_(name, why) {
+  var n = 0;
+  rows_(&#x27;devs&#x27;).forEach(function (d) { if (d[0] === name &amp;&amp; d[5] === &#x27;사용&#x27;) { setCell_(&#x27;devs&#x27;, d._row, 5, why); n++; } });
+  return n;
+}
+function pinSession_(name, gen) {
+  var tok = newTok_();
+  CacheService.getScriptCache().put(&#x27;tks_&#x27; + tok, JSON.stringify({ w: name, g: String(gen), p: 1 }), SESSION_S);
+  return tok;
+}
+/* 대표에게 메일 — 받는 주소는 스크립트 속성 OWNER_EMAIL 에만. 번호·토큰은 넣지 않음 */
+function mailOwner_(subj, body) {
+  var to = String(props_().getProperty(&#x27;OWNER_EMAIL&#x27;) || &#x27;&#x27;).trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return &#x27;메일 주소 없음(기록만)&#x27;;
+  try { MailApp.sendEmail(to, subj, body); return &#x27;메일 보냄&#x27;; } catch (x) { return &#x27;메일 못 보냄&#x27;; }
+}
+function pinAllFail_(cache) { cache.put(&#x27;pinall&#x27;, String(Number(cache.get(&#x27;pinall&#x27;) || 0) + 1), PIN_ALL_TTL); }
+function site_(code) {
+  if (!code || String(code).length &lt; 20) throw new Error(&#x27;주소를 확인해 주세요&#x27;);
+  var r = rows_(&#x27;sites&#x27;).filter(function (x) { return x[0] === String(code); })[0];
+  if (!r || r[13] === &#x27;Y&#x27;) throw new Error(&#x27;주소를 확인해 주세요&#x27;);
+  return r;
+}
+/* v1: 고객 확인 번호(전화 뒷번호 4자리). 번호가 없는 현장은 예전처럼 통과.
+   틀리면 &#x27;PIN:&#x27;으로 시작하는 오류 → 화면이 번호 입력 칸을 보여 줌 */
+function pinOk_(r, req) {
+  var pin = String(r[16] || &#x27;&#x27;).trim();
+  if (!pin) return;
+  if (req.pin == null || req.pin === &#x27;&#x27;) throw new Error(&#x27;PIN:&#x27;);
+  var ok = String(req.pin).trim() === pin;
+  // 틀린 횟수는 잠금 안에서 세어 동시에 많이 보내도 15분에 5번까지만 (검토 반영)
+  var cache = CacheService.getScriptCache(), k = &#x27;pinf_&#x27; + r[0];
+  var lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    var fails = Number(cache.get(k) || 0);
+    if (fails &gt;= 5) throw new Error(&#x27;PIN:확인 번호를 여러 번 틀렸어요. 15분 뒤에 다시 해 주세요&#x27;);
+    if (ok) return;
+    cache.put(k, String(fails + 1), 900);
+    throw new Error(&#x27;PIN:번호가 맞지 않아요 (&#x27; + (fails + 1) + &#x27;/5)&#x27;);
+  } finally { lock.releaseLock(); }
+}
+function stages_(json) {
+  var a = [];
+  try { a = JSON.parse(json || &#x27;[]&#x27;); } catch (x) {}
+  return (a || []).slice(0, 30).map(function (s) { return { n: clean_(s.n, 40), s: (Math.floor(Math.abs(Number(s.s) || 0))) % 3, a: day_(s.a), b: day_(s.b) }; }).filter(function (s) { return s.n; });
+}
+function pays_(json) {
+  var a = [];
+  try { a = typeof json === &#x27;string&#x27; ? JSON.parse(json || &#x27;[]&#x27;) : (json || []); } catch (x) {}
+  return (a || []).slice(0, 12).map(function (p) {
+    var amt = Math.round(Number(String(p.amt == null ? &#x27;&#x27; : p.amt).replace(/[^0-9.]/g, &#x27;&#x27;)) || 0);
+    return { n: clean_(p.n, 20) || &#x27;결제&#x27;, amt: amt, due: day_(p.due), paid: !!p.paid, date: day_(p.date) };
+  }).filter(function (p) { return p.n; });
+}
+function sitePublic_(r) {
+  // 고객에게 나가는 칸만. 메모(14)·확인 번호(16)·폴더ID(9)는 넣지 않는다.
+  return { code: r[0], name: r[1], manager: r[2], phone: r[3], address: r[4], start: r[5], end: r[6], stages: stages_(r[7]), status: r[8], payments: pays_(r[15]) };
+}
+function rate_(code, kind, max) {
+  var c = CacheService.getScriptCache(), k = &#x27;rt_&#x27; + kind + &#x27;_&#x27; + code, n = Number(c.get(k) || 0);
+  if (n &gt;= max) throw new Error(&#x27;잠시 뒤에 다시 올려 주세요&#x27;);
+  c.put(k, String(n + 1), 3600);
+}
+
+/* ---------- 드라이브 폴더 ---------- */
+function root_() {
+  var id = setting_(&#x27;사진 폴더ID&#x27;) || PHOTO_ROOT_ID;
+  if (id) { try { return DriveApp.getFolderById(id); } catch (x) {} }
+  var file = DriveApp.getFileById(ss_().getId());
+  var parents = file.getParents(), parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  var it = parent.getFoldersByName(ROOT_NAME), f = it.hasNext() ? it.next() : parent.createFolder(ROOT_NAME);
+  append_(&#x27;settings&#x27;, [&#x27;사진 폴더ID&#x27;, f.getId(), &#x27;현장별 폴더가 이 안에 생김&#x27;]);
+  return f;
+}
+function siteFolder_(r) {
+  if (r[9]) { try { return DriveApp.getFolderById(r[9]); } catch (x) {} }
+  var f = root_().createFolder(r[1] + &#x27; (&#x27; + r[0].slice(0, 6) + &#x27;)&#x27;);
+  setCell_(&#x27;sites&#x27;, r._row, 9, f.getId());
+  return f;
+}
+function monthFolder_(r) {
+  var f = siteFolder_(r), m = Utilities.formatDate(new Date(), &#x27;Asia/Seoul&#x27;, &#x27;yyyy-MM&#x27;);
+  var it = f.getFoldersByName(m);
+  return it.hasNext() ? it.next() : f.createFolder(m);
+}
+/* v1: 큰 사진(1.5MB 넘음, 드라이브에서 불러온 원본 등)은 드라이브 미리 보기 크기(긴 변 1600)로 보냄 */
+function photoData_(id) {
+  var f = DriveApp.getFileById(id);
+  if (f.getSize() &gt; 1.5 * 1024 * 1024) {
+    try {
+      var res = UrlFetchApp.fetch(&#x27;https://drive.google.com/thumbnail?sz=w1600&amp;id=&#x27; + encodeURIComponent(id), { headers: { Authorization: &#x27;Bearer &#x27; + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+      if (res.getResponseCode() === 200) {
+        var t = res.getBlob();
+        if (/^image\//.test(t.getContentType())) return &#x27;data:&#x27; + t.getContentType() + &#x27;;base64,&#x27; + Utilities.base64Encode(t.getBytes());
+      }
+    } catch (x) {}
+  }
+  if (f.getSize() &gt; 1.5 * 1024 * 1024) throw new Error(&#x27;큰 사진 미리 보기 실패&#x27;);   // 원본 통째로 보내면 한 묶음이 다 실패 → 이 사진만 건너뜀
+  var b = f.getBlob();
+  return &#x27;data:&#x27; + b.getContentType() + &#x27;;base64,&#x27; + Utilities.base64Encode(b.getBytes());
+}
+
+/* ---------- 현장 내용 ---------- */
+function bundle_(code, isAdmin, seenAt) {
+  var posts = rows_(&#x27;posts&#x27;).filter(function (p) { return p[1] === code &amp;&amp; (isAdmin || p[11] !== &#x27;Y&#x27;); }).map(function (p) {
+    var ph = []; try { ph = JSON.parse(p[9] || &#x27;[]&#x27;); } catch (x) {}
+    return { id: p[0], date: p[2], by: p[3] === &#x27;고객&#x27; ? &#x27;c&#x27; : &#x27;a&#x27;, author: p[4], stage: p[5], kind: p[6], text: p[7],
+             important: p[8] === &#x27;Y&#x27;, photos: ph, createdAt: p[10], hidden: p[11] === &#x27;Y&#x27;,
+             isNew: !!(isAdmin &amp;&amp; p[3] === &#x27;고객&#x27; &amp;&amp; p[10] &gt; (seenAt || &#x27;&#x27;)) };
+  });
+  var comments = rows_(&#x27;comments&#x27;).filter(function (c) { return c[1] === code &amp;&amp; (isAdmin || c[7] !== &#x27;Y&#x27;); }).map(function (c) {
+    return { id: c[0], postId: c[2], by: c[3] === &#x27;고객&#x27; ? &#x27;c&#x27; : &#x27;a&#x27;, author: c[4], text: c[5], createdAt: c[6], hidden: c[7] === &#x27;Y&#x27;,
+             isNew: !!(isAdmin &amp;&amp; c[3] === &#x27;고객&#x27; &amp;&amp; c[6] &gt; (seenAt || &#x27;&#x27;)) };
+  });
+  return { posts: posts, comments: comments };
+}
+function adminExtra_(r) {
+  return { pin: String(r[16] || &#x27;&#x27;), proj: projOf_(r), cust: String(r[17] || &#x27;&#x27;) };
+}
+function projOf_(r) { var m = String(r[14] || &#x27;&#x27;).match(/P-\d{4}-\d{3}/); return m ? m[0] : &#x27;&#x27;; }
+/* v3: 옛 값 남기기 (값 전체, 자르지 않음 — 시트 칸 한도 5만 자 안) */
+function keepOld_(code, col, old, who, why) { append_(&#x27;hist&#x27;, [now_(), code, col, String(old == null ? &#x27;&#x27; : old).slice(0, 49000), who || &#x27;&#x27;, why || &#x27;&#x27;]); }
+/* v3: 인트라넷 공정표(단계 이름·시작·끝) → 공정(JSON). 같은 이름 단계의 진행 상태는 이어받음. 바뀐 게 없으면 null */
+function mergeSched_(oldJson, sched) {
+  var old = stages_(oldJson), key = function (n) { return String(n || &#x27;&#x27;).replace(/\s+/g, &#x27;&#x27;).toLowerCase(); }, used = {};
+  var plan = stages_(JSON.stringify((sched || []).slice(0, 30))).filter(function (x) { return x.a; });
+  if (!plan.length) return null;
+  var out = plan.map(function (x) {
+    var hit = null;
+    for (var i = 0; i &lt; old.length; i++) if (!used[i] &amp;&amp; key(old[i].n) === key(x.n)) { hit = i; break; }
+    if (hit !== null) used[hit] = 1;
+    return { n: x.n, s: hit !== null ? old[hit].s : 0, a: x.a, b: x.b || x.a };
+  });
+  old.forEach(function (x, i) { if (!used[i] &amp;&amp; x.s &gt; 0 &amp;&amp; out.length &lt; 30) out.push(x); });   // 진행이 있던 단계는 남김
+  var j = JSON.stringify(out);
+  return j === JSON.stringify(old) ? null : j;
+}
+var DEF_STAGES = [&#x27;철거&#x27;, &#x27;설비&#x27;, &#x27;전기&#x27;, &#x27;목공&#x27;, &#x27;타일&#x27;, &#x27;도장&#x27;, &#x27;마감&#x27;];
+
+var ACTIONS = {
+  /* 고객·관리 공통 */
+  site: function (req) {
+    var r = site_(req.s);
+    pinOk_(r, req);
+    var b = bundle_(r[0], false);
+    return { site: sitePublic_(r), posts: b.posts, comments: b.comments, pinOn: !!String(r[16] || &#x27;&#x27;).trim() };
+  },
+  photo: function (req) {
+    var isAdmin = false;
+    if (req.pw) { admin_(req); isAdmin = true; }
+    var r = site_(req.s);
+    if (!isAdmin) pinOk_(r, req);
+    var ids = (req.ids || []).slice(0, 6), mine = {};
+    rows_(&#x27;photos&#x27;).forEach(function (p) { if (p[1] === r[0]) mine[p[0]] = 1; });
+    var res = {};
+    ids.forEach(function (id) {
+      if (!mine[id]) return;
+      try { res[id] = photoData_(id); } catch (x) {}
+    });
+    return { photos: res };
+  },
+  upload: function (req) {
+    var isAdmin = false;
+    if (req.pw) { admin_(req); isAdmin = true; }
+    var r = site_(req.s);
+    if (!isAdmin) { pinOk_(r, req); rate_(r[0], &#x27;up&#x27;, 80); }
+    var m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(req.data || &#x27;&#x27;);
+    if (!m) throw new Error(&#x27;사진 형식 오류&#x27;);
+    var bytes = Utilities.base64Decode(m[2]);
+    if (bytes.length &gt; 4 * 1024 * 1024) throw new Error(&#x27;사진이 너무 커요&#x27;);
+    var name = Utilities.formatDate(new Date(), &#x27;Asia/Seoul&#x27;, &#x27;yyyyMMdd_HHmmss&#x27;) + &#x27;_&#x27; + (isAdmin ? &#x27;회사&#x27; : &#x27;고객&#x27;) + &#x27;_&#x27; + Math.floor(Math.random() * 1000) + &#x27;.jpg&#x27;;
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      var f = monthFolder_(r).createFile(Utilities.newBlob(bytes, &#x27;image/&#x27; + m[1], name));
+      append_(&#x27;photos&#x27;, [f.getId(), r[0], now_(), isAdmin ? &#x27;회사&#x27; : &#x27;고객&#x27;, name]);
+      return { fileId: f.getId() };
+    } finally { lock.releaseLock(); }
+  },
+  post: function (req) {
+    var r = site_(req.s); pinOk_(r, req); rate_(r[0], &#x27;post&#x27;, 40);
+    var text = clean_(req.text, 2000), photos = (req.photos || []).slice(0, 20).map(String);
+    if (!text &amp;&amp; !photos.length) throw new Error(&#x27;내용을 적어 주세요&#x27;);
+    var id = id_(&#x27;P&#x27;), t = now_();
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      append_(&#x27;posts&#x27;, [id, r[0], today_(), &#x27;고객&#x27;, clean_(req.author, 20) || &#x27;고객&#x27;, &#x27;&#x27;, clean_(req.kind, 10) || &#x27;의견&#x27;, text, &#x27;&#x27;, JSON.stringify(photos), t, &#x27;&#x27;, &#x27;&#x27;]);
+      setCell_(&#x27;sites&#x27;, r._row, 12, t);
+    } finally { lock.releaseLock(); }
+    return { id: id };
+  },
+  comment: function (req) {
+    var isAdmin = false;
+    if (req.pw) { admin_(req); isAdmin = true; }
+    var r = site_(req.s);
+    if (!isAdmin) { pinOk_(r, req); rate_(r[0], &#x27;cmt&#x27;, 60); }
+    var text = clean_(req.text, 1000);
+    if (!text) throw new Error(&#x27;내용을 적어 주세요&#x27;);
+    var id = id_(&#x27;C&#x27;), t = now_();
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      append_(&#x27;comments&#x27;, [id, r[0], String(req.postId || &#x27;&#x27;), isAdmin ? &#x27;회사&#x27; : &#x27;고객&#x27;, clean_(req.author, 20) || (isAdmin ? &#x27;홈퍼니싱&#x27; : &#x27;고객&#x27;), text, t, &#x27;&#x27;]);
+      if (!isAdmin) setCell_(&#x27;sites&#x27;, r._row, 12, t);
+    } finally { lock.releaseLock(); }
+    return { id: id };
+  },
+
+  /* v2: 직원 입장권 → 출입증 (인트라넷 &#x27;관리 화면 열기&#x27;) */
+  ticket: function (req) {
+    var key = String(PropertiesService.getScriptProperties().getProperty(&#x27;FIELD_STAFF_KEY&#x27;) || &#x27;&#x27;).trim();
+    var t = ticketCheck_(req.k, key, Date.now());
+    var tb = pinRow_(t.who);
+    if (tb &amp;&amp; tb[2] === &#x27;차단&#x27;) throw new Error(&#x27;들어갈 수 없어요 (대표에게 문의해 주세요)&#x27;);   // v5: 즉시 차단된 직원
+    var cache = CacheService.getScriptCache();
+    var lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {   // 같은 입장권은 한 번만 (잠금 안에서 확인해 동시에 두 번 와도 하나만)
+      if (cache.get(&#x27;tkn_&#x27; + t.nonce)) throw new Error(&#x27;이미 쓴 입장권이에요 (인트라넷에서 다시 열어 주세요)&#x27;);
+      cache.put(&#x27;tkn_&#x27; + t.nonce, &#x27;1&#x27;, 600);
+    } finally { lock.releaseLock(); }
+    var token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, &#x27;&#x27;);
+    cache.put(&#x27;tks_&#x27; + token, t.who, 21600);   // 6시간
+    log_(&#x27;직원 입장&#x27;, &#x27;&#x27;, t.who, &#x27;인트라넷 입장권&#x27;);
+    return { token: token };
+  },
+
+  /* ---------- v5: 직원 번호 (로그인 화면) ---------- */
+  /* 이름 버튼에 쓸 목록: 번호가 정해졌고 차단이 아닌 이름만 (번호·해시·횟수는 안 나감) */
+  pinNames: function (req) {
+    ensurePinSettings_();
+    var pins = rows_(&#x27;pins&#x27;);
+    var names = staffNames_().filter(function (n) { return pins.some(function (x) { return x[0] === n &amp;&amp; x[1] &amp;&amp; x[2] !== &#x27;차단&#x27;; }); });
+    return { names: names };
+  },
+  /* 6자리 번호 확인 → 30일 기억 기기 토큰 + 6시간 출입증. 새 기기는 대표에게 메일 */
+  pinLogin: function (req) {
+    salt_();
+    var name = validName_(req.name), pin = String(req.pin == null ? &#x27;&#x27; : req.pin), ua = uaSum_(req.ua);
+    var cache = CacheService.getScriptCache(), out = null, err = &#x27;&#x27;, act = &#x27;&#x27;, detail = &#x27;&#x27;;
+    var lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {   // 직원별·전체 틀린 횟수는 잠금 안에서 셈 (동시에 많이 보내도 한도 그대로)
+      var all = Number(cache.get(&#x27;pinall&#x27;) || 0);
+      var r = name &amp;&amp; staffNames_().indexOf(name) &gt;= 0 ? pinRow_(name) : null;
+      if (all &gt;= PIN_ALL_MAX) { err = &#x27;틀린 번호가 너무 많아 잠시 막혔어요. 1시간 뒤에 다시 해 주세요&#x27;; act = &#x27;직원 번호 막힘&#x27;; detail = &#x27;전체 시도 제한 · &#x27; + ua; }
+      else if (!r || !r[1]) { pinAllFail_(cache); err = &#x27;이름 또는 번호를 확인해 주세요&#x27;; act = &#x27;직원 번호 틀림&#x27;; detail = &#x27;번호 없는 이름 · &#x27; + ua; }
+      else if (r[2] === &#x27;차단&#x27;) { pinAllFail_(cache); err = &#x27;들어갈 수 없어요 (대표에게 문의해 주세요)&#x27;; act = &#x27;직원 번호 틀림&#x27;; detail = &#x27;차단된 이름 · &#x27; + ua; }
+      else if (r[2] === &#x27;잠김&#x27;) { pinAllFail_(cache); err = &#x27;번호를 &#x27; + PIN_MAX_FAIL + &#x27;번 틀려 잠겼어요. 대표가 풀어 줘야 해요&#x27;; act = &#x27;직원 번호 틀림&#x27;; detail = &#x27;잠긴 상태 · &#x27; + ua; }
+      else if (!/^\d{6}$/.test(pin) || !sameStr_(pinHash_(name, pin), r[1])) {
+        pinAllFail_(cache);
+        var f = Number(r[3] || 0) + 1;
+        setCell_(&#x27;pins&#x27;, r._row, 3, f);
+        if (f &gt;= PIN_MAX_FAIL) { setCell_(&#x27;pins&#x27;, r._row, 2, &#x27;잠김&#x27;); setCell_(&#x27;pins&#x27;, r._row, 6, now_()); err = &#x27;번호를 &#x27; + PIN_MAX_FAIL + &#x27;번 틀려 잠겼어요. 대표가 풀어 줘야 해요&#x27;; act = &#x27;직원 번호 잠김&#x27;; }
+        else { err = &#x27;번호가 맞지 않아요 (&#x27; + f + &#x27;/&#x27; + PIN_MAX_FAIL + &#x27;)&#x27;; act = &#x27;직원 번호 틀림&#x27;; }
+        detail = f + &#x27;/&#x27; + PIN_MAX_FAIL + &#x27; · &#x27; + ua;
+      } else {
+        if (Number(r[3] || 0)) setCell_(&#x27;pins&#x27;, r._row, 3, 0);
+        var dev = newTok_();
+        append_(&#x27;devs&#x27;, [name, devHash_(dev), now_(), addDays_(DEV_DAYS), ua, &#x27;사용&#x27;, now_()]);
+        out = { token: pinSession_(name, r[5]), dev: dev, who: name, days: DEV_DAYS };
+        act = &#x27;직원 번호 입장&#x27;; detail = &#x27;새 기기 · &#x27; + ua;
+      }
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }   // 검토 반영: 잠금 풀기 전에 시트에 확실히 씀
+    if (!out) { log_(act, &#x27;&#x27;, name || &#x27;(이름 없음)&#x27;, detail); throw new Error(err); }
+    var m = mailOwner_(&#x27;[현장소통] 새 기기 접속 — &#x27; + name + &#x27; &#x27; + now_().slice(0, 16),
+      name + &#x27; 님이 새 기기로 현장소통 관리 화면에 들어왔어요.\n시각: &#x27; + now_() + &#x27;\n기기: &#x27; + ua + &#x27;\n\n모르는 접속이면 현장소통 관리 화면(관리 비밀번호) › 직원 번호 › 즉시 차단 을 눌러 주세요.\nⓒ HOME FURNISHING CO. all rights reserved.&#x27;);
+    log_(act, &#x27;&#x27;, name, detail + &#x27; · &#x27; + m);
+    return out;
+  },
+  /* 기억 기기 토큰 → 6시간 출입증 (30일 안, 번호를 바꾸거나 차단하면 무효) */
+  devLogin: function (req) {
+    // 토큰을 먼저 찾는다. 찾은 토큰은 어떤 횟수 제한에도 걸리지 않음 (검토 반영: 가짜 토큰으로 진짜 기기를 막지 못하게)
+    // 오류 앞머리: DEVBAD: = 확실히 무효(화면이 기기 기억을 지움) · DEVWAIT: = 잠시 문제(지우지 않음)
+    var tok = String(req.dev || &#x27;&#x27;);
+    if (!/^[0-9a-f]{64}$/.test(tok)) throw new Error(&#x27;DEVBAD:기억 기기 정보가 맞지 않아요&#x27;);
+    try { salt_(); } catch (x) { throw new Error(&#x27;DEVWAIT:&#x27; + x.message); }
+    var h = devHash_(tok), d = rows_(&#x27;devs&#x27;).filter(function (x) { return sameStr_(x[1], h); })[0];
+    if (!d) {   // 없는 토큰(244비트 무작위라 짐작 불가) — 막지 않고 기록만 (1시간에 5줄까지, 기록 탭이 넘치지 않게)
+      var c = CacheService.getScriptCache(), n = Number(c.get(&#x27;devmiss&#x27;) || 0);
+      c.put(&#x27;devmiss&#x27;, String(n + 1), PIN_ALL_TTL);
+      if (n &lt; 5) log_(&#x27;기억 기기 없음&#x27;, &#x27;&#x27;, &#x27;(모름)&#x27;, &#x27;없는 기억 기기 토큰&#x27; + (n === 4 ? &#x27; · 이 뒤 1시간은 기록 생략&#x27; : &#x27;&#x27;));
+      throw new Error(&#x27;DEVBAD:이 기기는 기억되어 있지 않아요&#x27;);
+    }
+    var r = pinRow_(d[0]);
+    if (d[5] !== &#x27;사용&#x27;) throw new Error(&#x27;DEVBAD:이 기기 기억이 끝났어요 (번호를 다시 넣어 주세요)&#x27;);
+    if (String(d[3]) &lt;= now_()) { setCell_(&#x27;devs&#x27;, d._row, 5, &#x27;만료&#x27;); log_(&#x27;기억 기기 만료&#x27;, &#x27;&#x27;, d[0], d[4]); throw new Error(&#x27;DEVBAD:30일이 지나 번호를 다시 넣어 주세요&#x27;); }
+    if (!r || r[2] === &#x27;차단&#x27; || !r[1] || staffNames_().indexOf(d[0]) &lt; 0) { setCell_(&#x27;devs&#x27;, d._row, 5, &#x27;무효(차단)&#x27;); throw new Error(&#x27;DEVBAD:들어갈 수 없어요 (대표에게 문의해 주세요)&#x27;); }
+    setCell_(&#x27;devs&#x27;, d._row, 6, now_());
+    log_(&#x27;직원 번호 입장&#x27;, &#x27;&#x27;, d[0], &#x27;기억 기기 · &#x27; + d[4]);
+    return { token: pinSession_(d[0], r[5]), who: d[0] };
+  },
+
+  /* ---------- v5: 직원 번호 관리 (대표만) ---------- */
+  pinAdmin: function (req) {
+    owner_(req);
+    ensurePinSettings_();
+    var pins = rows_(&#x27;pins&#x27;), devs = rows_(&#x27;devs&#x27;), t = now_(), names = staffNames_();
+    pins.forEach(function (x) { if (x[0] &amp;&amp; names.indexOf(x[0]) &lt; 0) names.push(x[0]); });   // 목록에서 뺀 이름도 상태는 보임
+    var list = names.map(function (n) {
+      var r = pins.filter(function (x) { return x[0] === n; })[0];
+      return { name: n, listed: staffNames_().indexOf(n) &gt;= 0, set: !!(r &amp;&amp; r[1]), state: r ? (r[2] || &#x27;사용&#x27;) : &#x27;번호 없음&#x27;, fails: r ? Number(r[3] || 0) : 0, changedAt: r ? r[4] : &#x27;&#x27;, lockedAt: r ? r[6] : &#x27;&#x27;,
+               devs: devs.filter(function (d) { return d[0] === n &amp;&amp; d[5] === &#x27;사용&#x27; &amp;&amp; String(d[3]) &gt; t; }).map(function (d) { return { made: d[2], exp: d[3], ua: d[4], last: d[6] }; }) };
+    });
+    var acts = /^(직원 번호|기억 기기|번호 |잠금 풀기|즉시 차단|직원 입장|직원 이름)/;
+    var logs = rows_(&#x27;log&#x27;).filter(function (x) { return acts.test(x[1]); }).slice(-80).reverse().map(function (x) {
+      return { t: x[0], act: x[1], who: x[3], detail: x[4], newDev: /새 기기/.test(x[4]), ok: /입장/.test(x[1]) };
+    });
+    return { staff: list, logs: logs, mail: !!String(props_().getProperty(&#x27;OWNER_EMAIL&#x27;) || &#x27;&#x27;).trim(), salt: !!String(props_().getProperty(&#x27;PIN_SALT&#x27;) || &#x27;&#x27;).trim() };
+  },
+  pinSet: function (req) {
+    var who = owner_(req);
+    ensurePinSettings_();
+    var name = validName_(req.name), pin = String(req.pin == null ? &#x27;&#x27; : req.pin);
+    if (!name || staffNames_().indexOf(name) &lt; 0) throw new Error(&#x27;직원 이름 목록에 없는 이름이에요&#x27;);
+    if (!/^\d{6}$/.test(pin)) throw new Error(&#x27;번호는 숫자 6자리로 넣어 주세요&#x27;);
+    if (/^(\d)\1{5}$/.test(pin) || &#x27;0123456789&#x27;.indexOf(pin) &gt;= 0 || &#x27;9876543210&#x27;.indexOf(pin) &gt;= 0) throw new Error(&#x27;같은 숫자·이어지는 숫자는 쓸 수 없어요&#x27;);
+    var killed = 0, first = false, lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      salt_(true);
+      var h = pinHash_(name, pin), r = pinRow_(name);
+      if (!r) { append_(&#x27;pins&#x27;, [name, h, &#x27;사용&#x27;, 0, now_(), 1, &#x27;&#x27;]); first = true; }
+      else {
+        keepOld_(&#x27;&#x27;, &#x27;직원 번호 &#x27; + name, &#x27;상태 &#x27; + (r[2] || &#x27;&#x27;) + &#x27; · 세대 &#x27; + (r[5] || &#x27;&#x27;) + &#x27; · 바꾼 때 &#x27; + (r[4] || &#x27;&#x27;), who, &#x27;번호 바꿈 (해시는 남기지 않음)&#x27;);
+        setCell_(&#x27;pins&#x27;, r._row, 1, h); setCell_(&#x27;pins&#x27;, r._row, 2, &#x27;사용&#x27;); setCell_(&#x27;pins&#x27;, r._row, 3, 0); setCell_(&#x27;pins&#x27;, r._row, 4, now_());
+        setCell_(&#x27;pins&#x27;, r._row, 5, Number(r[5] || 0) + 1); setCell_(&#x27;pins&#x27;, r._row, 6, &#x27;&#x27;);
+        killed = devKill_(name, &#x27;무효(번호 바뀜)&#x27;);
+      }
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
+    log_(first ? &#x27;번호 정함&#x27; : &#x27;번호 바꿈&#x27;, &#x27;&#x27;, who, name + (first ? &#x27;&#x27; : &#x27; · 기억 기기 &#x27; + killed + &#x27;대 무효&#x27;));
+    return { first: first, killed: killed };
+  },
+  pinUnlock: function (req) {
+    var who = owner_(req);
+    var name = validName_(req.name), r = pinRow_(name);
+    if (!r) throw new Error(&#x27;번호가 없는 이름이에요&#x27;);
+    if (r[2] !== &#x27;잠김&#x27;) throw new Error(r[2] === &#x27;차단&#x27; ? &#x27;차단된 직원은 새 번호를 정하면 다시 쓸 수 있어요&#x27; : &#x27;잠겨 있지 않아요&#x27;);
+    keepOld_(&#x27;&#x27;, &#x27;직원 번호 &#x27; + name, &#x27;상태 잠김 · 틀린 횟수 &#x27; + r[3] + &#x27; · 잠긴 때 &#x27; + r[6], who, &#x27;잠금 풀기&#x27;);
+    setCell_(&#x27;pins&#x27;, r._row, 2, &#x27;사용&#x27;); setCell_(&#x27;pins&#x27;, r._row, 3, 0);
+    log_(&#x27;잠금 풀기&#x27;, &#x27;&#x27;, who, name);
+    return {};
+  },
+  pinBlock: function (req) {
+    var who = owner_(req);
+    var name = validName_(req.name);
+    if (!name) throw new Error(&#x27;이름을 확인해 주세요&#x27;);
+    var killed = 0, lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      var r = pinRow_(name);
+      if (!r) append_(&#x27;pins&#x27;, [name, &#x27;&#x27;, &#x27;차단&#x27;, 0, now_(), 1, &#x27;&#x27;]);   // 번호를 정하기 전이라도 차단 표시 (임시 열쇠 출입증도 막힘)
+      else {
+        keepOld_(&#x27;&#x27;, &#x27;직원 번호 &#x27; + name, &#x27;상태 &#x27; + (r[2] || &#x27;&#x27;) + &#x27; · 세대 &#x27; + (r[5] || &#x27;&#x27;), who, &#x27;즉시 차단&#x27;);
+        setCell_(&#x27;pins&#x27;, r._row, 2, &#x27;차단&#x27;); setCell_(&#x27;pins&#x27;, r._row, 4, now_()); setCell_(&#x27;pins&#x27;, r._row, 5, Number(r[5] || 0) + 1);
+      }
+      killed = devKill_(name, &#x27;무효(차단)&#x27;);
+    } finally { SpreadsheetApp.flush(); lock.releaseLock(); }   // 검토 반영: 잠금 풀기 전에 시트에 확실히 씀
+    log_(&#x27;즉시 차단&#x27;, &#x27;&#x27;, who, name + &#x27; · 기억 기기 &#x27; + killed + &#x27;대 무효 · 출입증 끝&#x27;);
+    return { killed: killed };
+  },
+  pinAddName: function (req) {
+    var who = owner_(req);
+    ensurePinSettings_();
+    var name = validName_(req.name);
+    if (!name) throw new Error(&#x27;이름은 한글·영문 2~10자로 넣어 주세요&#x27;);
+    var cur = staffNames_();
+    if (cur.indexOf(name) &gt;= 0) return { names: cur };
+    var row = rows_(&#x27;settings&#x27;).filter(function (x) { return x[0] === &#x27;직원 이름&#x27;; })[0];
+    keepOld_(&#x27;&#x27;, &#x27;설정 직원 이름&#x27;, row[1], who, &#x27;이름 추가 &#x27; + name);
+    setCell_(&#x27;settings&#x27;, row._row, 1, cur.concat([name]).join(&#x27;,&#x27;));
+    log_(&#x27;직원 이름 추가&#x27;, &#x27;&#x27;, who, name);
+    return { names: staffNames_() };
+  },
+
+  /* 관리 전용 */
+  login: function (req) { admin_(req); return {}; },
+  sites: function (req) {
+    admin_(req);
+    var posts = rows_(&#x27;posts&#x27;), cm = rows_(&#x27;comments&#x27;);
+    var list = rows_(&#x27;sites&#x27;).filter(function (r) { return r[13] !== &#x27;Y&#x27;; }).map(function (r) {
+      var s = sitePublic_(r), seen = r[11] || &#x27;&#x27;;
+      s.newCount = posts.filter(function (p) { return p[1] === r[0] &amp;&amp; p[3] === &#x27;고객&#x27; &amp;&amp; p[10] &gt; seen; }).length +
+                   cm.filter(function (c) { return c[1] === r[0] &amp;&amp; c[3] === &#x27;고객&#x27; &amp;&amp; c[6] &gt; seen; }).length;
+      s.postCount = posts.filter(function (p) { return p[1] === r[0] &amp;&amp; p[11] !== &#x27;Y&#x27;; }).length;
+      s.createdAt = r[10];
+      var x = adminExtra_(r); s.pinOn = !!x.pin; s.proj = x.proj; s.cust = x.cust; s.pin = x.pin;   // v3: 목록 검색용 (관리 전용)
+      return s;
+    });
+    return { sites: list };
+  },
+  adminSite: function (req) {
+    admin_(req);
+    var r = site_(req.s), b = bundle_(r[0], true, r[11]);
+    setCell_(&#x27;sites&#x27;, r._row, 11, now_());
+    var s = sitePublic_(r), x = adminExtra_(r); s.pin = x.pin; s.proj = x.proj; s.cust = x.cust;
+    return { site: s, posts: b.posts, comments: b.comments, pinOn: !!x.pin };
+  },
+  /* v3: 인트라넷 &#x27;고객 공유 페이지 열기&#x27; — proj 로 찾기/만들기, 공정표 날짜 맞추기 (s 가 오면 그 현장) */
+  projSite: function (req) {
+    var who = admin_(req);
+    ensureCols_(&#x27;sites&#x27;);
+    var code = String(req.s || &#x27;&#x27;), proj = /^P-\d{4}-\d{3}$/.test(String(req.proj || &#x27;&#x27;)) ? String(req.proj) : &#x27;&#x27;;
+    if (!code &amp;&amp; !proj) throw new Error(&#x27;프로젝트 번호가 없어요 (인트라넷에서 다시 열어 주세요)&#x27;);
+    var pin = pin_(req.pin);
+    if (pin === null) pin = &#x27;&#x27;;   // 숫자 4자리가 아니면 넣지 않음
+    var sched = Array.isArray(req.stages) ? req.stages.slice(0, 30) : [];
+    var created = false, schedN = 0, r = null, custFilled = false;
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {   // 찾기와 만들기를 한 잠금 안에서 → 같은 proj 가 동시에 두 번 와도 현장은 하나
+      if (code) r = site_(code);
+      else r = rows_(&#x27;sites&#x27;).filter(function (x) { return x[13] !== &#x27;Y&#x27; &amp;&amp; projOf_(x) === proj; })[0] || null;
+      if (!r) {
+        var name = clean_(req.name, 60) || &#x27;홈퍼니싱 현장&#x27;;   // v4: 현장명은 고객 화면에 나감 — 고객 이름·프로젝트 번호는 쓰지 않음
+        var st0 = stages_(JSON.stringify(sched)).filter(function (x) { return x.a; });
+        if (!st0.length) st0 = DEF_STAGES.map(function (n) { return { n: n, s: 0, a: &#x27;&#x27;, b: &#x27;&#x27; }; });
+        else st0 = st0.map(function (x) { return { n: x.n, s: 0, a: x.a, b: x.b || x.a }; });
+        var nc = newCode_();
+        append_(&#x27;sites&#x27;, [nc, name, clean_(req.manager, 30), clean_(req.phone, 30), &#x27;&#x27;, day_(req.start), day_(req.end),
+                          JSON.stringify(st0), &#x27;진행&#x27;, &#x27;&#x27;, now_(), now_(), &#x27;&#x27;, &#x27;&#x27;, &#x27;인트라넷 &#x27; + proj, &#x27;[]&#x27;, pin, clean_(req.cust, 30)]);
+        created = true;
+        r = rows_(&#x27;sites&#x27;).filter(function (x) { return x[0] === nc; })[0];
+        schedN = st0[0] &amp;&amp; st0[0].a ? st0.length : 0;
+      } else {
+        var nj = mergeSched_(r[7], sched);
+        if (nj) { keepOld_(r[0], &#x27;공정(JSON)&#x27;, r[7], who, &#x27;인트라넷 공정표로 맞춤&#x27; + (proj ? &#x27; &#x27; + proj : &#x27;&#x27;)); setCell_(&#x27;sites&#x27;, r._row, 7, nj); schedN = JSON.parse(nj).length; }
+        if (!String(r[17] || &#x27;&#x27;) &amp;&amp; clean_(req.cust, 30)) { setCell_(&#x27;sites&#x27;, r._row, 17, clean_(req.cust, 30)); custFilled = true; }   // 빈 칸만 채움
+      }
+    } finally { lock.releaseLock(); }
+    if (created) { try { siteFolder_(r); } catch (x) {} log_(&#x27;현장 자동 생성&#x27;, r[0], who, r[1] + &#x27; · &#x27; + proj + (pin ? &#x27; · 확인 번호 있음&#x27; : &#x27; · 확인 번호 없음&#x27;)); }
+    else if (schedN || custFilled) log_(&#x27;인트라넷 맞춤&#x27;, r[0], who, (schedN ? &#x27;공정표 &#x27; + schedN + &#x27;단계&#x27; : &#x27;&#x27;) + (custFilled ? &#x27; 고객 이름&#x27; : &#x27;&#x27;));
+    return { code: r[0], created: created, sched: schedN, pinOn: !!String(r[16] || pin || &#x27;&#x27;).trim() };
+  },
+  addSite: function (req) {
+    var who = admin_(req);
+    ensureCols_(&#x27;sites&#x27;);
+    var name = clean_(req.name, 60);
+    if (!name) throw new Error(&#x27;현장 이름을 적어 주세요&#x27;);
+    var pin = pin_(req.pin);
+    if (pin === null) throw new Error(&#x27;확인 번호는 숫자 4자리로 적어 주세요&#x27;);
+    var code = newCode_(), stages = stages_(JSON.stringify(req.stages || []));
+    var proj = (String(req.proj || &#x27;&#x27;).match(/P-\d{4}-\d{3}/) || [&#x27;&#x27;])[0];
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      append_(&#x27;sites&#x27;, [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), day_(req.start), day_(req.end),
+                        JSON.stringify(stages), &#x27;진행&#x27;, &#x27;&#x27;, now_(), now_(), &#x27;&#x27;, &#x27;&#x27;, proj ? (&#x27;인트라넷 &#x27; + proj) : &#x27;&#x27;, JSON.stringify(pays_(req.payments)), pin, clean_(req.cust, 30)]);
+    } finally { lock.releaseLock(); }
+    var r = site_(code); siteFolder_(r);
+    log_(&#x27;현장 추가&#x27;, code, who, name + (proj ? &#x27; · &#x27; + proj : &#x27;&#x27;));
+    return { code: code };
+  },
+  updateSite: function (req) {
+    var who = admin_(req);
+    ensureCols_(&#x27;sites&#x27;);
+    var r = site_(req.s), f = req.fields || {};
+    var map = { name: 1, manager: 2, phone: 3, address: 4, status: 8, cust: 17 };
+    Object.keys(map).forEach(function (k) { if (f[k] != null) setCell_(&#x27;sites&#x27;, r._row, map[k], clean_(f[k], 100)); });
+    if (f.start != null) setCell_(&#x27;sites&#x27;, r._row, 5, day_(f.start));
+    if (f.end != null) setCell_(&#x27;sites&#x27;, r._row, 6, day_(f.end));
+    if (f.stages) {
+      var ns = JSON.stringify(stages_(JSON.stringify(f.stages)));
+      if (ns !== JSON.stringify(stages_(r[7]))) { keepOld_(r[0], &#x27;공정(JSON)&#x27;, r[7], who, &#x27;관리 화면에서 고침&#x27;); setCell_(&#x27;sites&#x27;, r._row, 7, ns); }
+    }
+    if (f.payments) setCell_(&#x27;sites&#x27;, r._row, 15, JSON.stringify(pays_(f.payments)));
+    if (f.pin != null) {
+      var pin = pin_(f.pin);
+      if (pin === null) throw new Error(&#x27;확인 번호는 숫자 4자리로 적어 주세요&#x27;);
+      setCell_(&#x27;sites&#x27;, r._row, 16, pin);
+    }
+    log_(&#x27;현장 수정&#x27;, r[0], who, Object.keys(f).join(&#x27;,&#x27;));
+    return {};
+  },
+  adminPost: function (req) {
+    admin_(req);
+    var r = site_(req.s), text = clean_(req.text, 4000), photos = (req.photos || []).slice(0, 30).map(String);
+    if (!text &amp;&amp; !photos.length) throw new Error(&#x27;내용을 적어 주세요&#x27;);
+    var id = id_(&#x27;P&#x27;);
+    append_(&#x27;posts&#x27;, [id, r[0], day_(req.date) || today_(), &#x27;회사&#x27;, clean_(req.author, 20) || &#x27;홈퍼니싱&#x27;, clean_(req.stage, 20), clean_(req.kind, 10) || &#x27;공정&#x27;,
+                      text, req.important ? &#x27;Y&#x27; : &#x27;&#x27;, JSON.stringify(photos), now_(), &#x27;&#x27;, &#x27;&#x27;]);
+    return { id: id };
+  },
+  /* v1: 드라이브 폴더(현장 폴더의 시공 전·중·후 사진)에서 사진 불러오기 — 원본은 읽기만 */
+  importFolder: function (req) {
+    var who = admin_(req);
+    var r = site_(req.s);
+    var fid = (String(req.folder || &#x27;&#x27;).match(/[-\w]{25,}/) || [&#x27;&#x27;])[0];
+    if (!fid) throw new Error(&#x27;드라이브 폴더 주소를 붙여 넣어 주세요&#x27;);
+    var folder;
+    try { folder = DriveApp.getFolderById(fid); } catch (x) { throw new Error(&#x27;폴더를 열 수 없어요 (주소·공유 확인)&#x27;); }
+    var kind = PHASES.indexOf(String(req.kind)) &gt;= 0 ? String(req.kind) : &#x27;시공 중&#x27;;
+    var have = {};
+    rows_(&#x27;photos&#x27;).forEach(function (p) { if (p[1] === r[0]) have[p[0]] = 1; });
+    var it = folder.getFiles(), list = [], skipped = 0, already = 0;
+    while (it.hasNext()) {
+      var f = it.next(), mt = f.getMimeType();
+      if (!/^image\/(jpeg|png|webp)$/.test(mt)) { skipped++; continue; }
+      if (have[f.getId()]) { already++; continue; }
+      if (f.getSize() &gt; 25 * 1024 * 1024) { skipped++; continue; }
+      list.push({ id: f.getId(), name: f.getName(), t: f.getDateCreated().getTime() });
+    }
+    list.sort(function (a, b) { return a.t - b.t || (a.name &lt; b.name ? -1 : 1); });
+    var more = Math.max(0, list.length - 30);
+    list = list.slice(0, 30);
+    if (!list.length) return { count: 0, skipped: skipped, already: already, more: 0 };
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    var id = id_(&#x27;P&#x27;);
+    try {
+      list.forEach(function (x) { append_(&#x27;photos&#x27;, [x.id, r[0], now_(), &#x27;회사&#x27;, &#x27;드라이브 &#x27; + x.name]); });
+      append_(&#x27;posts&#x27;, [id, r[0], day_(req.date) || today_(), &#x27;회사&#x27;, clean_(req.author, 20) || &#x27;홈퍼니싱&#x27;, clean_(req.stage, 20), kind,
+                        clean_(req.text, 4000), &#x27;&#x27;, JSON.stringify(list.map(function (x) { return x.id; })), now_(), &#x27;&#x27;, &#x27;&#x27;]);
+    } finally { lock.releaseLock(); }
+    log_(&#x27;드라이브 사진 불러오기&#x27;, r[0], who, kind + &#x27; &#x27; + list.length + &#x27;장 · 폴더 &#x27; + folder.getName());
+    return { count: list.length, skipped: skipped, already: already, more: more, id: id };
+  },
+  editPost: function (req) {
+    var who = admin_(req);
+    var r = site_(req.s);
+    var p = rows_(&#x27;posts&#x27;).filter(function (x) { return x[0] === req.id &amp;&amp; x[1] === r[0]; })[0];
+    if (!p) throw new Error(&#x27;글을 찾을 수 없어요&#x27;);
+    if (req.important != null) setCell_(&#x27;posts&#x27;, p._row, 8, req.important ? &#x27;Y&#x27; : &#x27;&#x27;);
+    if (req.hidden != null) setCell_(&#x27;posts&#x27;, p._row, 11, req.hidden ? &#x27;Y&#x27; : &#x27;&#x27;);
+    if (req.text != null) { log_(&#x27;글 수정 전 내용&#x27;, r[0], who, p[7]); setCell_(&#x27;posts&#x27;, p._row, 7, clean_(req.text, 4000)); }
+    if (req.kind != null) setCell_(&#x27;posts&#x27;, p._row, 6, clean_(req.kind, 10));
+    setCell_(&#x27;posts&#x27;, p._row, 12, now_());
+    return {};
+  },
+  editComment: function (req) {
+    admin_(req);
+    var r = site_(req.s);
+    var c = rows_(&#x27;comments&#x27;).filter(function (x) { return x[0] === req.id &amp;&amp; x[1] === r[0]; })[0];
+    if (!c) throw new Error(&#x27;댓글을 찾을 수 없어요&#x27;);
+    if (req.hidden != null) setCell_(&#x27;comments&#x27;, c._row, 7, req.hidden ? &#x27;Y&#x27; : &#x27;&#x27;);
+    return {};
+  },
+  savePdf: function (req) {
+    var who = admin_(req);
+    var r = site_(req.s), m = /^data:application\/pdf;(?:[^;,]*;)?base64,(.+)$/.exec(req.data || &#x27;&#x27;);
+    if (!m) throw new Error(&#x27;PDF 형식 오류&#x27;);
+    var folder = siteFolder_(r), base = &#x27;현장기록 &#x27; + r[1].replace(/[\\\/:*?&quot;&lt;&gt;|]/g, &#x27; &#x27;) + &#x27; &#x27;, max = -1, it = folder.getFiles();
+    while (it.hasNext()) {
+      var n = it.next().getName(), mm = /\sv(\d+)\.pdf$/.exec(n);
+      if (n.indexOf(base) === 0 &amp;&amp; mm) max = Math.max(max, Number(mm[1]));
+    }
+    var name = base + today_() + &#x27; v&#x27; + (max + 1) + &#x27;.pdf&#x27;;
+    var f = folder.createFile(Utilities.newBlob(Utilities.base64Decode(m[1]), &#x27;application/pdf&#x27;, name));
+    append_(&#x27;pdfs&#x27;, [f.getId(), r[0], name, now_()]);
+    log_(&#x27;PDF 저장&#x27;, r[0], who, name);
+    return { name: name, url: f.getUrl() };
+  },
+  folder: function (req) {
+    admin_(req);
+    return { url: siteFolder_(site_(req.s)).getUrl() };
+  }
+};
+
+/* 처음 한 번: 시트 탭·설정·사진 폴더 만들기 (편집기에서 실행 ▶) — v1로 바꾼 뒤에도 한 번 실행하면 새 칸 머리글이 생김 */
+function setup() {
+  Object.keys(TAB).forEach(sheet_);
+  ensureCols_(&#x27;sites&#x27;);
+  ensureSettings_();
+  ensurePinSettings_();   // v5: &#x27;직원 이름&#x27; 줄
+  salt_(true);            // v5: PIN_SALT 가 없으면 무작위로 만듦 (있으면 그대로)
+  if (!setting_(&#x27;사진 폴더ID&#x27;)) append_(&#x27;settings&#x27;, [&#x27;사진 폴더ID&#x27;, root_().getId(), &#x27;현장별 폴더가 이 안에 생김&#x27;]);
+  seedTest_();
+  rows_(&#x27;sites&#x27;).forEach(function (r) { siteFolder_(r); });
+  log_(&#x27;설치&#x27;, &#x27;&#x27;, &#x27;관리&#x27;, &#x27;탭·설정·시험 현장 준비 (v5 · 직원 번호 탭)&#x27;);
+}
+
+/* 시험 현장(대표 확인용) 3일치 — 이미 있으면 다시 넣지 않음 */
+function seedTest_() {
+  if (rows_(&#x27;sites&#x27;).some(function (r) { return r[0] === TEST_CODE; })) return;
+  var code = TEST_CODE, folder;
+  try { folder = DriveApp.getFolderById(TEST_FOLDER_ID); } catch (x) { folder = root_().createFolder(&#x27;시험 현장(대표 확인용) (&#x27; + code.slice(0, 6) + &#x27;)&#x27;); }
+  var mit = folder.getFoldersByName(&#x27;2026-11&#x27;), month = mit.hasNext() ? mit.next() : folder.createFolder(&#x27;2026-11&#x27;);
+  var ph = [];
+  for (var i = 0; i &lt; 8; i++) {
+    var blob = UrlFetchApp.fetch(SAMPLE_URL + i + &#x27;.jpg&#x27;).getBlob().setName(&#x27;예시사진_&#x27; + i + &#x27;.jpg&#x27;);
+    var f = month.createFile(blob);
+    ph.push(f.getId());
+    append_(&#x27;photos&#x27;, [f.getId(), code, &#x27;2026-11-0&#x27; + (3 + Math.min(2, Math.floor(i / 3))) + &#x27; 17:00:00&#x27;, i === 7 ? &#x27;고객&#x27; : &#x27;회사&#x27;, &#x27;예시사진_&#x27; + i + &#x27;.jpg&#x27;]);
+  }
+  var stages = [{ n: &#x27;철거&#x27;, s: 2 }, { n: &#x27;설비&#x27;, s: 2 }, { n: &#x27;전기&#x27;, s: 1 }, { n: &#x27;목공&#x27;, s: 1 }, { n: &#x27;타일&#x27;, s: 0 }, { n: &#x27;도장&#x27;, s: 0 }, { n: &#x27;마감&#x27;, s: 0 }];
+  append_(&#x27;sites&#x27;, [code, &#x27;시험 현장(대표 확인용)&#x27;, &#x27;정진혁 실장&#x27;, &#x27;1566-5904&#x27;, &#x27;서울 (예시 주소)&#x27;, &#x27;2026-11-03&#x27;, &#x27;2026-11-20&#x27;, JSON.stringify(stages), &#x27;진행&#x27;, folder.getId(), &#x27;2026-11-03 08:00:00&#x27;, &#x27;2026-11-05 18:00:00&#x27;, &#x27;2026-11-05 20:12:00&#x27;, &#x27;&#x27;, &#x27;대표 확인용 시험 현장. 고객에게 보내지 않음&#x27;, &#x27;[]&#x27;, &#x27;&#x27;]);
+  var P = [
+    [&#x27;P_s1&#x27;, &#x27;2026-11-03&#x27;, &#x27;회사&#x27;, &#x27;정진혁 실장&#x27;, &#x27;철거&#x27;, &#x27;공정&#x27;, &#x27;오늘 철거 작업을 마쳤습니다.\n· 거실·주방 기존 마루, 걸레받이 철거\n· 욕실 2곳 타일·도기 철거\n· 폐기물 1톤 반출, 엘리베이터 보양 완료\n내일은 설비(배관) 작업이 들어갑니다.&#x27;, &#x27;&#x27;, [0, 1, 2], &#x27;2026-11-03 17:40:00&#x27;],
+    [&#x27;P_s2&#x27;, &#x27;2026-11-04&#x27;, &#x27;회사&#x27;, &#x27;정진혁 실장&#x27;, &#x27;설비&#x27;, &#x27;공정&#x27;, &#x27;욕실·주방 배관 교체와 수압 시험을 마쳤습니다. 누수 없음 확인했습니다.\n전기 배선은 오후부터 시작했습니다.&#x27;, &#x27;&#x27;, [3, 4], &#x27;2026-11-04 17:20:00&#x27;],
+    [&#x27;P_s3&#x27;, &#x27;2026-11-04&#x27;, &#x27;회사&#x27;, &#x27;정진혁 실장&#x27;, &#x27;타일&#x27;, &#x27;공지&#x27;, &#x27;욕실 타일 색상을 11월 8일(토)까지 정해 주세요.\n샘플 두 가지(밝은 그레이 / 웜 베이지)를 현장에 두었습니다. 정해 주시면 바로 발주합니다.&#x27;, &#x27;Y&#x27;, [], &#x27;2026-11-04 18:05:00&#x27;],
+    [&#x27;P_s4&#x27;, &#x27;2026-11-05&#x27;, &#x27;회사&#x27;, &#x27;정진혁 실장&#x27;, &#x27;목공&#x27;, &#x27;공정&#x27;, &#x27;거실 천장 몰딩 자리와 안방 붙박이장 벽체 목공을 시작했습니다. 전기 콘센트 위치도 함께 표시해 두었습니다.&#x27;, &#x27;&#x27;, [5, 6], &#x27;2026-11-05 17:30:00&#x27;],
+    [&#x27;P_s5&#x27;, &#x27;2026-11-05&#x27;, &#x27;고객&#x27;, &#x27;고객&#x27;, &#x27;&#x27;, &#x27;요청&#x27;, &#x27;안방 콘센트를 침대 양쪽에 하나씩 더 넣을 수 있을까요? 참고 사진 올려요.&#x27;, &#x27;&#x27;, [7], &#x27;2026-11-05 20:12:00&#x27;]
+  ];
+  P.forEach(function (p) {
+    append_(&#x27;posts&#x27;, [p[0], code, p[1], p[2], p[3], p[4], p[5], p[6], p[7], JSON.stringify(p[8].map(function (k) { return ph[k]; })), p[9], &#x27;&#x27;, &#x27;&#x27;]);
+  });
+  append_(&#x27;comments&#x27;, [&#x27;C_s1&#x27;, code, &#x27;P_s1&#x27;, &#x27;고객&#x27;, &#x27;고객&#x27;, &#x27;빠르게 진행해 주셔서 감사합니다!&#x27;, &#x27;2026-11-03 19:02:00&#x27;, &#x27;&#x27;]);
+  append_(&#x27;comments&#x27;, [&#x27;C_s2&#x27;, code, &#x27;P_s1&#x27;, &#x27;회사&#x27;, &#x27;정진혁 실장&#x27;, &#x27;감사합니다. 매일 저녁 진행 사진 올려 드리겠습니다.&#x27;, &#x27;2026-11-03 19:30:00&#x27;, &#x27;&#x27;]);
+  append_(&#x27;comments&#x27;, [&#x27;C_s3&#x27;, code, &#x27;P_s3&#x27;, &#x27;고객&#x27;, &#x27;고객&#x27;, &#x27;토요일 오전에 현장 들러서 보고 정할게요.&#x27;, &#x27;2026-11-04 21:10:00&#x27;, &#x27;&#x27;]);
+}
+</textarea>
+    <button class="btn" type="button" data-copyel="manBox">appsscript.json 전체 복사</button>
+    <textarea id="manBox" readonly aria-label="appsscript.json 전체" style="min-height:90px">{
+  &quot;timeZone&quot;: &quot;Asia/Seoul&quot;,
+  &quot;exceptionLogging&quot;: &quot;STACKDRIVER&quot;,
+  &quot;runtimeVersion&quot;: &quot;V8&quot;,
+  &quot;oauthScopes&quot;: [
+    &quot;https://www.googleapis.com/auth/spreadsheets&quot;,
+    &quot;https://www.googleapis.com/auth/drive&quot;,
+    &quot;https://www.googleapis.com/auth/script.external_request&quot;,
+    &quot;https://www.googleapis.com/auth/script.send_mail&quot;
+  ],
+  &quot;webapp&quot;: { &quot;executeAs&quot;: &quot;USER_DEPLOYING&quot;, &quot;access&quot;: &quot;ANYONE_ANONYMOUS&quot; }
+}
+</textarea>
+    <p class="small">복사가 막히면 칸을 길게 눌러 ‘전체 선택 → 복사’ 하세요. 같은 코드가 드라이브 인트라넷 폴더 ‘현장소통 Code.gs 2026-11-23 v5.txt’에도 있어요.</p>
+    <button class="btn" type="button" data-done="3">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="4">
+    <div class="sh"><span class="no">4</span><h2>setup 한 번 실행</h2></div>
+    <ol>
+      <li>위쪽 함수 고르는 칸에서 <code>setup</code>을 고르고 <b>▶ 실행</b>.</li>
+      <li>‘권한 검토’ 창이 뜨면 대표 계정 → <b>고급 › (안전하지 않음)으로 이동 › 허용</b>. <b>메일 보내기</b> 권한이 새로 들어 있어요.</li>
+      <li>아래 실행 로그에 오류가 없으면 끝. 스크립트 속성에 <code>PIN_SALT</code>가 생겼는지 한 번 봅니다.</li>
+    </ol>
+    <p class="tip">기존 현장·글·사진 행은 그대로예요. 새 탭(‘직원 번호’, ‘기억 기기’, ‘옛 값’)과 새 칸 머리글만 생겨요.</p>
+    <button class="btn" type="button" data-done="4">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="5">
+    <div class="sh"><span class="no">5</span><h2>같은 주소로 새 버전 배포</h2></div>
+    <ol>
+      <li>오른쪽 위 <b>배포 › 배포 관리</b>.</li>
+      <li>지금 쓰는 웹 앱 줄의 <b>연필(수정)</b> → 버전 칸에서 <b>새 버전</b> → <b>배포</b>.</li>
+      <li>웹 앱 주소를 열어 <code>"v":5</code>가 보이면 성공.</li>
+    </ol>
+    <p class="note"><b>‘새 배포’를 누르지 마세요.</b> 새 배포는 주소가 바뀌어 현장소통 화면이 서버를 못 찾아요. 꼭 ‘배포 관리 › 연필 › 새 버전’.</p>
+    <button class="btn" type="button" data-done="5">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="6">
+    <div class="sh"><span class="no">6</span><h2>관리 비밀번호를 대표님만 아는 값으로</h2></div>
+    <ol>
+      <li>현장소통 데이터 시트의 <b>설정</b> 탭을 엽니다.</li>
+      <li><b>관리 비밀번호</b> 줄의 <b>값</b> 칸을 새 비밀번호로 바꿉니다 (12자 이상, 다른 곳에 안 쓰는 값). 바꾸는 즉시 적용돼요.</li>
+      <li>새 비밀번호는 직원·카톡·메일에 보내지 마세요. 직원은 열쇠(인트라넷 버튼)나 6자리 번호로 들어가요.</li>
+    </ol>
+    <p class="small">이 시트는 대표님 계정만 편집할 수 있게 공유를 그대로 두세요. 드라이브의 ‘현장소통 첫 비밀번호.txt’는 처음 설치 때만 쓰였고 지금은 안 읽어요.</p>
+    <button class="btn" type="button" data-done="6">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="7">
+    <div class="sh"><span class="no">7</span><h2>Claude에게 알리기</h2></div>
+    <p>여기까지 했으면 Claude 창에 <b>“현장소통 v5 배포완료”</b>라고 보내 주세요. Claude가 새 현장소통 화면(자동 생성·검색·공정 날짜·직원 번호 입장)을 올리고 다 됐다고 알려 드려요. 그 알림을 받은 뒤 8번부터 하세요.</p>
+    <button class="btn" type="button" data-copy="현장소통 v5 배포완료">보낼 말 복사</button>
+    <button class="btn" type="button" data-done="7">다 했어요</button>
+  </section>
+
+  <p class="grp">B. 첫 현장 · 직원 확인</p>
+
+  <section class="step" data-s="8">
+    <div class="sh"><span class="no">8</span><h2>직원 번호 정하기</h2></div>
+    <ol>
+      <li><b>soo-cpu.github.io/card/field/?admin</b>을 열고 <b>대표 전용 · 관리 비밀번호</b>로 들어갑니다.</li>
+      <li><b>직원 번호</b> 칸에서 정진혁·이봄이·채진아에게 각각 6자리를 정합니다 (생일·전화번호 끝자리·111111 같은 쉬운 번호는 피하기).</li>
+      <li>번호는 직원에게 <b>직접 말로</b> 알려 주세요. 화면에 다시 보이지 않아요.</li>
+    </ol>
+    <button class="btn" type="button" data-copy="https://soo-cpu.github.io/card/field/?admin">관리 화면 주소 복사</button>
+    <button class="btn" type="button" data-done="8">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="9">
+    <div class="sh"><span class="no">9</span><h2>김정래 현장을 첫 현장으로</h2></div>
+    <ol>
+      <li>인트라넷(대표 화면) <b>프로젝트</b>에서 <b>김정래</b> (아름마을 LG) 프로젝트를 엽니다.</li>
+      <li>단계가 <b>계약·시공</b>인지 봅니다 (상담·디자인·견적이면 ‘고객 공유 페이지 만들기’ 버튼이 나와요 — 그때는 Claude에게 알려 주세요).</li>
+      <li>담당이 <b>정진혁</b>인지 봅니다 (10번 확인에 필요).</li>
+      <li>‘현장 진행 상황’ 칸 <b>고객 공유 페이지 열기</b> → 새 탭에서 현장이 저절로 생기고 <b>고객 주소</b> 창이 떠요.</li>
+      <li>창의 <b>주소만 복사</b> → 인트라넷 김정래 프로젝트 <b>고객 공유 페이지 코드</b> 칸에 붙여 넣고 저장 → 프로젝트 화면에 ‘고객 주소 복사’가 생겨요.</li>
+      <li>현장소통에서 공정 날짜가 프로젝트 공정표와 같은지, 현장명이 맞는지 봅니다.</li>
+    </ol>
+    <p class="tip">다시 ‘고객 공유 페이지 열기’를 눌러도 같은 현장이 열려요. 공정표를 고친 뒤 누르면 날짜가 맞춰지고, 바뀌기 전 값은 시트 ‘옛 값’ 탭에 남아요.</p>
+    <button class="btn" type="button" data-done="9">다 했어요</button>
+  </section>
+
+  <section class="step" data-s="10">
+    <div class="sh"><span class="no">10</span><h2>정진혁 계정으로 열리는지 확인</h2></div>
+    <ol>
+      <li><b>정진혁 실장 휴대폰</b>에서 인트라넷 → 김정래 프로젝트 → <b>고객 공유 페이지 열기</b> → 비밀번호 없이 같은 현장 관리 화면이 열리면 OK.</li>
+      <li>같은 휴대폰에서 <b>soo-cpu.github.io/card/field/?admin</b> 직접 열기 → <b>직원 번호로 들어가기</b> → ‘정진혁’ → 6자리 → 열리면 OK. 대표님 메일로 <b>새 기기</b> 알림이 오는지 봅니다.</li>
+      <li>한 번 더 열어 번호를 다시 묻지 않으면 30일 기억 OK.</li>
+      <li>현장소통 시트 <b>기록</b> 탭의 ‘누가’ 칸에 <b>정진혁</b>이 찍혔는지 봅니다.</li>
+      <li>마지막으로 고객 주소를 다른 휴대폰에서 열어 <b>휴대폰 뒷번호 4자리</b>로 열리고, 고객 이름·프로젝트 번호·금액이 안 보이는지 봅니다.</li>
+    </ol>
+    <p class="note">안 되는 곳이 있으면 몇 번 단계인지와 화면에 나온 글을 Claude에게 보내 주세요.</p>
+    <button class="btn" type="button" data-done="10">다 했어요</button>
+  </section>
+
+  <button class="btn" type="button" id="resetAll">처음부터 다시 (체크 지우기)</button>
+  <p class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</p>
+</div>
+
+<script>
+(function(){
+  const KEY="hf-field-setup-v5";
+  let st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){st={}}
+  const steps=[...document.querySelectorAll(".step")];
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+  function draw(){
+    let n=0;
+    steps.forEach(s=>{const id=s.dataset.s,on=!!st[id];s.classList.toggle("done",on);if(on)n++;
+      const b=s.querySelector("[data-done]");if(b){b.textContent=on?"완료 ✓ (다시 누르면 취소)":"다 했어요";b.classList.toggle("done",on)}});
+    document.getElementById("progTxt").textContent=n+" / "+steps.length+" 단계"+(n===steps.length?" · 모두 끝!":"");
+    document.getElementById("progBar").style.width=(n/steps.length*100)+"%";
+  }
+  let tt;function toast(m){let t=document.querySelector(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true},2200)}
+  async function copy(text,el){
+    try{await navigator.clipboard.writeText(text);toast("복사했어요");return}catch(e){}
+    if(el){el.focus();el.select();try{el.setSelectionRange(0,el.value.length)}catch(x){}}
+    let ok=false;try{ok=document.execCommand("copy")}catch(x){}
+    toast(ok?"복사했어요":"복사가 막혔어요 · 선택된 글을 길게 눌러 복사하세요");
+  }
+  document.addEventListener("click",e=>{
+    const d=e.target.closest("[data-done]");
+    if(d){const id=d.dataset.done;st[id]=!st[id];save();draw();
+      if(st[id]){const nx=steps.find(s=>!st[s.dataset.s]);if(nx)nx.scrollIntoView({behavior:"smooth",block:"start"})}return}
+    const c=e.target.closest("[data-copy]");if(c){copy(c.dataset.copy);return}
+    const ce=e.target.closest("[data-copyel]");if(ce){const el=document.getElementById(ce.dataset.copyel);copy(el.value,el);return}
+    if(e.target.id==="resetAll"){if(e.target.dataset.arm){st={};save();draw();e.target.textContent="처음부터 다시 (체크 지우기)";delete e.target.dataset.arm;toast("체크를 지웠어요")}else{e.target.dataset.arm="1";e.target.textContent="한 번 더 누르면 체크가 모두 지워져요"}}
+  });
+  draw();
+})();
+</script>
