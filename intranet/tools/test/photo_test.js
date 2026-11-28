@@ -107,40 +107,53 @@ async function part1(b){
   ok('사진: alert/prompt 대화상자 안 뜸 (확인은 okAsk — 막히면 화면 안 확인 창)',!dialogs.some(d=>!/confirm/.test(d)),dialogs.join(','));
   await ctx.close()}
 
+// 2부·3부는 2026-11-28 에 서버 v9(드라이브본)·v10 과 화면 v9·v10 의 실제 동작에 맞춰 다시 씀 (예전 기대값은 저장소에만 있던 옛 v7 서버 기준이었음)
+//  달라진 점: 원본은 upload 와 따로 uploadOrig 로 올림 · 원본 폴더 = '현장명_고객명' (부모 = 설정 '현장 원본 폴더ID', 비면 사진 폴더) · 촬영 시각은 숫자(ms)로 보냄 · 사진 탭 칸 = 숨김(6)·원본ID(7)·촬영 시각(8)
+//  사진 지우기(숨김)는 대표만(hidePhoto). 글·댓글 숨기기(editPost·editComment hidden)는 v9 가 직원 출입증에도 허용 — [의도 확인 필요: 옛 v7 은 대표만이었음]. v10 부터 '기록' 탭에 남김
 function part2(){
-  const S=makeServer();S.setPw('pw-test-77');const pw='pw-test-77';
-  ok('서버 1: doGet v:7',JSON.parse(S.ctx.doGet({parameter:{}}).text).v===7);
+  const S=makeServer();S.setPw('pw-test-77');const pw='pw-test-77',PHOTO_ROOT='1d2JMn10YKoZv9Ymjib1V9Fh5mictFqGL';
+  ok('서버 1: doGet v:10 (v9 사진 동작 그대로)',JSON.parse(S.ctx.doGet({parameter:{}}).text).v===10);
   const a=S.post({a:'addSite',pw,name:'시험 현장 욕실',cust:'홍길동',proj:'P-2611-901',pin:''});ok('서버 2: 현장 추가',a.ok&&a.code,JSON.stringify(a));
-  const a2=S.post({a:'addSite',pw,name:'다른 이름',proj:'P-2611-901',pin:''});ok('서버 3: 같은 프로젝트로 또 추가 → 있는 현장 (하나만)',a2.ok&&a2.code===a.code&&a2.existing,JSON.stringify(a2));
+  const a2=S.post({a:'addSite',pw,name:'다른 이름',proj:'P-2611-901',pin:''});ok('서버 3: 같은 프로젝트로 또 추가 → 있는 현장 (하나만 · v10 에서 되살림)',a2.ok&&a2.code===a.code&&a2.exists===true,JSON.stringify(a2));
   const sitesN=S.rowsOf('현장').filter(r=>/P-2611-901/.test(r[14]||'')).length;ok('서버 4: 현장 탭에 그 프로젝트 줄은 1줄',sitesN===1,sitesN);
   const px='data:image/jpeg;base64,'+Buffer.from([255,216,255,224,0,1,2,3]).toString('base64'),orig='data:image/jpeg;base64,'+Buffer.alloc(5000,7).toString('base64');
-  const u1=S.post({a:'upload',pw,s:a.code,data:px,orig,taken:'2026-11-03 09:15:00',name:'IMG_0001.JPG'});
-  ok('서버 5: 원본 같이 올리기 → 줄인 사진 id + 원본 id',u1.ok&&u1.fileId&&u1.orig&&!u1.warn,JSON.stringify(u1));
-  const it=S.st.drive.items,oi=it[u1.orig]||{},m=it[oi.parent]||{},sub=it[m.parent]||{},pf=it[sub.parent]||{};
-  ok('서버 6: 원본 위치 = 인트라넷 첨부 › P-2611-901 시험 현장 욕실_홍길동 › 현장소통 사진 원본 › 월',pf.parent==='1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor'&&pf.name==='P-2611-901 시험 현장 욕실_홍길동'&&sub.name==='현장소통 사진 원본'&&/^\d{4}-\d{2}$/.test(m.name),JSON.stringify([pf.name,sub.name,m.name,pf.parent]));
-  ok('서버 7: 원본 파일 크기 그대로 (5000바이트) · 이름에 촬영 시각',oi.size===5000&&/^20261103091500_IMG_0001\.jpg$/.test(oi.name),JSON.stringify(oi));
-  const ph=S.rowsOf('사진').find(r=>r[0]===u1.fileId)||[];ok('서버 8: 사진 탭 = 원본ID·촬영 시각 칸',ph[5]===u1.orig&&ph[6]==='2026-11-03 09:15:00',JSON.stringify(ph));
-  const s1=S.rowsOf('현장').find(r=>r[0]===a.code);ok('서버 9: 현장 탭 19번째 칸 원본 폴더ID',s1&&s1[18]===oi&&false||s1&&s1[18]===sub.parent,JSON.stringify(s1&&s1[18]));
-  const u2=S.post({a:'upload',pw,s:a.code,data:px,orig,taken:'bad',name:'b.jpg'});const fol=Object.values(it).filter(x=>x.kind==='folder'&&/^P-2611-901/.test(x.name)).length;
-  ok('서버 10: 두 번째 사진도 같은 폴더 (폴더 1개) · 이상한 촬영 시각은 빈 값',u2.ok&&fol===1&&(S.rowsOf('사진').find(r=>r[0]===u2.fileId)||[])[6]==='',fol);
-  // 인트라넷이 먼저 만든 프로젝트 폴더가 있으면 그것을 씀
-  const S2=makeServer();S2.setPw(pw);const root=S2.ctx.DriveApp.getFolderById('1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor');const pre=root.createFolder('P-2611-777 인트라넷이 만든 폴더');
-  const b2=S2.post({a:'addSite',pw,name:'칠칠 현장',proj:'P-2611-777',pin:''});const u3=S2.post({a:'upload',pw,s:b2.code,data:px,orig,name:'c.jpg'});
-  const o3=S2.st.drive.items[u3.orig]||{},m3=S2.st.drive.items[o3.parent]||{},sb3=S2.st.drive.items[m3.parent]||{};
-  ok('서버 11: 인트라넷이 만든 ‘P-2611-777 …’ 폴더가 있으면 그 안에 저장 (새 폴더 안 만듦)',sb3.parent===pre.getId(),JSON.stringify([sb3.parent,pre.getId()]));
-  // 원본 저장 실패해도 줄인 사진은 올라감
-  S2.st.drive.fail.file=id=>id!==undefined&&S2.st.drive.items[id]&&/^\d{4}-\d{2}$/.test(S2.st.drive.items[id].name)&&(S2.st.drive.items[S2.st.drive.items[id].parent]||{}).name==='현장소통 사진 원본';
-  const u4=S2.post({a:'upload',pw,s:b2.code,data:px,orig,name:'d.jpg'});S2.st.drive.fail.file=null;
-  ok('서버 12: 원본 저장이 실패해도 줄인 사진은 올라가고 안내가 옴',u4.ok&&u4.fileId&&!u4.orig&&/원본/.test(u4.warn||''),JSON.stringify(u4));
-  const u5=S.post({a:'upload',pw,s:a.code,data:px,name:'e.jpg'});ok('서버 13: 원본 없이(예전 화면) 올려도 그대로 됨',u5.ok&&u5.fileId&&!u5.orig,JSON.stringify(u5));
-  // 숨기기는 대표만
+  const u1=S.post({a:'upload',pw,s:a.code,data:px,taken:Date.parse('2026-11-03T09:15:00+09:00')});const o1=S.post({a:'uploadOrig',pw,s:a.code,id:u1.fileId,data:orig,name:'IMG_0001.JPG'});
+  ok('서버 5: 줄인 사진 올리기(upload) → 원본 따로 올리기(uploadOrig) → 사진 id + 원본 id',u1.ok&&u1.fileId&&o1.ok&&o1.origId&&!o1.already,JSON.stringify([u1,o1]));
+  const it=S.st.drive.items,oi=it[o1.origId]||{},pf=it[oi.parent]||{};
+  ok('서버 6: 원본 위치 = 사진 폴더(설정 ‘현장 원본 폴더ID’ 가 비었을 때) › 시험 현장 욕실_홍길동',pf.name==='시험 현장 욕실_홍길동'&&pf.parent===PHOTO_ROOT,JSON.stringify([pf.name,pf.parent]));
+  ok('서버 7: 원본 파일 크기 그대로 (5000바이트) · 이름 = 촬영 날짜_시각_원래 이름',oi.size===5000&&/^20261103_091500_IMG_0001\.JPG$/.test(oi.name),JSON.stringify(oi));
+  const ph=S.rowsOf('사진').find(r=>r[0]===u1.fileId)||[];ok('서버 8: 사진 탭 = 원본ID(7번째)·촬영 시각(8번째) 칸',ph[6]===o1.origId&&ph[7]==='2026-11-03 09:15:00'&&ph[5]==='',JSON.stringify(ph));
+  const s1=S.rowsOf('현장').find(r=>r[0]===a.code);ok('서버 9: 현장 탭 19번째 칸 원본 폴더ID',!!s1&&s1[18]===oi.parent,JSON.stringify(s1&&s1[18]));
+  const u2=S.post({a:'upload',pw,s:a.code,data:px,taken:'bad'});const o2=S.post({a:'uploadOrig',pw,s:a.code,id:u2.fileId,data:orig,name:'b.jpg'});const fol=Object.values(it).filter(x=>x.kind==='folder'&&x.name==='시험 현장 욕실_홍길동').length;
+  ok('서버 10: 두 번째 사진도 같은 폴더 (폴더 1개) · 이상한 촬영 시각은 빈 값',u2.ok&&o2.ok&&fol===1&&(it[o2.origId]||{}).parent===oi.parent&&(S.rowsOf('사진').find(r=>r[0]===u2.fileId)||[])[7]==='',fol);
+  const o1b=S.post({a:'uploadOrig',pw,s:a.code,id:u1.fileId,data:orig,name:'IMG_0001.JPG'});ok('서버 10-2: 같은 사진 원본을 두 번 올려도 한 번만 (already)',o1b.ok&&o1b.already===true&&o1b.origId===o1.origId);
+  const oc=S.post({a:'uploadOrig',s:a.code,id:u1.fileId,data:orig,name:'x.jpg'});ok('서버 10-3: 원본 올리기는 직원·대표만 (비밀번호·출입증 없으면 거절)',!oc.ok,JSON.stringify(oc));
+  // 설정 '현장 원본 폴더ID' 가 있으면 그 폴더 아래 · 같은 이름 폴더가 이미 있으면 그것을 씀
+  const S2=makeServer();S2.setPw(pw);S2.ctx.sheet_('settings');S2.st.sheets['설정'].rows.push(['현장 원본 폴더ID','origparent_abcdefgh','시험']);
+  const root=S2.ctx.DriveApp.getFolderById('origparent_abcdefgh');const pre=root.createFolder('칠칠 현장_김칠칠');
+  const b2=S2.post({a:'addSite',pw,name:'칠칠 현장',cust:'김칠칠',proj:'P-2611-777',pin:''});const u3=S2.post({a:'upload',pw,s:b2.code,data:px});const o3=S2.post({a:'uploadOrig',pw,s:b2.code,id:u3.fileId,data:orig,name:'c.jpg'});
+  ok('서버 11: ‘현장 원본 폴더ID’ 아래에 이미 있는 ‘현장명_고객명’ 폴더에 저장 (새 폴더 안 만듦)',o3.ok&&(S2.st.drive.items[o3.origId]||{}).parent===pre.getId()&&Object.values(S2.st.drive.items).filter(x=>x.kind==='folder'&&x.name==='칠칠 현장_김칠칠').length===1,JSON.stringify([o3,pre.getId()]));
+  // 원본 저장이 실패해도 줄인 사진은 이미 올라가 있음
+  const u4=S2.post({a:'upload',pw,s:b2.code,data:px});S2.st.drive.fail.file=id=>id===pre.getId();const o4=S2.post({a:'uploadOrig',pw,s:b2.code,id:u4.fileId,data:orig,name:'d.jpg'});S2.st.drive.fail.file=null;
+  const r4=S2.rowsOf('사진').find(r=>r[0]===u4.fileId)||[];
+  ok('서버 12: 원본 저장이 실패해도 줄인 사진 줄은 그대로 남음 (원본ID 만 빈 값 · 오류로 알려 줌)',u4.ok&&u4.fileId&&!o4.ok&&r4[0]===u4.fileId&&r4[6]==='',JSON.stringify([o4,r4]));
+  const u5=S.post({a:'upload',pw,s:a.code,data:px});ok('서버 13: 원본 없이(예전 화면) 올려도 그대로 됨',u5.ok&&u5.fileId,JSON.stringify(u5));
+  // 숨기기
   const KEY='k'.repeat(40);S.setProp('FIELD_STAFF_KEY',KEY);const tk=S.post({a:'ticket',k:S.ticket(KEY,{who:'정진혁'})}).token;const T='T:'+tk;
-  const po=S.post({a:'adminPost',pw:T,s:a.code,text:'오늘 공정',photos:[u1.fileId]});ok('서버 14: 직원 출입증으로 글·사진 올리기는 됨',po.ok&&po.id,JSON.stringify(po));
-  const h1=S.post({a:'editPost',pw:T,s:a.code,id:po.id,hidden:true});ok('서버 15: 직원 출입증으로 글(사진) 숨기기 → 거절',!h1.ok&&/대표만/.test(h1.error||''),JSON.stringify(h1));
+  const po=S.post({a:'adminPost',pw:T,s:a.code,text:'오늘 공정',photos:[u1.fileId,u2.fileId]});ok('서버 14: 직원 출입증으로 글·사진 올리기는 됨',po.ok&&po.id,JSON.stringify(po));
+  const hp=S.post({a:'hidePhoto',pw:T,s:a.code,id:u1.fileId});ok('서버 15: 직원 출입증으로 사진 지우기(숨김) → 거절 (대표만)',!hp.ok&&/대표만/.test(hp.error||''),JSON.stringify(hp));
+  const hp2=S.post({a:'hidePhoto',pw,s:a.code,id:u1.fileId});const prow1=S.rowsOf('사진').find(r=>r[0]===u1.fileId);
+  ok('서버 15-2: 대표(비밀번호)는 사진 숨기기 됨 · 사진 줄·드라이브 파일·원본은 그대로',hp2.ok&&prow1&&prow1[5]==='Y'&&prow1[6]===o1.origId&&!!it[u1.fileId]&&!!it[o1.origId],JSON.stringify(hp2));
+  const vs=S.post({a:'adminSite',pw:T,s:a.code}),vo=S.post({a:'adminSite',pw,s:a.code}),pS=(vs.posts||[]).find(x=>x.id===po.id)||{},pO=(vo.posts||[]).find(x=>x.id===po.id)||{};
+  ok('서버 15-3: 숨긴 사진은 직원 화면 글에서 빠지고(1장) 대표에게만 ‘지운 사진’으로 보임',(pS.photos||[]).length===1&&!pS.hiddenPhotos&&(pO.hiddenPhotos||[]).length===1,JSON.stringify([pS.photos,pO.hiddenPhotos]));
   const h1b=S.post({a:'editPost',pw:T,s:a.code,id:po.id,important:true});ok('서버 16: 직원 출입증으로 중요 표시는 그대로 됨',h1b.ok,JSON.stringify(h1b));
-  const h2=S.post({a:'editPost',pw,s:a.code,id:po.id,hidden:true});const prow=S.rowsOf('글').find(r=>r[0]===po.id);ok('서버 17: 대표(비밀번호)는 숨기기 됨 · 글 줄은 남음',h2.ok&&prow&&prow[11]==='Y',JSON.stringify(h2));
-  const cm=S.post({a:'comment',pw:T,s:a.code,postId:po.id,text:'댓글'});const h3=S.post({a:'editComment',pw:T,s:a.code,id:cm.id,hidden:true});ok('서버 18: 직원 출입증으로 댓글 숨기기 → 거절',!h3.ok,JSON.stringify(h3));
-  ok('서버 19: 지운 행 없음 (사진 탭 줄 수 = 올린 수)',S.rowsOf('사진').length===3,S.rowsOf('사진').length);
+  // [의도 확인 필요] 서버 v9(드라이브본)는 글·댓글 숨기기를 직원 출입증에도 허용함 (옛 저장소 v7 은 대표만 → 거절이었음). 권한은 v9 그대로 두고 v10 에서 '기록' 탭에 남기게만 함
+  const h1=S.post({a:'editPost',pw:T,s:a.code,id:po.id,hidden:true});const prow=S.rowsOf('글').find(r=>r[0]===po.id);
+  ok('서버 17: (v9 동작) 직원 출입증으로 글 숨기기 됨 · 글 줄은 남음 · ‘기록’ 탭에 누가 숨겼는지',h1.ok&&prow&&prow[11]==='Y'&&S.rowsOf('기록').some(r=>r[1]==='글 숨김'&&r[3]==='정진혁'&&r[4].includes(po.id)),JSON.stringify(h1));
+  const h2=S.post({a:'editPost',pw,s:a.code,id:po.id,hidden:false});ok('서버 17-2: 대표(비밀번호)가 숨김을 풂 · 기록에 남음',h2.ok&&S.rowsOf('글').find(r=>r[0]===po.id)[11]===''&&S.rowsOf('기록').some(r=>r[1]==='글 숨김 풀기'&&r[3]==='관리'));
+  const cm=S.post({a:'comment',pw:T,s:a.code,postId:po.id,text:'댓글'});const h3=S.post({a:'editComment',pw:T,s:a.code,id:cm.id,hidden:true});
+  ok('서버 18: (v9 동작) 직원 출입증으로 댓글 숨기기 됨 · 댓글 줄은 남음 · ‘기록’ 탭에 남음',h3.ok&&(S.rowsOf('댓글').find(r=>r[0]===cm.id)||[])[7]==='Y'&&S.rowsOf('기록').some(r=>r[1]==='댓글 숨김'&&r[3]==='정진혁'),JSON.stringify(h3));
+  ok('서버 19: 지운 행 없음 (사진 탭 줄 수 = 올린 수 3)',S.rowsOf('사진').length===3,S.rowsOf('사진').length);
 }
 
 async function part3(b){
@@ -151,22 +164,24 @@ async function part3(b){
   await p.goto('https://soo-cpu.github.io/card/field/?admin');await wait(1500);
   const r=await p.evaluate(async()=>{const jpeg=async(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').fillRect(0,0,w,h);return new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/jpeg',.9))).arrayBuffer())};
     const exif=(u8,dt)=>{const te=[...(dt+'\0')].map(ch=>ch.charCodeAt(0));const T=[0x4D,0x4D,0,0x2A,0,0,0,8, 0,1, 0x87,0x69,0,4,0,0,0,1,0,0,0,26, 0,0,0,0, 0,1, 0x90,0x03,0,2,0,0,0,20,0,0,0,44, 0,0,0,0].concat(te);const body=[0x45,0x78,0x69,0x66,0,0].concat(T),len=body.length+2;const seg=[0xFF,0xE1,len>>8,len&255].concat(body);const out=new Uint8Array(u8.length+seg.length);out.set(u8.slice(0,2),0);out.set(seg,2);out.set(u8.slice(2),2+seg.length);return out};
-    const a=await jpeg(400,300),e=exif(a,'2025:12:24 18:30:05');
-    const t1=exifDate(e.buffer),t0=exifDate(a.buffer);
+    const a=await jpeg(400,300),e=exif(a,'2025:12:24 18:30:05');const fmt=t=>{const d=new Date(t),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())};
+    const fc=new File([a],'c.jpg',{type:'image/jpeg',lastModified:Date.parse('2026-11-20T10:00:00+09:00')}),fa=new File([e],'a.jpg',{type:'image/jpeg',lastModified:Date.parse('2026-11-25T10:00:00+09:00')}),fb=new File([a],'b.jpg',{type:'image/jpeg',lastModified:Date.parse('2026-11-01T10:00:00+09:00')});
+    const t1=fmt(await shotTime(fa)),t0=fmt(await shotTime(fc)); // 화면 v9: 촬영 시각은 숫자(ms) — EXIF 없으면 파일 날짜
     const box=document.createElement('div');document.body.appendChild(box);const pk=picker(box);const inp=box.querySelector('input[type=file]');
-    const dt=new DataTransfer();dt.items.add(new File([a],'c.jpg',{type:'image/jpeg',lastModified:Date.parse('2026-11-20T10:00:00+09:00')}));dt.items.add(new File([e],'a.jpg',{type:'image/jpeg',lastModified:Date.parse('2026-11-25T10:00:00+09:00')}));dt.items.add(new File([a],'b.jpg',{type:'image/jpeg',lastModified:Date.parse('2026-11-01T10:00:00+09:00')}));
+    const dt=new DataTransfer();dt.items.add(fc);dt.items.add(fa);dt.items.add(fb);
     inp.files=dt.files;inp.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,1500));
-    return {t1,t0,multi:inp.multiple,order:pk.files.map(x=>x.file.name),taken:pk.files.map(x=>x.taken),groups:byDay(pk.files).map(g=>g[0]+':'+g[1].length)}});
-  ok('현장소통 1: EXIF 촬영 날짜 읽기 (큰 엔디언) · EXIF 없으면 빈 값',r.t1==='2025-12-24 18:30:05'&&r.t0==='',JSON.stringify([r.t1,r.t0]));
+    return {t1,t0,multi:inp.multiple,order:pk.files.map(x=>x.file.name),taken:pk.files.map(x=>fmt(x.t)),days:[...new Set(pk.files.map(x=>fmt(x.t).slice(0,10)))].length,btn:box.querySelector('button').textContent}});
+  ok('현장소통 1: EXIF 촬영 날짜 읽기 (큰 엔디언) · EXIF 없으면 파일 날짜',r.t1==='2025-12-24 18:30:05'&&r.t0==='2026-11-20 10:00:00',JSON.stringify([r.t1,r.t0]));
   ok('현장소통 2: 여러 장 한 번에 고르기 (multiple)',r.multi);
   ok('현장소통 3: 고른 사진은 촬영 날짜 순 (a 2025-12-24 → b 11/01 → c 11/20)',JSON.stringify(r.order)==='["a.jpg","b.jpg","c.jpg"]',JSON.stringify(r)+'');
-  ok('현장소통 4: 촬영 날짜별 묶음 3일',r.groups.length===3,JSON.stringify(r.groups));
-  // 직원 출입증 화면에는 숨기기 버튼 없음, 비밀번호(대표) 화면에는 있음 — 미리보기 시험 현장
+  ok('현장소통 4: 3장 모두 들어감 (촬영 날짜 3일 · 버튼에 ‘3장 · 찍은 순서대로’)',r.days===3&&/3장 · 찍은 순서대로/.test(r.btn),JSON.stringify([r.taken,r.btn]));
+  // 대표(비밀번호) 화면에만 '사진 지우기 (대표)' — 직원 출입증 화면에는 없음 (중요 표시는 있음). 미리보기 시험 현장
+  // [의도 확인 필요] 글 숨기기 버튼(data-hide)은 화면 v9 가 직원 화면에도 보여 줌 (옛 v7 화면은 대표만)
   const btn=async(staff)=>{await p.evaluate(x=>{if(x){localStorage.removeItem('field_pw');sessionStorage.setItem('field_tk','tkPreview123');sessionStorage.setItem('field_preview_tk','tkPreview123')}else{localStorage.setItem('field_pw','0000');sessionStorage.removeItem('field_tk');sessionStorage.removeItem('field_preview_tk')}},staff);
-    await p.goto('https://soo-cpu.github.io/card/field/?admin&s=WI7ijOiMEPHIOf4vjkqEPmG2');await wait(2500);return p.evaluate(()=>({hide:document.querySelectorAll('[data-hide]').length,hc:document.querySelectorAll('[data-hc]').length,imp:document.querySelectorAll('[data-imp]').length}))};
+    await p.goto('https://soo-cpu.github.io/card/field/?admin&s=WI7ijOiMEPHIOf4vjkqEPmG2');await wait(2500);return p.evaluate(()=>({phdel:document.querySelectorAll('[data-phdel]').length,hide:document.querySelectorAll('[data-hide]').length,imp:document.querySelectorAll('[data-imp]').length}))};
   const boss=await btn(false),staff=await btn(true);
-  ok('현장소통 5: 대표(비밀번호) 화면 = 숨기기 버튼 있음 / 직원 출입증 화면 = 숨기기 없음(중요 표시는 있음)',boss&&boss.hide>0&&staff&&staff.hide===0&&staff.hc===0&&staff.imp>0,JSON.stringify({boss,staff}));
-  ok('현장소통: 화면 오류 없음',!errs.length,errs.slice(0,3).join(' | '));
+  ok('현장소통 5: 대표(비밀번호) 화면 = ‘사진 지우기 (대표)’ 있음 / 직원 출입증 화면 = 없음 (중요 표시는 있음)',boss&&boss.phdel>0&&staff&&staff.phdel===0&&staff.imp>0,JSON.stringify({boss,staff}));
+  ok('현장소통: 화면 오류·브라우저 대화상자 없음',!errs.length&&!dialogs.length,errs.slice(0,3).join(' | ')+dialogs.join());
   await ctx.close()}
 
 (async()=>{const b=await chromium.launch();
