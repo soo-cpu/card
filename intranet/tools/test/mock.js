@@ -1,4 +1,8 @@
-(()=>{const U=window.__MOCKUSER;const BC=new BroadcastChannel("mockdb");const LK="mockdb";
+(()=>{const U=window.__MOCKUSER;
+// 대표 첫 화면 (v0.99-53 E 대표 현황판): 실제로는 대표가 주소에 메뉴 없이 들어오면 현황판(#ceo)이 먼저 열림. 예전 시험들은 '홈에서 시작'으로 짜여 있어
+// 가짜 저장소에서는 기본을 '이 기기 첫 화면 = 기존 홈'(화면에 있는 설정 hf-ceo-first)으로 두고, 현황판 시험(ceo_board_test.js)만 window.__CEOFIRST=true 로 실제 기본값을 봄
+if(!window.__CEOFIRST){try{if(!localStorage.getItem("hf-ceo-first"))localStorage.setItem("hf-ceo-first","home")}catch(e){}}
+const BC=new BroadcastChannel("mockdb");const LK="mockdb";
 const RULES=JSON.parse(localStorage.getItem("mockrules")||"[]");
 const lv={view:1,interact:2,admin:3,owner:4};const myLv=U.isOwner?4:2;
 const ld=()=>{try{return JSON.parse(localStorage.getItem(LK)||"{}")}catch(e){return {}}};

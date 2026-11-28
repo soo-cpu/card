@@ -3504,6 +3504,7 @@ function redItems(){if(!me.admin)return [];const L=[],T=todayStr(),ack=k=>!!REDA
   Object.values(ASKQ).flat().filter(r=>r.status==="대표 전달").forEach(r=>L.push({k:"askq:"+r.uid+":"+r.did,kind:"직원 질문",title:(r.name||"직원")+": "+String(r.q||"").slice(0,80),sub:"물어보기에서 대표에게 전달됨 · "+String(r.screen||"").slice(0,60),at:r.at}));
   // 5. 직원이 지운 것 (기존 휴지통 빨간 숫자도 그대로)
   try{delList().forEach(n=>L.push({k:"del:"+n.id,kind:"직원 삭제",title:(n.name||"직원")+" 님이 "+(n.what||"")+" 지움 · "+(n.title||""),sub:"되살리기는 ‘직원이 지운 것’ 창에서",at:n.at,del:1}))}catch(e){}
+  try{ceoRed(ack).forEach(x=>L.push(x))}catch(e){} // v0.99-53 E 대표 현황판: 늦어진 공정 · 미루는 결재
   return L.sort((a,b)=>(b.top||0)-(a.top||0))}
 function redDraw(){if(!me.admin){const b=document.getElementById("redFab");if(b)b.remove();return}if(mode==="shared"&&!me.id)return;try{redInit()}catch(e){}
   if(!document.getElementById("redCss")){const st=document.createElement("style");st.id="redCss";st.textContent=`@keyframes redBlink{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.7)}50%{box-shadow:0 0 0 10px rgba(198,40,40,0);filter:brightness(1.25)}}#redFab.on{background:#C62828!important;animation:redBlink 1.2s ease-in-out infinite}#redFab.off{background:#9e9e9e!important;opacity:.55}@media (prefers-reduced-motion:reduce){#redFab.on{animation:none}}@media print{#redFab{display:none!important}}body.cs-cust #redFab{display:none!important}`;document.head.appendChild(st)}
@@ -3884,11 +3885,11 @@ async function resolveNames(){
 
 // ===== 화면 =====
 const onlyMine=()=>mode==="shared"&&!me.admin&&((myStaff()||{}).scope==="담당 건만"||isTeam(myStaff()));
-function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="vlog"&&mode==="shared")return h;/* 퇴근 일지: 대표=직원별 요약 · 직원=본인 것만 */if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(h==="fdash"&&me.admin)return h;/* 경영 대시보드는 대표만 (대표 지시 2026-11-13 5번) */if(["fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks"&&me.admin)return h;/* 빈칸 목록은 대표만 (5·11번) */if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
+function route(){const h=(location.hash||"").slice(1);if(h==="calendar")return h;if(h==="vlog"&&mode==="shared")return h;/* 퇴근 일지: 대표=직원별 요약 · 직원=본인 것만 */if(h==="staff"&&onlyMine())return "home";if(h==="bonus"&&me.admin)return h;if(h==="fcost"&&canFcost())return h;if(h==="recv"&&canMoney())return h;if(h==="fdash"&&me.admin)return h;/* 경영 대시보드는 대표만 (대표 지시 2026-11-13 5번) */if(["fstate","cflow"].includes(h)&&canFin())return h;if(h==="myhr"&&mode==="shared"&&!me.admin)return h;if(h==="blanks"&&me.admin)return h;/* 빈칸 목록은 대표만 (5·11번) */if(h==="goal")return h;if(h==="sitedocs"&&mode==="shared")return h;if(h==="amtchk"&&me.admin)return h;if(h==="drvchg"&&me.admin)return h;if(h==="ceo"&&ceoOk())return h;/* v0.99-53 E 대표 현황판: 대표만 */if(h==="preview"&&me.admin&&!PV)return h;if(h==="mysign"&&canSignPage())return h;if(h==="fbox"&&canFbox())return h;return h==="home"||h==="forms"||h==="consult"||h==="imagegen"||MOD[h]?h:"home"}
 function renderNav(){
   const r=route();
   const cnt={projects:S.projects.filter(x=>["문의","상담","디자인","견적","계약","시공"].includes(x.stage)).length,approvals:S.approvals.filter(x=>canDecide(x)).length||apVis().filter(x=>["결재 대기","결재 진행"].includes(x.status)).length,sites:S.sites.filter(x=>x.status==="공사 중").length,customers:S.customers.filter(x=>(x.status||"진행중")==="진행중").length,quotes:S.quotes.filter(x=>!["계약","보류·종료"].includes(x.status)).length,as:S.as.filter(x=>x.status!=="완료").length,feedback:me.admin?S.feedback.filter(x=>["접수","진행 중"].includes(x.status||"접수")).length:0};
-  let h=`<a href="#home" ${r==="home"?'aria-current="page"':""}><span>홈</span>${badgeN()?`<span class="cnt" style="background:#c62828;color:#fff">${badgeN()}</span>`:""}</a>`,g="";
+  let h=ceoNavHTML(r)+`<a href="#home" ${r==="home"?'aria-current="page"':""}><span>홈</span>${badgeN()?`<span class="cnt" style="background:#c62828;color:#fff">${badgeN()}</span>`:""}</a>`,g="";
   NAV_ORDER.forEach(k=>{if(k==="staff"&&onlyMine()){h+=`<a href="#forms" ${r==="forms"?'aria-current="page"':""}><span>서식 자료실</span></a><a href="#myhr" ${r==="myhr"?'aria-current="page"':""}><span>내 인사 정보</span></a>`;return}if(MOD[k].grp!==g){g=MOD[k].grp;h+=`<div class="grp">${esc(g)}</div>`}
     if(k==="projects")h+=`<a href="#goal" ${r==="goal"?'aria-current="page"':""}><span>목표 관리</span></a>`;
     h+=`<a href="#${k}" ${k===r?'aria-current="page"':""}><span>${esc(MOD[k].nav)}</span>${cnt[k]?`<span class="cnt">${cnt[k]}</span>`:""}</a>`;
@@ -5387,6 +5388,7 @@ async function siteAutoSave(){if(PV||!me.admin||mode!=="shared"||!db)return;let 
 function render(){try{siteAutoFix()}catch(e){}try{setTimeout(()=>{phRefresh();pgRefresh();try{spRefresh()}catch(e){}try{gsRefresh()}catch(e){}},0)}catch(e){}
   if(mode==="shared"&&!me.admin&&!PV&&gatePassed&&!rosterLocked&&S.staff.length){const s=myStaff();if(!s||s.state==="퇴사"||s.intra==="사용 안 함"){rosterLocked=true;knock("명단에서 빠짐");lockScreen("접근할 수 없어요","직원 명단에서 빠졌거나 퇴사 처리된 계정이에요. 필요하면 대표에게 문의해 주세요.");return}}
   if(PV)pvApply();
+  try{ceoLand();ceoInit()}catch(e){} // v0.99-53 E 대표 현황판: 대표 첫 화면 · 8시·18시 숫자
   renderNav();
   {const nv=document.getElementById("nav");if(nv&&!nv.querySelector('a[href="#calendar"]')){const a=document.createElement("a");a.href="#calendar";if(location.hash==="#calendar")a.setAttribute("aria-current","page");a.innerHTML="<span>공용 캘린더</span>";const hm=nv.querySelector('a[href="#home"]');if(hm)hm.after(a);else nv.prepend(a)}}
   try{calInit()}catch(e){}try{signInit()}catch(e){}try{dcInit()}catch(e){}try{notiInit()}catch(e){}try{spListen()}catch(e){}try{calMiniDraw()}catch(e){}try{redDraw()}catch(e){}setTimeout(()=>{try{gjScan()}catch(e){}},3000);
@@ -5396,7 +5398,7 @@ function render(){try{siteAutoFix()}catch(e){}try{setTimeout(()=>{phRefresh();pg
   const banner=pvBar()+pracBanner()+(mode==="shared"&&!me.admin&&["home","projects","customers","quotes","sites"].includes(r)?syncNoteHTML():"");
   const focusQ=document.activeElement&&document.activeElement.id==="q",focusG=document.activeElement&&document.activeElement.id==="gs";
   document.body.classList.toggle("consulting",r==="consult"&&!!CS);document.body.classList.toggle("cs-cust",r==="consult"&&!!CS&&CS.cust);
-  $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="drvchg"?renderDrvchg():r==="preview"?renderPreview():r==="mysign"?renderMysign():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="vlog"?renderVlog():r==="goal"?renderGoal():r==="calendar"?renderCal():renderModule(r));
+  $("#view").innerHTML=banner+(r==="consult"&&CS?"":gsBarHTML())+(r==="home"?renderHome():r==="forms"?renderForms():r==="consult"?renderConsult():r==="imagegen"?renderImageGen():r==="myhr"?renderMyHr():r==="blanks"?renderBlanks():r==="fbox"?drvWrapFbox():r==="fdash"?renderFdash():r==="fstate"?renderFstate():r==="sitedocs"?renderSitedocs():r==="cflow"?renderCflow():r==="amtchk"?renderAmtchk():r==="drvchg"?renderDrvchg():r==="ceo"?renderCeo():r==="preview"?renderPreview():r==="mysign"?renderMysign():r==="bonus"?renderBonus():r==="fcost"?renderFcost():r==="recv"?renderRecv():r==="vlog"?renderVlog():r==="goal"?renderGoal():r==="calendar"?renderCal():renderModule(r));
   if(focusG){const g=$("#gs");if(g){g.focus();g.setSelectionRange(g.value.length,g.value.length)}}
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
 }
@@ -5988,7 +5990,7 @@ const dcExIds=()=>(dcCfg().exFolders||[]).map(l=>String(l).trim().split(/\s+/)[0
 // 보이는 소식인지: 공유 드라이브(drv 있음) + 제외 폴더(부모·위 폴더) 아님 + 제외 이름 아님 · 대표 본인 변경은 토글
 function dcOk(i,withMine){const c=dcCfg();if(!i||!i.drv)return false;const ex=dcExIds(),anc=[i.pid].concat(i.anc||[]);if(anc.some(a=>a&&ex.includes(a)))return false;
   const nm=String(i.t||"");if((c.exNames||[]).some(p=>p&&nm.includes(p)))return false;if(!withMine&&((c.me||[]).includes(i.who)||(c.me||[]).includes(dcWho(i))))return false;return true}
-function dcInit(){if(DC.on||!db||!me.admin||mode!=="shared"||PV)return;DC.on=true;const rr=()=>{if(route()==="drvchg")render();else{try{renderNav()}catch(e){}}};
+function dcInit(){if(DC.on||!db||!me.admin||mode!=="shared"||PV)return;DC.on=true;const rr=()=>{if(route()==="drvchg"||route()==="ceo")render();else{try{renderNav()}catch(e){}}};
   try{db.collection("acct/_drv/chg").onSnapshot(s=>{DC.days=s.docs.map(d=>Object.assign({_id:d.id},d.data()));rr()},()=>{})}catch(e){}
   try{db.doc("acct/_drv/chgst/s").onSnapshot(x=>{DC.st=x&&x.exists?x.data():null;rr()},()=>{})}catch(e){}
   try{db.doc("acct/_drv/chgcfg/c").onSnapshot(x=>{DC.cfg=x&&x.exists?x.data():null;rr()},()=>{})}catch(e){}
@@ -6081,6 +6083,205 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 });
 document.addEventListener("toggle",e=>{const el=e.target;if(el&&el.dataset&&el.dataset.dccfgbox)DC.cfgOpen=el.open},true);
 document.addEventListener("change",e=>{const el=e.target;if(!el)return;if(el.id==="dcWho"){DC.who=el.value;render()}});
+// ===== v0.99-53 E. 대표 현황판 (다음 지시 2026-11-28 v11 · E) — 단톡방 안 봐도 한눈에 =====
+// 대표(관리자)만: 메뉴·주소(#ceo)·카드·저장 칸 전부. 직원 화면(실제 로그인·미리 보기)에는 메뉴도 주소도 없음 (route 가 홈으로 돌림) · 성과금 정보 없음
+// 저장 칸: acct/_ceo/snap/cur 한 장 (acct 는 대표 계정만 읽고 씀 — 자료 변경 소식 acct/_drv 와 같은 자리). 센 숫자만 담는 스냅숏이라 원본은 손대지 않음 · 지우는 일 없음
+// 숫자 갱신: 아침 8시·저녁 6시(한국 시간) 기준. 대표 화면이 열렸을 때 마지막으로 센 시각이 가장 최근 기준 시각보다 오래됐으면 다시 세어 저장, 아니면 저장된 숫자를 그대로 보여 줌
+//   (서버 예약 작업·AI 요약 없음 — 이미 화면에 내려와 있는 자료를 세기만 함) · '지금 다시 세기' 는 손으로
+// 알림: 늦어진 공정 · 미루는 결재(대표 차례로 CEO_AP_SLOW_DAYS 일 넘게) 두 가지만 — 현황판 맨 위 빨간 줄 + 기존 '대표 확인'(빨간 종) 목록. 밖으로 나가는 문자·메일·푸시 없음
+// 다른 묶음과 느슨하게: v11SpecSummary(A · 고객 확인 안 된 확정본) · v11TimelineToday(B · 오늘 현장 사진·메모) 가 있으면 쓰고, 없으면 기존 자료로 대신하거나 '준비 중'
+const CEO_AP_SLOW_DAYS=2;   // 미루는 결재: 대표 차례로 이 날수 넘게 기다린 것
+const CEO_SLOT_HOURS=[8,18]; // 숫자 갱신 기준 시각 (한국 시간)
+const CEO_DUE_DAYS=30;      // 입금 예정: 오늘부터 이 날수 안의 수금 일정
+const CEO_LMAX=30;          // 숫자마다 목록에 담는 줄 수 (스냅숏 크기 지킴)
+const CEO_PARTS=[["res","주거 파트","ártico studio",["주거"]],["gov","관공서 파트","홈퍼니싱",["관공서·학교"]]]; // 프로젝트 '구분' 칸 → 파트 (그 밖·빈칸은 '구분 없음'으로 따로 셈)
+const CEO_STAFF=["정진혁","이봄이","채진아"];
+const CEO_ACTIVE=["문의","상담","디자인","견적","계약","시공"]; // 진행 중 (메뉴의 프로젝트 숫자와 같은 기준)
+const CEO_DONE=["준공","사후관리","종료","미계약 종료"];       // 공정이 끝난 단계 — 늦은 공정으로 세지 않음
+const CEO_WORK_COLS=["projects","quotes","sites","customers","reports","approvals","as","manuals","notices","feedback"];
+const CEO_PATH="acct/_ceo/snap",CEO_FIRST_KEY="hf-ceo-first";
+let CEO={snap:null,loaded:false,on:false,busy:false,landed:false,t0:0,tries:0};
+const ceoOk=()=>!!(me.admin&&!PV);
+const ceoPartOf=cat=>{const c=String(cat||"").trim();const p=CEO_PARTS.find(x=>x[3].includes(c));return p?p[0]:"etc"};
+const ceoPartName=k=>{const p=CEO_PARTS.find(x=>x[0]===k);return p?p[1]:"그 밖·구분 없음"};
+// 가장 최근 기준 시각 (오늘 08:00 또는 18:00, 그 전이면 어제 18:00 · 한국 시간) → ISO
+function ceoSlotAt(ms){const k=new Date((ms==null?Date.now():ms)+9*36e5),h=k.getUTCHours();let d=Date.UTC(k.getUTCFullYear(),k.getUTCMonth(),k.getUTCDate());const H=CEO_SLOT_HOURS.slice().sort((a,b)=>a-b);
+  let hh=null;for(const x of H)if(h>=x)hh=x;if(hh===null){hh=H[H.length-1];d-=864e5}return new Date(d+hh*36e5-9*36e5).toISOString()}
+const ceoStale=(s,ms)=>!s||!s.at||String(s.at)<ceoSlotAt(ms);
+const ceoKst=iso=>{const t=new Date(iso||"");if(isNaN(t))return "";const k=new Date(t.getTime()+9*36e5);return (k.getUTCMonth()+1)+"월 "+k.getUTCDate()+"일 "+String(k.getUTCHours()).padStart(2,"0")+":"+String(k.getUTCMinutes()).padStart(2,"0")};
+const ceoMoney=n=>{n=Math.round(num(n));if(!n)return "0원";const a=Math.abs(n),sg=n<0?"-":"";if(a>=1e8){const m=Math.round((a%1e8)/1e4);return sg+Math.floor(a/1e8)+"억"+(m?" "+m.toLocaleString("ko-KR")+"만":"")+"원"}if(a>=1e4)return sg+Math.round(a/1e4).toLocaleString("ko-KR")+"만원";return sg+a.toLocaleString("ko-KR")+"원"};
+// A·B 묶음이 내놓는 요약 (있을 때만 · 함수든 배열이든) — 여기서 만들지 않음
+function ceoExt(name){let v;try{v=window[name]}catch(e){}if(typeof v==="function"){try{v=v()}catch(e){v=null}}return Array.isArray(v)?v:null}
+const ceoBoss=a=>["최윤수","신혜현","대표"].includes(curApprover(a)||"대표"); // 지금 차례가 대표 (신혜현 칸도 최윤수 계정으로 승인)
+const ceoPending=a=>!!a&&["결재 대기","결재 진행"].includes(a.status||"결재 대기");
+const ceoApSince=a=>((a.history||[]).slice(-1)[0]||{}).at||a.updatedAt||a.createdAt||"";
+// 세기: 화면에 이미 내려와 있는 자료(프로젝트·공정표·전자결재·미수금 표·수금 일정·현장 사진·프로젝트 기록·현장 일지·개선 요청함)만 — 새로 읽거나 AI 를 부르지 않음
+function ceoCount(){const now=Date.now(),at=new Date(now).toISOString(),T=kday(at);
+  const mk=()=>({active:{n:0,L:[]},today:{n:0,L:[]},late:{n:0,L:[]},ap:{n:0,slow:0,L:[]},recv:{n:0,sum:0,L:[]},due:{n:0,sum:0,over:0,overSum:0,L:[]},tl:{n:0,photo:0,memo:0,L:[]},spec:{n:0,L:[]}});
+  const P={res:mk(),gov:mk(),etc:mk()};const add=(box,row)=>{box.n++;if(box.L.length<CEO_LMAX)box.L.push(row)};
+  const nm=p=>String((p&&(p.title||p.custName||p.no))||"(이름 없음)").slice(0,40),pk=p=>ceoPartOf(p&&p.cat),byId=id=>(S.projects||[]).find(x=>x.id===id);
+  // 1) 프로젝트: 진행 중 · 오늘 공정 · 늦어진 공정 (공정표 sched 의 공정별 마지막 끝 날짜가 지났는데 그 공정 진행률이 100% 가 아님)
+  (S.projects||[]).forEach(p=>{const B=P[pk(p)];
+    if(CEO_ACTIVE.includes(p.stage))add(B.active,{c:"projects",id:p.id,t:nm(p),s:(p.no||"")+" · "+(p.stage||"")+(p.mgr?" · "+p.mgr:"")});
+    const sc=(Array.isArray(p.sched)?p.sched:[]).filter(x=>x&&x.proc&&x.start);if(!sc.length||CEO_DONE.includes(p.stage))return;
+    const td=sc.filter(x=>String(x.start)<=T&&T<=String(x.end||x.start));if(td.length)add(B.today,{c:"projects",id:p.id,t:nm(p),s:[...new Set(td.map(x=>x.proc))].join(" · ")});
+    const last={};sc.forEach(x=>{const e=String(x.end||x.start);if(!last[x.proc]||last[x.proc]<e)last[x.proc]=e});let st=null;try{st=pgState(p)}catch(e){}
+    if(st&&st.all>=100)return;const late=Object.entries(last).filter(([proc,e])=>e<T&&!(st&&st.cur[proc]&&st.cur[proc].pct>=100)).sort((a,b)=>a[1].localeCompare(b[1]));if(!late.length)return;
+    const dd=e=>Math.max(1,Math.round((Date.parse(T)-Date.parse(e))/864e5));
+    add(B.late,{c:"projects",id:p.id,t:nm(p),b:1,end:late[late.length-1][1],days:dd(late[0][1]),s:late.slice(0,4).map(([proc,e])=>proc+" "+e.slice(5).replace("-","/")+" 끝 예정 · "+dd(e)+"일 지남").join(", ")+(late.length>4?" 외 "+(late.length-4)+"개":"")})});
+  // 2) 결재 대기 (대표 차례) · 그중 CEO_AP_SLOW_DAYS 일 넘은 것 = 미루는 결재
+  (S.approvals||[]).filter(a=>ceoPending(a)&&ceoBoss(a)).forEach(a=>{const p=pjOf(a.pno),B=P[p?pk(p):"etc"],t0=new Date(ceoApSince(a)||now).getTime(),hrs=Math.max(0,Math.floor((now-(isNaN(t0)?now:t0))/36e5)),slow=hrs>=CEO_AP_SLOW_DAYS*24;if(slow)B.ap.slow++;
+    add(B.ap,Object.assign({c:"approvals",id:a.id,t:String((a.kind||"")+" · "+(a.title||"")).slice(0,60),s:"기안 "+who(a.createdBy)+(num(a.amount)?" · "+won(num(a.amount)):"")+" · "+(hrs>=24?Math.floor(hrs/24)+"일째":hrs+"시간째")+" 대기"+(a.pno?" · "+a.pno:"")},slow?{b:1,slow:1}:{}))});
+  // 3) 미수금: 캐시플로우 엑셀 그날 시트의 미수금 표 (미수금 화면과 같은 표 · 업체명으로 프로젝트를 찾아 파트를 정함, 못 찾으면 구분 없음)
+  let recvDay="",recvTotal=null;try{const A=arNow();if(A){recvDay=A.d;recvTotal=arTotal(A);(A.ar.rows||[]).forEach(r=>{const left=num(r.left);if(!left)return;let lp=null;try{lp=arLink(r.name,r.mon).p}catch(e){}const B=P[lp?pk(lp):"etc"];B.recv.sum+=left;add(B.recv,{c:lp?"projects":"",id:lp?lp.id:"",t:String(r.name||"").slice(0,40),s:won(left)+(lp?" · "+(lp.no||""):" · 프로젝트 미연결")})})}}catch(e){}
+  // 4) 입금 예정: 프로젝트 수금 일정(pays)에서 아직 덜 받은 단계 — 오늘부터 CEO_DUE_DAYS 일 안 · 예정일이 지난 것은 '기한 지남'으로 따로
+  try{const lim=kday(new Date(now+CEO_DUE_DAYS*864e5).toISOString());recvList().forEach(r=>{const B=P[pk(r.p)];r.steps.forEach(st=>{if(!(st.left>0)||!st.due)return;const due=String(st.due).slice(0,10);
+      if(due<T){B.due.over++;B.due.overSum+=st.left;if(B.due.L.length<CEO_LMAX)B.due.L.push({c:"projects",id:r.p.id,t:nm(r.p),b:1,s:(st.step||"")+" "+won(st.left)+" · 예정 "+due.slice(5).replace("-","/")+" · 기한 지남"})}
+      else if(due<=lim){B.due.sum+=st.left;add(B.due,{c:"projects",id:r.p.id,t:nm(r.p),s:(st.step||"")+" "+won(st.left)+" · 예정 "+due.slice(5).replace("-","/")})}})})}catch(e){}
+  // 5) 오늘 올라온 현장 사진·메모: B 타임라인이 있으면 그것, 없으면 기존 자료(현장 사진 · 프로젝트 기록 · 현장 일지)
+  const TL=ceoExt("v11TimelineToday");let tlSrc="기존";
+  if(TL){tlSrc="B";TL.forEach(e=>{if(!e)return;const p=byId(e.pid),B=P[p?pk(p):"etc"],ph=/사진|photo/i.test(String(e.kind||""));if(ph)B.tl.photo++;else B.tl.memo++;const tt=/^\d{4}-/.test(String(e.t||""))?khm(e.t):String(e.t||"");
+      add(B.tl,{c:p?"projects":"",id:p?p.id:"",t:String(e.name||(p?nm(p):"")||"현장").slice(0,40),s:[tt,e.kind,String(e.text||"").slice(0,60),e.who].filter(Boolean).join(" · ")})})}
+  else (S.projects||[]).forEach(p=>{let ph=0,mm=0;try{ph=phList(p).filter(e=>phImg(e)&&(e.d||kday(e.at))===T).length}catch(e){}
+      mm+=(p.plog||[]).filter(x=>x&&kday(x.at)===T).length;(S.sites||[]).filter(s=>s.pno&&s.pno===p.no).forEach(s=>{mm+=(s.logs||[]).filter(l=>l&&String(l.d||"").slice(0,10)===T).length});
+      if(!ph&&!mm)return;const B=P[pk(p)];B.tl.photo+=ph;B.tl.memo+=mm;add(B.tl,{c:"projects",id:p.id,t:nm(p),s:[ph?"사진 "+ph+"장":"",mm?"메모·일지 "+mm+"건":""].filter(Boolean).join(" · ")})});
+  // 6) 고객 확인 안 된 확정본: A 요약이 있을 때만 (확정은 됐는데 고객이 아직 안 봄 · 확정 뒤 바뀐 것 표시)
+  const SP=ceoExt("v11SpecSummary"),specReady=!!SP;
+  if(SP)SP.forEach(e=>{if(!e||!e.confirmedAt||e.custSeenAt)return;const p=byId(e.pid),k=p?pk(p):/관공|학교/.test(String(e.part||""))?"gov":/주거/.test(String(e.part||""))?"res":"etc";
+    add(P[k].spec,Object.assign({c:p?"projects":"",id:p?p.id:"",t:String(e.name||(p?nm(p):"")||"현장").slice(0,40),s:[e.ver,"확정 "+(ceoKst(e.confirmedAt)||String(e.confirmedAt).slice(0,10)),e.confirmedBy,e.changedAfterConfirm?"확정 뒤 바뀜":""].filter(Boolean).join(" · ")},e.changedAfterConfirm?{b:1}:{}))});
+  // 7) 직원별: 오늘 등록·수정한 일 (각 줄의 만든 사람·고친 사람 칸) · 오늘 남긴 프로젝트 기록·사진 · 개선 요청('불편해요') 처리 상태
+  const staff=CEO_STAFF.map(name=>{const s=staffByName(name)||{},u=s.uid||"";const W=[];let memo=0,photo=0;const fb={wait:0,doing:0,ask:0,done:0,hold:0,L:[]};
+    if(u){CEO_WORK_COLS.forEach(col=>(S[col]||[]).forEach(r=>{if(!r)return;const tt=String(r.title||r.name||r.custName||r.qno||r.site||r.content||r.body||r.no||r.d||"").slice(0,40);
+        if(r.createdBy===u&&r.createdAt&&kday(r.createdAt)===T)W.push({c:col,id:r.id,t:tt,s:((MOD[col]||{}).nav||col)+" · 등록 "+khm(r.createdAt),at:r.createdAt});
+        else{const by=r.updatedBy||r.__by,ua=r.updatedAt||r.__at;if(by===u&&ua&&kday(ua)===T)W.push({c:col,id:r.id,t:tt,s:((MOD[col]||{}).nav||col)+" · 수정 "+khm(ua),at:ua})}}));
+      (S.projects||[]).forEach(p=>{memo+=(p.plog||[]).filter(x=>x&&x.name===name&&kday(x.at)===T).length;photo+=(p.photos||[]).filter(e=>e&&(e.by===u||e.byName===name)&&(e.d||kday(e.at))===T).length});
+      (S.feedback||[]).filter(x=>x&&x.createdBy===u).forEach(x=>{const st=x.status||"접수",k=st==="접수"?"wait":st==="진행 중"?"doing":st==="형 확인 필요"?"ask":st==="보류"?"hold":"done";fb[k]++;if(k!=="done"&&fb.L.length<10)fb.L.push(Object.assign({c:"feedback",id:x.id,t:String(x.body||"").slice(0,50),s:st+" · "+String(x.createdAt||"").slice(0,10)},k==="ask"?{b:1}:{}))})}
+    W.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    return {name,pos:s.pos||s.title||"",linked:!!u,work:{n:W.length,L:W.slice(0,CEO_LMAX).map(x=>({c:x.c,id:x.id,t:x.t,s:x.s}))},memo,photo,fb}});
+  return {v:1,at,slot:ceoSlotAt(now),day:T,by:"auto",parts:P,staff,recvDay,recvTotal,tlSrc,specReady}}
+// 저장된 스냅숏 읽기 (실시간 구독은 쓰지 않음 — 화면당 구독 수를 아낌 · 대표 한 사람만 보는 칸)
+async function ceoLoad(){try{const g=await db.doc(CEO_PATH+"/cur").get();const d=g&&g.exists?g.data():null;if(d&&d.parts&&(!CEO.snap||String(d.at||"")>String(CEO.snap.at||"")))CEO.snap=d}catch(e){}CEO.loaded=true}
+const ceoRedraw=()=>{try{if(route()==="ceo")render();else{renderNav();redDraw()}}catch(e){}};
+function ceoInit(){if(CEO.on||!db||!ceoOk()||mode!=="shared"||!me.id)return;CEO.on=true;CEO.t0=Date.now();
+  ceoLoad().then(ceoRedraw);setTimeout(ceoAuto,6000);setInterval(ceoAuto,5*6e4)}
+// 기준 시각(8시·18시)이 지났는지 보고, 지났으면 다시 세어 저장 (자료가 내려올 시간을 6초 준 뒤 · 다른 기기가 먼저 셌으면 그 숫자를 씀)
+async function ceoAuto(){if(!db||!ceoOk()||mode!=="shared"||CEO.busy||Date.now()-CEO.t0<5500)return;
+  if(!CEO.loaded||!cfgLoaded||!finReady||!(S.staff||[]).length){if(CEO.tries++<10)setTimeout(ceoAuto,2500);if(CEO.tries<=10)return} /* 저장된 숫자·기본 자료가 아직 안 내려옴 → 조금 뒤 다시 (열 번까지, 그래도 없으면 있는 자료로) */
+  if(!ceoStale(CEO.snap))return;
+  await ceoRecount("auto")}
+async function ceoRecount(by){if(!ceoOk()||CEO.busy)return;CEO.busy=true;ceoRedraw();
+  try{if(by==="auto"&&db&&mode==="shared"){await ceoLoad();if(!ceoStale(CEO.snap))return}
+    const s=ceoCount();s.by=by==="manual"?"manual":"auto";s.byName=me.name||"대표";
+    if(db&&mode==="shared"){try{await db.collection(CEO_PATH).doc("cur").set(s)}catch(e){s.unsaved=1;toast("현황판 숫자를 저장하지 못했어요 (화면에는 보여요)")}}
+    CEO.snap=s;if(by==="manual"){toast("지금 자료로 다시 셌어요");try{knock("열람",{what:"대표 현황판 다시 세기"})}catch(e){}}}
+  catch(e){toast("현황판 숫자를 세지 못했어요 · "+String((e&&e.message)||"").slice(0,40))}
+  finally{CEO.busy=false;ceoRedraw()}}
+// 대표의 첫 화면: 주소에 메뉴가 없이 들어오면 현황판부터 (기존 홈은 메뉴 '홈'·현황판 위 버튼으로 한 번에) · 이 기기에서 '기존 홈 먼저'를 고르면 그대로 홈
+function ceoLand(){if(CEO.landed||!ceoOk()||mode!=="shared"||!me.id)return;CEO.landed=true;const h=location.hash||"";
+  if((h===""||h==="#")&&lsGet(CEO_FIRST_KEY)!=="home"){try{history.replaceState(history.state,"","#ceo");navCurHash=navHashNow()}catch(e){}}}
+const ceoSnapNow=()=>CEO.snap||(mode!=="shared"||!db?ceoCount():null); // 연습 모드(저장소 없음): 저장 없이 바로 세어 보여 줌
+// 알림 두 가지 (스냅숏 기준 · 결재는 그 사이 처리된 것을 빼고)
+function ceoAlerts(s){s=s||CEO.snap;if(!s||!s.parts)return {late:[],slow:[]};const late=[],slow=[];
+  Object.keys(s.parts).forEach(k=>{((s.parts[k].late||{}).L||[]).forEach(x=>{const p=(S.projects||[]).find(y=>y.id===x.id);if(p&&CEO_DONE.includes(p.stage))return;late.push(x)});
+    ((s.parts[k].ap||{}).L||[]).filter(x=>x.slow).forEach(x=>{const a=(S.approvals||[]).find(y=>y.id===x.id);if((S.approvals||[]).length&&!(a&&ceoPending(a)&&ceoBoss(a)))return;slow.push(x)})});
+  return {late,slow}}
+// 기존 '대표 확인'(빨간 종) 목록에 얹는 줄 — 늦어진 공정은 '확인함'을 누르면 빠지고(다른 공정이 또 늦어지면 다시 뜸), 결재는 처리하면 빠짐
+function ceoRed(ack){if(!ceoOk())return [];const s=CEO.snap;if(!s)return [];const A=ceoAlerts(s),L=[],base=ceoKst(s.slot)+" 기준";
+  A.late.forEach(x=>{const k=("ceolate-"+x.id+"-"+(x.end||"")).replace(/[^A-Za-z0-9_\-:.]/g,"_");if(ack(k))return;L.push({k,top:1,kind:"공정 늦음",title:x.t+" · "+x.s,sub:"대표 현황판 "+base+" · 공정 진행률을 100%로 올리거나 공정표 날짜를 고치면 빠져요",at:x.end||s.day,open:["projects",x.id]})});
+  if(A.slow.length)L.push({k:"",top:1,kind:"결재 대기",title:"["+CEO_AP_SLOW_DAYS+"일 넘음] 대표 차례 결재 "+A.slow.length+"건이 미뤄지고 있어요",sub:A.slow.slice(0,3).map(x=>x.t).join(" / ")+(A.slow.length>3?" 외 "+(A.slow.length-3)+"건":"")+" · 대표 현황판 "+base,at:s.at,go:"#approvals"});
+  return L}
+function ceoNavHTML(r){if(!ceoOk())return "";let n=0;try{const A=ceoAlerts();n=A.late.length+A.slow.length}catch(e){}
+  return `<a href="#ceo" ${r==="ceo"?'aria-current="page"':""}><span>대표 현황판</span>${n?`<span class="cnt" style="background:#c62828;color:#fff">${n}</span>`:""}</a>`}
+function ceoCss(){if(document.getElementById("ceoCss"))return;const st=document.createElement("style");st.id="ceoCss";st.textContent=`
+.ceo-parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.ceo-part{padding:12px 14px}.ceo-part h2{margin:0 0 8px;font-size:17px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.ceo-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.ceo-n{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:6px 9px;display:grid;gap:0;min-width:0;background:var(--panel)}
+.ceo-n:focus-visible{outline:2px solid var(--accent);outline-offset:1px}.ceo-n:hover{background:var(--tint)}
+.ceo-n span,.ceo-n small,.ceo-n b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ceo-n span{font-size:12px;color:var(--sub)}.ceo-n small{font-size:11px;color:var(--sub);min-height:15px}
+.ceo-n b{font-size:19px;line-height:1.25;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}
+.ceo-n.zero b{color:var(--sub);font-weight:700}
+.ceo-n.bad{border-color:var(--bad);background:var(--bad-bg)}.ceo-n.bad b,.ceo-n.bad span,.ceo-n.bad small{color:var(--bad)}
+.ceo-alert{border:2px solid var(--bad);background:var(--bad-bg);color:var(--bad);border-radius:12px;padding:10px 12px;display:grid;gap:4px;margin:10px 0;font-size:14px}
+.ceo-alert b{font-size:15px}.ceo-alert button{all:unset;cursor:pointer;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.ceo-alert button:focus-visible{outline:2px solid var(--bad)}
+.ceo-okline{color:var(--ok);font-size:13px;margin:8px 0}
+.ceo-etc h2,.ceo-staff h2,#ceoDrv h2{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+.ceo-lines{margin-top:8px;display:grid;gap:2px;font-size:13px;color:var(--sub)}.ceo-lines .bad{color:var(--bad);font-weight:600}.ceo-lines div{overflow-wrap:anywhere}
+.ceo-etc .chips{align-items:center}.ceo-chip{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px}.ceo-chip.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-bg)}
+.ceo-srow{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr);gap:6px 12px;padding:9px 0;border-top:1px solid var(--line);align-items:start}
+.ceo-srow:first-of-type{border-top:0}.ceo-srow button{all:unset;cursor:pointer;display:block;min-width:0;overflow-wrap:anywhere}.ceo-srow button:focus-visible{outline:2px solid var(--accent)}
+.ceo-srow small{display:block;color:var(--sub);font-size:12px;overflow-wrap:anywhere}
+.ceo-list .item{grid-template-columns:minmax(0,1fr) auto}.ceo-list .item .t b{white-space:normal;overflow-wrap:anywhere}.ceo-list .item .t small{display:block;white-space:normal;overflow-wrap:anywhere}
+.ceo-list .item.bad .t b{color:var(--bad)}
+@media (max-width:860px){.ceo-parts{grid-template-columns:minmax(0,1fr);gap:10px;margin:10px 0}.ceo-part{padding:10px 12px}.ceo-srow{grid-template-columns:minmax(0,1fr)}
+  body:not(.navall):not(.pcview) .nav>a[href="#ceo"]{display:flex!important}
+  body.pcview .ceo-parts{grid-template-columns:repeat(2,minmax(0,1fr))}body.pcview .ceo-srow{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr)}}`;document.head.appendChild(st)}
+function ceoTile(pk,key,label,val,sub,cls){return `<button type="button" class="ceo-n ${cls||""}" data-ceolist="${pk}|${key}" aria-label="${esc(label+" "+val+(sub?" · "+sub:""))} · 목록 보기"><span>${esc(label)}</span><b>${esc(val)}</b><small>${esc(sub||"")}</small></button>`}
+function ceoPartHTML(s,k){const P=CEO_PARTS.find(x=>x[0]===k),B=s.parts[k];const z=n=>n?"":"zero";
+  const tl=B.tl.photo||B.tl.memo?"사진 "+B.tl.photo+" · 메모 "+B.tl.memo:"0건";
+  return `<section class="card ceo-part" data-ceopart="${k}"><h2>${esc(P[1])} <small class="muted">${esc(P[2])} · 구분 ‘${esc(P[3].join("·"))}’</small></h2><div class="ceo-stats">
+   ${ceoTile(k,"active","진행 중 프로젝트",B.active.n+"건","문의~시공",z(B.active.n))}
+   ${ceoTile(k,"today","오늘 공정 있는 현장",B.today.n+"곳",B.today.L.slice(0,2).map(x=>x.t).join(", "),z(B.today.n))}
+   ${ceoTile(k,"late","공정 늦어진 현장",B.late.n+"곳",B.late.n?"끝 날짜 지남 · 완료 아님":"늦은 공정 없음",B.late.n?"bad":"zero")}
+   ${ceoTile(k,"ap","결재 대기 (형 차례)",B.ap.n+"건",B.ap.slow?CEO_AP_SLOW_DAYS+"일 넘음 "+B.ap.slow+"건":B.ap.n?"미룬 것 없음":"",B.ap.slow?"bad":z(B.ap.n))}
+   ${ceoTile(k,"recv","미수금 합계",ceoMoney(B.recv.sum),B.recv.n?B.recv.n+"줄"+(s.recvDay?" · "+s.recvDay.slice(5).replace("-","/")+" 엑셀":""):(s.recvDay?"미수 없음":"미수금 표 없음"),z(B.recv.sum))}
+   ${ceoTile(k,"due","입금 예정 ("+CEO_DUE_DAYS+"일 안)",ceoMoney(B.due.sum),(B.due.n?B.due.n+"건":"예정 없음")+(B.due.over?" · 기한 지남 "+B.due.over+"건":""),B.due.over?"bad":z(B.due.sum))}
+   ${ceoTile(k,"tl","오늘 현장 사진·메모",tl,s.tlSrc==="B"?"현장 타임라인":"현장 사진·기록·일지",z(B.tl.n))}
+   ${ceoTile(k,"spec","고객 확인 안 된 확정본",s.specReady?B.spec.n+"건":"준비 중",s.specReady?(B.spec.n?"고객이 아직 안 봄":"모두 확인"):"마감재 확정본 연결 전",s.specReady&&B.spec.n?"bad":"zero")}</div>
+   ${B.late.n||B.tl.n?`<div class="ceo-lines">${B.late.L.slice(0,3).map(x=>`<div class="bad">늦음 · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}${B.tl.L.slice(0,3).map(x=>`<div>오늘 · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}</div>`:""}</section>`}
+function ceoEtcHTML(s){const B=s.parts.etc;if(!B)return "";const any=B.active.n||B.today.n||B.late.n||B.ap.n||B.recv.n||B.due.n||B.due.over||B.tl.n||B.spec.n;if(!any)return "";
+  const c=(key,txt,bad)=>`<button type="button" class="ceo-chip ${bad?"bad":""}" data-ceolist="etc|${key}">${esc(txt)}</button>`;
+  return `<section class="card ceo-etc" data-ceopart="etc"><h2 style="font-size:15px;margin:0 0 6px">그 밖·구분 없음 <small class="muted">일반공사·자재납품·조합영업 · 구분이 빈 프로젝트 · 본사 결재 · 프로젝트를 못 찾은 미수금</small></h2><div class="chips">
+   ${c("active","진행 중 "+B.active.n+"건")}${c("today","오늘 공정 "+B.today.n+"곳")}${c("late","공정 늦음 "+B.late.n+"곳",B.late.n)}${c("ap","결재 대기 "+B.ap.n+"건"+(B.ap.slow?" ("+CEO_AP_SLOW_DAYS+"일 넘음 "+B.ap.slow+")":""),B.ap.slow)}${c("recv","미수금 "+ceoMoney(B.recv.sum))}${c("due","입금 예정 "+ceoMoney(B.due.sum)+(B.due.over?" · 기한 지남 "+B.due.over:""),B.due.over)}${c("tl","오늘 사진 "+B.tl.photo+" · 메모 "+B.tl.memo)}${s.specReady?c("spec","고객 미확인 확정본 "+B.spec.n+"건",B.spec.n):""}</div></section>`}
+function ceoStaffHTML(s){return `<section class="card ceo-staff"><h2 style="margin:0 0 4px">직원별 오늘 <small class="muted">등록·수정한 일 · ‘불편해요’ 요청 처리 상태</small></h2>${(s.staff||[]).map((x,i)=>{const f=x.fb||{},open=(f.wait||0)+(f.doing||0)+(f.ask||0);
+    return `<div class="ceo-srow" data-ceostaff="${esc(x.name)}"><div><b>${esc(x.name)}</b> <small style="display:inline">${esc(x.pos||"")}</small>${x.linked?"":`<small>계정이 직원 카드에 연결 안 됨</small>`}</div>
+     <button type="button" data-ceolist="staff${i}|work" aria-label="${esc(x.name)} 오늘 등록·수정 ${x.work.n}건 · 목록 보기"><b>오늘 ${x.work.n}건</b>${x.memo||x.photo?` <span class="muted">· 기록 ${x.memo} · 사진 ${x.photo}</span>`:""}<small>${x.work.n?esc(x.work.L.slice(0,2).map(w=>w.t).join(", "))+(x.work.n>2?" 외 "+(x.work.n-2)+"건":""):"오늘 등록·수정한 것이 아직 없어요"}</small></button>
+     <button type="button" data-ceolist="staff${i}|fb" aria-label="${esc(x.name)} 요청 처리 상태 · 목록 보기"><b${f.ask?' style="color:var(--bad)"':""}>요청 ${open?"처리 중 "+open+"건":"밀린 것 없음"}</b><small>접수 ${f.wait||0} · 진행 중 ${f.doing||0} · 형 확인 필요 ${f.ask||0} · 끝남 ${f.done||0}${f.hold?" · 보류 "+f.hold:""}</small></button></div>`}).join("")}</section>`}
+// 자료 변경 소식 (기존 '변경 확인' 탭)을 현황판 아래 칸으로 — 같은 자료·같은 버튼(확인함·새로고침)을 그대로 쓰고, 전체 화면(#drvchg)·설정은 그대로 남김
+function ceoDrvHTML(){let all=[];try{dcInit();all=dcItems().filter(i=>dcOk(i,DC.mine)&&kday(i.ts)>=new Date(Date.now()-45*864e5).toISOString().slice(0,10))}catch(e){}
+  const un=all.filter(i=>!DC.seen[i.k]),show=(un.length?un:all).slice(0,8),st=DC.st||{};
+  return `<section class="card" id="ceoDrv" style="${un.length?"border-color:var(--yellow);box-shadow:inset 4px 0 0 var(--yellow)":""}"><h2 style="margin:0 0 4px">자료 변경 소식 <small class="muted">회사 공유 드라이브에서 직원이 올리거나 바꾼 업무 자료 · 새 변경 ${un.length}건</small></h2>
+   <div class="tools" style="margin:6px 0"><a class="btn sm pri" href="#drvchg">전체 보기·설정</a><button type="button" class="btn sm" data-dcref="1" ${DC.busy?"disabled":""}>${DC.busy?"새로고침 중…":"지금 새로고침"}</button>${un.length?`<button type="button" class="btn sm" data-dcall="1">보이는 것 모두 확인함</button>`:""}<span class="hint">마지막 수집 ${st.at?esc(kst(st.at)):"아직 없음"}</span></div>
+   ${show.length?`<div class="list">${show.map(dcRow).join("")}</div>${(un.length?un:all).length>show.length?`<p class="hint">${un.length?"확인 안 한 것":"최근 것"} ${show.length}건만 보여요 · 나머지는 ‘전체 보기’에서</p>`:""}`:`<div class="empty">아직 모은 변경이 없어요 · ‘지금 새로고침’을 눌러 보세요</div>`}</section>`}
+function renderCeo(){if(!ceoOk())return `<div class="empty">대표 전용 메뉴예요</div>`;ceoCss();ceoInit();const s=ceoSnapNow(),first=lsGet(CEO_FIRST_KEY)!=="home";
+  const stale=!!s&&mode==="shared"&&!!db&&ceoStale(s);
+  const head=`<div class="head"><div><h1>대표 현황판</h1><p id="ceoBase">${s?`<b>${esc(ceoKst(s.slot))} 기준</b> · ${esc(ceoKst(s.at))}에 ${s.by==="manual"?"다시 셈":"셈"}${stale||CEO.busy?" · 새 기준 시각이 지나 다시 세는 중…":""}`:"숫자를 세는 중…"} <span class="muted">· 아침 8시·저녁 6시에 숫자가 바뀌어요 (저장된 자료만 셈)</span></p></div>
+   <div class="tools"><button type="button" class="btn pri" data-ceorecount="1" ${CEO.busy?"disabled":""}>${CEO.busy?"세는 중…":"지금 다시 세기"}</button><a class="btn" href="#home">기존 홈 보기</a></div></div>`;
+  if(!s)return head+`<section class="card"><p class="muted">프로젝트·결재·미수금 자료를 불러와 세고 있어요. 잠시만 기다려 주세요.</p></section>`+ceoDrvHTML()+`<div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`;
+  const A=ceoAlerts(s);
+  const alert=A.late.length||A.slow.length?`<section class="ceo-alert" role="alert" id="ceoAlert">${A.late.length?`<div><b>공정 늦음 ${A.late.length}곳</b> · ${A.late.slice(0,6).map(x=>`<button type="button" data-ceoopen="projects|${esc(x.id)}">${esc(x.t)} (${esc(String(x.days||""))}일 지남)</button>`).join(" · ")}${A.late.length>6?" 외 "+(A.late.length-6)+"곳":""}</div>`:""}${A.slow.length?`<div><b>미루는 결재 ${A.slow.length}건</b> · 대표 차례로 ${CEO_AP_SLOW_DAYS}일 넘게 대기 · ${A.slow.slice(0,4).map(x=>`<button type="button" data-ceoopen="approvals|${esc(x.id)}">${esc(x.t)}</button>`).join(" · ")}${A.slow.length>4?" 외 "+(A.slow.length-4)+"건":""}</div>`:""}</section>`
+    :`<p class="ceo-okline" id="ceoAlertNone">늦어진 공정·미루는 결재가 없어요</p>`;
+  return head+alert+`<div class="ceo-parts" id="ceoParts">${CEO_PARTS.map(p=>ceoPartHTML(s,p[0])).join("")}</div>${ceoEtcHTML(s)}${ceoStaffHTML(s)}${ceoDrvHTML()}
+   <p class="hint">숫자를 누르면 그 목록이 열려요. 미수금은 캐시플로우 엑셀의 미수금 표${s.recvTotal!=null?" (엑셀 합계 "+esc(won(s.recvTotal))+")":""}, 입금 예정은 프로젝트 수금 일정에서 가져와요. 알림은 늦어진 공정과 ${CEO_AP_SLOW_DAYS}일 넘게 미룬 결재만 떠요.
+   <button type="button" class="btn sm" data-ceofirst="${first?"home":"ceo"}" style="margin-left:6px">${first?"이 기기 첫 화면을 기존 홈으로":"이 기기 첫 화면을 현황판으로"}</button></p><div class="foot">ⓒ HOME FURNISHING CO. all rights reserved.</div>`}
+// 숫자를 누르면: 그 숫자에 들어간 줄 목록 (화면 안 창) → 줄을 누르면 그 프로젝트·결재·요청이 열리고, 아래 버튼으로 해당 메뉴로 이동
+const CEO_KEYS={active:["진행 중 프로젝트","#projects","프로젝트 메뉴로"],today:["오늘 공정 있는 현장","#projects","프로젝트 메뉴로"],late:["공정 늦어진 현장","#projects","프로젝트 메뉴로"],ap:["결재 대기 (형 차례)","#approvals","전자결재로"],recv:["미수금","#recv","미수금 화면으로"],due:["입금 예정","#recv","미수금 화면으로"],tl:["오늘 현장 사진·메모","#projects","프로젝트 메뉴로"],spec:["고객 확인 안 된 확정본","#projects","프로젝트 메뉴로"],work:["오늘 등록·수정한 일","",""],fb:["요청 처리 상태 (끝나지 않은 것)","#feedback","개선 요청함으로"]};
+function ceoListOpen(pk,key){const s=ceoSnapNow();if(!s)return;const K=CEO_KEYS[key];if(!K)return;let box=null,ttl="",note="";
+  const m=/^staff(\d+)$/.exec(pk);if(m){const x=(s.staff||[])[+m[1]];if(!x)return;ttl=x.name+" · "+K[0];box=key==="work"?x.work:{n:(x.fb.L||[]).length,L:x.fb.L||[]};if(key==="fb")note="접수 "+(x.fb.wait||0)+" · 진행 중 "+(x.fb.doing||0)+" · 형 확인 필요 "+(x.fb.ask||0)+" · 끝남 "+(x.fb.done||0)+(x.fb.hold?" · 보류 "+x.fb.hold:"")}
+  else{const B=s.parts[pk];if(!B||!B[key])return;box=B[key];ttl=ceoPartName(pk)+" · "+K[0];
+    if(key==="recv")note="합계 "+won(box.sum)+(s.recvDay?" · "+s.recvDay+" 엑셀 미수금 표":"");
+    if(key==="due")note=CEO_DUE_DAYS+"일 안 "+won(box.sum)+(box.over?" · 기한 지남 "+box.over+"건 "+won(box.overSum):"");
+    if(key==="ap"&&box.slow)note=CEO_AP_SLOW_DAYS+"일 넘게 기다린 결재 "+box.slow+"건 (빨간 줄)";
+    if(key==="spec"&&!s.specReady)note="마감재 확정본 화면이 연결되면 여기에 ‘확정은 됐는데 고객이 아직 안 본 것’이 보여요 (준비 중)";
+    if(key==="tl")note=s.tlSrc==="B"?"현장 타임라인에서 가져왔어요":"오늘 올라온 현장 사진·프로젝트 기록·현장 일지를 셌어요"}
+  const old=document.getElementById("ceoVeil");if(old)old.remove();const v=document.createElement("div");v.className="veil";v.id="ceoVeil";const L=box.L||[],n=box.n!=null?box.n:L.length;
+  v.innerHTML=`<div class="sheet ceo-list" role="dialog" aria-label="${esc(ttl)}" style="max-width:640px"><h3>${esc(ttl)} <button type="button" class="btn sm" data-ceoclose="1">닫기</button></h3>
+   <p class="hint" style="margin:0">${esc(ceoKst(s.slot))} 기준${note?" · "+esc(note):""}</p>
+   ${L.length?`<div class="list">${L.map(x=>`<div class="item${x.b?" bad":""}" ${x.c&&x.id?`data-ceoopen="${esc(x.c)}|${esc(x.id)}" tabindex="0" role="button"`:'style="cursor:default"'}><div class="t"><b>${esc(x.t||"")}</b><small>${esc(x.s||"")}</small></div>${x.c&&x.id?`<span class="muted">열기 ›</span>`:""}</div>`).join("")}</div>${n>L.length?`<p class="hint">${L.length}줄만 보여요 (모두 ${n}줄)</p>`:""}`:`<div class="empty">해당하는 것이 없어요</div>`}
+   ${K[1]?`<div class="tools"><button type="button" class="btn pri" data-ceogo="${K[1]}">${esc(K[2])}</button></div>`:""}</div>`;
+  document.body.appendChild(v)}
+document.addEventListener("click",e=>{const t=e.target&&e.target.closest&&e.target.closest("[data-ceolist],[data-ceoopen],[data-ceoclose],[data-ceogo],[data-ceorecount],[data-ceofirst]");if(!t||!ceoOk())return;e.preventDefault();e.stopPropagation();
+  const v=document.getElementById("ceoVeil"),close=()=>{if(v)v.remove()};
+  if(t.dataset.ceoclose){close();return}
+  if(t.dataset.ceogo){close();location.hash=t.dataset.ceogo;return}
+  if(t.dataset.ceorecount){ceoRecount("manual");return}
+  if(t.dataset.ceofirst){lsSet(CEO_FIRST_KEY,t.dataset.ceofirst);toast(t.dataset.ceofirst==="home"?"이 기기에서는 기존 홈이 먼저 열려요":"이 기기에서는 현황판이 먼저 열려요");render();return}
+  if(t.dataset.ceolist){const [pk,key]=t.dataset.ceolist.split("|");ceoListOpen(pk,key);return}
+  if(t.dataset.ceoopen){const [c,id]=t.dataset.ceoopen.split("|");if(!(S[c]||[]).some(x=>x.id===id)){toast("그 사이 없어졌거나 옮겨진 줄이에요 · ‘지금 다시 세기’를 눌러 보세요");return}close();openSheet(c,id);return}});
+document.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const t=e.target&&e.target.matches&&e.target.matches("#ceoVeil [data-ceoopen]")?e.target:null;if(t){e.preventDefault();t.click()}});
+document.addEventListener("click",e=>{if(e.target&&e.target.id==="ceoVeil")e.target.remove()});
 
 
 // ===== 입력 시트 =====
@@ -7527,6 +7728,7 @@ loadLocal();me.admin=true;me.isOwner=true;render();try{askFab()}catch(e){}
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{phUpload:(...a)=>phUpload(...a),phList:p=>phList(p),pjRaw:r=>pjRaw(r),phSrc:id=>phSrc(id),phBlobSize:async id=>(await phBlob(id)).size});
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{vl:()=>VL&&JSON.parse(JSON.stringify(Object.assign({},VL,{ctl:null}))),vlv:()=>JSON.parse(JSON.stringify(VLV)),vlb:()=>JSON.parse(JSON.stringify(VLB)),vlbLoad:()=>vlbLoad(true),vlOpen,vlPjs:()=>vlPjs().map(p=>p.id),vlSens,vlMask,vlNoMoney,vlPrompt:t=>vlPrompt(t),vlMatch:n=>{const p=vlMatch(n,vlPjs());return p?p.id:null},vlDenied:()=>vlDenied,vlNoAI:()=>vlNoAI,vlLeft:n=>{if(VL)VL.left=n}});
   if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{gs:()=>gsLast,sc:()=>scLast,rf:()=>rfLast,rfNext,rfList,rfUntil,refCodeOf,scInfo,scTexts,gsNow,gsCfg,routeAuto:typeof routeAuto==="function"?routeAuto:null,fstKey,fstSignJs,fstSign,fstCan,hubShareHTML,fsData,fsSched,qaBuild,qaPlan,qaDoc,qaFileName,hfro,qaInit,qaP:()=>QA_P,qaSheet:()=>sheet&&{qa:sheet.qa,qe:sheet.qe,costPlain:!!sheet.costPlain},vat10,withVat,cpg:()=>CPG,cmaskNative:()=>CMASK_NATIVE,gnQr,gnUrl,gnCoupon,gnTelOf,gnCfg,gnDefaults,gnBtnHTML,gnOpen,gnMake,gnPaper,gn:()=>GN&&JSON.parse(JSON.stringify({f:GN.f,coupon:GN.coupon,pid:GN.pid,logged:GN.logged,last:GN.last||null})),gnCanvas:()=>GN?gnMake().canvas:null,gnDefaults,gnUnit,gnStatRows,gnStatPull,gnStatSees,keepLog:()=>KEEP_LOG}); // 시험 도구(가짜 저장소)에서만 생기는 손잡이 — 실제 화면에는 없음
+  if(window.__MOCKUSER&&window.__hfT)Object.assign(window.__hfT,{ceo:()=>CEO.snap&&JSON.parse(JSON.stringify(CEO.snap)),ceoSlotAt,ceoStale,ceoCount,ceoRecount,ceoPartOf,ceoAlerts:()=>ceoAlerts(),ceoRed:()=>ceoRed(()=>false)}); // v0.99-53 E 시험 손잡이
   if(me.admin)db.collection("activity").orderBy("at","desc").limit(40).onSnapshot(snap=>{S.activity=snap.docs.map(d=>Object.assign({id:d.id},d.data()));render();resolveNames()},()=>{});
   render();
 })();
