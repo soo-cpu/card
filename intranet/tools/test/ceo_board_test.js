@@ -85,7 +85,8 @@ const SNAP="acct/_ceo/snap/cur";
  ok('3 늦은 공정 내용: 주거=목공(철거 100%·오늘 타일은 아님) · 관공서=전기 · 준공·100% 현장은 빠짐',P.res.late.L[0].id==='p1'&&/목공/.test(P.res.late.L[0].s)&&!/철거|타일/.test(P.res.late.L[0].s)&&/3일 지남/.test(P.res.late.L[0].s)&&P.gov.late.L[0].id==='p4'&&/전기/.test(P.gov.late.L[0].s),[P.res.late.L,P.gov.late.L]);
  ok('3 화면 숫자 = 스냅숏',await tile(A,'res','active')==='3건'&&await tile(A,'res','late')==='1곳'&&await tile(A,'res','ap')==='1건'&&await tile(A,'res','recv')==='550만원'&&await tile(A,'res','due')==='1,320만원'&&await tile(A,'gov','recv')==='2,200만원'&&await tile(A,'gov','active')==='2건',[await tile(A,'res','active'),await tile(A,'res','recv'),await tile(A,'res','due'),await tile(A,'gov','recv')]);
  ok('3 늦은 공정 칸은 빨간색',await A.evaluate(()=>document.querySelector('[data-ceolist="res|late"]').classList.contains('bad')&&getComputedStyle(document.querySelector('[data-ceolist="res|late"] b')).color!==getComputedStyle(document.querySelector('[data-ceolist="res|active"] b')).color));
- ok('3 확정본(A)이 아직 없으면 ‘준비 중’ · 사진·메모는 기존 자료로',await tile(A,'res','spec')==='준비 중'&&snap.tlSrc==='기존'&&snap.specReady===false&&await tile(A,'res','tl')==='사진 1 · 메모 2',[await tile(A,'res','spec'),await tile(A,'res','tl')]);
+ // (v0.99-54) A 확정본·B 타임라인이 인트라넷에 들어온 뒤: 확정본 요약은 0건, 사진·메모는 B 타임라인(v11TimelineToday)에서 옴 — 숫자는 기존 자료로 셀 때와 같음
+ ok('3 확정본(A) 요약 있음(확정본 0건) · 사진·메모는 B 타임라인에서 (사진 1 · 메모 2)',await tile(A,'res','spec')==='0건'&&snap.tlSrc==='B'&&snap.specReady===true&&await tile(A,'res','tl')==='사진 1 · 메모 2',[await tile(A,'res','spec'),await tile(A,'res','tl'),snap.tlSrc,snap.specReady]);
  const S3=snap.staff;const sf=nm=>S3.find(x=>x.name===nm);
  ok('3 직원 줄 3명: 정진혁 오늘 2건(프로젝트 수정·견적 등록)·기록 1·사진 1·요청 접수 1 끝남 1 / 이봄이 형 확인 필요 1 / 채진아 오늘 1건',S3.length===3&&sf('정진혁').work.n===2&&sf('정진혁').memo===1&&sf('정진혁').photo===1&&sf('정진혁').fb.wait===1&&sf('정진혁').fb.done===1&&sf('이봄이').fb.ask===1&&sf('이봄이').work.n===0&&sf('채진아').work.n===1,S3.map(x=>[x.name,x.work.n,x.memo,x.photo,x.fb.wait,x.fb.ask,x.fb.done]));
  ok('3 직원 줄 화면: 세 사람 이름 · 요청 상태',await A.locator('.ceo-srow').count()===3&&/형 확인 필요 1/.test(await A.locator('[data-ceostaff="이봄이"]').innerText())&&/오늘 2건/.test(await A.locator('[data-ceostaff="정진혁"]').innerText()));
@@ -152,7 +153,8 @@ const SNAP="acct/_ceo/snap/cur";
 
  // ───────── 11. A(확정본)·B(타임라인) 요약이 있으면 씀 ─────────
  const pre=`window.v11SpecSummary=()=>[{pid:"p1",name:"한빛아파트 욕실",part:"주거",ver:"v2",confirmedBy:"정진혁",confirmedAt:${JSON.stringify(NOWI)},custSeenAt:"",changedAfterConfirm:true},{pid:"p4",name:"교문초등학교 도서관",part:"관공서",ver:"v1",confirmedBy:"이봄이",confirmedAt:${JSON.stringify(NOWI)},custSeenAt:${JSON.stringify(NOWI)},changedAfterConfirm:false},{pid:"p2",name:"푸른빌라",part:"주거",ver:"v1",confirmedBy:"",confirmedAt:"",custSeenAt:""}];window.v11TimelineToday=[{pid:"p4",name:"교문초등학교 도서관",t:"09:10",kind:"사진",text:"전기 배관",who:"이봄이"},{pid:"p4",name:"교문초등학교 도서관",t:"10:20",kind:"메모",text:"자재 도착",who:"이봄이"}];`;
- const Wd=await world();const Dp=await Wd.open('admin',15000,pre);const sd=(await Wd.DB())[SNAP];
+ // (v0.99-54) 인트라넷이 두 함수를 스스로 만들므로, 화면이 뜬 뒤에 시험용 값으로 바꾸고 ‘다시 세기’
+ const Wd=await world();const Dp=await Wd.open('admin',15000);await Dp.evaluate(pre);await Dp.evaluate(()=>window.__hfT.ceoRecount('manual'));await wait(2500);const sd=(await Wd.DB())[SNAP];
  ok('11 A 요약: 확정됐는데 고객이 안 본 것만(주거 1 · 관공서 0 · 확정 전 것은 안 셈)',sd.specReady===true&&sd.parts.res.spec.n===1&&sd.parts.gov.spec.n===0&&/확정 뒤 바뀜/.test(sd.parts.res.spec.L[0].s)&&await tile(Dp,'res','spec')==='1건'&&await tile(Dp,'gov','spec')==='0건',[sd.specReady,sd.parts.res.spec,await tile(Dp,'res','spec')]);
  ok('11 B 타임라인: 관공서 사진 1 · 메모 1 (기존 자료 대신)',sd.tlSrc==='B'&&sd.parts.gov.tl.photo===1&&sd.parts.gov.tl.memo===1&&sd.parts.res.tl.n===0&&await tile(Dp,'gov','tl')==='사진 1 · 메모 1',[sd.tlSrc,sd.parts.gov.tl]);
 

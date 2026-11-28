@@ -163,6 +163,7 @@ const R=[];const ok=(n,v,x)=>{R.push(!!v);console.log(v?'통과':'실패',n,x===
  ok('라2 v11TimelineToday(): [{pid,name,t,kind,text,who}] 모양 · 종류는 사진·메모·결정·일지뿐 (결재·확정본·금액 없음)',shape(tdA)&&tdA.length>0&&!tdA.some(e=>/원|결재/.test(e.kind))&&!MONEY.test(JSON.stringify(tdA))&&!/1,234,567|기안/.test(JSON.stringify(tdA)),tdA.map(e=>e.kind+':'+e.text));
  const p1T=tdA.filter(e=>e.pid==='p1');
  ok('라3 오늘 것만: p1 사진 한 줄(2장 · n=2) · 오늘 메모·결정 · 오늘 현장 일지 — 어제 사진·옛 메모는 없음',p1T.filter(e=>e.kind==='사진').length===1&&p1T.find(e=>e.kind==='사진').n===2&&p1T.find(e=>e.kind==='사진').who==='정진혁'&&p1T.some(e=>e.kind==='결정'&&e.text==='주방 상판은 흰색으로 확정')&&p1T.some(e=>e.kind==='메모'&&e.text==='정진혁 현장 메모'&&e.who==='정진혁')&&p1T.some(e=>e.kind==='일지'&&/벽 타일 붙임/.test(e.text))&&!p1T.some(e=>/첫 상담|욕실 타일은 600각|방수 끝냄|욕실 철거/.test(e.text))&&p1T.every(e=>e.name==='시험마을 8단지'),p1T.map(e=>e.kind+':'+e.text+':'+e.n));
+ ok('라3-1 t 는 ISO 시각 · 시각을 모르는 현장 일지는 빈 글자 (현황판이 엉뚱한 시각을 적지 않게)',p1T.filter(e=>e.kind!=='일지').every(e=>/^\d{4}-\d\d-\d\dT/.test(e.t))&&p1T.find(e=>e.kind==='일지').t==='',p1T.map(e=>e.t));
  ok('라4 대표: 다른 프로젝트 오늘 메모도 들어옴 (p5 김일반) · p2 옛 메모는 없음',tdA.some(e=>e.pid==='p5'&&e.text==='도배지 도착')&&!tdA.some(e=>e.pid==='p2'));
  const K=await open('kim','');const tdK=await K.evaluate(()=>window.v11TimelineToday());
  ok('라5 일반 직원(김일반): 본인이 볼 수 있는 프로젝트 것만 (p5) — 가려진 p1 은 없음',shape(tdK)&&tdK.length>0&&tdK.every(e=>e.pid==='p5'),tdK.map(e=>e.pid+':'+e.text));

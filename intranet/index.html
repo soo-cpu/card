@@ -6213,7 +6213,7 @@ function ceoCss(){if(document.getElementById("ceoCss"))return;const st=document.
 .ceo-alert button:focus-visible{outline:2px solid var(--bad)}
 .ceo-okline{color:var(--ok);font-size:13px;margin:8px 0}
 .ceo-etc h2,.ceo-staff h2,#ceoDrv h2{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
-.ceo-lines{margin-top:8px;display:grid;gap:2px;font-size:13px;color:var(--sub)}.ceo-lines .bad{color:var(--bad);font-weight:600}.ceo-lines div{overflow-wrap:anywhere}
+.ceo-lines{margin-top:8px;display:grid;gap:2px;font-size:13px;color:var(--sub)}.ceo-lines .bad{color:var(--bad);font-weight:600}.ceo-lines div{overflow-wrap:anywhere}.ceo-lines div:not(.bad){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}/* v0.99-54: 오늘 줄은 한 줄로 (타임라인에서 줄이 늘어도 카드가 길어지지 않게 · 전체는 숫자를 눌러 봄) */
 .ceo-etc .chips{align-items:center}.ceo-chip{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px}.ceo-chip.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-bg)}
 .ceo-srow{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr);gap:6px 12px;padding:9px 0;border-top:1px solid var(--line);align-items:start}
 .ceo-srow:first-of-type{border-top:0}.ceo-srow button{all:unset;cursor:pointer;display:block;min-width:0;overflow-wrap:anywhere}.ceo-srow button:focus-visible{outline:2px solid var(--accent)}
@@ -6235,7 +6235,7 @@ function ceoPartHTML(s,k){const P=CEO_PARTS.find(x=>x[0]===k),B=s.parts[k];const
    ${ceoTile(k,"due","입금 예정 ("+CEO_DUE_DAYS+"일 안)",ceoMoney(B.due.sum),(B.due.n?B.due.n+"건":"예정 없음")+(B.due.over?" · 기한 지남 "+B.due.over+"건":""),B.due.over?"bad":z(B.due.sum))}
    ${ceoTile(k,"tl","오늘 현장 사진·메모",tl,s.tlSrc==="B"?"현장 타임라인":"현장 사진·기록·일지",z(B.tl.n))}
    ${ceoTile(k,"spec","고객 확인 안 된 확정본",s.specReady?B.spec.n+"건":"준비 중",s.specReady?(B.spec.n?"고객이 아직 안 봄":"모두 확인"):"마감재 확정본 연결 전",s.specReady&&B.spec.n?"bad":"zero")}</div>
-   ${B.late.n||B.tl.n?`<div class="ceo-lines">${B.late.L.slice(0,3).map(x=>`<div class="bad">늦음 · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}${B.tl.L.slice(0,3).map(x=>`<div>오늘 · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}</div>`:""}</section>`}
+   ${B.late.n||B.tl.n?`<div class="ceo-lines">${B.late.L.slice(0,3).map(x=>`<div class="bad">늦음 · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}${B.tl.L.slice(0,1).map(x=>`<div>오늘${B.tl.L.length>1?" "+B.tl.L.length+"줄":""} · ${esc(x.t)} — ${esc(x.s)}</div>`).join("")}</div>`:""}</section>`}
 function ceoEtcHTML(s){const B=s.parts.etc;if(!B)return "";const any=B.active.n||B.today.n||B.late.n||B.ap.n||B.recv.n||B.due.n||B.due.over||B.tl.n||B.spec.n;if(!any)return "";
   const c=(key,txt,bad)=>`<button type="button" class="ceo-chip ${bad?"bad":""}" data-ceolist="etc|${key}">${esc(txt)}</button>`;
   return `<section class="card ceo-etc" data-ceopart="etc"><h2 style="font-size:15px;margin:0 0 6px">그 밖·구분 없음 <small class="muted">일반공사·자재납품·조합영업 · 구분이 빈 프로젝트 · 본사 결재 · 프로젝트를 못 찾은 미수금</small></h2><div class="chips">
@@ -7668,8 +7668,8 @@ document.addEventListener("click",e=>{const t=e.target&&e.target.closest&&e.targ
 // 엔터로 바로 저장 (한글 조합 중 엔터는 건너뜀 · 창의 '저장'으로 번지지 않게)
 document.addEventListener("keydown",e=>{const t=e.target;if(!t||t.id!=="tlText"||e.key!=="Enter"||e.isComposing||e.keyCode===229)return;e.preventDefault();tlAdd()});
 // 대표 현황판(E)이 쓰는 함수: 오늘(한국 시간) 올라온 사진·메모·결정·일지 — 부른 사람이 볼 수 있는 프로젝트 것만 · 결재·금액 없음
-// v11TimelineToday() → [{pid,name,t,kind,text,who,n}] (t = ISO 시각 또는 날짜 · kind = '사진'|'메모'|'결정'|'일지' · n = 사진 줄의 장수)
-window.v11TimelineToday=()=>{const T=tlToday(),out=[];(S.projects||[]).forEach(p=>{if(!tlCan(p))return;const name=tlName(p),put1=(e,x)=>out.push(Object.assign({pid:p.id,name,t:String(e.t||""),kind:TL_LAB[e.kind]||"메모",text:String(e.text||"").slice(0,200),who:String(e.who||"")},x||{}));
+// v11TimelineToday() → [{pid,name,t,kind,text,who,n}] (t = ISO 시각, 시각을 모르는 줄(현장 일지)은 빈 글자 · kind = '사진'|'메모'|'결정'|'일지' · n = 사진 줄의 장수)
+window.v11TimelineToday=()=>{const T=tlToday(),out=[];(S.projects||[]).forEach(p=>{if(!tlCan(p))return;const name=tlName(p),put1=(e,x)=>out.push(Object.assign({pid:p.id,name,t:tlHasTime(e.t)?String(e.t):"",kind:TL_LAB[e.kind]||"메모",text:String(e.text||"").slice(0,200),who:String(e.who||"")},x||{}));
     (Array.isArray(p.plog)?p.plog:[]).forEach(x=>{if(x&&x.text&&x.at&&tlDay(x.at)===T)put1({t:x.at,kind:x.type==="결정"?"dec":"memo",text:(x.type&&x.type!=="결정"&&x.type!=="메모"?"["+x.type+"] ":"")+x.text,who:x.name||""})});
     (S.sites||[]).filter(s=>s&&p.no&&s.pno===p.no).forEach(s=>(Array.isArray(s.logs)?s.logs:[]).forEach(l=>{if(l&&String(l.d||"").slice(0,10)===T&&(l.text||l.proc))put1({t:T,kind:"log",text:"현장 일지 · "+(l.proc?l.proc+(l.text?" · ":""):"")+String(l.text||""),who:""})}));
     (Array.isArray(p.progLog)?p.progLog:[]).forEach(e=>{if(e&&typeof e==="object"&&e.kind==="퇴근 일지"&&typeof e.text==="string"&&e.text&&tlDay(e.at||e.d)===T)put1({t:e.at||e.d,kind:"log",text:"퇴근 일지 · "+e.text,who:e.byName||""})});
