@@ -690,7 +690,7 @@ function specHtml() {
   if (!sp || !sp.ver) {
     if (!ADMIN) return "";
     if (API && D && !("spec" in D)) return '<section class="card" id="specOld"><h2>확정 마감재·도면</h2><div class="meta">현장소통 서버가 옛 버전이에요 (Code.gs v10 배포 뒤에 확정본이 여기에 보여요).</div></section>';
-    return '<section class="card" id="specNone"><h2>확정 마감재·도면</h2><div class="meta">아직 확정본이 없어요. 인트라넷 프로젝트 화면 ‘마감재·도면’에서 확정한 뒤 ‘고객 화면(현장소통)에 확정본 보내기’를 누르면 여기와 고객 화면에 보여요.</div></section>';
+    return '<section class="card" id="specNone"><h2>확정 마감재·도면</h2><div class="meta">아직 확정본이 없어요. 인트라넷 프로젝트 화면 ‘마감재·도면’에서 확정한 뒤 ‘고객 화면(현장소통)에 확정본 보내기’를 누르면 여기와 고객 화면에 보여요.' + (D && D.pinOn === false ? ' <b id="specPin">고객 확인 번호를 먼저 정해 주세요 — 확인 번호(고객 휴대폰 뒷 4자리)가 없는 현장에는 확정본이 올라가지 않아요. 위 ‘현장 정보’에서 넣을 수 있어요.</b>' : "") + '</div></section>';
   }
   const items = Array.isArray(sp.items) ? sp.items : [], files = Array.isArray(sp.files) ? sp.files : [], day = String(sp.at || "").slice(0, 10);
   let h = '<section class="card spec" id="spec" data-ver="' + esc(sp.ver) + '"><h2>확정 마감재·도면<span class="ver">v' + esc(sp.ver) + '</span></h2>';
@@ -709,7 +709,7 @@ async function specLoad(root) {
     const id = b.dataset.sfimg;
     try {
       if (!SPEC_IMG[id]) { const r = await call("specFile", ADMIN ? { s: CODE, pw: PW, id } : { s: CODE, id }); SPEC_IMG[id] = String(r.data || ""); }
-      if (!/^data:image\//.test(SPEC_IMG[id]) || !b.isConnected) continue;
+      if (!/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]*$/.test(SPEC_IMG[id]) || !b.isConnected) continue; // 그림 자료 모양일 때만 넣음
       const im = new Image(); im.alt = "확정 도면"; im.src = SPEC_IMG[id]; b.innerHTML = ""; b.appendChild(im);
     } catch (e) { const sp = b.querySelector("span"); if (sp) sp.innerHTML = sp.innerHTML.replace("불러오는 중…", "못 불러왔어요"); }
   }
@@ -719,7 +719,7 @@ function specBind(root) {
   specLoad(sec);
   sec.addEventListener("click", async e => {
     const im = e.target.closest("[data-sfimg]"), pd = e.target.closest("[data-sfpdf]");
-    if (im && SPEC_IMG[im.dataset.sfimg]) { modal('<img src="' + SPEC_IMG[im.dataset.sfimg] + '" alt="확정 도면" style="width:100%;border-radius:8px"><div class="row" style="margin-top:10px"><button class="btn" data-close>닫기</button></div>'); return; }
+    if (im && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]*$/.test(SPEC_IMG[im.dataset.sfimg] || "")) { modal('<img src="' + esc(SPEC_IMG[im.dataset.sfimg]) + '" alt="확정 도면" style="width:100%;border-radius:8px"><div class="row" style="margin-top:10px"><button class="btn" data-close>닫기</button></div>'); return; }
     if (pd) {
       if (pd.disabled) return; pd.disabled = true; const lab = pd.querySelector("b"), t0 = lab.textContent; lab.textContent = "불러오는 중…";
       try {
@@ -1130,6 +1130,7 @@ function siteForm(s, pre) {
     try {
       if (isNew) {
         const r = await call("addSite", Object.assign({ pw: PW, proj: s.proj || "" }, f)); m.remove();
+        if (r.exists) toast("같은 프로젝트 번호 현장이 이미 있어 그 현장을 열어요 (새로 만들지 않았어요)", 4000); // v10 검토 반영
         let on = false; try { const c = await call("adminSite", { s: r.code, pw: PW }); on = !!c.pinOn; } catch (x) {} // 서버가 실제로 번호를 저장했는지 (옛 서버면 false)
         shareModal(Object.assign({ code: r.code }, f, { pin: "", pinOn: on }), true); listView();
       }

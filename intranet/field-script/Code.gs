@@ -87,9 +87,11 @@
  *    site·adminSite 응답에 spec {ver, at, items[[공간,품목,제품명·색상]], files[{id,name,kind}], seenAt} — 고객 응답에는 확정한 직원 이름 없음, 확인 번호 통과 뒤에만
  *  - 고객에게 나가는 마감재 칸은 공간·품목·제품명·색상 3칸만 (업체·비고·금액은 인트라넷이 보내지도 않고 서버도 받지 않음)
  *  - 파일은 복사하지 않음: 인트라넷이 드라이브(인트라넷 첨부 › 프로젝트 폴더)에 올린 파일 번호만 받아, 볼 때 읽어서 보냄 (이미지·PDF만, 허용 폴더 안에 있는 파일만)
- *    허용 폴더 = '설정' 탭 '확정본 파일 상위 폴더ID'(쉼표로 여러 개) · '현장 원본 폴더ID' · 그 현장 폴더
+ *    허용 폴더 = '설정' 탭 '확정본 파일 상위 폴더ID'(기본 '인트라넷 첨부' 하나 · 쉼표로 여러 개 · 드라이브 최상위 ID 는 무시)
  *  - 확정한 사람 이름은 최윤수·이봄이·정진혁만 받음 (인트라넷 확정 권한과 같음). 더 옛 버전은 받지 않음. 같은 내용을 다시 보내면 줄을 더하지 않음
  *  - 고객 '확인했어요': 지금 확정본 버전에만, 한 번 누르면 되돌릴 수 없음. 확정본 버전이 바뀌면 새 버전에 다시 확인
+ *  - v10 검토 반영(2026-11-28): 허용 폴더는 '인트라넷 첨부' 폴더 하나만(공유 드라이브 최상위 ID 는 설정에 있어도 무시) · 보낸 사람(출입증 이름·관리 비밀번호)이 관리·최윤수·이봄이·정진혁일 때만 받음
+ *    고객 확인 번호가 없는 현장에는 확정본을 올리지도 보여 주지도 않음 · 글·댓글 숨기기도 '기록' 탭에 남김 · addSite 는 같은 프로젝트 번호 현장이 있으면 그 현장을 돌려줌(새 줄 안 만듦)
  *    누르면 드라이브 '확정본 고객 확인 기록' 폴더에 표시 파일 '확정본고객확인 P-…-… vN 날짜 시각.txt' 를 남김 → 인트라넷 '고객 확인 새로 고침'이 제목으로 읽어 감 (실패해도 시트 기록은 남음)
  */
 
@@ -701,7 +703,10 @@ function withSite_(code, fn) {
 }
 /* ---------- v10: 확정 마감재·도면 (인트라넷에서 확정한 최신 확정본만) ---------- */
 var SPEC_CONF = ['최윤수', '이봄이', '정진혁'];   // 인트라넷 확정 권한과 같은 이름만 받음
-var SPEC_ROOT_DEF = '1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor,0AJ-UqRUzUqsGUk9PVA';   // 인트라넷 첨부(프로젝트 번호 폴더가 있는 곳). '설정' 탭 '확정본 파일 상위 폴더ID' 로 바꿈
+var SPEC_ROOT_DEF = '1P0Rh3vBB1ApsUcpVXZsDrzr1mdVUWOor';   // '인트라넷 첨부' 폴더 하나만 (프로젝트 번호 폴더가 있는 곳). '설정' 탭 '확정본 파일 상위 폴더ID' 로 바꿈 — 공유 드라이브 최상위는 절대 넣지 않음
+var SPEC_SENDERS = ['관리'].concat(SPEC_CONF);   // 확정본을 보낼 수 있는 사람: 관리 비밀번호(대표) · 확정 권한 직원의 출입증
+/* 공유 드라이브 최상위 ID 모양(0A… 로 시작하는 짧은 ID)은 허용 폴더로 쓰지 않음 — 드라이브 전체(단가표·계약 서류)가 허용되는 것을 막음 */
+function isDriveRootId_(x) { x = String(x || ''); return x === 'root' || (/^0A/.test(x) && x.length <= 21); }
 var SPEC_FILE_MAX = 15 * 1024 * 1024, SPEC_PDF_SEND = 8 * 1024 * 1024;
 var SEEN_FOLDER = '확정본 고객 확인 기록';
 function specJson_(v) { try { var a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch (x) { return []; } }
@@ -711,15 +716,19 @@ function specItems_(a) {
           .filter(function (r) { return r[0] || r[1] || r[2]; });
 }
 function specRoots_(r) {
-  var ids = String(setting_('확정본 파일 상위 폴더ID') || SPEC_ROOT_DEF).split(',').concat([setting_('현장 원본 폴더ID'), r && r[9], r && r[18]]);
-  return ids.map(function (x) { return String(x || '').trim(); }).filter(function (x) { return /^[A-Za-z0-9_-]{5,80}$/.test(x); });
+  // 허용 폴더 = '확정본 파일 상위 폴더ID'(인트라넷 첨부)만. 현장 원본 폴더·현장 사진 폴더는 따로 허용하지 않음 (그 폴더가 인트라넷 첨부 아래에 있으면 저절로 허용)
+  var ids = String(setting_('확정본 파일 상위 폴더ID') || SPEC_ROOT_DEF).split(',');
+  ids = ids.map(function (x) { return String(x || '').trim(); }).filter(function (x) { return /^[A-Za-z0-9_-]{5,80}$/.test(x) && !isDriveRootId_(x); });
+  return ids.length ? ids : [SPEC_ROOT_DEF];
 }
 /* 파일의 부모를 6단계까지 올라가며 허용 폴더 안에 있는지 */
 function underRoot_(file, roots) {
   var it = file.getParents(), depth = 0;
   while (it && it.hasNext() && depth < 6) {
     var f = it.next();
-    if (roots.indexOf(f.getId()) >= 0) return true;
+    var fid = f.getId();
+    if (isDriveRootId_(fid)) return false;   // 드라이브 최상위까지 올라갔으면 밖
+    if (roots.indexOf(fid) >= 0) return true;
     it = f.getParents(); depth++;
   }
   return false;
@@ -752,10 +761,12 @@ function specSeenOf_(code, ver) {
   var x = rows_('specseen').filter(function (s) { return s[1] === code && Number(s[2]) === Number(ver); })[0];
   return x ? { at: x[0], day: x[3] } : null;
 }
+function sitePin_(code) { var r = rows_('sites').filter(function (x) { return x[0] === code; })[0]; return r ? String(r[16] || '').trim() : ''; }
 /* 화면에 주는 확정본. 고객(isAdmin 아님)에게는 확정한 직원 이름·보낸 사람을 넣지 않음 */
 function specOut_(code, isAdmin) {
   var c = specCur_(code);
   if (!c) return null;
+  if (!isAdmin && !sitePin_(code)) return null;   // 확인 번호가 없는 현장은 고객에게 확정본을 보여 주지 않음 (주소만으로 보이지 않게)
   var seen = specSeenOf_(code, c.ver);
   var o = { ver: c.ver, at: c.at, items: specItems_(specJson_(c.itemsJson)),
             files: specJson_(c.filesJson).map(function (f) { return { id: String(f.id || ''), name: clean_(f.name, 80), kind: f.mime === 'application/pdf' ? 'pdf' : 'img' }; }),
@@ -1134,6 +1145,10 @@ var ACTIONS = {
     var proj = (String(req.proj || '').match(/P-\d{4}-\d{3}/) || [''])[0];
     var lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
+      if (proj) {   // v10 검토 반영: 같은 프로젝트 번호 현장이 이미 있으면(숨긴 것 제외) 새 줄을 만들지 않고 그 현장을 돌려줌
+        var ex = rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0];
+        if (ex) return { code: ex[0], stages: stages_(ex[7]), warn: [], exists: true };
+      }
       append_('sites', [code, name, clean_(req.manager, 30), clean_(req.phone, 30), clean_(req.address, 100), day_(req.start), day_(req.end),
                         JSON.stringify(stages), '진행', '', now_(), now_(), '', '', proj ? ('인트라넷 ' + proj) : '', JSON.stringify(pays_(req.payments)), pin, clean_(req.cust, 30)]);
     } finally { lock.releaseLock(); }
@@ -1233,18 +1248,18 @@ var ACTIONS = {
     var p = rows_('posts').filter(function (x) { return x[0] === req.id && x[1] === r[0]; })[0];
     if (!p) throw new Error('글을 찾을 수 없어요');
     if (req.important != null) setCell_('posts', p._row, 8, req.important ? 'Y' : '');
-    if (req.hidden != null) setCell_('posts', p._row, 11, req.hidden ? 'Y' : '');
+    if (req.hidden != null) { setCell_('posts', p._row, 11, req.hidden ? 'Y' : ''); log_(req.hidden ? '글 숨김' : '글 숨김 풀기', r[0], who, String(p[0]) + ' · ' + String(p[7] || '').slice(0, 60)); }   // v10 검토 반영: 숨기기도 기록
     if (req.text != null) { log_('글 수정 전 내용', r[0], who, p[7]); setCell_('posts', p._row, 7, clean_(req.text, 4000)); }
     if (req.kind != null) setCell_('posts', p._row, 6, clean_(req.kind, 10));
     setCell_('posts', p._row, 12, now_());
     return {};
   },
   editComment: function (req) {
-    admin_(req);
+    var who = admin_(req);
     var r = site_(req.s);
     var c = rows_('comments').filter(function (x) { return x[0] === req.id && x[1] === r[0]; })[0];
     if (!c) throw new Error('댓글을 찾을 수 없어요');
-    if (req.hidden != null) setCell_('comments', c._row, 7, req.hidden ? 'Y' : '');
+    if (req.hidden != null) { setCell_('comments', c._row, 7, req.hidden ? 'Y' : ''); log_(req.hidden ? '댓글 숨김' : '댓글 숨김 풀기', r[0], who, String(c[0]) + ' · ' + String(c[5] || '').slice(0, 60)); }   // v10 검토 반영: 숨기기도 기록
     return {};
   },
   savePdf: function (req) {
@@ -1348,6 +1363,7 @@ var ACTIONS = {
      줄은 덧붙이기만. 같은 버전·같은 내용이면 더하지 않음. 더 옛 버전은 거절 */
   specPush: function (req) {
     var who = admin_(req);
+    if (SPEC_SENDERS.indexOf(who) < 0) throw new Error('확정본은 대표·이봄이 실장·정진혁 실장만 보낼 수 있어요');   // by 글자만 믿지 않고 실제 보낸 사람(출입증 이름)을 봄
     var proj = /^P-\d{4}-\d{3}$/.test(String(req.proj || '')) ? String(req.proj) : '';
     var r = req.s ? site_(req.s) : (proj ? rows_('sites').filter(function (x) { return x[13] !== 'Y' && projOf_(x) === proj; })[0] : null);
     if (!r) throw new Error('현장을 찾을 수 없어요 (인트라넷에서 ‘고객 공유 페이지 열기’를 먼저 눌러 주세요)');
@@ -1365,6 +1381,7 @@ var ACTIONS = {
       log_('확정본 내림', code, who, 'v' + c0.ver + ' 확정 취소');
       return { cancelled: true, ver: 0 };
     }
+    if (!String(r[16] || '').trim()) throw new Error('고객 확인 번호를 먼저 정해 주세요 (현장 정보에서 고객 휴대폰 뒷 4자리를 넣은 뒤 다시 보내 주세요). 확정본을 올리지 않았어요');
     var ver = Math.floor(Number(sp.ver));
     if (!(ver >= 1 && ver <= 9999)) throw new Error('확정본 버전을 확인해 주세요');
     var by = clean_(sp.by, 20);
@@ -1389,7 +1406,7 @@ var ACTIONS = {
     var isAdmin = false;
     if (req.pw) { admin_(req); isAdmin = true; }
     var r = site_(req.s);
-    if (!isAdmin) { pinOk_(r, req); rate_(r[0], 'sf', 200); }
+    if (!isAdmin) { if (!String(r[16] || '').trim()) throw new Error('파일을 찾을 수 없어요 (화면을 새로 고쳐 주세요)'); pinOk_(r, req); rate_(r[0], 'sf', 200); }
     var c = specCur_(r[0]), id = String(req.id || '');
     var f = c ? specJson_(c.filesJson).filter(function (x) { return x && x.id === id; })[0] : null;
     if (!f) throw new Error('파일을 찾을 수 없어요 (화면을 새로 고쳐 주세요)');
@@ -1402,6 +1419,7 @@ var ACTIONS = {
   specSeen: function (req) {
     if (req.pw) throw new Error('고객 화면에서만 누를 수 있어요');
     var r = site_(req.s);
+    if (!String(r[16] || '').trim()) throw new Error('확정본이 아직 없어요 (화면을 새로 고쳐 주세요)');   // 확인 번호 없는 현장은 확인 기록을 받지 않음
     pinOk_(r, req);
     rate_(r[0], 'ss', 30);
     var ver = Math.floor(Number(req.ver)), res, fresh = false, mark = '';
